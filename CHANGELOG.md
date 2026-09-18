@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.10.4-beta.1
+## 0.10.4
 
 ### Added
 
