@@ -15,6 +15,7 @@ import {
 	mapTrainingReadiness,
 	mapTrainingStatus,
 	mapActivities,
+	mapExerciseSets,
 } from "./garmin-mapper";
 
 export class GarminProvider implements HealthProvider {
@@ -22,6 +23,11 @@ export class GarminProvider implements HealthProvider {
 	readonly name = "Garmin Connect";
 
 	private api = new GarminApi();
+	private strengthSets = false;
+
+	setOptions(options: { strengthSets: boolean }): void {
+		this.strengthSets = options.strengthSets;
+	}
 
 	setRegion(region: ServerRegion): void {
 		this.api.setRegion(region);
@@ -218,19 +224,34 @@ export class GarminProvider implements HealthProvider {
 		let activities: Record<string, string> = {};
 		let trainings: import("../provider").TrainingEntry[] = [];
 		let startLocation: { lat: number; lon: number } | undefined;
+		let strength: import("../provider").StrengthExercise[] = [];
 		requests.push(
 			this.api.fetchActivities(date)
-				.then(data => {
+				.then(async data => {
 					const result = mapActivities(data);
 					activities = result.display;
 					trainings = result.trainings;
 					if (result.startLocation) startLocation = result.startLocation;
+
+					// Strength sets: one extra request per strength activity, sequential
+					// to stay gentle on Garmin's rate limit.
+					if (this.strengthSets) {
+						const responses: Record<string, unknown>[] = [];
+						for (const act of data) {
+							const type = (act["activityType"] as Record<string, unknown> | undefined)?.["typeKey"];
+							const id = act["activityId"];
+							if (type !== "strength_training" || (typeof id !== "number" && typeof id !== "string")) continue;
+							const sets = await this.api.fetchExerciseSets(id);
+							if (sets) responses.push(sets);
+						}
+						strength = mapExerciseSets(responses);
+					}
 				})
 				.catch(e => warnOrRethrowAuth("Activities", e))
 		);
 
 		await Promise.all(requests);
 
-		return { metrics, activities, trainings, startLocation };
+		return { metrics, activities, trainings, startLocation, strength };
 	}
 }

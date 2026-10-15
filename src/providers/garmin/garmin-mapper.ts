@@ -1,5 +1,5 @@
 import { normalizeActivityKey, getActivityCategory } from "../../activity-keys";
-import type { TrainingEntry } from "../provider";
+import type { StrengthExercise, TrainingEntry } from "../provider";
 
 /** Converts seconds to "Xh Ymin" format */
 export function secondsToHoursMin(seconds: number | null | undefined): string | null {
@@ -350,4 +350,65 @@ export function mapActivities(activities: Record<string, unknown>[]): ActivityRe
 	}
 
 	return { display, trainings, startLocation };
+}
+
+/** BARBELL_BACK_SQUAT → "Barbell Back Squat" */
+function prettifyExerciseKey(key: string): string {
+	return key.toLowerCase().split("_").filter(Boolean)
+		.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+/** Garmin stores set weight in grams; tolerate kg values just in case. */
+function toKg(raw: unknown): number | null {
+	const w = Number(raw);
+	if (!isFinite(w) || w <= 0) return null;
+	const kg = w > 1000 ? w / 1000 : w;
+	return Math.round(kg * 10) / 10;
+}
+
+/** Maps Garmin exerciseSets responses (one per strength activity) to
+ *  per-exercise summaries, in the order the exercises were performed. */
+export function mapExerciseSets(responses: Record<string, unknown>[]): StrengthExercise[] {
+	const order: string[] = [];
+	const byName: Record<string, { reps: number[]; weights: (number | null)[] }> = {};
+
+	for (const resp of responses) {
+		const sets = resp["exerciseSets"];
+		if (!Array.isArray(sets)) continue;
+
+		for (const raw of sets as Record<string, unknown>[]) {
+			if (raw["setType"] !== "ACTIVE") continue; // skip rest sets
+
+			// Pick the most likely exercise Garmin recorded for this set
+			const candidates = Array.isArray(raw["exercises"]) ? raw["exercises"] as Record<string, unknown>[] : [];
+			let best: Record<string, unknown> | undefined;
+			for (const c of candidates) {
+				if (!best || (Number(c["probability"]) || 0) > (Number(best["probability"]) || 0)) best = c;
+			}
+			const key = typeof best?.["name"] === "string" && best["name"]
+				? best["name"]
+				: typeof best?.["category"] === "string" && best["category"]
+					? best["category"]
+					: "UNKNOWN";
+			const name = prettifyExerciseKey(key);
+
+			if (!byName[name]) {
+				byName[name] = { reps: [], weights: [] };
+				order.push(name);
+			}
+			byName[name].reps.push(Math.round(Number(raw["repetitionCount"]) || 0));
+			byName[name].weights.push(toKg(raw["weight"]));
+		}
+	}
+
+	return order.map(name => {
+		const { reps, weights } = byName[name]!;
+		const entry: StrengthExercise = { exercise: name, sets: reps.length, reps };
+		const known = weights.filter((w): w is number => w !== null);
+		if (known.length > 0) {
+			entry.weights_kg = weights.map(w => w ?? 0);
+			entry.max_weight_kg = Math.max(...known);
+		}
+		return entry;
+	});
 }

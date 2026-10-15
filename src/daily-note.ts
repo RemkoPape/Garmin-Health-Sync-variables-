@@ -135,6 +135,7 @@ export async function writeToDailyNote(
 		prefix: string;
 		template: string;
 		writeTrainings: boolean;
+		writeStrengthSets?: boolean;
 		writeWorkoutLocation: boolean;
 		createIfMissing: boolean;
 	}
@@ -176,6 +177,11 @@ export async function writeToDailyNote(
 	// Machine-readable training data (optional)
 	if (options.writeTrainings && data.trainings && data.trainings.length > 0) {
 		properties[applyPrefix("trainings", options.prefix)] = data.trainings as unknown as Record<string, unknown>[];
+	}
+
+	// Strength sets per exercise (optional)
+	if (options.writeStrengthSets && data.strength && data.strength.length > 0) {
+		properties[applyPrefix("strength_sets", options.prefix)] = data.strength as unknown as Record<string, unknown>[];
 	}
 
 	// Workout Location via Reverse Geocoding (optional)

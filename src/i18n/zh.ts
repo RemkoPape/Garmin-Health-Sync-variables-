@@ -34,6 +34,8 @@ export const zh: Record<TranslationKeys, string> = {
 	settingsWriteWorkoutLocationDesc: "在 frontmatter 中添加第一个 GPS 活动的地名",
 	settingsWriteTrainings: "机器可读训练数据",
 	settingsWriteTrainingsDesc: "在 frontmatter 中添加结构化的 'trainings' 字段（用于 Dataview 查询）",
+	settingsWriteStrengthSets: "力量训练组",
+	settingsWriteStrengthSetsDesc: "为力量训练添加 'strength_sets' 字段，包含动作、组数、次数和重量（每次力量训练额外一次请求）",
 	settingsDailyNoteTemplate: "新建笔记模板",
 	settingsDailyNoteTemplateDesc: "创建新每日笔记时使用的内容（留空则创建空白笔记）",
 	settingsMetricsStandard: "标准指标",

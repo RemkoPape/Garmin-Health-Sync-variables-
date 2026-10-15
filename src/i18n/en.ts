@@ -32,6 +32,8 @@ export const en = {
 	settingsWriteWorkoutLocationDesc: "Add place name of first GPS activity to frontmatter",
 	settingsWriteTrainings: "Machine-readable trainings",
 	settingsWriteTrainingsDesc: "Add structured 'trainings' field to frontmatter (for Dataview queries)",
+	settingsWriteStrengthSets: "Strength sets",
+	settingsWriteStrengthSetsDesc: "Add a 'strength_sets' field with exercise, sets, reps and weight for strength workouts (one extra request per strength activity)",
 	settingsDailyNoteTemplate: "New note template",
 	settingsDailyNoteTemplateDesc: "Content added when creating a new daily note (leave empty for a blank note)",
 	settingsMetricsStandard: "Standard metrics",

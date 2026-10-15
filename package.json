@@ -1,6 +1,6 @@
 {
 	"name": "garmin-health-sync",
-	"version": "0.10.4",
+	"version": "0.10.5-beta.1",
 	"description": "Sync Garmin Connect health data into Obsidian Daily Notes",
 	"main": "main.js",
 	"type": "module",

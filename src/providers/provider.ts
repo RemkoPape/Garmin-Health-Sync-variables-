@@ -9,6 +9,15 @@ export interface TrainingEntry {
 	calories?: number;
 }
 
+/** One exercise from a strength activity (from Garmin's exercise sets) */
+export interface StrengthExercise {
+	exercise: string;
+	sets: number;
+	reps: number[];
+	weights_kg?: number[];
+	max_weight_kg?: number;
+}
+
 /** Normalized health data — provider-independent */
 export interface HealthData {
 	/** Metrics as key-value pairs (normalized keys) */
@@ -17,6 +26,8 @@ export interface HealthData {
 	activities: Record<string, string>;
 	/** Structured training data (machine-readable, optional) */
 	trainings?: TrainingEntry[];
+	/** Per-exercise strength sets (optional) */
+	strength?: StrengthExercise[];
 	/** Start coordinates of the first activity with GPS */
 	startLocation?: { lat: number; lon: number };
 }
@@ -46,6 +57,9 @@ export interface HealthProvider {
 
 	/** Fetch health data for a specific date */
 	fetchData(date: string, enabledMetrics: string[]): Promise<HealthData>;
+
+	/** Per-sync options (optional) */
+	setOptions?(options: { strengthSets: boolean }): void;
 
 	/** Recommended delay between dates in batch operations (ms) — optional */
 	getRecommendedBatchDelay?(enabledMetrics: string[]): number;

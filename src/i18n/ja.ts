@@ -34,6 +34,8 @@ export const ja: Record<TranslationKeys, string> = {
 	settingsWriteWorkoutLocationDesc: "最初のGPSアクティビティの地名をフロントマターに追加",
 	settingsWriteTrainings: "機械可読トレーニングデータ",
 	settingsWriteTrainingsDesc: "フロントマターに構造化された 'trainings' フィールドを追加（Dataviewクエリ用）",
+	settingsWriteStrengthSets: "筋トレのセット",
+	settingsWriteStrengthSetsDesc: "筋力トレーニングに種目・セット数・回数・重量を含む 'strength_sets' フィールドを追加します（筋トレ1回につき追加リクエスト1件）",
 	settingsDailyNoteTemplate: "新規ノートテンプレート",
 	settingsDailyNoteTemplateDesc: "新しいデイリーノート作成時に使用するコンテンツ（空白ノートにする場合は空のままにしてください）",
 	settingsMetricsStandard: "標準メトリクス",

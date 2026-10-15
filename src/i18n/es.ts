@@ -34,6 +34,8 @@ export const es: Record<TranslationKeys, string> = {
 	settingsWriteWorkoutLocationDesc: "Añadir nombre del lugar de la primera actividad GPS al frontmatter",
 	settingsWriteTrainings: "Entrenamientos legibles por máquina",
 	settingsWriteTrainingsDesc: "Añadir campo estructurado 'trainings' al frontmatter (para consultas Dataview)",
+	settingsWriteStrengthSets: "Series de fuerza",
+	settingsWriteStrengthSetsDesc: "Añade un campo 'strength_sets' con ejercicio, series, repeticiones y peso para entrenamientos de fuerza (una solicitud adicional por entrenamiento)",
 	settingsDailyNoteTemplate: "Plantilla para nuevas notas",
 	settingsDailyNoteTemplateDesc: "Contenido al crear una nueva nota diaria (dejar vacío para una nota en blanco)",
 	settingsMetricsStandard: "Métricas estándar",

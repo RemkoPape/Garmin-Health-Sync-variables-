@@ -40,6 +40,7 @@ export interface HealthSyncSettings {
 	autoSync: boolean;
 	createDailyNoteIfMissing: boolean; // When false, sync waits for the note instead of creating it
 	writeTrainings: boolean; // Machine-readable training data in frontmatter
+	writeStrengthSets: boolean; // Per-exercise strength sets in frontmatter
 	writeWorkoutLocation: boolean; // Reverse-geocoded workout location in frontmatter
 	serverRegion: ServerRegion;
 	unitSystem: UnitSystem;
@@ -59,6 +60,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	autoSync: true,
 	createDailyNoteIfMissing: true,
 	writeTrainings: false,
+	writeStrengthSets: false,
 	writeWorkoutLocation: true,
 	serverRegion: "international",
 	unitSystem: "metric",
@@ -172,6 +174,11 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 				name: t("settingsWriteTrainings", lang),
 				desc: t("settingsWriteTrainingsDesc", lang),
 				control: { type: "toggle", key: "writeTrainings" },
+			},
+			{
+				name: t("settingsWriteStrengthSets", lang),
+				desc: t("settingsWriteStrengthSetsDesc", lang),
+				control: { type: "toggle", key: "writeStrengthSets" },
 			},
 			{
 				type: "group",

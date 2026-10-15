@@ -1,0 +1,376 @@
+diff --git a/src/daily-note.ts b/src/daily-note.ts
+index af79eaf..ca5ebb4 100644
+--- a/src/daily-note.ts
++++ b/src/daily-note.ts
+@@ -135,6 +135,7 @@ export async function writeToDailyNote(
+ 		prefix: string;
+ 		template: string;
+ 		writeTrainings: boolean;
++		writeStrengthSets?: boolean;
+ 		writeWorkoutLocation: boolean;
+ 		createIfMissing: boolean;
+ 	}
+@@ -178,6 +179,11 @@ export async function writeToDailyNote(
+ 		properties[applyPrefix("trainings", options.prefix)] = data.trainings as unknown as Record<string, unknown>[];
+ 	}
+ 
++	// Strength sets per exercise (optional)
++	if (options.writeStrengthSets && data.strength && data.strength.length > 0) {
++		properties[applyPrefix("strength_sets", options.prefix)] = data.strength as unknown as Record<string, unknown>[];
++	}
++
+ 	// Workout Location via Reverse Geocoding (optional)
+ 	if (options.writeWorkoutLocation && data.startLocation) {
+ 		const locationName = await reverseGeocode(data.startLocation.lat, data.startLocation.lon);
+diff --git a/src/i18n/de.ts b/src/i18n/de.ts
+index a3c548c..1dc69ea 100644
+--- a/src/i18n/de.ts
++++ b/src/i18n/de.ts
+@@ -34,6 +34,8 @@ export const de: Record<TranslationKeys, string> = {
+ 	settingsWriteWorkoutLocationDesc: "Ortsname der ersten GPS-Aktivität im Frontmatter hinzufügen",
+ 	settingsWriteTrainings: "Maschinenlesbare Trainings",
+ 	settingsWriteTrainingsDesc: "Strukturiertes 'trainings'-Feld im Frontmatter hinzufügen (für Dataview-Abfragen)",
++	settingsWriteStrengthSets: "Kraftsätze",
++	settingsWriteStrengthSetsDesc: "Fügt ein Feld 'strength_sets' mit Übung, Sätzen, Wiederholungen und Gewicht für Krafttrainings hinzu (eine zusätzliche Anfrage pro Krafttraining)",
+ 	settingsDailyNoteTemplate: "Vorlage für neue Notizen",
+ 	settingsDailyNoteTemplateDesc: "Inhalt beim Erstellen einer neuen Daily Note (leer lassen für leere Notiz)",
+ 	settingsMetricsStandard: "Standard-Metriken",
+diff --git a/src/i18n/en.ts b/src/i18n/en.ts
+index 892a3b7..22a212e 100644
+--- a/src/i18n/en.ts
++++ b/src/i18n/en.ts
+@@ -32,6 +32,8 @@ export const en = {
+ 	settingsWriteWorkoutLocationDesc: "Add place name of first GPS activity to frontmatter",
+ 	settingsWriteTrainings: "Machine-readable trainings",
+ 	settingsWriteTrainingsDesc: "Add structured 'trainings' field to frontmatter (for Dataview queries)",
++	settingsWriteStrengthSets: "Strength sets",
++	settingsWriteStrengthSetsDesc: "Add a 'strength_sets' field with exercise, sets, reps and weight for strength workouts (one extra request per strength activity)",
+ 	settingsDailyNoteTemplate: "New note template",
+ 	settingsDailyNoteTemplateDesc: "Content added when creating a new daily note (leave empty for a blank note)",
+ 	settingsMetricsStandard: "Standard metrics",
+diff --git a/src/i18n/es.ts b/src/i18n/es.ts
+index 4f60b05..5aed981 100644
+--- a/src/i18n/es.ts
++++ b/src/i18n/es.ts
+@@ -34,6 +34,8 @@ export const es: Record<TranslationKeys, string> = {
+ 	settingsWriteWorkoutLocationDesc: "Añadir nombre del lugar de la primera actividad GPS al frontmatter",
+ 	settingsWriteTrainings: "Entrenamientos legibles por máquina",
+ 	settingsWriteTrainingsDesc: "Añadir campo estructurado 'trainings' al frontmatter (para consultas Dataview)",
++	settingsWriteStrengthSets: "Series de fuerza",
++	settingsWriteStrengthSetsDesc: "Añade un campo 'strength_sets' con ejercicio, series, repeticiones y peso para entrenamientos de fuerza (una solicitud adicional por entrenamiento)",
+ 	settingsDailyNoteTemplate: "Plantilla para nuevas notas",
+ 	settingsDailyNoteTemplateDesc: "Contenido al crear una nueva nota diaria (dejar vacío para una nota en blanco)",
+ 	settingsMetricsStandard: "Métricas estándar",
+diff --git a/src/i18n/fr.ts b/src/i18n/fr.ts
+index 30a5cf9..14696cf 100644
+--- a/src/i18n/fr.ts
++++ b/src/i18n/fr.ts
+@@ -34,6 +34,8 @@ export const fr: Record<TranslationKeys, string> = {
+ 	settingsWriteWorkoutLocationDesc: "Ajouter le nom du lieu de la première activité GPS au frontmatter",
+ 	settingsWriteTrainings: "Entraînements lisibles par machine",
+ 	settingsWriteTrainingsDesc: "Ajouter un champ structuré 'trainings' au frontmatter (pour les requêtes Dataview)",
++	settingsWriteStrengthSets: "Séries de musculation",
++	settingsWriteStrengthSetsDesc: "Ajoute un champ 'strength_sets' avec exercice, séries, répétitions et poids pour les séances de musculation (une requête supplémentaire par séance)",
+ 	settingsDailyNoteTemplate: "Modèle de nouvelle note",
+ 	settingsDailyNoteTemplateDesc: "Contenu ajouté lors de la création d'une nouvelle note quotidienne (laisser vide pour une note vierge)",
+ 	settingsMetricsStandard: "Métriques standard",
+diff --git a/src/i18n/ja.ts b/src/i18n/ja.ts
+index c537360..cfb928f 100644
+--- a/src/i18n/ja.ts
++++ b/src/i18n/ja.ts
+@@ -34,6 +34,8 @@ export const ja: Record<TranslationKeys, string> = {
+ 	settingsWriteWorkoutLocationDesc: "最初のGPSアクティビティの地名をフロントマターに追加",
+ 	settingsWriteTrainings: "機械可読トレーニングデータ",
+ 	settingsWriteTrainingsDesc: "フロントマターに構造化された 'trainings' フィールドを追加（Dataviewクエリ用）",
++	settingsWriteStrengthSets: "筋トレのセット",
++	settingsWriteStrengthSetsDesc: "筋力トレーニングに種目・セット数・回数・重量を含む 'strength_sets' フィールドを追加します（筋トレ1回につき追加リクエスト1件）",
+ 	settingsDailyNoteTemplate: "新規ノートテンプレート",
+ 	settingsDailyNoteTemplateDesc: "新しいデイリーノート作成時に使用するコンテンツ（空白ノートにする場合は空のままにしてください）",
+ 	settingsMetricsStandard: "標準メトリクス",
+diff --git a/src/i18n/zh.ts b/src/i18n/zh.ts
+index 4fcebb9..11eaf70 100644
+--- a/src/i18n/zh.ts
++++ b/src/i18n/zh.ts
+@@ -34,6 +34,8 @@ export const zh: Record<TranslationKeys, string> = {
+ 	settingsWriteWorkoutLocationDesc: "在 frontmatter 中添加第一个 GPS 活动的地名",
+ 	settingsWriteTrainings: "机器可读训练数据",
+ 	settingsWriteTrainingsDesc: "在 frontmatter 中添加结构化的 'trainings' 字段（用于 Dataview 查询）",
++	settingsWriteStrengthSets: "力量训练组",
++	settingsWriteStrengthSetsDesc: "为力量训练添加 'strength_sets' 字段，包含动作、组数、次数和重量（每次力量训练额外一次请求）",
+ 	settingsDailyNoteTemplate: "新建笔记模板",
+ 	settingsDailyNoteTemplateDesc: "创建新每日笔记时使用的内容（留空则创建空白笔记）",
+ 	settingsMetricsStandard: "标准指标",
+diff --git a/src/providers/garmin/garmin-api.ts b/src/providers/garmin/garmin-api.ts
+index dc8ae2b..dea4f1a 100644
+--- a/src/providers/garmin/garmin-api.ts
++++ b/src/providers/garmin/garmin-api.ts
+@@ -860,6 +860,23 @@ export class GarminApi {
+ 		return Array.isArray(acts) ? acts as Record<string, unknown>[] : [];
+ 	}
+ 
++	/** Fetches the exercise sets (exercise, reps, weight) of one strength activity.
++	 *  Returns null when the activity has no sets or the request fails. */
++	async fetchExerciseSets(activityId: number | string): Promise<Record<string, unknown> | null> {
++		const oauth2 = await this.ensureValidOAuth2();
++		const url = `${this.urls.apiBase}/activity-service/activity/${activityId}/exerciseSets`;
++		try {
++			const { status, data } = await this.apiGet(url, oauth2);
++			if (status >= 200 && status < 300 && data && typeof data === "object") {
++				return data as Record<string, unknown>;
++			}
++			console.debug(`Garmin Health Sync: exerciseSets ${activityId} → status ${status} (skipped)`);
++		} catch (e) {
++			console.debug(`Garmin Health Sync: exerciseSets ${activityId} fetch error:`, e);
++		}
++		return null;
++	}
++
+ 	async fetchTrainingStatus(date: string): Promise<Record<string, unknown>> {
+ 		const data = await this.getCachedOrFetch(date);
+ 		return (data.trainingStatus || {}) as Record<string, unknown>;
+diff --git a/src/providers/garmin/garmin-mapper.ts b/src/providers/garmin/garmin-mapper.ts
+index a71450c..0d12c91 100644
+--- a/src/providers/garmin/garmin-mapper.ts
++++ b/src/providers/garmin/garmin-mapper.ts
+@@ -1,5 +1,5 @@
+ import { normalizeActivityKey, getActivityCategory } from "../../activity-keys";
+-import type { TrainingEntry } from "../provider";
++import type { StrengthExercise, TrainingEntry } from "../provider";
+ 
+ /** Converts seconds to "Xh Ymin" format */
+ export function secondsToHoursMin(seconds: number | null | undefined): string | null {
+@@ -351,3 +351,64 @@ export function mapActivities(activities: Record<string, unknown>[]): ActivityRe
+ 
+ 	return { display, trainings, startLocation };
+ }
++
++/** BARBELL_BACK_SQUAT → "Barbell Back Squat" */
++function prettifyExerciseKey(key: string): string {
++	return key.toLowerCase().split("_").filter(Boolean)
++		.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
++}
++
++/** Garmin stores set weight in grams; tolerate kg values just in case. */
++function toKg(raw: unknown): number | null {
++	const w = Number(raw);
++	if (!isFinite(w) || w <= 0) return null;
++	const kg = w > 1000 ? w / 1000 : w;
++	return Math.round(kg * 10) / 10;
++}
++
++/** Maps Garmin exerciseSets responses (one per strength activity) to
++ *  per-exercise summaries, in the order the exercises were performed. */
++export function mapExerciseSets(responses: Record<string, unknown>[]): StrengthExercise[] {
++	const order: string[] = [];
++	const byName: Record<string, { reps: number[]; weights: (number | null)[] }> = {};
++
++	for (const resp of responses) {
++		const sets = resp["exerciseSets"];
++		if (!Array.isArray(sets)) continue;
++
++		for (const raw of sets as Record<string, unknown>[]) {
++			if (raw["setType"] !== "ACTIVE") continue; // skip rest sets
++
++			// Pick the most likely exercise Garmin recorded for this set
++			const candidates = Array.isArray(raw["exercises"]) ? raw["exercises"] as Record<string, unknown>[] : [];
++			let best: Record<string, unknown> | undefined;
++			for (const c of candidates) {
++				if (!best || (Number(c["probability"]) || 0) > (Number(best["probability"]) || 0)) best = c;
++			}
++			const key = typeof best?.["name"] === "string" && best["name"]
++				? best["name"]
++				: typeof best?.["category"] === "string" && best["category"]
++					? best["category"]
++					: "UNKNOWN";
++			const name = prettifyExerciseKey(key);
++
++			if (!byName[name]) {
++				byName[name] = { reps: [], weights: [] };
++				order.push(name);
++			}
++			byName[name].reps.push(Math.round(Number(raw["repetitionCount"]) || 0));
++			byName[name].weights.push(toKg(raw["weight"]));
++		}
++	}
++
++	return order.map(name => {
++		const { reps, weights } = byName[name]!;
++		const entry: StrengthExercise = { exercise: name, sets: reps.length, reps };
++		const known = weights.filter((w): w is number => w !== null);
++		if (known.length > 0) {
++			entry.weights_kg = weights.map(w => w ?? 0);
++			entry.max_weight_kg = Math.max(...known);
++		}
++		return entry;
++	});
++}
+diff --git a/src/providers/garmin/garmin-provider.ts b/src/providers/garmin/garmin-provider.ts
+index c6a5e73..f21a98f 100644
+--- a/src/providers/garmin/garmin-provider.ts
++++ b/src/providers/garmin/garmin-provider.ts
+@@ -15,6 +15,7 @@ import {
+ 	mapTrainingReadiness,
+ 	mapTrainingStatus,
+ 	mapActivities,
++	mapExerciseSets,
+ } from "./garmin-mapper";
+ 
+ export class GarminProvider implements HealthProvider {
+@@ -22,6 +23,11 @@ export class GarminProvider implements HealthProvider {
+ 	readonly name = "Garmin Connect";
+ 
+ 	private api = new GarminApi();
++	private strengthSets = false;
++
++	setOptions(options: { strengthSets: boolean }): void {
++		this.strengthSets = options.strengthSets;
++	}
+ 
+ 	setRegion(region: ServerRegion): void {
+ 		this.api.setRegion(region);
+@@ -218,19 +224,34 @@ export class GarminProvider implements HealthProvider {
+ 		let activities: Record<string, string> = {};
+ 		let trainings: import("../provider").TrainingEntry[] = [];
+ 		let startLocation: { lat: number; lon: number } | undefined;
++		let strength: import("../provider").StrengthExercise[] = [];
+ 		requests.push(
+ 			this.api.fetchActivities(date)
+-				.then(data => {
++				.then(async data => {
+ 					const result = mapActivities(data);
+ 					activities = result.display;
+ 					trainings = result.trainings;
+ 					if (result.startLocation) startLocation = result.startLocation;
++
++					// Strength sets: one extra request per strength activity, sequential
++					// to stay gentle on Garmin's rate limit.
++					if (this.strengthSets) {
++						const responses: Record<string, unknown>[] = [];
++						for (const act of data) {
++							const type = (act["activityType"] as Record<string, unknown> | undefined)?.["typeKey"];
++							const id = act["activityId"];
++							if (type !== "strength_training" || (typeof id !== "number" && typeof id !== "string")) continue;
++							const sets = await this.api.fetchExerciseSets(id);
++							if (sets) responses.push(sets);
++						}
++						strength = mapExerciseSets(responses);
++					}
+ 				})
+ 				.catch(e => warnOrRethrowAuth("Activities", e))
+ 		);
+ 
+ 		await Promise.all(requests);
+ 
+-		return { metrics, activities, trainings, startLocation };
++		return { metrics, activities, trainings, startLocation, strength };
+ 	}
+ }
+diff --git a/src/providers/provider.ts b/src/providers/provider.ts
+index 650a64c..000911d 100644
+--- a/src/providers/provider.ts
++++ b/src/providers/provider.ts
+@@ -9,6 +9,15 @@ export interface TrainingEntry {
+ 	calories?: number;
+ }
+ 
++/** One exercise from a strength activity (from Garmin's exercise sets) */
++export interface StrengthExercise {
++	exercise: string;
++	sets: number;
++	reps: number[];
++	weights_kg?: number[];
++	max_weight_kg?: number;
++}
++
+ /** Normalized health data — provider-independent */
+ export interface HealthData {
+ 	/** Metrics as key-value pairs (normalized keys) */
+@@ -17,6 +26,8 @@ export interface HealthData {
+ 	activities: Record<string, string>;
+ 	/** Structured training data (machine-readable, optional) */
+ 	trainings?: TrainingEntry[];
++	/** Per-exercise strength sets (optional) */
++	strength?: StrengthExercise[];
+ 	/** Start coordinates of the first activity with GPS */
+ 	startLocation?: { lat: number; lon: number };
+ }
+@@ -47,6 +58,9 @@ export interface HealthProvider {
+ 	/** Fetch health data for a specific date */
+ 	fetchData(date: string, enabledMetrics: string[]): Promise<HealthData>;
+ 
++	/** Per-sync options (optional) */
++	setOptions?(options: { strengthSets: boolean }): void;
++
+ 	/** Recommended delay between dates in batch operations (ms) — optional */
+ 	getRecommendedBatchDelay?(enabledMetrics: string[]): number;
+ }
+diff --git a/src/settings.ts b/src/settings.ts
+index 932ea2a..0205a3a 100644
+--- a/src/settings.ts
++++ b/src/settings.ts
+@@ -40,6 +40,7 @@ export interface HealthSyncSettings {
+ 	autoSync: boolean;
+ 	createDailyNoteIfMissing: boolean; // When false, sync waits for the note instead of creating it
+ 	writeTrainings: boolean; // Machine-readable training data in frontmatter
++	writeStrengthSets: boolean; // Per-exercise strength sets in frontmatter
+ 	writeWorkoutLocation: boolean; // Reverse-geocoded workout location in frontmatter
+ 	serverRegion: ServerRegion;
+ 	unitSystem: UnitSystem;
+@@ -59,6 +60,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
+ 	autoSync: true,
+ 	createDailyNoteIfMissing: true,
+ 	writeTrainings: false,
++	writeStrengthSets: false,
+ 	writeWorkoutLocation: true,
+ 	serverRegion: "international",
+ 	unitSystem: "metric",
+@@ -173,6 +175,11 @@ export class HealthSyncSettingTab extends PluginSettingTab {
+ 				desc: t("settingsWriteTrainingsDesc", lang),
+ 				control: { type: "toggle", key: "writeTrainings" },
+ 			},
++			{
++				name: t("settingsWriteStrengthSets", lang),
++				desc: t("settingsWriteStrengthSetsDesc", lang),
++				control: { type: "toggle", key: "writeStrengthSets" },
++			},
+ 			{
+ 				type: "group",
+ 				heading: t("settingsMetricsStandard", lang),
+diff --git a/src/sync.ts b/src/sync.ts
+index 99dee2f..233879f 100644
+--- a/src/sync.ts
++++ b/src/sync.ts
+@@ -74,6 +74,7 @@ export class SyncManager {
+ 				.map(([key]) => key);
+ 
+ 			// Fetch data
++			this.provider.setOptions?.({ strengthSets: settings.writeStrengthSets });
+ 			const data = await this.provider.fetchData(date, enabledMetrics);
+ 
+ 			const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
+@@ -93,6 +94,7 @@ export class SyncManager {
+ 				prefix: settings.usePrefix ? "ohs_" : "",
+ 				template: settings.dailyNoteTemplate,
+ 				writeTrainings: settings.writeTrainings,
++				writeStrengthSets: settings.writeStrengthSets,
+ 				writeWorkoutLocation: settings.writeWorkoutLocation,
+ 				// In wait mode the gate above already confirmed the note exists;
+ 				// keep createIfMissing false as a safety net should it vanish
+@@ -142,7 +144,8 @@ export class SyncManager {
+ 			for (let i = 0; i < dates.length; i++) {
+ 				const date = dates[i]!;
+ 				try {
+-					const data = await this.provider.fetchData(date, enabledMetrics);
++					this.provider.setOptions?.({ strengthSets: settings.writeStrengthSets });
++			const data = await this.provider.fetchData(date, enabledMetrics);
+ 					const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
+ 
+ 					if (hasData) {
+@@ -156,6 +159,7 @@ export class SyncManager {
+ 							prefix: settings.usePrefix ? "ohs_" : "",
+ 							template: settings.dailyNoteTemplate,
+ 							writeTrainings: settings.writeTrainings,
++				writeStrengthSets: settings.writeStrengthSets,
+ 							writeWorkoutLocation: settings.writeWorkoutLocation,
+ 							createIfMissing: true,
+ 						});

@@ -74,6 +74,7 @@ export class SyncManager {
 				.map(([key]) => key);
 
 			// Fetch data
+			this.provider.setOptions?.({ strengthSets: settings.writeStrengthSets });
 			const data = await this.provider.fetchData(date, enabledMetrics);
 
 			const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
@@ -93,6 +94,7 @@ export class SyncManager {
 				prefix: settings.usePrefix ? "ohs_" : "",
 				template: settings.dailyNoteTemplate,
 				writeTrainings: settings.writeTrainings,
+				writeStrengthSets: settings.writeStrengthSets,
 				writeWorkoutLocation: settings.writeWorkoutLocation,
 				// In wait mode the gate above already confirmed the note exists;
 				// keep createIfMissing false as a safety net should it vanish
@@ -142,7 +144,8 @@ export class SyncManager {
 			for (let i = 0; i < dates.length; i++) {
 				const date = dates[i]!;
 				try {
-					const data = await this.provider.fetchData(date, enabledMetrics);
+					this.provider.setOptions?.({ strengthSets: settings.writeStrengthSets });
+			const data = await this.provider.fetchData(date, enabledMetrics);
 					const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
 
 					if (hasData) {
@@ -156,6 +159,7 @@ export class SyncManager {
 							prefix: settings.usePrefix ? "ohs_" : "",
 							template: settings.dailyNoteTemplate,
 							writeTrainings: settings.writeTrainings,
+				writeStrengthSets: settings.writeStrengthSets,
 							writeWorkoutLocation: settings.writeWorkoutLocation,
 							createIfMissing: true,
 						});

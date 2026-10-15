@@ -860,6 +860,23 @@ export class GarminApi {
 		return Array.isArray(acts) ? acts as Record<string, unknown>[] : [];
 	}
 
+	/** Fetches the exercise sets (exercise, reps, weight) of one strength activity.
+	 *  Returns null when the activity has no sets or the request fails. */
+	async fetchExerciseSets(activityId: number | string): Promise<Record<string, unknown> | null> {
+		const oauth2 = await this.ensureValidOAuth2();
+		const url = `${this.urls.apiBase}/activity-service/activity/${activityId}/exerciseSets`;
+		try {
+			const { status, data } = await this.apiGet(url, oauth2);
+			if (status >= 200 && status < 300 && data && typeof data === "object") {
+				return data as Record<string, unknown>;
+			}
+			console.debug(`Garmin Health Sync: exerciseSets ${activityId} → status ${status} (skipped)`);
+		} catch (e) {
+			console.debug(`Garmin Health Sync: exerciseSets ${activityId} fetch error:`, e);
+		}
+		return null;
+	}
+
 	async fetchTrainingStatus(date: string): Promise<Record<string, unknown>> {
 		const data = await this.getCachedOrFetch(date);
 		return (data.trainingStatus || {}) as Record<string, unknown>;
