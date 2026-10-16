@@ -1,6 +1,8 @@
 import { App, Modal, Notice, Plugin, Setting, TAbstractFile, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, HealthSyncSettings, HealthSyncSettingTab } from "./settings";
 import { ManualLoginModal } from "./ui/manual-login-modal";
+import { CredentialLoginModal } from "./ui/credential-login-modal";
+import { LoginCooldown } from "./login-cooldown";
 import { SyncManager } from "./sync";
 import { matchDailyNoteDate } from "./daily-note";
 import { GarminProvider } from "./providers/garmin/garmin-provider";
@@ -76,6 +78,7 @@ export default class HealthSyncPlugin extends Plugin {
 	private lastAutoSyncAttempt = 0;
 	private loginRequiredNotice: Notice | null = null;
 	private lastLoginNoticeAt = 0;
+	private credentialModalOpen = false;
 
 	async onload() {
 		await this.loadSettings();
@@ -408,30 +411,35 @@ export default class HealthSyncPlugin extends Plugin {
 	}
 
 	/** Interactive OAuth login from settings (opens the Garmin login window). */
-	async loginViaBrowser(): Promise<void> {
-		try {
-			const result = await this.garminProvider.authenticate();
-			if (result.ok) {
+	loginViaBrowser(onSuccess?: () => void): Promise<void> {
+		// Primary sign-in on every platform: email + password (+ MFA code) without a browser.
+		this.openCredentialLogin(onSuccess);
+		return Promise.resolve();
+	}
+
+	/** Browser-free sign-in (email + password, optional MFA code). Used on mobile. */
+	openCredentialLogin(onSuccess?: () => void): void {
+		if (this.credentialModalOpen) return;
+		this.credentialModalOpen = true;
+		const cooldown = new LoginCooldown(this.app);
+		let previousAttemptAgo: number | null = null;
+		new CredentialLoginModal(this.app, this.settings.language, {
+			cooldown,
+			onClosed: () => { this.credentialModalOpen = false; },
+			login: (email, password) => {
+				previousAttemptAgo = cooldown.noteAttempt();
+				return this.garminProvider.loginWithCredentials(email, password);
+			},
+			verifyMfa: (code) => this.garminProvider.completeMfaLogin(code),
+			onSuccess: async () => {
 				await this.handleLoginResult(true, "noticeLoginFailed");
-				return;
-			}
-			if (result.cancelled) {
-				// User deliberately closed the login window — not a stall/escape. Don't
-				// nag with a fallback notice or auto-open the guided browser login.
-				console.debug("Garmin Health Sync: login window closed by user — no fallback prompt");
-				return;
-			}
-			// Issue #6: genuine no_ticket (the hand-off escapes to the system browser or
-			// stalls on the form). Instead of a dead-end failure notice, guide to the
-			// browser login — it uses a real browser and completes where the window cannot.
-			console.debug("Garmin Health Sync: in-window login produced no ticket → guided browser login");
-			new Notice(t("noticeLoginFallbackToBrowser", this.settings.language));
-			this.openManualLogin();
-		} catch (error) {
-			console.error("Garmin Health Sync: OAuth login failed", error);
-			new Notice(t("noticeLoginFallbackToBrowser", this.settings.language));
-			this.openManualLogin();
-		}
+				onSuccess?.();
+			},
+			// Backup on every platform: sign in on Garmin's page in the browser, paste the ticket back.
+			onBrowserFallback: () => this.openManualLogin(onSuccess),
+			// Attempt timing helps work out how long Garmin's limit really lasts.
+			getDiagnostics: () => `${this.garminProvider.getLoginDiagnostics()}\nprevious attempt: ${previousAttemptAgo === null ? "none" : `${previousAttemptAgo}s ago`}, blocks in a row: ${cooldown.strikes()}`,
+		}).open();
 	}
 
 	/** Manual-ticket login fallback (issue #6): opens the modal where the user
@@ -610,7 +618,11 @@ export default class HealthSyncPlugin extends Plugin {
 	private async loginFromNotice(notice: Notice, button: HTMLButtonElement): Promise<void> {
 		button.disabled = true;
 		button.textContent = t("noticeLoginInProgress", this.settings.language);
-		await this.loginViaBrowser();
+		await this.loginViaBrowser(() => {
+			// Mobile: the credential modal resolves after this handler returns.
+			notice.hide();
+			if (this.loginRequiredNotice === notice) this.loginRequiredNotice = null;
+		});
 
 		if (this.garminProvider.isSessionValid() && this.garminProvider.getAuthState() !== "needsUserLogin") {
 			// Review-C: loginViaBrowser() already triggered an auto-sync on success —

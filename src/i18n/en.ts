@@ -103,10 +103,10 @@ export const en = {
 
 	// Manual Login Modal (issue #6 fallback)
 	modalManualLoginTitle: "Manual Garmin login",
-	modalManualLoginIntro: "If the normal login window does not complete (it stays on the sign-in form or opens your system browser), you can finish the login manually:",
+	modalManualLoginIntro: "Garmin's sign-in page opens in your browser. After signing in, bring the one-time ticket back to the plugin:",
 	modalManualLoginStep1: "Open the Garmin sign-in page in your web browser and log in.",
-	modalManualLoginStep2: "After signing in, the browser shows a mostly empty page whose address contains 'ticket=ST-…'.",
-	modalManualLoginStep3: "Copy that full address (or just the ST-… part) and paste it below right away — the ticket expires after a few seconds.",
+	modalManualLoginStep2: "After signing in, the browser shows a mostly empty page. Its text contains 'serviceTicket: ST-…' (or its address contains 'ticket=ST-…').",
+	modalManualLoginStep3: "Select and copy that text (or the full address) and paste it below right away — the ticket expires after a few seconds.",
 	modalManualLoginOpenUrl: "Garmin sign-in page",
 	modalManualLoginOpenButton: "Open in browser",
 	modalManualLoginCopyTooltip: "Copy link",
@@ -117,6 +117,30 @@ export const en = {
 	modalManualLoginSubmit: "Log in",
 	modalManualLoginPasteButton: "Sign in from clipboard",
 	modalManualLoginPasteEmpty: "No ST-… ticket found in the clipboard — copy the address of the result page first.",
+
+	// Credential login modal (mobile sign-in without a browser)
+	modalCredTitle: "Sign in to Garmin",
+	modalCredIntro: "Your password is sent only to Garmin and is never stored by this plugin.",
+	modalCredEmail: "Email",
+	modalCredPassword: "Password",
+	modalCredSubmit: "Sign in",
+	modalCredBrowserFallback: "Use browser login",
+	modalCredMfaTitle: "Verification code",
+	modalCredMfaIntro: "Garmin sent you a verification code. Enter it to finish signing in.",
+	modalCredMfaCode: "Code",
+	modalCredErrorInvalid: "Wrong email or password.",
+	modalCredErrorMfa: "Wrong or expired code. Try again.",
+	modalCredErrorBlocked: "Garmin blocked this sign-in attempt. Use the browser login instead, or try again later.",
+	modalCredErrorGeneric: "Sign-in did not complete. Use the browser login instead, or copy the diagnostics for a bug report.",
+	modalCredCopyDiagnostics: "Copy diagnostics",
+	modalCredDiagnosticsCopied: "Diagnostics copied",
+	modalCredRetry: "Try again",
+	modalCredErrorRateLimited: "Garmin is limiting sign-in attempts from this device. Wait for the timer below, or use the browser login.",
+	modalCredCooldown: "Next attempt possible in about {time} (estimated).",
+	modalManualLoginStep3Mobile: "Touch and hold that text, choose select all, then copy. Switch back to Obsidian and tap the clipboard button below right away — the ticket expires after a few seconds.",
+	modalManualLoginTicketFound: "Ticket found: {ticket}",
+	modalManualLoginTicketNone: "No ticket found yet",
+	modalManualLoginClipboardBlocked: "Could not read the clipboard — paste the ticket into the field below instead.",
 };
 
 export type TranslationKeys = keyof typeof en;
