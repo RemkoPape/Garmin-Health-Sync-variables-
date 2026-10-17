@@ -126,7 +126,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			},
 			{
 				name: t("settingsGarminLogin", lang),
-				desc: `${garminStatus}. ${t("settingsGarminSessionPrivacyDesc", lang)}`,
+				desc: `${garminStatus}. ${t("settingsGarminSessionPrivacyDesc", lang)}${hasSavedSession ? ` ${t("settingsGarminLogoutHint", lang)}` : ""}`,
 				render: (setting) => this.renderGarminLogin(setting, hasSavedSession),
 			},
 			{
