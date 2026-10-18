@@ -71,6 +71,11 @@ export class GarminProvider implements HealthProvider {
 		return this.api.getLoginDiagnostics();
 	}
 
+	/** Redacted per-endpoint log of the last data fetch, for bug reports. */
+	getSyncDiagnostics(): string {
+		return this.api.getSyncDiagnostics();
+	}
+
 	/** Sign-in URL for the manual-ticket fallback (opened in an external browser). */
 	getSigninUrl(): string {
 		return this.api.getSigninUrl();

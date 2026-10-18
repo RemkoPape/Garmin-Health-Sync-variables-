@@ -1,6 +1,7 @@
 import {
 	App,
 	PluginSettingTab,
+	Notice,
 	Setting,
 	SettingDefinition,
 	SettingDefinitionItem,
@@ -189,6 +190,20 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 				],
 			},
 		];
+	}
+
+	private async copySyncDiagnostics(el: HTMLElement, lang: HealthSyncSettings["language"]): Promise<void> {
+		const text = this.plugin.getSyncDiagnostics();
+		try {
+			await navigator.clipboard.writeText(text);
+			new Notice(t("modalCredDiagnosticsCopied", lang));
+		} catch {
+			// Clipboard write blocked: show the text so it can be selected and copied by hand.
+			const area = el.createEl("textarea", { text });
+			area.readOnly = true;
+			area.rows = 6;
+			area.addClass("ghs-diagnostics");
+		}
 	}
 
 	getControlValue(key: string): unknown {

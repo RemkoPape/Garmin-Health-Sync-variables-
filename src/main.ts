@@ -503,6 +503,11 @@ export default class HealthSyncPlugin extends Plugin {
 		return this.garminProvider.isSessionValid();
 	}
 
+	/** Redacted log of the last data fetch (settings → copy diagnostics). */
+	getSyncDiagnostics(): string {
+		return this.garminProvider.getSyncDiagnostics() || "no sync run since the plugin started";
+	}
+
 	/** Apply the configured server region to the API layer */
 	applyServerRegion(): void {
 		this.garminProvider.setRegion(this.settings.serverRegion);
