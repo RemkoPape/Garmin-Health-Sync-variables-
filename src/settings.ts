@@ -131,6 +131,11 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 				render: (setting) => this.renderGarminLogin(setting, hasSavedSession),
 			},
 			{
+				// Mobile has no dev console: lets users paste what the last sync did into a bug report.
+				name: t("modalCredCopyDiagnostics", lang),
+				action: (el) => { void this.copySyncDiagnostics(el, lang); },
+			},
+			{
 				name: t("settingsAutoSync", lang),
 				desc: t("settingsAutoSyncDesc", lang),
 				control: { type: "toggle", key: "autoSync" },
