@@ -126,6 +126,7 @@ export const es: Record<TranslationKeys, string> = {
 	modalCredEmail: "Correo electrónico",
 	modalCredPassword: "Contraseña",
 	modalCredSubmit: "Iniciar sesión",
+	modalCredBusy: "Espera…",
 	modalCredBrowserFallback: "Usar inicio de sesión en el navegador",
 	modalCredMfaTitle: "Código de verificación",
 	modalCredMfaIntro: "Garmin te ha enviado un código de verificación. Introdúcelo para terminar de iniciar sesión.",

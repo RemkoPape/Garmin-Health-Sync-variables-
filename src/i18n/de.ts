@@ -127,6 +127,7 @@ export const de: Record<TranslationKeys, string> = {
 	modalCredEmail: "E-Mail",
 	modalCredPassword: "Passwort",
 	modalCredSubmit: "Anmelden",
+	modalCredBusy: "Bitte warten…",
 	modalCredBrowserFallback: "Browser-Anmeldung verwenden",
 	modalCredMfaTitle: "Bestätigungscode",
 	modalCredMfaIntro: "Garmin hat dir einen Bestätigungscode geschickt. Gib ihn ein, um die Anmeldung abzuschließen.",

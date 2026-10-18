@@ -126,6 +126,7 @@ export const zh: Record<TranslationKeys, string> = {
 	modalCredEmail: "邮箱",
 	modalCredPassword: "密码",
 	modalCredSubmit: "登录",
+	modalCredBusy: "请稍候…",
 	modalCredBrowserFallback: "使用浏览器登录",
 	modalCredMfaTitle: "验证码",
 	modalCredMfaIntro: "Garmin 已向你发送验证码，请输入以完成登录。",

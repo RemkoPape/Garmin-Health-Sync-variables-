@@ -126,6 +126,7 @@ export const ja: Record<TranslationKeys, string> = {
 	modalCredEmail: "メールアドレス",
 	modalCredPassword: "パスワード",
 	modalCredSubmit: "サインイン",
+	modalCredBusy: "お待ちください…",
 	modalCredBrowserFallback: "ブラウザでサインイン",
 	modalCredMfaTitle: "確認コード",
 	modalCredMfaIntro: "Garmin から確認コードが送信されました。入力してサインインを完了してください。",

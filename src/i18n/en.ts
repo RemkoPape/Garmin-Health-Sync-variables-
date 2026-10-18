@@ -125,6 +125,7 @@ export const en = {
 	modalCredEmail: "Email",
 	modalCredPassword: "Password",
 	modalCredSubmit: "Sign in",
+	modalCredBusy: "Please wait…",
 	modalCredBrowserFallback: "Use browser login",
 	modalCredMfaTitle: "Verification code",
 	modalCredMfaIntro: "Garmin sent you a verification code. Enter it to finish signing in.",

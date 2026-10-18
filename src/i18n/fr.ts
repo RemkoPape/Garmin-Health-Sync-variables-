@@ -126,6 +126,7 @@ export const fr: Record<TranslationKeys, string> = {
 	modalCredEmail: "E-mail",
 	modalCredPassword: "Mot de passe",
 	modalCredSubmit: "Se connecter",
+	modalCredBusy: "Veuillez patienter…",
 	modalCredBrowserFallback: "Utiliser la connexion par navigateur",
 	modalCredMfaTitle: "Code de vérification",
 	modalCredMfaIntro: "Garmin vous a envoyé un code de vérification. Saisissez-le pour terminer la connexion.",
