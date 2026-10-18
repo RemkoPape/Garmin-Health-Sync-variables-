@@ -1,6 +1,6 @@
 import { requestUrl, Platform, type RequestUrlResponse } from "obsidian";
 import type { ServerRegion } from "../../settings";
-import { LoginRequiredError, GarminAuthError, isGarminAuthError, isAuthFailureStatus } from "../../errors";
+import { LoginRequiredError, GarminAuthError, SyncFetchError, isLoginRequiredError, isSyncFetchError, isGarminAuthError, isAuthFailureStatus } from "../../errors";
 import { getConsumer, getOAuth1, exchange, OAUTH_UA, type OAuth1Token, type OAuth2Token, type Consumer } from "./garmin-oauth";
 import { AuthStateMachine, type AuthState } from "./auth-state";
 import {
@@ -25,6 +25,12 @@ function describeResponse(res: RequestUrlResponse, json: string): string {
 	} catch { /* body unreadable: keep "?" */ }
 	const type = String(res.headers?.["content-type"] ?? "?").split(";")[0];
 	return `type=${type}, text-length=${text}, json=${json}${reparse}`;
+}
+
+/** Error type (and HTTP status when known) for the sync diagnostics; never the message. */
+function describeError(e: unknown): string {
+	if (isGarminAuthError(e)) return `${e.name} HTTP ${e.status}`;
+	return e instanceof Error ? e.name : "error";
 }
 
 function platformName(): string {
@@ -886,7 +892,13 @@ export class GarminApi {
 	 *  once on a mid-batch 401/403. */
 	async fetchDataForDate(date: string, seq?: number): Promise<Record<string, unknown>> {
 		const log = this.beginSyncDiag(date, seq);
-		let oauth2 = await this.ensureValidOAuth2();
+		let oauth2: OAuth2Token;
+		try {
+			oauth2 = await this.ensureValidOAuth2();
+		} catch (e: unknown) {
+			log(`token refresh: failed (${describeError(e)})`);
+			throw e;
+		}
 
 		// F4: the socialProfile call is the first API call after the refresh. An
 		// auth/transient error here must reach the state machine — otherwise state
@@ -899,7 +911,7 @@ export class GarminApi {
 				if (isAuthFailureStatus(e.status)) this.failAuth();
 				this.authState.onTransientError();
 			}
-			log(`socialProfile: failed (${isGarminAuthError(e) ? `HTTP ${e.status}` : e instanceof Error ? e.name : "error"})`);
+			log(`socialProfile: failed (${describeError(e)})`);
 			throw e;
 		}
 		log("socialProfile: ok");
@@ -908,6 +920,8 @@ export class GarminApi {
 
 		const first = await this.fetchEndpoints(keys, dn, date, oauth2, log);
 		const results = first.results;
+		let ok = first.ok;
+		let failed = first.failed;
 
 		if (first.authFailed) {
 			// Mid-batch auth failure: refresh once and re-fetch the missing endpoints.
@@ -917,9 +931,22 @@ export class GarminApi {
 			const missing = keys.filter(k => !(k in results));
 			const retry = await this.fetchEndpoints(missing, dn, date, oauth2, log);
 			Object.assign(results, retry.results);
+			// The retry re-requested every endpoint that had not produced a result, so its failures replace the first pass's.
+			ok += retry.ok;
+			failed = retry.failed;
 			// F5: if the retry hits 401/403 again, OAuth1 is dead → needsUserLogin
 			// instead of a false onSuccess.
 			if (retry.authFailed) this.failAuth();
+		}
+
+		// Nothing usable came back and something hard-failed: report an error, not "no data".
+		// A partial failure only leaves a trace in the diagnostics and the console.
+		if (ok === 0 && failed.length > 0) {
+			throw new SyncFetchError("all_endpoints_failed");
+		}
+		if (failed.length > 0) {
+			log(`partial failure: ${failed.join(", ")}`);
+			console.warn("Garmin Health Sync: endpoints failed:", failed.join(", "));
 		}
 
 		// F2: only report success if this run is still the current one. A fetch
@@ -936,9 +963,12 @@ export class GarminApi {
 	 *  results and whether an auth failure (401/403) occurred. */
 	private async fetchEndpoints(
 		keys: string[], dn: string, date: string, oauth2: OAuth2Token, log: (line: string) => void,
-	): Promise<{ results: Record<string, unknown>; authFailed: boolean }> {
+	): Promise<{ results: Record<string, unknown>; authFailed: boolean; failed: string[]; ok: number }> {
 		const results: Record<string, unknown> = {};
 		let authFailed = false;
+		// Hard failures: thrown/timeout or an HTTP error that is neither auth (401/403) nor "not found".
+		const failed: string[] = [];
+		let ok = 0; // 2xx responses, including empty bodies (a day without data is not a failure)
 		await Promise.all(keys.map(async (key) => {
 			const build = this.endpoints[key];
 			if (!build) return;
@@ -946,22 +976,25 @@ export class GarminApi {
 			try {
 				const { status, data, shape } = await this.apiGet(build(dn, date), oauth2);
 				log(`${key}: HTTP ${status}, ${shape}, ${Date.now() - started}ms`);
+				if (status >= 200 && status < 300) ok++;
 				if (status >= 200 && status < 300 && data != null) {
 					results[key] = this.transformResponse(key, data);
 				} else if (isAuthFailureStatus(status)) {
 					authFailed = true;
 					console.debug(`Garmin Health Sync: endpoint ${key} → auth failure ${status}`);
 				} else {
+					if (!(status >= 200 && status < 300) && status !== 404) failed.push(key);
 					// F11: also covers the empty 200 body (Garmin occasionally returns
 					// 200 + null for missing daily data) — legitimate, but now logged.
 					console.debug(`Garmin Health Sync: endpoint ${key} → status ${status}${data == null ? " (empty)" : ""} (skipped)`);
 				}
 			} catch (e) {
-				log(`${key}: threw ${e instanceof Error ? e.name : "error"}, ${Date.now() - started}ms`);
+				log(`${key}: threw ${describeError(e)}, ${Date.now() - started}ms`);
+				failed.push(key);
 				console.debug(`Garmin Health Sync: endpoint ${key} fetch error:`, e);
 			}
 		}));
-		return { results, authFailed };
+		return { results, authFailed, failed, ok };
 	}
 
 	/** Same response transformations as the BrowserWindow interceptor */
@@ -1080,12 +1113,14 @@ export class GarminApi {
 				this.pendingDate = "";
 			}
 			return data;
-		}).catch(e => {
+		}).catch((e: unknown) => {
 			if (seq === this.currentFetchSeq) {
 				this.fetchPromise = null;
 				this.pendingDate = "";
 			}
-			throw e;
+			// A failed fetch must not look like an empty day: everything except "log in again"
+			// becomes a SyncFetchError, which the provider passes on to the sync.
+			throw isLoginRequiredError(e) || isSyncFetchError(e) ? e : new SyncFetchError(`fetch_failed: ${describeError(e)}`);
 		});
 
 		return this.fetchPromise;

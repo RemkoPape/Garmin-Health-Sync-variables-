@@ -10,6 +10,20 @@ export function isLoginRequiredError(error: unknown): error is LoginRequiredErro
 		|| (error instanceof Error && error.message === "login_required");
 }
 
+/** A data fetch produced no usable response (refresh/profile/network failure, timeout, or
+ *  every endpoint failed). Distinct from a successful fetch that simply has no data, so the
+ *  sync can report an error instead of "no health data". */
+export class SyncFetchError extends Error {
+	constructor(message = "sync_fetch_failed") {
+		super(message);
+		this.name = "SyncFetchError";
+	}
+}
+
+export function isSyncFetchError(error: unknown): error is SyncFetchError {
+	return error instanceof SyncFetchError;
+}
+
 /** Carries the HTTP status of a failed Garmin OAuth/API call so the auth state
  *  machine can tell a dead OAuth1 grant (401/403 → needsUserLogin) apart from a
  *  transient failure (429/5xx/network → temporarilyUnavailable + backoff).

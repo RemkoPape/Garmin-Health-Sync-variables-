@@ -3,7 +3,7 @@ import type { ServerRegion } from "../../settings";
 import { GarminApi, getRequiredEndpoints, calculateBatchDelay, type CredentialLoginOutcome } from "./garmin-api";
 import type { OAuth1Token, OAuth2Token } from "./garmin-oauth";
 import type { AuthState } from "./auth-state";
-import { LoginRequiredError, isLoginRequiredError } from "../../errors";
+import { LoginRequiredError, isLoginRequiredError, isSyncFetchError } from "../../errors";
 import {
 	mapDailySummary,
 	mapSleepData,
@@ -144,7 +144,7 @@ export class GarminProvider implements HealthProvider {
 			Object.assign(metrics, data);
 		};
 		const warnOrRethrowAuth = (label: string, error: unknown): void => {
-			if (isLoginRequiredError(error)) throw error;
+			if (isLoginRequiredError(error) || isSyncFetchError(error)) throw error;
 			console.warn(`Garmin Health Sync: ${label} fetch failed`, error);
 		};
 
