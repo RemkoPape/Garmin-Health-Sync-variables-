@@ -177,6 +177,8 @@ Ce plugin effectue des requêtes réseau vers deux services externes :
 
 Aucune donnée n'est envoyée à un autre serveur.
 
+**Presse-papiers :** Le plugin n’utilise le presse-papiers que lorsque vous touchez un bouton, jamais en arrière-plan. **Utiliser la connexion par navigateur** le lit une fois, lorsque vous touchez **Se connecter depuis le presse-papiers**, pour récupérer le ticket de connexion à usage unique copié depuis votre navigateur. Il y écrit lorsque vous touchez pour copier le lien de connexion ou **Copier le diagnostic** (dans les paramètres et dans la fenêtre de connexion). Le diagnostic ne contient ni mot de passe, ni jetons, ni données de compte, ni valeurs de santé, uniquement des détails techniques de la dernière connexion ou synchronisation : noms des types de données, codes d’état HTTP, tailles de réponse et durées.
+
 ## Développement
 
 ```bash

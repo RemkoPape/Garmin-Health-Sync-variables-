@@ -179,7 +179,7 @@ This plugin makes network requests to two external services:
 
 No data is sent to any other server.
 
-**Clipboard:** The *Sign in via browser* login reads the clipboard once — and only when you click **Sign in from clipboard** — to pick up the one-time login ticket you copied from your browser. It writes to the clipboard only when you click to copy the sign-in link. The clipboard is never accessed in the background.
+**Clipboard:** The plugin only uses the clipboard when you click a button, never in the background. **Use browser login** reads it once, when you click **Sign in from clipboard**, to pick up the one-time login ticket you copied from your browser. It writes to it when you click to copy the sign-in link, or **Copy diagnostics** (in the settings and in the sign-in window). Diagnostics contain no password, tokens, account data or health values, only technical details of the last sign-in or sync: data type names, HTTP status codes, response sizes and timings.
 
 ## Development
 
