@@ -103,6 +103,9 @@ export class GarminProvider implements HealthProvider {
 			throw new LoginRequiredError();
 		}
 
+		// The API cache only has to share one batch between the mapper calls below.
+		this.api.clearCache();
+
 		const enabled = new Set(enabledMetrics);
 		// Only call required endpoints
 		const requiredEndpoints = getRequiredEndpoints(enabledMetrics);
