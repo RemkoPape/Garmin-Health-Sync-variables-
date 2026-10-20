@@ -14,6 +14,10 @@
 - A sync that fails (token refresh, profile lookup, network error, timeout, or every request failing) now shows the sync error notice instead of "No health data available". The "no data" notice is kept for days Garmin really has no data for. If only some data types fail, the sync continues and the failures appear in the diagnostics.
 - Garmin sign-in tokens are now stored in Obsidian's secret storage instead of `data.json`, so they are no longer synced to other devices or committed with the vault. Existing desktop sessions are moved over automatically on first start, with no new login. Each device signs in separately. Once a device has migrated, the synced `data.json` no longer holds the tokens, so devices still running an older plugin version are signed out.
 
+### Fixed
+
+- Running **Sync current note** (or Backfill for a single day) a second time for the same date repeated the first answer until Obsidian was restarted, so today's steps and other values stayed stale. Every sync now asks Garmin again.
+
 ## 0.10.4
 
 ### Added
