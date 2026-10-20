@@ -6,6 +6,7 @@
 
 - Mobile support (iOS and Android). The plugin now signs in with your Garmin email and password (plus a verification code if your account uses two-step verification) on every platform, without a browser. If Garmin blocks or rate-limits that attempt, a countdown shows when you can retry and a guided browser sign-in (sign in on Garmin's page, paste the one-time ticket back) is offered as a backup on every platform. A copyable diagnostics log (no password or tokens) helps with bug reports.
 - New **Copy diagnostics** button in the settings: copies a short log of the last sync (per data type: HTTP status, response type and size, timing, error type) for bug reports. It contains no tokens, account data or health values.
+- The sync log in **Copy diagnostics** now also shows, per data type, how many fields Garmin returned and which day it answered for, a short list of response headers (names, plus cache hints and cookie names, never cookie values), and how many fields each mapper filled. On mobile, when a sync finds no data, it also asks Garmin for the daily summary a few more times with one request detail changed each time and logs how the answers differ. This helps find platform-specific causes of empty results. It still contains no tokens, account data or health values.
 - The sign-in and verification-code buttons now show "Please wait…" and are disabled while the request runs.
 
 ### Changed

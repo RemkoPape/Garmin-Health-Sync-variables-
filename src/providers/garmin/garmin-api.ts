@@ -4,6 +4,7 @@ import { LoginRequiredError, GarminAuthError, SyncFetchError, isLoginRequiredErr
 import { getConsumer, getOAuth1, exchange, OAUTH_UA, type OAuth1Token, type OAuth2Token, type Consumer } from "./garmin-oauth";
 import { AuthStateMachine, type AuthState } from "./auth-state";
 import {
+	collectCookies,
 	mobileLogin,
 	mobileVerifyMfa,
 	getMobileServiceUrl,
@@ -23,9 +24,65 @@ function describeResponse(res: RequestUrlResponse, json: string): string {
 			try { JSON.parse(res.text); reparse = ", text-parses=yes"; } catch { reparse = ", text-parses=no"; }
 		}
 	} catch { /* body unreadable: keep "?" */ }
-	const type = String(res.headers?.["content-type"] ?? "?").split(";")[0];
+	const type = (headerValue(res.headers, "content-type") ?? "?").split(";")[0];
 	return `type=${type}, text-length=${text}, json=${json}${reparse}`;
 }
+
+/** Case-insensitive header lookup: Android keeps the server's casing, desktop lowercases. */
+function headerValue(headers: Record<string, string> | undefined, name: string): string | undefined {
+	if (!headers) return undefined;
+	const key = Object.keys(headers).find((k) => k.toLowerCase() === name);
+	const value = key ? headers[key] : undefined;
+	return typeof value === "string" ? value : undefined;
+}
+
+const DIAG_HEADERS = ["content-encoding", "age", "date", "cache-control", "cf-cache-status", "x-cache", "server"];
+
+/** Response headers for the sync diagnostics: all header names, values only for a short
+ *  non-identifying whitelist (cache/CDN hints), cookie NAMES only. Shows whether the platform
+ *  stack hands us cookies or a cached answer. */
+function describeHeaders(headers: Record<string, string> | undefined): string {
+	if (!headers) return "headers: none";
+	const names = Object.keys(headers).map((k) => k.toLowerCase()).filter((k) => k !== "set-cookie").sort();
+	const values: string[] = [];
+	for (const h of DIAG_HEADERS) {
+		const v = headerValue(headers, h);
+		if (v !== undefined) values.push(`${h}=${v.slice(0, 40)}`);
+	}
+	const jar: Record<string, string> = {};
+	try { collectCookies(headers, jar); } catch { /* names are best effort */ }
+	return `headers: ${names.join(",")}; ${values.join("; ")}; set-cookie names: ${Object.keys(jar).join(",") || "none"}`;
+}
+
+/** Payload shape for the sync diagnostics: field counts and the echoed calendar date only,
+ *  never values. The echoed date shows whether Garmin answered for the day we asked for. */
+function describePayload(data: unknown): string {
+	if (Array.isArray(data)) return `array[${data.length}]`;
+	if (data == null || typeof data !== "object") return "payload=none";
+	const obj = data as Record<string, unknown>;
+	const keys = Object.keys(obj);
+	const nonNull = keys.filter((k) => obj[k] != null).length;
+	const inner = obj["dailySleepDTO"];
+	const dto = inner != null && typeof inner === "object" ? inner as Record<string, unknown> : null;
+	const echoed = dto?.["calendarDate"] ?? obj["calendarDate"];
+	const date = typeof echoed === "string" && /^\d{4}-\d{2}-\d{2}$/.test(echoed) ? echoed : "-";
+	const dtoNonNull = dto ? `, sleepDTO non-null=${Object.values(dto).filter((v) => v != null).length}/${Object.keys(dto).length}` : "";
+	return `fields=${keys.length}, non-null=${nonNull}${dtoNonNull}, calendarDate=${date}`;
+}
+
+/** Request variants for the empty-answer probe (mobile diagnostics): each changes one thing the
+ *  platform HTTP stack might handle differently. `drop` removes a header, `suffix` extends the URL. */
+const PROBE_VARIANTS: { name: string; add?: Record<string, string>; drop?: string; suffix?: string }[] = [
+	{ name: "A baseline" },
+	{ name: "B accept-json", add: { Accept: "application/json" } },
+	{ name: "C accept-encoding-identity", add: { "Accept-Encoding": "identity" } },
+	{ name: "D no-cache", add: { "Cache-Control": "no-cache", Pragma: "no-cache" } },
+	{ name: "E cache-buster", suffix: "&_=" },
+	{ name: "F no-user-agent", drop: "User-Agent" },
+	{ name: "F2 other-user-agent", add: { "User-Agent": "GCM-iOS-5.7.2.1" } },
+	{ name: "G empty-cookie", add: { Cookie: "" } },
+	{ name: "H sentinel-cookie", add: { Cookie: "x=1" } },
+];
 
 /** Error type (and HTTP status when known) for the sync diagnostics; never the message. */
 function describeError(e: unknown): string {
@@ -206,6 +263,8 @@ export class GarminApi {
 	// Redacted per-endpoint log of the last data fetch (mobile has no dev console).
 	private syncDiagnostics: string[] = [];
 	private syncDiagSeq = -1;
+	private dnInfo = "";                          // which profile field gave the displayName (never the value)
+	private probedDates = new Set<string>();      // empty-answer probe: at most 3 dates per session
 
 	setRegion(region: ServerRegion): void {
 		this.urls = getRegionUrls(region);
@@ -685,8 +744,13 @@ export class GarminApi {
 	}
 
 	private writeSyncDiag(seq: number, line: string): void {
-		if (seq !== this.syncDiagSeq || this.syncDiagnostics.length >= 60) return;
+		if (seq !== this.syncDiagSeq || this.syncDiagnostics.length >= 90) return;
 		this.syncDiagnostics.push(line);
+	}
+
+	/** Lets the provider append a line (e.g. mapper results) to the current sync log. */
+	addSyncDiagnostic(line: string): void {
+		this.writeSyncDiag(this.syncDiagSeq, line);
 	}
 
 	/** Credential login without a browser (works on mobile). Password is used for this call
@@ -834,17 +898,8 @@ export class GarminApi {
 
 	/** Bearer GET against connectapi (replaces the cookie/interceptor data path).
 	 *  `shape` describes the response (content-type, length, JSON parse result) for the sync diagnostics. */
-	private async apiGet(url: string, oauth2: OAuth2Token): Promise<{ status: number; data: unknown; shape: string }> {
-		const res = await requestUrl({
-			url,
-			method: "GET",
-			headers: {
-				"User-Agent": OAUTH_UA,
-				Authorization: `Bearer ${oauth2.access_token}`,
-				"Di-Backend": `connectapi.${this.urls.domain}`,
-			},
-			throw: false,
-		});
+	private async apiGet(url: string, oauth2: OAuth2Token): Promise<{ status: number; data: unknown; shape: string; headers: Record<string, string> }> {
+		const res = await requestUrl({ url, method: "GET", headers: this.apiHeaders(oauth2), throw: false });
 		const ok = res.status >= 200 && res.status < 300;
 		// Garmin returns 200 with an EMPTY body for endpoints that have no data for
 		// the day (e.g. hrv on an account/day without readings). res.json then throws
@@ -855,7 +910,49 @@ export class GarminApi {
 		if (ok) {
 			try { data = res.json; json = "ok"; } catch { data = null; json = "threw"; }
 		}
-		return { status: res.status, data, shape: describeResponse(res, json) };
+		return { status: res.status, data, shape: describeResponse(res, json), headers: res.headers };
+	}
+
+	private apiHeaders(oauth2: OAuth2Token): Record<string, string> {
+		return {
+			"User-Agent": OAUTH_UA,
+			Authorization: `Bearer ${oauth2.access_token}`,
+			"Di-Backend": `connectapi.${this.urls.domain}`,
+		};
+	}
+
+	/** Mobile diagnostics, only after a sync that mapped nothing: re-asks the daily summary with
+	 *  one request detail changed at a time and logs how each answer differs (status, size, field
+	 *  counts, echoed date, cookie names) — never values. Shows which detail the platform stack
+	 *  changes. At most 3 dates per session, sequential, and never throws. */
+	async probeRequestVariants(date: string): Promise<void> {
+		if (!Platform.isMobileApp || this.probedDates.has(date) || this.probedDates.size >= 3) return;
+		this.probedDates.add(date);
+		const log = (line: string): void => this.addSyncDiagnostic(line);
+		try {
+			const oauth2 = await this.ensureValidOAuth2();
+			const dn = this.displayName;
+			const build = this.endpoints["dailySummary"];
+			if (!dn || !build) return;
+			log("probe: every request below asks dailySummary for the same date");
+			for (const v of PROBE_VARIANTS) {
+				const headers = { ...this.apiHeaders(oauth2), ...v.add };
+				if (v.drop) delete headers[v.drop];
+				const url = build(dn, date) + (v.suffix ? `${v.suffix}${Date.now()}` : "");
+				try {
+					const res = await requestUrl({ url, method: "GET", headers, throw: false });
+					let payload = "payload=none";
+					try { payload = describePayload(res.json); } catch { /* empty or unparseable body */ }
+					const cookies: Record<string, string> = {};
+					try { collectCookies(res.headers, cookies); } catch { /* names are best effort */ }
+					log(`probe ${v.name}: HTTP ${res.status}, text-length=${res.text.length}, ${payload}, set-cookie names: ${Object.keys(cookies).join(",") || "none"}`);
+				} catch (e: unknown) {
+					log(`probe ${v.name}: threw ${describeError(e)}`);
+				}
+			}
+		} catch (e: unknown) {
+			log(`probe: aborted (${describeError(e)})`);
+		}
 	}
 
 	/** Fetches the displayName (for user-specific endpoints) from socialProfile. */
@@ -869,6 +966,8 @@ export class GarminApi {
 				|| (typeof d.userName === "string" && d.userName) || "";
 			if (dn) {
 				this.displayName = dn;
+				const guid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dn);
+				this.dnInfo = `profile id from ${typeof d.displayName === "string" && d.displayName ? "displayName" : "userName"}, guid-shaped=${guid ? "yes" : "no"}`;
 				return dn;
 			}
 		}
@@ -914,7 +1013,7 @@ export class GarminApi {
 			log(`socialProfile: failed (${describeError(e)})`);
 			throw e;
 		}
-		log("socialProfile: ok");
+		log(`socialProfile: ok${this.dnInfo ? ` (${this.dnInfo})` : ""}`);
 
 		const keys = this.requiredEndpoints ?? Object.keys(this.endpoints);
 
@@ -974,8 +1073,9 @@ export class GarminApi {
 			if (!build) return;
 			const started = Date.now();
 			try {
-				const { status, data, shape } = await this.apiGet(build(dn, date), oauth2);
-				log(`${key}: HTTP ${status}, ${shape}, ${Date.now() - started}ms`);
+				const { status, data, shape, headers } = await this.apiGet(build(dn, date), oauth2);
+				log(`${key}: HTTP ${status}, ${shape}, ${describePayload(data)}, ${Date.now() - started}ms`);
+				log(`${key} ${describeHeaders(headers)}`);
 				if (status >= 200 && status < 300) ok++;
 				if (status >= 200 && status < 300 && data != null) {
 					results[key] = this.transformResponse(key, data);

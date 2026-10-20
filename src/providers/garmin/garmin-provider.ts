@@ -140,7 +140,9 @@ export class GarminProvider implements HealthProvider {
 					? `array[${raw.length}]` + (raw.length > 0 && raw[0] != null && typeof raw[0] === "object" ? `: ${Object.keys(raw[0] as object).join(", ")}` : "")
 					: Object.keys(raw).join(", ") || "(none)";
 				console.debug(`Garmin Health Sync: Mapper [${label}] got data but mapped nothing — response keys: ${keys}`);
+				this.api.addSyncDiagnostic(`mapper ${label}: response keys: ${keys}`);
 			}
+			this.api.addSyncDiagnostic(`mapper ${label}: mapped ${Object.keys(data).length} field(s)`);
 			Object.assign(metrics, data);
 		};
 		const warnOrRethrowAuth = (label: string, error: unknown): void => {
@@ -249,6 +251,11 @@ export class GarminProvider implements HealthProvider {
 		);
 
 		await Promise.all(requests);
+
+		// Nothing mapped: on mobile, record how request details change Garmin's answer (diagnostics only).
+		if (Object.keys(metrics).length === 0 && Object.keys(activities).length === 0) {
+			await this.api.probeRequestVariants(date);
+		}
 
 		return { metrics, activities, trainings, startLocation };
 	}
