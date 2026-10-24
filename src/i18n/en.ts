@@ -93,6 +93,7 @@ export const en = {
 	noticeAutoSyncDone: "Health data synced — {count} days updated",
 	noticeBackfillStart: "Starting backfill...",
 	noticeBackfillDone: "Backfill complete: {count} days updated",
+	noticeBackfillDoneWithErrors: "Backfill complete: {count} days updated, {failed} failed (see console)",
 
 	noticeManualLoginFailed: "Manual login failed — no valid ticket found or the ticket expired. Tickets are single-use and expire quickly; please sign in again and paste the new one right away.",
 

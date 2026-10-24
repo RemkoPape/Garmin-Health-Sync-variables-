@@ -95,6 +95,7 @@ export const ja: Record<TranslationKeys, string> = {
 	noticeAutoSyncDone: "ヘルスデータを同期しました — {count} 日分を更新",
 	noticeBackfillStart: "バックフィルを開始...",
 	noticeBackfillDone: "バックフィル完了：{count} 日分を更新",
+	noticeBackfillDoneWithErrors: "バックフィル完了：{count} 日分を更新、{failed} 日分は失敗（コンソール参照）",
 	noticeManualLoginFailed: "手動ログインに失敗しました — 有効なチケットが見つからないか、期限切れです。チケットは一度しか使えずすぐに失効します。再度サインインして新しいチケットをすぐに貼り付けてください。",
 
 	// Backfill Modal
