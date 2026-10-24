@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.11.0
+
+### Added
+
+- Mobile support (iOS and Android). The plugin now signs in with your Garmin email and password (plus a verification code if your account uses two-step verification) on every platform, without a browser. If Garmin blocks or rate-limits that attempt, a countdown shows when you can retry and a guided browser sign-in (sign in on Garmin's page, paste the one-time ticket back) is offered as a backup on every platform. A copyable diagnostics log (no password or tokens) helps with bug reports.
+- New **Copy diagnostics** button in the settings: copies a short log of the last sync (per data type: HTTP status, response type and size, timing, error type) for bug reports. It contains no tokens, account data or health values.
+- The sync log in **Copy diagnostics** now also shows, per data type, how many fields Garmin returned and which day it answered for, a short list of response headers (names, plus cache hints and cookie names, never cookie values), and how many fields each mapper filled. On mobile, when a sync finds no data, it also asks Garmin for the daily summary a few more times with one request detail changed each time and logs how the answers differ. This helps find platform-specific causes of empty results. It still contains no tokens, account data or health values.
+- The sign-in and verification-code buttons now show "Please wait…" and are disabled while the request runs.
+
+### Changed
+
+- A sync that fails (token refresh, profile lookup, network error, timeout, or every request failing) now shows the sync error notice instead of "No health data available". The "no data" notice is kept for days Garmin really has no data for. If only some data types fail, the sync continues and the failures appear in the diagnostics.
+- Garmin sign-in tokens are now stored in Obsidian's secret storage instead of `data.json`, so they are no longer synced to other devices or committed with the vault. Existing desktop sessions are moved over automatically on first start, with no new login. Each device signs in separately. Once a device has migrated, the synced `data.json` no longer holds the tokens, so devices still running an older plugin version are signed out.
+
+### Fixed
+
+- Running **Sync current note** (or Backfill for a single day) a second time for the same date repeated the first answer until Obsidian was restarted, so today's steps and other values stayed stale. Every sync now asks Garmin again.
+- Backfill now keeps its result on screen for 10 seconds, reports how many days failed, hides the "Starting backfill..." notice when done, and tells you when sign-in is required instead of stopping silently.
+
 ## 0.10.4
 
 ### Added

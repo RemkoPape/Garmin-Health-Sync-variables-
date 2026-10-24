@@ -1,9 +1,9 @@
 import type { HealthData, HealthProvider, LoginResult } from "../provider";
 import type { ServerRegion } from "../../settings";
-import { GarminApi, getRequiredEndpoints, calculateBatchDelay } from "./garmin-api";
+import { GarminApi, getRequiredEndpoints, calculateBatchDelay, type CredentialLoginOutcome } from "./garmin-api";
 import type { OAuth1Token, OAuth2Token } from "./garmin-oauth";
 import type { AuthState } from "./auth-state";
-import { LoginRequiredError, isLoginRequiredError } from "../../errors";
+import { LoginRequiredError, isLoginRequiredError, isSyncFetchError } from "../../errors";
 import {
 	mapDailySummary,
 	mapSleepData,
@@ -57,6 +57,25 @@ export class GarminProvider implements HealthProvider {
 		return { ok: res.ok, cancelled: res.cancelled === true };
 	}
 
+	/** Browser-free credential login (mobile). The password is not retained. */
+	loginWithCredentials(email: string, password: string): Promise<CredentialLoginOutcome> {
+		return this.api.loginWithCredentials(email, password);
+	}
+
+	completeMfaLogin(code: string): Promise<CredentialLoginOutcome> {
+		return this.api.completeMfaLogin(code);
+	}
+
+	/** Redacted step log of the last credential login, for bug reports. */
+	getLoginDiagnostics(): string {
+		return this.api.getLoginDiagnostics();
+	}
+
+	/** Redacted per-endpoint log of the last data fetch, for bug reports. */
+	getSyncDiagnostics(): string {
+		return this.api.getSyncDiagnostics();
+	}
+
 	/** Sign-in URL for the manual-ticket fallback (opened in an external browser). */
 	getSigninUrl(): string {
 		return this.api.getSigninUrl();
@@ -103,6 +122,9 @@ export class GarminProvider implements HealthProvider {
 			throw new LoginRequiredError();
 		}
 
+		// The API cache only has to share one batch between the mapper calls below.
+		this.api.clearCache();
+
 		const enabled = new Set(enabledMetrics);
 		// Only call required endpoints
 		const requiredEndpoints = getRequiredEndpoints(enabledMetrics);
@@ -121,11 +143,13 @@ export class GarminProvider implements HealthProvider {
 					? `array[${raw.length}]` + (raw.length > 0 && raw[0] != null && typeof raw[0] === "object" ? `: ${Object.keys(raw[0] as object).join(", ")}` : "")
 					: Object.keys(raw).join(", ") || "(none)";
 				console.debug(`Garmin Health Sync: Mapper [${label}] got data but mapped nothing — response keys: ${keys}`);
+				this.api.addSyncDiagnostic(`mapper ${label}: response keys: ${keys}`);
 			}
+			this.api.addSyncDiagnostic(`mapper ${label}: mapped ${Object.keys(data).length} field(s)`);
 			Object.assign(metrics, data);
 		};
 		const warnOrRethrowAuth = (label: string, error: unknown): void => {
-			if (isLoginRequiredError(error)) throw error;
+			if (isLoginRequiredError(error) || isSyncFetchError(error)) throw error;
 			console.warn(`Garmin Health Sync: ${label} fetch failed`, error);
 		};
 
@@ -230,6 +254,11 @@ export class GarminProvider implements HealthProvider {
 		);
 
 		await Promise.all(requests);
+
+		// Nothing mapped: on mobile, record how request details change Garmin's answer (diagnostics only).
+		if (Object.keys(metrics).length === 0 && Object.keys(activities).length === 0) {
+			await this.api.probeRequestVariants(date);
+		}
 
 		return { metrics, activities, trainings, startLocation };
 	}

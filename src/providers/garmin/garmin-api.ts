@@ -1,8 +1,98 @@
-import { requestUrl, Platform } from "obsidian";
+import { requestUrl, Platform, type RequestUrlResponse } from "obsidian";
 import type { ServerRegion } from "../../settings";
-import { LoginRequiredError, GarminAuthError, isGarminAuthError, isAuthFailureStatus } from "../../errors";
+import { LoginRequiredError, GarminAuthError, SyncFetchError, isLoginRequiredError, isSyncFetchError, isGarminAuthError, isAuthFailureStatus } from "../../errors";
 import { getConsumer, getOAuth1, exchange, OAUTH_UA, type OAuth1Token, type OAuth2Token, type Consumer } from "./garmin-oauth";
 import { AuthStateMachine, type AuthState } from "./auth-state";
+import {
+	collectCookies,
+	mobileLogin,
+	mobileVerifyMfa,
+	getMobileServiceUrl,
+	type MfaChallenge,
+	type MobileSsoFailure,
+	type MobileSsoResult,
+} from "./garmin-mobile-sso";
+
+/** Body shape for the sync diagnostics: no content, only type and sizes. When `res.json` threw,
+ *  also records whether the raw text would have parsed (tells apart empty body from parse quirk). */
+function describeResponse(res: RequestUrlResponse, json: string): string {
+	let text = "?";
+	let reparse = "";
+	try {
+		text = String(res.text.length);
+		if (json === "threw") {
+			try { JSON.parse(res.text); reparse = ", text-parses=yes"; } catch { reparse = ", text-parses=no"; }
+		}
+	} catch { /* body unreadable: keep "?" */ }
+	const type = (headerValue(res.headers, "content-type") ?? "?").split(";")[0];
+	return `type=${type}, text-length=${text}, json=${json}${reparse}`;
+}
+
+/** Case-insensitive header lookup: Android keeps the server's casing, desktop lowercases. */
+function headerValue(headers: Record<string, string> | undefined, name: string): string | undefined {
+	if (!headers) return undefined;
+	const key = Object.keys(headers).find((k) => k.toLowerCase() === name);
+	const value = key ? headers[key] : undefined;
+	return typeof value === "string" ? value : undefined;
+}
+
+const DIAG_HEADERS = ["content-encoding", "age", "date", "cache-control", "cf-cache-status", "x-cache", "server"];
+
+/** Response headers for the sync diagnostics: all header names, values only for a short
+ *  non-identifying whitelist (cache/CDN hints), cookie NAMES only. Shows whether the platform
+ *  stack hands us cookies or a cached answer. */
+function describeHeaders(headers: Record<string, string> | undefined): string {
+	if (!headers) return "headers: none";
+	const names = Object.keys(headers).map((k) => k.toLowerCase()).filter((k) => k !== "set-cookie").sort();
+	const values: string[] = [];
+	for (const h of DIAG_HEADERS) {
+		const v = headerValue(headers, h);
+		if (v !== undefined) values.push(`${h}=${v.slice(0, 40)}`);
+	}
+	const jar: Record<string, string> = {};
+	try { collectCookies(headers, jar); } catch { /* names are best effort */ }
+	return `headers: ${names.join(",")}; ${values.join("; ")}; set-cookie names: ${Object.keys(jar).join(",") || "none"}`;
+}
+
+/** Payload shape for the sync diagnostics: field counts and the echoed calendar date only,
+ *  never values. The echoed date shows whether Garmin answered for the day we asked for. */
+function describePayload(data: unknown): string {
+	if (Array.isArray(data)) return `array[${data.length}]`;
+	if (data == null || typeof data !== "object") return "payload=none";
+	const obj = data as Record<string, unknown>;
+	const keys = Object.keys(obj);
+	const nonNull = keys.filter((k) => obj[k] != null).length;
+	const inner = obj["dailySleepDTO"];
+	const dto = inner != null && typeof inner === "object" ? inner as Record<string, unknown> : null;
+	const echoed = dto?.["calendarDate"] ?? obj["calendarDate"];
+	const date = typeof echoed === "string" && /^\d{4}-\d{2}-\d{2}$/.test(echoed) ? echoed : "-";
+	const dtoNonNull = dto ? `, sleepDTO non-null=${Object.values(dto).filter((v) => v != null).length}/${Object.keys(dto).length}` : "";
+	return `fields=${keys.length}, non-null=${nonNull}${dtoNonNull}, calendarDate=${date}`;
+}
+
+/** Request variants for the empty-answer probe (mobile diagnostics): each changes one thing the
+ *  platform HTTP stack might handle differently. `drop` removes a header, `suffix` extends the URL. */
+const PROBE_VARIANTS: { name: string; add?: Record<string, string>; drop?: string; suffix?: string }[] = [
+	{ name: "A baseline" },
+	{ name: "B accept-json", add: { Accept: "application/json" } },
+	{ name: "C accept-encoding-identity", add: { "Accept-Encoding": "identity" } },
+	{ name: "D no-cache", add: { "Cache-Control": "no-cache", Pragma: "no-cache" } },
+	{ name: "E cache-buster", suffix: "&_=" },
+	{ name: "F no-user-agent", drop: "User-Agent" },
+	{ name: "F2 other-user-agent", add: { "User-Agent": "GCM-iOS-5.7.2.1" } },
+	{ name: "G empty-cookie", add: { Cookie: "" } },
+	{ name: "H sentinel-cookie", add: { Cookie: "x=1" } },
+];
+
+/** Error type (and HTTP status when known) for the sync diagnostics; never the message. */
+function describeError(e: unknown): string {
+	if (isGarminAuthError(e)) return `${e.name} HTTP ${e.status}`;
+	return e instanceof Error ? e.name : "error";
+}
+
+function platformName(): string {
+	return Platform.isIosApp ? "ios" : Platform.isAndroidApp ? "android" : Platform.isDesktopApp ? "desktop" : "other";
+}
 
 interface RegionUrls {
 	connectBase: string;
@@ -147,6 +237,11 @@ function getLoginUserAgent(): string {
 	return `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ${chrome} Safari/537.36`;
 }
 
+export type CredentialLoginOutcome =
+	| { status: "ok" }
+	| { status: "mfa"; method: string }
+	| { status: "error"; reason: MobileSsoFailure | "exchange_failed"; detail: string; retryAfter?: number };
+
 export class GarminApi {
 	// OAuth tokens (M1/M2): long-lived OAuth1 + short-lived OAuth2. Persisted via main.ts.
 	private oauth1: OAuth1Token | null = null;
@@ -162,6 +257,14 @@ export class GarminApi {
 	private activeLoginWindow: BrowserWindowType | null = null;
 	// Plugin version for self-identifying login/diagnostic logs (set from main.ts).
 	private pluginVersion = "";
+	// Credential login (mobile): pending MFA challenge + redacted step log for bug reports.
+	private pendingMfa: MfaChallenge | null = null;
+	private loginDiagnostics: string[] = [];
+	// Redacted per-endpoint log of the last data fetch (mobile has no dev console).
+	private syncDiagnostics: string[] = [];
+	private syncDiagSeq = -1;
+	private dnInfo = "";                          // which profile field gave the displayName (never the value)
+	private probedDates = new Set<string>();      // empty-answer probe: at most 3 dates per session
 
 	setRegion(region: ServerRegion): void {
 		this.urls = getRegionUrls(region);
@@ -270,6 +373,8 @@ export class GarminApi {
 	}
 
 	private async doLoginViaOAuth(opts: { silent?: boolean } = {}): Promise<{ ok: boolean; detail: string; cancelled?: boolean }> {
+		// The Electron BrowserWindow only exists on desktop; mobile uses loginWithCredentials().
+		if (!Platform.isDesktopApp) return { ok: false, detail: "unsupported_platform" };
 		const silent = opts.silent ?? false;
 		console.debug(`Garmin Health Sync: starting OAuth login (plugin v${this.pluginVersion || "?"}, region=${this.urls.domain}, silent=${silent})`);
 		const BrowserWindow = this.getBrowserWindowConstructor();
@@ -595,17 +700,119 @@ export class GarminApi {
 
 	/** Ticket → OAuth1 → OAuth2 (proves M1 + M2 end-to-end against real Garmin servers).
 	 *  login-url = …/sso/embed, matching the `service` of the ticket. */
-	private async exchangeTicket(ticket: string, via: string): Promise<{ ok: boolean; detail: string }> {
+	private async exchangeTicket(
+		ticket: string,
+		via: string,
+		loginUrl: string = this.urls.ssoEmbed,
+	): Promise<{ ok: boolean; detail: string }> {
 		const consumer = await this.getConsumerCached();
-		const oauth1 = await getOAuth1(ticket, consumer, this.urls.domain, this.urls.ssoEmbed);
-		this.oauth1 = oauth1;
+		const oauth1 = await getOAuth1(ticket, consumer, this.urls.domain, loginUrl);
 		console.debug("Garmin Health Sync: OAuth1 token obtained (oauth_token:", oauth1.oauth_token.slice(0, 10) + "…)");
 		const oauth2 = await exchange(oauth1, consumer, this.urls.domain, { login: true });
+		// Only replace the working session once BOTH exchanges succeeded, so a failed
+		// re-login cannot leave a half-set (OAuth1 without OAuth2) state behind.
+		this.oauth1 = oauth1;
 		this.oauth2 = oauth2;
 		this.displayName = "";          // resolve fresh on (re-)login
 		this.authState.onLogin();        // fresh login → ready, reset backoff
 		console.debug("Garmin Health Sync: OAuth2 token obtained, expires_in:", oauth2.expires_in, "s");
 		return { ok: true, detail: `via=${via}; oauth1 ok; oauth2 ok; expires_in=${oauth2.expires_in}s` };
+	}
+
+	/** Redacted, copy-pasteable log of the last credential login (no password, ticket or token). */
+	getLoginDiagnostics(): string {
+		return this.loginDiagnostics.join("\n");
+	}
+
+	private diag(line: string): void {
+		this.loginDiagnostics.push(line);
+		console.debug(`Garmin Health Sync: login — ${line}`);
+	}
+
+	/** Redacted, copy-pasteable log of the last data fetch: endpoint key, HTTP status,
+	 *  body shape and timing only — never URLs, headers, tokens, ids or values. */
+	getSyncDiagnostics(): string {
+		return this.syncDiagnostics.join("\n");
+	}
+
+	/** Starts a fresh sync log; the returned writer ignores fetches that were superseded or orphaned. */
+	private beginSyncDiag(date: string, seq: number | undefined): (line: string) => void {
+		const mine = seq ?? this.currentFetchSeq;
+		this.syncDiagSeq = mine;
+		this.syncDiagnostics = [`plugin v${this.pluginVersion || "?"}, platform=${platformName()}, region=${this.urls.domain}, date=${date}`];
+		return (line) => this.writeSyncDiag(mine, line);
+	}
+
+	private writeSyncDiag(seq: number, line: string): void {
+		if (seq !== this.syncDiagSeq || this.syncDiagnostics.length >= 90) return;
+		this.syncDiagnostics.push(line);
+	}
+
+	/** Lets the provider append a line (e.g. mapper results) to the current sync log. */
+	addSyncDiagnostic(line: string): void {
+		this.writeSyncDiag(this.syncDiagSeq, line);
+	}
+
+	/** Credential login without a browser (works on mobile). Password is used for this call
+	 *  only. Result `mfa` means a verification code is needed: call completeMfaLogin(). */
+	async loginWithCredentials(email: string, password: string): Promise<CredentialLoginOutcome> {
+		this.pendingMfa = null;
+		this.loginDiagnostics = [`plugin v${this.pluginVersion || "?"}, platform=${platformName()}, region=${this.urls.domain}`];
+		try {
+			return await this.handleSsoResult(await mobileLogin(this.urls.domain, email.trim(), password));
+		} catch (e: unknown) {
+			return this.crashOutcome(e);
+		}
+	}
+
+	/** An exception escaped the sign-in code: keep its type/message (never the password) in the diagnostics. */
+	private crashOutcome(e: unknown): CredentialLoginOutcome {
+		const name = e instanceof Error ? e.name : "error";
+		const msg = e instanceof Error ? e.message : String(e);
+		this.diag(`unexpected error: ${name}: ${msg}`);
+		console.error("Garmin Health Sync: credential login crashed", e);
+		return { status: "error", reason: "unexpected", detail: this.getLoginDiagnostics() };
+	}
+
+	/** Second step after loginWithCredentials() returned `mfa`. */
+	async completeMfaLogin(code: string): Promise<CredentialLoginOutcome> {
+		if (!this.pendingMfa) return { status: "error", reason: "unexpected", detail: "no_pending_mfa" };
+		try {
+			return await this.handleSsoResult(await mobileVerifyMfa(this.urls.domain, this.pendingMfa, code));
+		} catch (e: unknown) {
+			return this.crashOutcome(e);
+		}
+	}
+
+	private async handleSsoResult(result: MobileSsoResult): Promise<CredentialLoginOutcome> {
+		if (result.kind === "mfa") {
+			this.pendingMfa = result.challenge;
+			this.diag(`sso: MFA required (${result.challenge.method}), session cookies=${Object.keys(result.challenge.cookies).length}`);
+			return { status: "mfa", method: result.challenge.method };
+		}
+		if (result.kind === "error") {
+			this.diag(`sso: ${result.detail}`);
+			return {
+				status: "error",
+				reason: result.reason,
+				detail: this.getLoginDiagnostics(),
+				...(result.retryAfter !== undefined ? { retryAfter: result.retryAfter } : {}),
+			};
+		}
+		this.pendingMfa = null;
+		this.diag("sso: ticket received");
+		try {
+			// login-url must match the `service` the ticket was issued for.
+			await this.exchangeTicket(result.ticket, "credentials", getMobileServiceUrl(this.urls.domain));
+			this.diag("oauth1 + oauth2 exchange ok");
+			return { status: "ok" };
+		} catch (e: unknown) {
+			const status = isGarminAuthError(e) ? e.status : undefined;
+			const msg = e instanceof Error ? e.message : String(e);
+			this.diag(`token exchange failed${status != null ? ` (HTTP ${status})` : ""}: ${msg}`);
+			// 429 from the token endpoints is the same rate limit: give it the cooldown + message.
+			return { status: "error", reason: status === 429 ? "rate_limited" : "exchange_failed", detail: this.getLoginDiagnostics() };
+		}
 	}
 
 	/** Manual-ticket login fallback (issue #6): some Garmin SSO widget variants
@@ -689,28 +896,63 @@ export class GarminApi {
 		}
 	}
 
-	/** Bearer GET against connectapi (replaces the cookie/interceptor data path). */
-	private async apiGet(url: string, oauth2: OAuth2Token): Promise<{ status: number; data: unknown }> {
-		const res = await requestUrl({
-			url,
-			method: "GET",
-			headers: {
-				"User-Agent": OAUTH_UA,
-				Authorization: `Bearer ${oauth2.access_token}`,
-				"Di-Backend": `connectapi.${this.urls.domain}`,
-			},
-			throw: false,
-		});
+	/** Bearer GET against connectapi (replaces the cookie/interceptor data path).
+	 *  `shape` describes the response (content-type, length, JSON parse result) for the sync diagnostics. */
+	private async apiGet(url: string, oauth2: OAuth2Token): Promise<{ status: number; data: unknown; shape: string; headers: Record<string, string> }> {
+		const res = await requestUrl({ url, method: "GET", headers: this.apiHeaders(oauth2), throw: false });
 		const ok = res.status >= 200 && res.status < 300;
 		// Garmin returns 200 with an EMPTY body for endpoints that have no data for
 		// the day (e.g. hrv on an account/day without readings). res.json then throws
 		// "Unexpected end of JSON input" — guard it and treat an unparseable body as
 		// "no data" instead of letting the SyntaxError bubble into the fetch.
 		let data: unknown = null;
+		let json = "skipped";
 		if (ok) {
-			try { data = res.json; } catch { data = null; }
+			try { data = res.json; json = "ok"; } catch { data = null; json = "threw"; }
 		}
-		return { status: res.status, data };
+		return { status: res.status, data, shape: describeResponse(res, json), headers: res.headers };
+	}
+
+	private apiHeaders(oauth2: OAuth2Token): Record<string, string> {
+		return {
+			"User-Agent": OAUTH_UA,
+			Authorization: `Bearer ${oauth2.access_token}`,
+			"Di-Backend": `connectapi.${this.urls.domain}`,
+		};
+	}
+
+	/** Mobile diagnostics, only after a sync that mapped nothing: re-asks the daily summary with
+	 *  one request detail changed at a time and logs how each answer differs (status, size, field
+	 *  counts, echoed date, cookie names) — never values. Shows which detail the platform stack
+	 *  changes. At most 3 dates per session, sequential, and never throws. */
+	async probeRequestVariants(date: string): Promise<void> {
+		if (!Platform.isMobileApp || this.probedDates.has(date) || this.probedDates.size >= 3) return;
+		this.probedDates.add(date);
+		const log = (line: string): void => this.addSyncDiagnostic(line);
+		try {
+			const oauth2 = await this.ensureValidOAuth2();
+			const dn = this.displayName;
+			const build = this.endpoints["dailySummary"];
+			if (!dn || !build) return;
+			log("probe: every request below asks dailySummary for the same date");
+			for (const v of PROBE_VARIANTS) {
+				const headers = { ...this.apiHeaders(oauth2), ...v.add };
+				if (v.drop) delete headers[v.drop];
+				const url = build(dn, date) + (v.suffix ? `${v.suffix}${Date.now()}` : "");
+				try {
+					const res = await requestUrl({ url, method: "GET", headers, throw: false });
+					let payload = "payload=none";
+					try { payload = describePayload(res.json); } catch { /* empty or unparseable body */ }
+					const cookies: Record<string, string> = {};
+					try { collectCookies(res.headers, cookies); } catch { /* names are best effort */ }
+					log(`probe ${v.name}: HTTP ${res.status}, text-length=${res.text.length}, ${payload}, set-cookie names: ${Object.keys(cookies).join(",") || "none"}`);
+				} catch (e: unknown) {
+					log(`probe ${v.name}: threw ${describeError(e)}`);
+				}
+			}
+		} catch (e: unknown) {
+			log(`probe: aborted (${describeError(e)})`);
+		}
 	}
 
 	/** Fetches the displayName (for user-specific endpoints) from socialProfile. */
@@ -724,6 +966,8 @@ export class GarminApi {
 				|| (typeof d.userName === "string" && d.userName) || "";
 			if (dn) {
 				this.displayName = dn;
+				const guid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dn);
+				this.dnInfo = `profile id from ${typeof d.displayName === "string" && d.displayName ? "displayName" : "userName"}, guid-shaped=${guid ? "yes" : "no"}`;
 				return dn;
 			}
 		}
@@ -746,7 +990,14 @@ export class GarminApi {
 	 *  Ensures a valid OAuth2 before the batch (Phase 7) and refreshes
 	 *  once on a mid-batch 401/403. */
 	async fetchDataForDate(date: string, seq?: number): Promise<Record<string, unknown>> {
-		let oauth2 = await this.ensureValidOAuth2();
+		const log = this.beginSyncDiag(date, seq);
+		let oauth2: OAuth2Token;
+		try {
+			oauth2 = await this.ensureValidOAuth2();
+		} catch (e: unknown) {
+			log(`token refresh: failed (${describeError(e)})`);
+			throw e;
+		}
 
 		// F4: the socialProfile call is the first API call after the refresh. An
 		// auth/transient error here must reach the state machine — otherwise state
@@ -759,13 +1010,17 @@ export class GarminApi {
 				if (isAuthFailureStatus(e.status)) this.failAuth();
 				this.authState.onTransientError();
 			}
+			log(`socialProfile: failed (${describeError(e)})`);
 			throw e;
 		}
+		log(`socialProfile: ok${this.dnInfo ? ` (${this.dnInfo})` : ""}`);
 
 		const keys = this.requiredEndpoints ?? Object.keys(this.endpoints);
 
-		const first = await this.fetchEndpoints(keys, dn, date, oauth2);
+		const first = await this.fetchEndpoints(keys, dn, date, oauth2, log);
 		const results = first.results;
+		let ok = first.ok;
+		let failed = first.failed;
 
 		if (first.authFailed) {
 			// Mid-batch auth failure: refresh once and re-fetch the missing endpoints.
@@ -773,11 +1028,24 @@ export class GarminApi {
 			this.oauth2 = null; // forces a refresh (throws on 401/403 → needsUserLogin)
 			oauth2 = await this.ensureValidOAuth2();
 			const missing = keys.filter(k => !(k in results));
-			const retry = await this.fetchEndpoints(missing, dn, date, oauth2);
+			const retry = await this.fetchEndpoints(missing, dn, date, oauth2, log);
 			Object.assign(results, retry.results);
+			// The retry re-requested every endpoint that had not produced a result, so its failures replace the first pass's.
+			ok += retry.ok;
+			failed = retry.failed;
 			// F5: if the retry hits 401/403 again, OAuth1 is dead → needsUserLogin
 			// instead of a false onSuccess.
 			if (retry.authFailed) this.failAuth();
+		}
+
+		// Nothing usable came back and something hard-failed: report an error, not "no data".
+		// A partial failure only leaves a trace in the diagnostics and the console.
+		if (ok === 0 && failed.length > 0) {
+			throw new SyncFetchError("all_endpoints_failed");
+		}
+		if (failed.length > 0) {
+			log(`partial failure: ${failed.join(", ")}`);
+			console.warn("Garmin Health Sync: endpoints failed:", failed.join(", "));
 		}
 
 		// F2: only report success if this run is still the current one. A fetch
@@ -793,30 +1061,40 @@ export class GarminApi {
 	/** Fetches a list of endpoints in parallel via Bearer. Returns the transformed
 	 *  results and whether an auth failure (401/403) occurred. */
 	private async fetchEndpoints(
-		keys: string[], dn: string, date: string, oauth2: OAuth2Token,
-	): Promise<{ results: Record<string, unknown>; authFailed: boolean }> {
+		keys: string[], dn: string, date: string, oauth2: OAuth2Token, log: (line: string) => void,
+	): Promise<{ results: Record<string, unknown>; authFailed: boolean; failed: string[]; ok: number }> {
 		const results: Record<string, unknown> = {};
 		let authFailed = false;
+		// Hard failures: thrown/timeout or an HTTP error that is neither auth (401/403) nor "not found".
+		const failed: string[] = [];
+		let ok = 0; // 2xx responses, including empty bodies (a day without data is not a failure)
 		await Promise.all(keys.map(async (key) => {
 			const build = this.endpoints[key];
 			if (!build) return;
+			const started = Date.now();
 			try {
-				const { status, data } = await this.apiGet(build(dn, date), oauth2);
+				const { status, data, shape, headers } = await this.apiGet(build(dn, date), oauth2);
+				log(`${key}: HTTP ${status}, ${shape}, ${describePayload(data)}, ${Date.now() - started}ms`);
+				log(`${key} ${describeHeaders(headers)}`);
+				if (status >= 200 && status < 300) ok++;
 				if (status >= 200 && status < 300 && data != null) {
 					results[key] = this.transformResponse(key, data);
 				} else if (isAuthFailureStatus(status)) {
 					authFailed = true;
 					console.debug(`Garmin Health Sync: endpoint ${key} → auth failure ${status}`);
 				} else {
+					if (!(status >= 200 && status < 300) && status !== 404) failed.push(key);
 					// F11: also covers the empty 200 body (Garmin occasionally returns
 					// 200 + null for missing daily data) — legitimate, but now logged.
 					console.debug(`Garmin Health Sync: endpoint ${key} → status ${status}${data == null ? " (empty)" : ""} (skipped)`);
 				}
 			} catch (e) {
+				log(`${key}: threw ${describeError(e)}, ${Date.now() - started}ms`);
+				failed.push(key);
 				console.debug(`Garmin Health Sync: endpoint ${key} fetch error:`, e);
 			}
 		}));
-		return { results, authFailed };
+		return { results, authFailed, failed, ok };
 	}
 
 	/** Same response transformations as the BrowserWindow interceptor */
@@ -912,10 +1190,14 @@ export class GarminApi {
 		const seq = ++this.fetchSeq;
 		this.currentFetchSeq = seq;
 		const FETCH_TIMEOUT_MS = 30000;
+		let settled = false;
 		const withTimeout = Promise.race([
-			this.fetchDataForDate(date, seq),
+			this.fetchDataForDate(date, seq).finally(() => { settled = true; }),
 			new Promise<never>((_, reject) =>
-				window.setTimeout(() => reject(new Error("fetch timeout")), FETCH_TIMEOUT_MS)
+				window.setTimeout(() => {
+					if (!settled) this.writeSyncDiag(seq, `fetch timeout after ${FETCH_TIMEOUT_MS}ms`);
+					reject(new Error("fetch timeout"));
+				}, FETCH_TIMEOUT_MS)
 			),
 		]);
 
@@ -931,12 +1213,14 @@ export class GarminApi {
 				this.pendingDate = "";
 			}
 			return data;
-		}).catch(e => {
+		}).catch((e: unknown) => {
 			if (seq === this.currentFetchSeq) {
 				this.fetchPromise = null;
 				this.pendingDate = "";
 			}
-			throw e;
+			// A failed fetch must not look like an empty day: everything except "log in again"
+			// becomes a SyncFetchError, which the provider passes on to the sync.
+			throw isLoginRequiredError(e) || isSyncFetchError(e) ? e : new SyncFetchError(`fetch_failed: ${describeError(e)}`);
 		});
 
 		return this.fetchPromise;

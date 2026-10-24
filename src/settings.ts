@@ -1,6 +1,7 @@
 import {
 	App,
 	PluginSettingTab,
+	Notice,
 	Setting,
 	SettingDefinition,
 	SettingDefinitionItem,
@@ -126,8 +127,13 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			},
 			{
 				name: t("settingsGarminLogin", lang),
-				desc: `${garminStatus}. ${t("settingsGarminSessionPrivacyDesc", lang)}`,
+				desc: `${garminStatus}. ${t("settingsGarminSessionPrivacyDesc", lang)}${hasSavedSession ? ` ${t("settingsGarminLogoutHint", lang)}` : ""}`,
 				render: (setting) => this.renderGarminLogin(setting, hasSavedSession),
+			},
+			{
+				// Mobile has no dev console: lets users paste what the last sync did into a bug report.
+				name: t("modalCredCopyDiagnostics", lang),
+				action: (el) => { void this.copySyncDiagnostics(el, lang); },
 			},
 			{
 				name: t("settingsAutoSync", lang),
@@ -191,6 +197,20 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 		];
 	}
 
+	private async copySyncDiagnostics(el: HTMLElement, lang: HealthSyncSettings["language"]): Promise<void> {
+		const text = this.plugin.getSyncDiagnostics();
+		try {
+			await navigator.clipboard.writeText(text);
+			new Notice(t("modalCredDiagnosticsCopied", lang));
+		} catch {
+			// Clipboard write blocked: show the text so it can be selected and copied by hand.
+			const area = el.createEl("textarea", { text });
+			area.readOnly = true;
+			area.rows = 6;
+			area.addClass("ghs-diagnostics");
+		}
+	}
+
 	getControlValue(key: string): unknown {
 		if (key.startsWith(METRIC_KEY_PREFIX)) {
 			const metricKey = key.slice(METRIC_KEY_PREFIX.length);
@@ -244,6 +264,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 	private renderGarminLogin(setting: Setting, hasSavedSession: boolean): () => void {
 		const lang = this.plugin.settings.language;
 		const buttonEls: HTMLButtonElement[] = [];
+		setting.settingEl.addClass("ghs-login-row");
 
 		if (hasSavedSession) {
 			setting.addButton((btn) => {
@@ -259,7 +280,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 				btn.setButtonText(t("settingsGarminLogin", lang))
 					.setCta()
 					.onClick(async () => {
-						await this.plugin.loginViaBrowser();
+						await this.plugin.loginViaBrowser(() => this.update());
 						this.update();
 					});
 			});
@@ -275,6 +296,9 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			});
 		}
 
-		return () => buttonEls.forEach((el) => el.remove());
+		return () => {
+			buttonEls.forEach((el) => el.remove());
+			setting.settingEl.removeClass("ghs-login-row");
+		};
 	}
 }
