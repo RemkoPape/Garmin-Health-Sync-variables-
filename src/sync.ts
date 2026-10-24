@@ -120,13 +120,17 @@ export class SyncManager {
 			return 0;
 		}
 
-		new Notice(t("noticeBackfillStart", settings.language));
+		const startNotice = new Notice(t("noticeBackfillStart", settings.language), 0);
 
 		let count = 0;
+		let failed = 0;
 		try {
 			if (!this.provider.isSessionValid()) {
 				const authenticated = await this.provider.authenticate();
-				if (!authenticated.ok) return 0;
+				if (!authenticated.ok) {
+					new Notice(t("noticeLoginRequired", settings.language));
+					return 0;
+				}
 			}
 
 			const enabledMetrics = Object.entries(settings.enabledMetrics)
@@ -171,11 +175,17 @@ export class SyncManager {
 						new Notice(t("noticeLoginRequired", settings.language));
 						throw error;
 					}
+					failed++;
 					console.warn(`Garmin Health Sync: Backfill failed for ${date}`, error);
 				}
 			}
 
-			new Notice(t("noticeBackfillDone", settings.language).replace("{count}", String(count)));
+			// The run can take minutes, so keep the result on screen long enough to be seen.
+			const doneKey = failed > 0 ? "noticeBackfillDoneWithErrors" : "noticeBackfillDone";
+			new Notice(
+				t(doneKey, settings.language).replace("{count}", String(count)).replace("{failed}", String(failed)),
+				10000
+			);
 			return count;
 		} catch (error) {
 			if (isLoginRequiredError(error)) {
@@ -184,6 +194,8 @@ export class SyncManager {
 			console.error("Garmin Health Sync: Backfill failed", error);
 			new Notice(t("noticeSyncError", settings.language));
 			return 0;
+		} finally {
+			startNotice.hide();
 		}
 	}
 

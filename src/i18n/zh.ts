@@ -94,6 +94,7 @@ export const zh: Record<TranslationKeys, string> = {
 	noticeAutoSyncDone: "健康数据同步完成 — 已更新 {count} 天",
 	noticeBackfillStart: "开始回填数据...",
 	noticeBackfillDone: "回填完成：已更新 {count} 天",
+	noticeBackfillDoneWithErrors: "回填完成：已更新 {count} 天，{failed} 天失败（见控制台）",
 	noticeManualLoginFailed: "手动登录失败 — 未找到有效票据或票据已过期。票据仅一次有效且很快过期；请重新登录并立即粘贴新票据。",
 
 	// Backfill Modal

@@ -94,6 +94,7 @@ export const de: Record<TranslationKeys, string> = {
 	noticeAutoSyncDone: "Gesundheitsdaten synchronisiert — {count} Tage aktualisiert",
 	noticeBackfillStart: "Starte Nachsynchronisierung...",
 	noticeBackfillDone: "Nachsynchronisierung abgeschlossen: {count} Tage aktualisiert",
+	noticeBackfillDoneWithErrors: "Nachsynchronisierung abgeschlossen: {count} Tage aktualisiert, {failed} fehlgeschlagen (siehe Konsole)",
 
 	noticeManualLoginFailed: "Manuelle Anmeldung fehlgeschlagen — kein gültiges Ticket gefunden oder Ticket abgelaufen. Tickets sind nur einmal und kurz gültig; bitte erneut anmelden und das neue Ticket sofort einfügen.",
 

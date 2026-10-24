@@ -94,6 +94,7 @@ export const es: Record<TranslationKeys, string> = {
 	noticeAutoSyncDone: "Datos de salud sincronizados — {count} días actualizados",
 	noticeBackfillStart: "Iniciando relleno de datos...",
 	noticeBackfillDone: "Relleno completado: {count} días actualizados",
+	noticeBackfillDoneWithErrors: "Relleno completado: {count} días actualizados, {failed} con error (ver consola)",
 	noticeManualLoginFailed: "Inicio de sesión manual fallido — no se encontró un ticket válido o el ticket expiró. Los tickets son de un solo uso y expiran rápido; vuelve a iniciar sesión y pega el nuevo de inmediato.",
 
 	// Backfill Modal

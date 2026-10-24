@@ -5,6 +5,7 @@
 ### Fixed
 
 - Running **Sync current note** (or Backfill for a single day) a second time for the same date repeated the first answer until Obsidian was restarted, so today's steps and other values stayed stale. Every sync now asks Garmin again.
+- Backfill now keeps its result on screen for 10 seconds, reports how many days failed, hides the "Starting backfill..." notice when done, and tells you when sign-in is required instead of stopping silently.
 
 ## 0.10.4
 
