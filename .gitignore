@@ -18,3 +18,11 @@ Thumbs.db
 
 # Lokale Dev-/Research-Skripte (z.B. OAuth-Trockenlauf-Prototyp) — nicht Teil des Plugins
 tools/
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/worktrees/
+
+# Test output
+coverage/
+.vitest/

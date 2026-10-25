@@ -1,65 +1,135 @@
 name: Release
 
+# Triggered on push of a SemVer-shaped tag. Bare 0.11.1 ships as the latest GitHub release;
+# 0.11.1-beta.N ships as a prerelease (BRAT only). The whole chain (lint, typecheck, build, tests with
+# coverage, check-release --strict) runs on a clean runner before anything is published.
+#
+# Prerelease safety: main's manifest.json always advertises the CURRENT STABLE version, because the
+# community directory uses it to decide which release to offer. For a beta tag this workflow stamps the
+# beta version into the working tree only (stamp-prerelease.mjs), so the uploaded assets carry it for
+# BRAT while main keeps pointing at the last good stable release. Nothing is committed.
+#
+# Actions are pinned to full commit SHAs (see ci.yml).
+
 on:
-    push:
-        tags:
-            - "[0-9]+.[0-9]+.[0-9]+"
-            - "[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"
+
+# A STATIC group serializes two tags pushed in quick succession. cancel-in-progress MUST stay false:
+# interrupting a run mid-publish is precisely the failure this guards against.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-    release:
-        runs-on: ubuntu-latest
-        permissions:
-            contents: write
-            id-token: write
-            attestations: write
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
 
-        steps:
-            - uses: actions/checkout@v6
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          # Later steps run `npm ci`, i.e. third-party code: leave no writable token in .git/config.
+          persist-credentials: false
+          # Full history: the next step asks which branches contain the tagged commit.
+          fetch-depth: 0
 
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 22.x
-                  cache: "npm"
+      # A release must come from reviewed code. A beta tag has to sit on main (merge first, then tag).
+      # A stable tag is pushed on the release/X.Y.Z branch head BEFORE that branch merges, so it may also
+      # sit on a release branch. Anything else is refused before anything is built or published.
+      - name: Check the tag is on main or a release branch
+        run: |
+          set -euo pipefail
+          if git merge-base --is-ancestor "${GITHUB_SHA}" origin/main; then
+            echo "tag ${GITHUB_REF_NAME} is on main"
+            exit 0
+          fi
+          if [[ "${GITHUB_REF_NAME}" != *-* ]]; then
+            for branch in $(git for-each-ref --format='%(refname:short)' 'refs/remotes/origin/release/*'); do
+              if git merge-base --is-ancestor "${GITHUB_SHA}" "${branch}"; then
+                echo "stable tag ${GITHUB_REF_NAME} is on ${branch}"
+                exit 0
+              fi
+            done
+          fi
+          echo "::error::${GITHUB_REF_NAME} (${GITHUB_SHA}) is not on main (beta) or on a release/* branch (stable). Merge first, then retag."
+          exit 1
 
-            - run: npm ci
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
 
-            # Beta tags only: the committed manifest.json stays on the current stable
-            # version (the community directory reads it from main), so the beta version
-            # is stamped into the working tree here and ships only in the release assets,
-            # which is where BRAT reads it. Nothing is committed.
-            - name: Stamp beta version into working tree
-              if: contains(github.ref_name, '-beta.')
-              run: node stamp-prerelease.mjs "${{ github.ref_name }}"
+      - run: npm ci
 
-            - run: npm run build
+      # Beta tags only: stamp the beta version into the working tree so everything below runs against
+      # the exact artifact that gets uploaded.
+      - name: Stamp beta version into working tree
+        if: contains(github.ref_name, '-beta.')
+        run: node stamp-prerelease.mjs "${GITHUB_REF_NAME}"
 
-            # The uploaded manifest must carry exactly the tag's version (stable: the
-            # committed one, beta: the stamped one).
-            - name: Check manifest version matches tag
-              run: |
-                  asset_version=$(node -p "require('./manifest.json').version")
-                  if [ "$asset_version" != "${{ github.ref_name }}" ]; then
-                      echo "::error::manifest.json says '$asset_version' but the tag is '${{ github.ref_name }}'"
-                      exit 1
-                  fi
+      - name: Lint
+        run: npm run lint
 
-            - name: Attest release assets
-              uses: actions/attest-build-provenance@v4
-              with:
-                  subject-path: |
-                      main.js
-                      manifest.json
-                      styles.css
+      - name: Typecheck tests
+        run: npm run typecheck:tests
 
-            - name: Create release and upload assets
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  # Mark -beta.N tags as pre-releases automatically.
-                  PRERELEASE=""
-                  case "${{ github.ref_name }}" in
-                      *-beta.*) PRERELEASE="--prerelease" ;;
-                  esac
-                  gh release create "${{ github.ref_name }}" main.js manifest.json styles.css \
-                      --title "${{ github.ref_name }}" --notes-file CHANGELOG.md $PRERELEASE
+      - name: Build plugin
+        run: npm run build
+
+      - name: Test with coverage
+        run: npm run test:cov
+
+      # --strict: any warning blocks the release. Offline apart from npm audit, which skips when unreachable.
+      - name: Release guard
+        run: npm run check-release -- --tag "${GITHUB_REF_NAME}" --with-build --strict
+
+      # Last gate before anything becomes externally visible: the three files exist, are non-empty and
+      # the manifest version equals the tag. (A missing styles.css once broke the layout on iPad.)
+      - name: Validate release artifacts
+        run: |
+          set -euo pipefail
+          fail=0
+          for f in main.js manifest.json styles.css; do
+            if [ ! -s "$f" ]; then
+              echo "::error title=Missing release artifact::$f is absent or empty"
+              fail=1
+            else
+              echo "ok: $f ($(wc -c <"$f") bytes)"
+            fi
+          done
+          asset_version=$(node -p "require('./manifest.json').version")
+          if [ "$asset_version" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error title=Version mismatch::manifest.json says '$asset_version' but the tag is '${GITHUB_REF_NAME}'"
+            fail=1
+          fi
+          [ -s main.js ] && [ -s manifest.json ] && [ -s styles.css ] || fail=1
+          exit $fail
+
+      - name: Attest release assets
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+
+      - name: Create release and upload assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if [[ "$tag" == *-beta.* ]]; then flag="--prerelease"; else flag="--latest"; fi
+          # Notes: this tag's own CHANGELOG section, or GitHub's generated notes when there is none.
+          awk -v h="## ${tag}" '$0==h {on=1; next} /^## / {on=0} on' CHANGELOG.md > release-notes.md
+          if [ -s release-notes.md ]; then notes="--notes-file release-notes.md"; else notes="--generate-notes"; fi
+          gh release create "$tag" main.js manifest.json styles.css --title "$tag" $notes $flag

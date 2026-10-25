@@ -1,0 +1,12 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"skipLibCheck": true,
+		"inlineSourceMap": false,
+		"inlineSources": false,
+		"types": ["node"],
+		"lib": ["DOM", "DOM.Iterable", "ES2022"]
+	},
+	"include": ["src/**/*.ts", "tests/**/*.ts", "testUtils/**/*.ts"]
+}
