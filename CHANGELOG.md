@@ -5,6 +5,7 @@
 ### Fixed
 
 - Sleep and sleep phase durations no longer show "60min" (7h 59m 45s was written as "7h 60min"; it is now "8h 0min").
+- Workout locations keep Vietnamese and other Latin names whole ("Hà Nội" was written as "Hà").
 - Intensity minutes are counted when Garmin sends vigorous minutes but no moderate value.
 
 ## 0.11.1-beta.2
