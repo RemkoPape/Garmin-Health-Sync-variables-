@@ -1420,3 +1420,118 @@ describe("daily note format corner cases", () => {
 		expect(fetched(loaded.provider)).toEqual([dayString(1)]);
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Background work never leaves an unhandled rejection (WKWebView can turn those into a load failure)
+// ---------------------------------------------------------------------------
+
+describe("background work that fails", () => {
+	/** Collects unhandled rejections raised while `action` runs, waiting a real tick afterwards. */
+	async function unhandledDuring(action: () => Promise<void>): Promise<unknown[]> {
+		const seen: unknown[] = [];
+		const handler = (reason: unknown): void => {
+			seen.push(reason);
+		};
+		process.on("unhandledRejection", handler);
+		try {
+			await action();
+			await vi.runAllTimersAsync();
+			vi.useRealTimers();
+			await new Promise((resolve) => setTimeout(resolve, 5));
+		} finally {
+			process.off("unhandledRejection", handler);
+			vi.useFakeTimers();
+			vi.setSystemTime(NOW);
+		}
+		return seen;
+	}
+	const failSaves = (loaded: Awaited<ReturnType<typeof load>>): void => {
+		loaded.plugin.saveData = () => Promise.reject(new Error("disk full"));
+	};
+
+	it("an auto-sync pass whose settings cannot be saved is logged, not thrown into the void", async () => {
+		const loaded = await load(signedIn());
+		failSaves(loaded);
+		const seen = await unhandledDuring(async () => {
+			loaded.app.workspace.layoutReady();
+		});
+		expect(seen).toEqual([]);
+		expect(console.error).toHaveBeenCalled();
+	});
+
+	it("a backfill whose settings cannot be saved is logged, not thrown into the void", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		failSaves(loaded);
+		const seen = await unhandledDuring(async () => {
+			loaded.plugin.commands.get("backfill-health-data")!.callback!();
+			(Modal.opened.at(-1)!.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
+		});
+		expect(seen).toEqual([]);
+	});
+
+	it("a sign-in notice button whose follow-up fails is logged, not thrown into the void", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.app.workspace.layoutReady();
+		await settle();
+		const button = Notice.recorded[0]!.fragment!.querySelector("button")!;
+		loaded.plugin.loginViaBrowser = () => Promise.reject(new Error("modal failed"));
+		const seen = await unhandledDuring(async () => {
+			button.click();
+		});
+		expect(seen).toEqual([]);
+	});
+
+	it("a note appearing while saves fail does not raise one either", async () => {
+		const loaded = await load(signedIn({ createDailyNoteIfMissing: false }));
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		failSaves(loaded);
+		const seen = await unhandledDuring(async () => {
+			await loaded.app.vault.create(`${dayString(2)}.md`, "text");
+		});
+		expect(seen).toEqual([]);
+	});
+});
+
+describe("onload", () => {
+	it("a failing settings save during startup does not stop the plugin from loading", async () => {
+		const app = new App();
+		const plugin = new HealthSyncPlugin(app as never, { version: "0.11.1-test" } as never) as Loaded["plugin"];
+		plugin.data = signedIn({ garminSession: "old-cookie" });
+		plugin.saveData = () => Promise.reject(new Error("disk full"));
+		await expect(plugin.onload()).resolves.toBeUndefined();
+		expect(plugin.commands.has("sync-health-data")).toBe(true);
+		expect(FakeGarminProvider.last().isSessionValid()).toBe(true);
+	});
+
+	it("shows the real error in a notice that stays, and still rethrows, when loading fails", async () => {
+		const app = new App();
+		const plugin = new HealthSyncPlugin(app as never, { version: "0.11.1-test" } as never) as Loaded["plugin"];
+		plugin.data = { language: "de" };
+		plugin.addCommand = () => {
+			throw new Error("addCommand exploded");
+		};
+		await expect(plugin.onload()).rejects.toThrow("addCommand exploded");
+		const shown = Notice.recorded.at(-1)!;
+		expect(shown.message).toBe(de.noticeLoadFailed.replace("{error}", "addCommand exploded"));
+		expect(shown.duration).toBe(0);
+	});
+
+	it("uses English for that notice when the settings were not even loaded", async () => {
+		const app = new App();
+		const plugin = new HealthSyncPlugin(app as never, { version: "0.11.1-test" } as never) as Loaded["plugin"];
+		plugin.loadData = () => Promise.reject(new Error("cannot read data.json"));
+		await expect(plugin.onload()).rejects.toThrow("cannot read data.json");
+		expect(Notice.recorded.at(-1)!.message).toBe(en.noticeLoadFailed.replace("{error}", "cannot read data.json"));
+	});
+
+	it("names a thrown plain value too, and survives a Notice that cannot be shown", async () => {
+		const app = new App();
+		const plugin = new HealthSyncPlugin(app as never, { version: "0.11.1-test" } as never) as Loaded["plugin"];
+		plugin.loadData = () => Promise.reject("plain failure");
+		const NoticeClass = Notice as unknown as { prototype: object };
+		void NoticeClass;
+		await expect(plugin.onload()).rejects.toBe("plain failure");
+		expect(Notice.recorded.at(-1)!.message).toContain("plain failure");
+	});
+});

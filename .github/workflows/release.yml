@@ -82,6 +82,9 @@ jobs:
       - name: Typecheck tests
         run: npm run typecheck:tests
 
+      - name: Lint styles.css (stylelint, as Obsidian's review does)
+        run: npm run lint:css
+
       - name: Build plugin
         run: npm run build
 

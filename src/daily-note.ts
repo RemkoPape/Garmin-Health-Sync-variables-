@@ -226,31 +226,29 @@ async function updateFrontmatter(
 		return false;
 	}
 
-	const existing = parsed.kind === "present" ? parsed.data : {};
-
-	// Dirty-check: skip the write when every incoming key is already present
-	// with the same value. Avoids flipping the file's mtime and firing LiveSync
-	// when nothing changed.
-	let changed = false;
-	for (const [key, value] of Object.entries(properties)) {
-		if (!isDeepEqual(existing[key], value)) {
-			changed = true;
-			break;
-		}
-	}
-	if (!changed) {
+	if (!hasChanges(parsed.kind === "present" ? parsed.data : {}, properties)) {
 		console.debug("Garmin Health Sync: frontmatter unchanged, skipping write for", file.path);
 		return false;
 	}
 
-	const merged = { ...existing };
-	for (const [key, value] of Object.entries(properties)) {
-		merged[key] = value;
-	}
+	// Write atomically. The note may have changed since the read above (it is often open and being typed in),
+	// so the merge is redone against the content as it is NOW instead of overwriting with the stale copy.
+	let written = false;
+	await app.vault.process(file, (current) => {
+		const now = extractFrontmatter(current);
+		if (now.kind === "invalid") return current;
+		const nowExisting = now.kind === "present" ? now.data : {};
+		if (!hasChanges(nowExisting, properties)) return current;
+		written = true;
+		return renderWithFrontmatter({ ...nowExisting, ...properties }, now);
+	});
+	return written;
+}
 
-	const newContent = renderWithFrontmatter(merged, parsed);
-	await app.vault.modify(file, newContent);
-	return true;
+/** Dirty check: true if any incoming key is missing or differs. Avoids flipping the file's mtime and firing sync
+ *  engines (LiveSync and the like) when nothing changed. */
+function hasChanges(existing: Record<string, unknown>, properties: Record<string, unknown>): boolean {
+	return Object.entries(properties).some(([key, value]) => !isDeepEqual(existing[key], value));
 }
 
 type FrontmatterParse =

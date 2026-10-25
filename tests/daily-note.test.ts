@@ -410,6 +410,57 @@ describe("C7: a closing marker with trailing whitespace (matches Obsidian, #23)"
 	});
 });
 
+describe("a note that changes while it is being synced", () => {
+	/** Make the file change right after the plugin has read it (an open note being typed in). */
+	function changeAfterRead(path: string, change: (current: string) => string): void {
+		const read = vault.read.bind(vault);
+		let done = false;
+		vault.read = async (file) => {
+			const content = await read(file);
+			if (!done && file.path === path) {
+				done = true;
+				vault.overwrite(path, change(content));
+			}
+			return content;
+		};
+	}
+
+	it("keeps what the user typed in between, and still adds the properties", async () => {
+		vault.seed(note, "---\nmood: ok\n---\nBody\n");
+		changeAfterRead(note, (c) => `${c}typed while syncing\n`);
+		expect(await writeToDailyNote(asApp(), DATE, health(), opts())).toBe(true);
+		expect(vault.text(note)).toBe("---\nmood: ok\nsteps: 8000\nsleep_duration: 7h 30min\n---\nBody\ntyped while syncing\n");
+	});
+
+	it("keeps a property the user added in between", async () => {
+		vault.seed(note, "---\nmood: ok\n---\nBody\n");
+		changeAfterRead(note, () => "---\nmood: great\nenergy: 7\n---\nBody\n");
+		await writeToDailyNote(asApp(), DATE, health(), opts());
+		expect(frontmatter(note)).toEqual({ mood: "great", energy: 7, steps: 8000, sleep_duration: "7h 30min" });
+	});
+
+	it("writes nothing when someone else already wrote the same values in between", async () => {
+		vault.seed(note, "Body\n");
+		changeAfterRead(note, () => "---\nsteps: 8000\nsleep_duration: 7h 30min\n---\nBody\n");
+		expect(await writeToDailyNote(asApp(), DATE, health(), opts())).toBe(false);
+		expect(vault.modifyCount()).toBe(1); // only the atomic call itself, and it left the content as it found it
+		expect(vault.text(note)).toBe("---\nsteps: 8000\nsleep_duration: 7h 30min\n---\nBody\n");
+	});
+
+	it("leaves the note alone when it became invalid in between", async () => {
+		vault.seed(note, "Body\n");
+		changeAfterRead(note, () => "---\nkey: [unclosed\n---\nBody\n");
+		expect(await writeToDailyNote(asApp(), DATE, health(), opts())).toBe(false);
+		expect(vault.text(note)).toBe("---\nkey: [unclosed\n---\nBody\n");
+	});
+
+	it("reports a failure of the atomic write like any other write failure", async () => {
+		vault.seed(note, "Body\n");
+		vault.failOn = (op) => (op === "process" ? new Error("vault busy") : null);
+		await expect(writeToDailyNote(asApp(), DATE, health(), opts())).rejects.toThrow("vault busy");
+	});
+});
+
 describe("the dirty check", () => {
 	it("does not touch the file when every value already matches", async () => {
 		vault.seed(note, "---\nsteps: 8000\nsleep_duration: 7h 30min\nmood: ok\n---\nBody\n");

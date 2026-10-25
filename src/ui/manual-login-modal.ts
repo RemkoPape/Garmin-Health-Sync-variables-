@@ -56,7 +56,7 @@ export class ManualLoginModal extends Modal {
 				.onClick(() => {
 					// In Obsidian desktop window.open with an http(s) URL is
 					// forwarded to the system browser — exactly what we want here.
-					window.open(this.signinUrl);
+					activeWindow.open(this.signinUrl);
 				}))
 			.addExtraButton(btn => btn
 				.setIcon("copy")
@@ -95,6 +95,9 @@ export class ManualLoginModal extends Modal {
 			busy = true;
 			try {
 				if (await this.onSubmit(v)) this.close();
+			} catch (e: unknown) {
+				// The caller reports its own failures; anything that still escapes must not become an unhandled rejection.
+				console.error("Garmin Health Sync: ticket sign-in failed", e);
 			} finally {
 				busy = false;
 			}

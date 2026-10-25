@@ -93,11 +93,19 @@ describe("the ticket preview", () => {
 });
 
 describe("the browser link", () => {
-	it("opens the sign-in page", () => {
-		const openWindow = vi.fn();
-		(window as unknown as { open: unknown }).open = openWindow;
-		open().button(en.modalManualLoginOpenButton).click();
-		expect(openWindow).toHaveBeenCalledWith(URL_);
+	it("opens the sign-in page in the active window (the one the dialog is in, also a pop-out)", () => {
+		const openActive = vi.fn();
+		const openMain = vi.fn();
+		(window as unknown as { open: unknown }).open = openMain;
+		const original = (globalThis as unknown as { activeWindow: unknown }).activeWindow;
+		(globalThis as unknown as { activeWindow: unknown }).activeWindow = { open: openActive };
+		try {
+			open().button(en.modalManualLoginOpenButton).click();
+		} finally {
+			(globalThis as unknown as { activeWindow: unknown }).activeWindow = original;
+		}
+		expect(openActive).toHaveBeenCalledWith(URL_);
+		expect(openMain).not.toHaveBeenCalled();
 	});
 
 	it("copies the link and says so", async () => {
@@ -181,19 +189,6 @@ describe("submitting a ticket", () => {
 		button(en.modalManualLoginSubmit).click();
 		await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
 	});
-
-	it("allows another attempt after the submit handler failed", async () => {
-		const onSubmit = vi.fn().mockRejectedValueOnce(new Error("boom")).mockResolvedValue(true);
-		const handler = vi.fn();
-		process.on("unhandledRejection", handler);
-		const { type, button, modal } = open(onSubmit);
-		type(TICKET);
-		button(en.modalManualLoginSubmit).click();
-		await new Promise((r) => setTimeout(r, 0));
-		process.off("unhandledRejection", handler);
-		button(en.modalManualLoginSubmit).click();
-		await vi.waitFor(() => expect(isOpen(modal)).toBe(false));
-	});
 });
 
 describe("the clipboard button", () => {
@@ -229,5 +224,25 @@ describe("the clipboard button", () => {
 
 	it("is the primary button", () => {
 		expect(open().button(en.modalManualLoginPasteButton).classList.contains("mod-cta")).toBe(true);
+	});
+});
+
+describe("a submit handler that throws", () => {
+	it("is logged, not left as an unhandled rejection, and the dialog stays usable", async () => {
+		const seen: unknown[] = [];
+		const handler = (r: unknown): void => {
+			seen.push(r);
+		};
+		process.on("unhandledRejection", handler);
+		const onSubmit = vi.fn().mockRejectedValueOnce(new Error("boom")).mockResolvedValue(true);
+		const { type, button, modal } = open(onSubmit);
+		type(TICKET);
+		button(en.modalManualLoginSubmit).click();
+		await new Promise((r) => setTimeout(r, 5));
+		process.off("unhandledRejection", handler);
+		expect(seen).toEqual([]);
+		expect(console.error).toHaveBeenCalled();
+		button(en.modalManualLoginSubmit).click();
+		await vi.waitFor(() => expect(isOpen(modal)).toBe(false));
 	});
 });

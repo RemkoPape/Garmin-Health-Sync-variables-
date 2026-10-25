@@ -295,6 +295,15 @@ if (pkg) {
 	else fail("npm honours min-release-age", `npm ${npmVersion || "?"} is older than ${MIN_NPM_WITH_RELEASE_AGE}`);
 }
 
+// ---------- styles.css lint (the review lints CSS too) ----------
+{
+	const cfg = await readText("stylelint.config.mjs");
+	if (cfg === null) fail("stylelint config present", "stylelint.config.mjs is missing");
+	else if (!/declaration-no-important/.test(cfg) || !/no-unsupported-browser-features/.test(cfg) || !/browsers:\s*\[\s*"chrome \d+"/.test(cfg)) {
+		fail("stylelint config present", "must enable declaration-no-important and no-unsupported-browser-features with a chrome target");
+	} else pass("stylelint config present", "declaration-no-important + no-unsupported-browser-features");
+}
+
 // ---------- Scripts, lint, build, test ----------
 if (pkg) {
 	const scripts = pkg.scripts ?? {};
@@ -320,6 +329,15 @@ if (pkg) {
 			if (errors === 0 && warnings === 0) pass("npm run lint passes", "0 errors, 0 warnings");
 			else fail("npm run lint passes", `${errors} errors, ${warnings} warnings`);
 		}
+	}
+
+	if (!runLint) skip("styles.css passes stylelint", "pass --with-build or --with-lint");
+	else if (typeof scripts["lint:css"] !== "string") fail("styles.css passes stylelint", "no lint:css script in package.json");
+	else {
+		console.log("  running npm run lint:css ...");
+		const r = run("npm", ["run", "lint:css", "--silent"], { env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
+		if (r.status === 0) pass("styles.css passes stylelint");
+		else fail("styles.css passes stylelint", (r.stdout + r.stderr).trim().split("\n").slice(0, 3).join(" | "));
 	}
 
 	if (!runBuildAndTest) {

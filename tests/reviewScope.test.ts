@@ -26,6 +26,7 @@ describe("review-bot scan scope", () => {
 			"knip.jsonc",
 			"stamp-prerelease.mjs",
 			"styles.css",
+			"stylelint.config.mjs",
 			"version-bump.mjs",
 			"vitest.config.mts",
 		]);

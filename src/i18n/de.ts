@@ -81,6 +81,7 @@ export const de: Record<TranslationKeys, string> = {
 	noticeSyncWaitingForNote: "Sync übersprungen — für {date} existiert noch keine Daily Note. Sobald du sie anlegst, wird synchronisiert.",
 	noticeSyncError: "Fehler beim Synchronisieren der Gesundheitsdaten",
 	noticeFrontmatterBroken: "Garmin Health Sync: Das Frontmatter in \"{path}\" ist kaputt ({reason}). Ein Backup wurde unter _garmin-health-sync/backups/ abgelegt. Bitte manuell reparieren.",
+	noticeLoadFailed: "Garmin Health Sync konnte nicht geladen werden: {error}",
 	noticeLoginRequired: "Bitte zuerst Gesundheitsanbieter verbinden (Einstellungen → Garmin Health Sync)",
 	noticeLoginSuccess: "Anmeldung erfolgreich!",
 	noticeLoginFailed: "Anmeldung fehlgeschlagen oder abgebrochen",

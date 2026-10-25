@@ -15,7 +15,8 @@
 		"typecheck:tests": "tsc -p tsconfig.test.json",
 		"check:dead-code": "knip --production && knip --no-config-hints --include dependencies,unlisted,binaries,unresolved",
 		"check-release": "node scripts/check-release.mjs",
-		"lint:cloud-parity": "node scripts/lint-cloud-parity.mjs"
+		"lint:cloud-parity": "node scripts/lint-cloud-parity.mjs",
+		"lint:css": "stylelint styles.css"
 	},
 	"keywords": [],
 	"license": "0-BSD",
@@ -33,6 +34,8 @@
 		"jiti": "2.6.1",
 		"knip": "6.38.0",
 		"obsidian": "^1.13.1",
+		"stylelint": "17.16.0",
+		"stylelint-no-unsupported-browser-features": "8.1.2",
 		"tslib": "2.4.0",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "8.35.1",

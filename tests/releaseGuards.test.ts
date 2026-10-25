@@ -26,6 +26,11 @@ describe("release.yml", () => {
 		expect([...order].sort((a, b) => a - b)).toEqual(order);
 	});
 
+	it("lints styles.css in release and CI", () => {
+		expect(stripYamlComments(release)).toContain("npm run lint:css");
+		expect(ci).toContain("npm run lint:css");
+	});
+
 	it("stamps betas before anything is built", () => {
 		const code = stripYamlComments(release);
 		expect(code.indexOf("stamp-prerelease.mjs")).toBeGreaterThan(code.indexOf("npm ci"));
