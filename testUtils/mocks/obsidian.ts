@@ -8,7 +8,12 @@
 // (plan 1.5b) is the place to pin values read from a real Obsidian.
 import type { TFile as ObsidianTFile } from "obsidian";
 import moment from "moment";
+import "moment/locale/de";
+import "moment/locale/zh-cn";
 import { parse, stringify } from "yaml";
+
+// Importing a locale file also switches the global locale to it; Obsidian runs in English unless the user changes it.
+moment.locale("en");
 
 export { moment };
 

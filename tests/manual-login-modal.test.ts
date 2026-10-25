@@ -26,6 +26,7 @@ function open(onSubmit: (input: string) => Promise<boolean> = () => Promise.reso
 const clipboard = (impl: { writeText?: unknown; readText?: unknown }): void => {
 	Object.defineProperty(navigator, "clipboard", { value: impl, configurable: true });
 };
+const isOpen = (m: unknown): boolean => (m as { isOpen: boolean }).isOpen;
 const keydown = (el: HTMLElement, key: string): void => {
 	el.dispatchEvent(Object.assign(new window.Event("keydown", { cancelable: true }), { key }));
 };
@@ -129,7 +130,7 @@ describe("submitting a ticket", () => {
 		const { modal, type, button } = open(onSubmit);
 		type(`  ${TICKET}  `);
 		button(en.modalManualLoginSubmit).click();
-		await vi.waitFor(() => expect(modal.isOpen).toBe(false));
+		await vi.waitFor(() => expect(isOpen(modal)).toBe(false));
 		expect(onSubmit).toHaveBeenCalledWith(TICKET);
 	});
 
@@ -161,7 +162,7 @@ describe("submitting a ticket", () => {
 		type(TICKET);
 		button(en.modalManualLoginSubmit).click();
 		await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
-		expect(modal.isOpen).toBe(true);
+		expect(isOpen(modal)).toBe(true);
 		button(en.modalManualLoginSubmit).click();
 		await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
 	});
@@ -191,7 +192,7 @@ describe("submitting a ticket", () => {
 		await new Promise((r) => setTimeout(r, 0));
 		process.off("unhandledRejection", handler);
 		button(en.modalManualLoginSubmit).click();
-		await vi.waitFor(() => expect(modal.isOpen).toBe(false));
+		await vi.waitFor(() => expect(isOpen(modal)).toBe(false));
 	});
 });
 
@@ -202,7 +203,7 @@ describe("the clipboard button", () => {
 		const { button, preview, modal } = open(onSubmit);
 		const previewEl = preview();
 		button(en.modalManualLoginPasteButton).click();
-		await vi.waitFor(() => expect(modal.isOpen).toBe(false));
+		await vi.waitFor(() => expect(isOpen(modal)).toBe(false));
 		expect(onSubmit).toHaveBeenCalledWith(`ticket=${TICKET}`);
 		expect(previewEl.classList.contains("is-found")).toBe(true);
 	});

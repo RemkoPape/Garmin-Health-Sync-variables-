@@ -2,7 +2,7 @@
 import type { HealthData, HealthProvider, LoginResult } from "../src/providers/provider";
 
 export class FakeProvider implements HealthProvider {
-	readonly id = "fake";
+	readonly id: string = "fake";
 	readonly name = "Fake";
 	configured = true;
 	sessionValid = true;

@@ -2,6 +2,11 @@
 
 ## 0.11.1-beta.4
 
+### Internal
+
+- Tests for the plugin shell (startup, tokens, auto-sync schedule, manual sync, backfill, sign-in), the settings tab and both sign-in dialogs. The whole source is now at 100 % coverage (lines, branches, functions, statements) and CI fails below that.
+- Removed a catch block in the backfill command that could never run, and two unreachable lines.
+
 ### Fixed
 
 - The copy-link button in the manual sign-in dialog no longer fails silently when the clipboard is blocked; it tells you.

@@ -70,6 +70,7 @@ async function signIn(s: Setup, email = "me@example.com", password = "pw"): Prom
 	s.primary().click();
 	await settle();
 }
+const isOpen = (m: unknown): boolean => (m as { isOpen: boolean }).isOpen;
 const keydown = (el: HTMLElement, key: string): Event => {
 	const ev = Object.assign(new window.Event("keydown", { cancelable: true }), { key });
 	el.dispatchEvent(ev);
@@ -183,7 +184,7 @@ describe("outcomes", () => {
 		await signIn(s);
 		expect(s.cooldown.resets).toBe(1);
 		expect(s.handlers.onSuccess).toHaveBeenCalledOnce();
-		expect(s.modal.isOpen).toBe(false);
+		expect(isOpen(s.modal)).toBe(false);
 		expect(s.handlers.onClosed).toHaveBeenCalledOnce();
 	});
 
@@ -191,7 +192,7 @@ describe("outcomes", () => {
 		const s = open({ status: "ok" });
 		s.handlers.onSuccess.mockRejectedValue(new Error("save failed"));
 		await signIn(s);
-		expect(s.modal.isOpen).toBe(false);
+		expect(isOpen(s.modal)).toBe(false);
 		expect(console.error).toHaveBeenCalled();
 	});
 
@@ -218,7 +219,7 @@ describe("outcomes", () => {
 		s.primary().click();
 		await settle();
 		expect(s.handlers.verifyMfa).toHaveBeenCalledWith("123456");
-		expect(s.modal.isOpen).toBe(false);
+		expect(isOpen(s.modal)).toBe(false);
 	});
 
 	it("two-step verification: an empty code is ignored, a wrong code shows the message and asks again", async () => {
@@ -278,6 +279,20 @@ describe("outcomes", () => {
 		expect(s.root.querySelector("h2")?.textContent).toBe(en.modalCredTitle);
 	});
 
+	it("a crash that arrives after the dialog was dismissed starts no countdown", async () => {
+		let fail: (e: Error) => void = () => undefined;
+		const s = open(() => new Promise((_, reject) => (fail = reject)), 0);
+		s.type(0, "a@b.c");
+		s.type(1, "pw");
+		s.primary().click();
+		s.modal.close();
+		s.cooldown.left = 60;
+		fail(new Error("late"));
+		await settle();
+		await vi.advanceTimersByTimeAsync(3000);
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
 	it("renders nothing for an outcome that arrives after the dialog was dismissed", async () => {
 		let finish: (o: CredentialLoginOutcome) => void = () => undefined;
 		const s = open(() => new Promise((resolve) => (finish = resolve)));
@@ -301,14 +316,14 @@ describe("the failure screen", () => {
 	it("leaves the dialog and opens the browser login", async () => {
 		const s = await failed();
 		s.button(en.modalCredBrowserFallback)!.click();
-		expect(s.modal.isOpen).toBe(false);
+		expect(isOpen(s.modal)).toBe(false);
 		expect(s.handlers.onBrowserFallback).toHaveBeenCalledOnce();
 	});
 
 	it("from the form, the browser login does the same", () => {
 		const s = open();
 		s.button(en.modalCredBrowserFallback)!.click();
-		expect(s.modal.isOpen).toBe(false);
+		expect(isOpen(s.modal)).toBe(false);
 		expect(s.handlers.onBrowserFallback).toHaveBeenCalledOnce();
 	});
 

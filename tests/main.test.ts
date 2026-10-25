@@ -278,6 +278,15 @@ describe("sign-in tokens", () => {
 		expect(plugin.settings.garminOAuth1).not.toBe("");
 	});
 
+	it("writes both tokens to data.json after a sync when secret storage is unavailable", async () => {
+		const loaded = await load(signedIn(), (a) => {
+			a.secretStorage = undefined;
+		});
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(loaded.plugin.data).toMatchObject({ garminOAuth1: JSON.stringify(TOKEN1), garminOAuth2: JSON.stringify(TOKEN2) });
+	});
+
 	it("clears only legacy tokens that were really moved (an OAuth2-only leftover is dropped, not stored)", async () => {
 		const { plugin, provider } = await load({ garminOAuth2: JSON.stringify(TOKEN2) });
 		expect(provider.isSessionValid()).toBe(false);
@@ -670,8 +679,6 @@ describe("waiting for the daily note (create-when-missing off)", () => {
 // ---------------------------------------------------------------------------
 
 import { moment } from "../testUtils/mocks/obsidian";
-import "moment/locale/de";
-import "moment/locale/zh-cn";
 
 const momentFn = moment as unknown as { (d: string, f: string): { format(f: string): string }; locale(l?: string): string };
 
@@ -1139,6 +1146,8 @@ describe("the sign-in notice", () => {
 	it("closes after a successful sign-in", async () => {
 		const { button, notice, provider } = await expired();
 		button.click();
+		await settle(); // the dialog is open and the user has not signed in yet
+		expect(notice.hidden).toBe(false);
 		const modal = Modal.opened[0]!;
 		fill(modal, ["a@b.c", "pw"]);
 		press(modal, "button.mod-cta");
@@ -1346,6 +1355,20 @@ describe("sign-in details", () => {
 		expect((loaded.plugin.data as HealthSyncSettings).garminOAuth2).toBe("");
 	});
 
+	it("writes empty strings to data.json when a dead token is dropped and secret storage is unavailable", async () => {
+		const loaded = await load(signedIn({ language: "en" }), (a) => {
+			a.secretStorage = undefined;
+		});
+		loaded.provider.fetchData = async () => {
+			loaded.provider.oauth1 = null;
+			loaded.provider.oauth2 = null;
+			throw new LoginRequiredError();
+		};
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(loaded.plugin.data).toMatchObject({ garminOAuth1: "", garminOAuth2: "" });
+	});
+
 	it("a newer sign-in notice is not cleared by an older one's button", async () => {
 		const loaded = await load({ language: "en" });
 		loaded.app.workspace.layoutReady();
@@ -1379,6 +1402,14 @@ describe("daily note format corner cases", () => {
 		loaded.plugin.commands.get("sync-health-data")!.callback!();
 		await vi.runAllTimersAsync();
 		expect(fetched(loaded.provider)).toEqual([dayString(1)]);
+	});
+
+	it("recognises a weekday-format note that was moved into a hand-made subfolder", async () => {
+		const loaded = await load(signedIn({ dailyNoteFormat: "YYYY-MM-DD ddd", dailyNotePath: "Daily" }));
+		loaded.app.workspace.activeFile = loaded.app.vault.seed("Daily/archive/2026-10-20 Tue.md", "x") as TFile;
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toEqual(["2026-10-20"]);
 	});
 
 	it("does not look at the bare file name for a format with folders", async () => {

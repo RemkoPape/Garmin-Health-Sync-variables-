@@ -81,7 +81,7 @@ fragProto.createEl = function (this: DocumentFragment, tag: string, o?: { text?:
 	const el = win.document.createElement(tag);
 	if (o?.text) el.textContent = o.text;
 	if (o?.cls) el.className = o.cls;
-	this.appendChild(el);
+	this.appendChild(el as unknown as Node);
 	return el;
 };
 fragProto.createDiv = function (this: DocumentFragment, o?: { text?: string; cls?: string }) {
