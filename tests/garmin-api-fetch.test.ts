@@ -554,6 +554,7 @@ describe("per-endpoint accessors and the shared cache", () => {
 		await expect(api.fetchHrv(DATE)).rejects.toBeInstanceOf(LoginRequiredError);
 		api.setTokens(OAUTH1, null);
 		net.reset();
+		net.fail(/thegarth/);
 		net.on(EX, { status: 500 });
 		await expect(api.fetchHrv(DATE)).rejects.toMatchObject({ name: "SyncFetchError", message: "fetch_failed: GarminAuthError HTTP 500" });
 	});
