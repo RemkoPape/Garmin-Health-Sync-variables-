@@ -58,6 +58,7 @@ export class TAbstractFile {
 }
 
 export class TFile extends TAbstractFile {
+	basename = "";
 	extension = "md";
 	stat = { size: 0, ctime: 0, mtime: 0 };
 }
@@ -111,6 +112,7 @@ export class Vault {
 	private attach(item: TAbstractFile, path: string): void {
 		item.path = path;
 		item.name = path.slice(path.lastIndexOf("/") + 1);
+		if (item instanceof TFile) item.basename = item.name.replace(/\.[^.]*$/, "");
 		const parentPath = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "/";
 		const parent = this.folders.get(parentPath);
 		if (!parent) throw new Error(`Parent folder does not exist: ${parentPath}`);

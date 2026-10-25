@@ -649,3 +649,310 @@ describe("waiting for the daily note (create-when-missing off)", () => {
 		expect(fetched(loaded.provider).sort()).toEqual([dayString(1), dayString(2), dayString(3)].sort());
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Manual sync: which note, which date
+// ---------------------------------------------------------------------------
+
+import { moment } from "../testUtils/mocks/obsidian";
+import "moment/locale/de";
+import "moment/locale/zh-cn";
+
+const momentFn = moment as unknown as { (d: string, f: string): { format(f: string): string }; locale(l?: string): string };
+
+describe("manual sync", () => {
+	async function manual(open: string | null, data: Partial<HealthSyncSettings> = {}, seedFiles: string[] = []) {
+		const loaded = await load(signedIn(data));
+		for (const f of seedFiles) loaded.app.vault.seed(f, "text");
+		if (open) loaded.app.workspace.activeFile = (loaded.app.vault.getAbstractFileByPath(open) ?? loaded.app.vault.seed(open, "text")) as TFile;
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		return loaded;
+	}
+
+	it("asks the user to sign in when there is no session, and fetches nothing", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await settle();
+		expect(Notice.recorded.map((n) => n.message)).toEqual([en.noticeLoginRequired]);
+		expect(loaded.provider.fetchCalls).toEqual([]);
+	});
+
+	it("syncs yesterday when no note is open", async () => {
+		const { provider } = await manual(null);
+		expect(fetched(provider)).toEqual([dayString(1)]);
+	});
+
+	it("syncs the date of the open daily note", async () => {
+		const { provider, app } = await manual("2026-10-20.md");
+		expect(fetched(provider)).toEqual(["2026-10-20"]);
+		expect(app.vault.text("2026-10-20.md")).toContain("steps: 8000");
+	});
+
+	it("falls back to yesterday for a note that is not a daily note", async () => {
+		const { provider } = await manual("Notes/ideas.md");
+		expect(fetched(provider)).toEqual([dayString(1)]);
+	});
+
+	it("falls back to yesterday for a daily note outside the configured folder", async () => {
+		const { provider } = await manual("Other/2026-10-20.md", { dailyNotePath: "Daily" });
+		expect(fetched(provider)).toEqual([dayString(1)]);
+	});
+
+	it("reads the date of a note inside the configured folder, with slashes around the setting", async () => {
+		const { provider } = await manual("Daily/2026-10-20.md", { dailyNotePath: "/Daily/" });
+		expect(fetched(provider)).toEqual(["2026-10-20"]);
+	});
+
+	it.each([
+		["DD.MM.YYYY", "20.10.2026.md"],
+		["[Journal] YYYY-MM-DD", "Journal 2026-10-20.md"],
+		["YYYY/MM/DD", "2026/10/20.md"],
+		["YYYY/YYYY-MM-DD", "2026/2026-10-20.md"],
+		["YYYYMMDD", "20261020.md"],
+		["[Day ]YYYY-MM-DD[ (log)]", "Day 2026-10-20 (log).md"],
+	])("reads the date from the format %s", async (format, file) => {
+		const { provider } = await manual(file, { dailyNoteFormat: format });
+		expect(fetched(provider)).toEqual(["2026-10-20"]);
+	});
+
+	it("does not accept a path whose repeated year disagrees", async () => {
+		const { provider } = await manual("2025/2026-10-20.md", { dailyNoteFormat: "YYYY/YYYY-MM-DD" });
+		expect(fetched(provider)).toEqual([dayString(1)]);
+	});
+
+	it("recognises a note moved into a hand-made subfolder below the configured folder", async () => {
+		const { provider } = await manual("Daily/archive/2026-10-20.md", { dailyNotePath: "Daily" });
+		expect(fetched(provider)).toEqual(["2026-10-20"]);
+	});
+
+	it("takes a literal bracket without a closing bracket as plain text", async () => {
+		const { provider } = await manual("[x 2026-10-20.md", { dailyNoteFormat: "[x YYYY-MM-DD" });
+		expect(fetched(provider)).toEqual(["2026-10-20"]);
+	});
+
+	it("records the sync time after a successful sync only", async () => {
+		const ok = await manual("2026-10-20.md");
+		expect(ok.plugin.settings.lastSyncTimes["2026-10-20"]).toBe(Date.now());
+		const failing = await load(signedIn());
+		failing.provider.byDate.set("2026-10-20", new Error("503"));
+		failing.app.workspace.activeFile = failing.app.vault.seed("2026-10-20.md", "text") as TFile;
+		failing.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(failing.plugin.settings.lastSyncTimes["2026-10-20"]).toBeUndefined();
+	});
+
+	it("saves the settings and tokens, and shows the sign-in notice when the token is dead", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.byDate.set(dayString(1), new LoginRequiredError());
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeSessionExpired + en.noticeLoginAction);
+		expect(loaded.plugin.saves).toBeGreaterThan(0);
+	});
+
+	it("stays quiet about login for other failures", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.byDate.set(dayString(1), new Error("503"));
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.map((n) => n.message)).not.toContain(en.noticeSessionExpired + en.noticeLoginAction);
+	});
+
+	it("shows the sign-in notice when the provider reports needsUserLogin after an error", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.authState = "needsUserLogin";
+		loaded.provider.fetchData = () => Promise.reject(new Error("dead"));
+		loaded.provider.fetchData = async () => {
+			throw new LoginRequiredError();
+		};
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeSessionExpired + en.noticeLoginAction);
+	});
+});
+
+describe("F5: manual sync for formats with weekday, month name or other tokens", () => {
+	afterEachLocale();
+
+	function afterEachLocale(): void {
+		beforeEach(() => {
+			momentFn.locale("en");
+		});
+	}
+
+	async function manualWith(format: string, dateInName: string, data: Partial<HealthSyncSettings> = {}) {
+		const name = `${momentFn(dateInName, "YYYY-MM-DD").format(format)}.md`;
+		const loaded = await load(signedIn({ dailyNoteFormat: format, ...data }));
+		loaded.app.workspace.activeFile = loaded.app.vault.seed(name, "text") as TFile;
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		return { ...loaded, name };
+	}
+
+	it.each(["YYYY-MM-DD ddd", "D MMM YYYY", "dddd, MMMM Do YYYY", "YYYY-[W]WW-E", "ddd DD.MM.YYYY", "YYYY-MM-DD dd"])(
+		"syncs the date of the open note for the format %s, into that very note",
+		async (format) => {
+			const { provider, app, name } = await manualWith(format, "2026-10-20");
+			expect(fetched(provider)).toEqual(["2026-10-20"]);
+			expect(app.vault.paths()).toEqual([name]);
+			expect(app.vault.text(name)).toContain("steps: 8000");
+		},
+	);
+
+	it("also opens the note in a folder", async () => {
+		const { provider } = await manualWith("YYYY-MM-DD ddd", "2026-10-20", { dailyNotePath: "Daily" });
+		expect(fetched(provider)).toEqual([dayString(1)]);
+		const nested = await load(signedIn({ dailyNoteFormat: "YYYY-MM-DD ddd", dailyNotePath: "Daily" }));
+		nested.app.workspace.activeFile = nested.app.vault.seed("Daily/2026-10-20 Tue.md", "text") as TFile;
+		nested.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(fetched(nested.provider)).toEqual(["2026-10-20"]);
+	});
+
+	it("uses the weekday and month names of the app language (German)", async () => {
+		momentFn.locale("de");
+		const { provider, name } = await manualWith("YYYY-MM-DD ddd", "2026-10-20");
+		expect(name).toMatch(/Di\.?\.md$/);
+		expect(fetched(provider)).toEqual(["2026-10-20"]);
+		const month = await manualWith("D MMM YYYY", "2026-10-21");
+		expect(fetched(month.provider)).toEqual(["2026-10-21"]);
+	});
+
+	it("uses the Chinese names too", async () => {
+		momentFn.locale("zh-cn");
+		const { provider } = await manualWith("YYYY-MM-DD ddd", "2026-10-20");
+		expect(fetched(provider)).toEqual(["2026-10-20"]);
+	});
+
+	it("does not guess when the name was written in another language: falls back to yesterday", async () => {
+		momentFn.locale("de");
+		const loaded = await load(signedIn({ dailyNoteFormat: "YYYY-MM-DD ddd" }));
+		loaded.app.workspace.activeFile = loaded.app.vault.seed("2026-10-20 Tue.md", "text") as TFile;
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toEqual([dayString(1)]);
+	});
+
+	it("does not accept a name whose weekday disagrees with its date", async () => {
+		const loaded = await load(signedIn({ dailyNoteFormat: "YYYY-MM-DD ddd" }));
+		loaded.app.workspace.activeFile = loaded.app.vault.seed("2026-10-20 Fri.md", "text") as TFile;
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toEqual([dayString(1)]);
+	});
+
+	it("does not accept an impossible date or a name that merely resembles the format", async () => {
+		for (const name of ["2026-02-30 Mon.md", "notes 2026-10-20 Tue.md", "2026-10-20 Tue extra.md"]) {
+			const loaded = await load(signedIn({ dailyNoteFormat: "YYYY-MM-DD ddd" }));
+			loaded.app.workspace.activeFile = loaded.app.vault.seed(name, "text") as TFile;
+			loaded.plugin.commands.get("sync-health-data")!.callback!();
+			await vi.runAllTimersAsync();
+			expect(fetched(loaded.provider), name).toEqual([dayString(1)]);
+		}
+	});
+
+	it("also triggers the auto-sync when such a note is opened", async () => {
+		const loaded = await load(signedIn({ dailyNoteFormat: "YYYY-MM-DD ddd" }));
+		const yesterday = momentFn(dayString(1), "YYYY-MM-DD").format("YYYY-MM-DD ddd");
+		const file = loaded.app.vault.seed(`${yesterday}.md`, "text");
+		loaded.app.workspace.fire("file-open", file);
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toContain(dayString(1));
+	});
+
+	it("keeps plain formats on the fast path, unchanged", async () => {
+		const { provider } = await manualWith("YYYY-MM-DD", "2026-10-20");
+		expect(fetched(provider)).toEqual(["2026-10-20"]);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Backfill command
+// ---------------------------------------------------------------------------
+
+describe("backfill command", () => {
+	function openBackfill(loaded: Awaited<ReturnType<typeof load>>) {
+		loaded.plugin.commands.get("backfill-health-data")!.callback!();
+		const modal = Modal.opened.at(-1)!;
+		const inputs = modal.contentEl.querySelectorAll<HTMLInputElement>("input");
+		return { modal, from: inputs[0]!, to: inputs[1]!, start: modal.contentEl.querySelector("button.mod-cta") as HTMLButtonElement };
+	}
+
+	it("opens a dialog with a type=date field each for the start and the end", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		const { modal, from, to } = openBackfill(loaded);
+		expect(modal.contentEl.querySelector("h2")?.textContent).toBe(en.modalBackfillTitle);
+		expect(from.type).toBe("date");
+		expect(to.type).toBe("date");
+	});
+
+	it("pre-fills today and seven days ago", async () => {
+		const loaded = await load(signedIn());
+		const { from, to } = openBackfill(loaded);
+		expect(to.value).toBe(dayString(0));
+		expect(from.value).toBe(dayString(7));
+	});
+
+	it("F2: pre-fills local dates, also late in the evening and just after midnight", async () => {
+		for (const [h, m] of [[0, 30], [23, 30]] as const) {
+			vi.setSystemTime(new Date(2026, 9, 25, h, m, 0));
+			const loaded = await load(signedIn());
+			const { from, to } = openBackfill(loaded);
+			expect(to.value, `${h}:${m}`).toBe("2026-10-25");
+			expect(from.value, `${h}:${m}`).toBe("2026-10-18");
+		}
+	});
+
+	it("runs the backfill for the chosen range, then closes the dialog", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		const { modal, from, to, start } = openBackfill(loaded);
+		from.value = "2026-10-20";
+		from.dispatchEvent(new window.Event("input"));
+		to.value = "2026-10-22";
+		to.dispatchEvent(new window.Event("input"));
+		start.click();
+		await vi.runAllTimersAsync();
+		expect(modal.isOpen).toBe(false);
+		expect(fetched(loaded.provider)).toEqual(["2026-10-20", "2026-10-21", "2026-10-22"]);
+		expect(Notice.recorded.at(-1)?.message).toBe(en.noticeBackfillDone.replace("{count}", "3"));
+	});
+
+	it("saves the settings and tokens when it ends, including after an error", async () => {
+		const loaded = await load(signedIn());
+		const savesBefore = loaded.plugin.saves;
+		openBackfill(loaded).start.click();
+		await vi.runAllTimersAsync();
+		expect(loaded.plugin.saves).toBeGreaterThan(savesBefore);
+	});
+
+	it("tells the user to sign in when the token dies during the backfill, and keeps the days already done", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.byDate.set(dayString(5), new LoginRequiredError());
+		openBackfill(loaded).start.click();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeLoginRequired);
+		expect(fetched(loaded.provider)).toEqual([dayString(7), dayString(6), dayString(5)].sort());
+	});
+
+	it("does not leave the plugin thinking a backfill is still running after an unexpected failure", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.getRecommendedBatchDelay = () => {
+			throw new Error("boom");
+		};
+		openBackfill(loaded).start.click();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeSyncError);
+		const file = loaded.app.vault.seed(`${dayString(2)}.md`, "x");
+		loaded.app.workspace.fire("file-open", file);
+		await vi.runAllTimersAsync();
+		expect(loaded.plugin.saves).toBeGreaterThan(0);
+	});
+
+	it("tears the dialog down when closed", async () => {
+		const loaded = await load(signedIn());
+		const { modal } = openBackfill(loaded);
+		modal.close();
+		expect(modal.contentEl.children).toHaveLength(0);
+	});
+});

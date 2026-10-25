@@ -6,7 +6,7 @@ import { App, Notice, TFile, TFolder, moment, normalizePath, parseYaml, stringif
  * does not install — every call becomes error-typed there. Type the tiny
  * surface this module uses locally so the checks hold in any environment.
  */
-type MomentFn = (input?: string, format?: string) => { format(format: string): string };
+type MomentFn = (input?: string, format?: string, strict?: boolean) => { format(format: string): string; isValid(): boolean };
 const momentFn = moment as unknown as MomentFn;
 import type { HealthData } from "./providers/provider";
 import { applyPrefix } from "./metrics";
@@ -396,6 +396,19 @@ function isDeepEqual(a: unknown, b: unknown): boolean {
 		return true;
 	}
 	return false;
+}
+
+/**
+ * The reverse of formatDate(): the YYYY-MM-DD date a note name was formatted from, or null.
+ *
+ * Understands every moment token (weekday and month names included, in the app's language), which a hand-written
+ * pattern cannot. The strict parse alone is not trusted: the result must format back to exactly the same name,
+ * so a name that merely resembles the format (wrong weekday, wrong language, extra text) is rejected.
+ */
+export function dateFromFormattedName(name: string, format: string): string | null {
+	const parsed = momentFn(name, format, true);
+	if (!parsed.isValid() || parsed.format(format) !== name) return null;
+	return parsed.format("YYYY-MM-DD");
 }
 
 /**

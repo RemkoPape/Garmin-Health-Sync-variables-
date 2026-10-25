@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- **Sync current note** now syncs the day of the note you have open also when your daily note name contains more than year, month and day (for example `2026-10-21 Wed` or `21 Oct 2026`). Before, it wrote yesterday's data into that note. Opening such a note also triggers the automatic sync again.
+- The backfill dialog pre-fills today's and last week's date in your local time (it used UTC, so after midnight or in the evening it was off by a day).
 - Settings no longer share their toggles and sync times with the built-in defaults (a latent bug that made behaviour depend on what ran before).
 
 ## 0.11.1-beta.3
