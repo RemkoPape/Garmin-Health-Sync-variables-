@@ -74,8 +74,6 @@ export const zh: Record<TranslationKeys, string> = {
 	metric_body_fat_pct: "体脂率",
 	metric_distance_mi: "距离（英里）",
 	metric_weight_lbs: "体重（磅）",
-	metric_stress_high: "压力时长（分钟）",
-	metric_recovery_high: "恢复时长（分钟）",
 	// Notices
 	noticeSyncing: "正在同步健康数据...",
 	noticeSyncSuccess: "健康数据同步成功",

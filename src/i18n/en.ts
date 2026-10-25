@@ -72,8 +72,6 @@ export const en = {
 	metric_body_fat_pct: "Body fat %",
 	metric_distance_mi: "Distance (mi)",
 	metric_weight_lbs: "Weight (lbs)",
-	metric_stress_high: "Stress duration (min)",
-	metric_recovery_high: "Recovery duration (min)",
 	// Notices
 	noticeSyncing: "Syncing health data...",
 	noticeSyncSuccess: "Health data synced successfully",

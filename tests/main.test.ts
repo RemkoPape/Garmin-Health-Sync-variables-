@@ -125,6 +125,21 @@ describe("F7: the defaults are never changed by a loaded plugin", () => {
 	});
 });
 
+describe("F8: switches that never did anything are gone, old files still load", () => {
+	it("loads a data.json that still has the removed metric keys, shows no toggle and requests nothing extra", async () => {
+		const loaded = await load(signedIn({ enabledMetrics: { ...DEFAULT_SETTINGS.enabledMetrics, stress_high: true, recovery_high: true } as Record<string, boolean> }));
+		expect(loaded.plugin.settings.enabledMetrics["stress_high"]).toBe(true);
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		for (const call of loaded.provider.fetchCalls) {
+			expect(call.enabledMetrics).toContain("stress_high");
+		}
+		const note = loaded.app.vault.text(`${dayString(1)}.md`);
+		expect(note).not.toContain("stress_high");
+		expect(note).not.toContain("recovery_high");
+	});
+});
+
 describe("startup", () => {
 	it("registers the three commands under their stable ids, named in the user's language", async () => {
 		const { plugin } = await load({ language: "de" });
