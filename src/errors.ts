@@ -49,11 +49,3 @@ export function isGarminAuthError(error: unknown): error is GarminAuthError {
 export function isAuthFailureStatus(status: number): boolean {
 	return status === 401 || status === 403;
 }
-
-/** Transient failure: retry with backoff, never log out. Covers rate limiting
- *  (429), server-side errors (5xx) and network-level failures (status ≤ 0).
- *  The state machine treats every non-auth-failure as transient by default;
- *  this helper exists for explicit, readable checks. */
-export function isTransientStatus(status: number): boolean {
-	return status === 429 || status >= 500 || status <= 0;
-}
