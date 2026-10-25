@@ -16,7 +16,17 @@ export { moment };
 // Platform
 // ---------------------------------------------------------------------------
 
-const PLATFORM_DEFAULTS = { isMobile: false, isDesktop: true, isIosApp: false, isAndroidApp: false };
+const PLATFORM_DEFAULTS = {
+	isMobile: false,
+	isMobileApp: false,
+	isDesktop: true,
+	isDesktopApp: true,
+	isIosApp: false,
+	isAndroidApp: false,
+	isMacOS: false,
+	isLinux: false,
+	isWin: true,
+};
 export const Platform = { ...PLATFORM_DEFAULTS };
 
 // ---------------------------------------------------------------------------
