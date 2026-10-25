@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.1-beta.4
+
+### Fixed
+
+- Settings no longer share their toggles and sync times with the built-in defaults (a latent bug that made behaviour depend on what ran before).
+
 ## 0.11.1-beta.3
 
 ### Fixed

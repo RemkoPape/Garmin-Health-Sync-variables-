@@ -545,7 +545,12 @@ export default class HealthSyncPlugin extends Plugin {
 	async loadSettings() {
 		const saved = await this.loadData() as Partial<HealthSyncSettings> | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+		// Object.assign is shallow: without these copies the two nested objects below would be the very objects in
+		// DEFAULT_SETTINGS, and every toggle or sync time written later would change the defaults too. (Not
+		// structuredClone: older iOS WebViews lack it and esbuild does not polyfill it.)
 		const defaults = DEFAULT_SETTINGS.enabledMetrics;
+		this.settings.enabledMetrics = { ...(saved?.enabledMetrics ?? defaults) };
+		this.settings.lastSyncTimes = { ...(saved?.lastSyncTimes ?? {}) };
 		for (const key of Object.keys(defaults)) {
 			if (this.settings.enabledMetrics[key] === undefined) {
 				this.settings.enabledMetrics[key] = defaults[key]!;

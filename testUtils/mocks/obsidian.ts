@@ -204,10 +204,11 @@ export class Vault {
 // ---------------------------------------------------------------------------
 
 export class Notice {
-	static recorded: { message: string; duration?: number; hidden: boolean }[] = [];
-	private entry: { message: string; duration?: number; hidden: boolean };
-	constructor(message: string, duration?: number) {
-		this.entry = { message, duration, hidden: false };
+	static recorded: { message: string; duration?: number; hidden: boolean; fragment?: DocumentFragment }[] = [];
+	private entry: { message: string; duration?: number; hidden: boolean; fragment?: DocumentFragment };
+	constructor(message: string | DocumentFragment, duration?: number) {
+		const isText = typeof message === "string";
+		this.entry = { message: isText ? message : (message.textContent ?? ""), duration, hidden: false, ...(isText ? {} : { fragment: message }) };
 		Notice.recorded.push(this.entry);
 	}
 	hide(): void {
@@ -220,7 +221,7 @@ export class Notice {
 }
 
 // ---------------------------------------------------------------------------
-// App and plugin shells
+// App, workspace and plugin shells
 // ---------------------------------------------------------------------------
 
 export class SecretStorageFake {
@@ -240,10 +241,40 @@ export class SecretStorageFake {
 	}
 }
 
+type WorkspaceListener = (...args: unknown[]) => void;
+
+export class Workspace {
+	activeFile: TFile | null = null;
+	private readyCallbacks: (() => void)[] = [];
+	private listeners: Record<string, WorkspaceListener[]> = {};
+	onLayoutReady(cb: () => void): void {
+		this.readyCallbacks.push(cb);
+	}
+	on(name: string, cb: WorkspaceListener): { name: string } {
+		(this.listeners[name] ??= []).push(cb);
+		return { name };
+	}
+	getActiveFile(): TFile | null {
+		return this.activeFile;
+	}
+	// ---- test helpers ----
+	/** Obsidian finished loading the layout: run the callbacks registered with onLayoutReady. */
+	layoutReady(): void {
+		for (const cb of this.readyCallbacks.splice(0)) cb();
+	}
+	fire(name: string, ...args: unknown[]): void {
+		for (const cb of this.listeners[name] ?? []) cb(...args);
+	}
+}
+
 export class App {
 	vault = new Vault();
+	workspace = new Workspace();
 	secretStorage: SecretStorageFake | undefined = new SecretStorageFake();
 	local = new Map<string, unknown>();
+	/** Set by tests to exercise the Periodic Notes / Daily Notes auto-detection. */
+	plugins: { plugins: Record<string, unknown> } | undefined = undefined;
+	internalPlugins: { plugins: Record<string, unknown> } | undefined = undefined;
 	loadLocalStorage(key: string): unknown {
 		return this.local.has(key) ? this.local.get(key) : null;
 	}
@@ -252,10 +283,42 @@ export class App {
 	}
 }
 
+export interface Command {
+	id: string;
+	name: string;
+	callback?: () => void;
+}
+
 export class Plugin {
 	app: App;
-	constructor(app: App = new App()) {
+	manifest: { version: string };
+	/** What loadData returns and saveData stores (a copy, like data.json on disk). */
+	data: unknown = null;
+	saves = 0;
+	commands = new Map<string, Command>();
+	settingTabs: unknown[] = [];
+	events: unknown[] = [];
+	constructor(app: App = new App(), manifest: { version: string } = { version: "0.0.0-test" }) {
 		this.app = app;
+		this.manifest = manifest;
+	}
+	loadData(): Promise<unknown> {
+		return Promise.resolve(this.data === null ? null : (JSON.parse(JSON.stringify(this.data)) as unknown));
+	}
+	saveData(data: unknown): Promise<void> {
+		this.saves++;
+		this.data = JSON.parse(JSON.stringify(data));
+		return Promise.resolve();
+	}
+	addCommand(command: Command): Command {
+		this.commands.set(command.id, command);
+		return command;
+	}
+	addSettingTab(tab: unknown): void {
+		this.settingTabs.push(tab);
+	}
+	registerEvent(ref: unknown): void {
+		this.events.push(ref);
 	}
 }
 
@@ -263,27 +326,175 @@ export class PluginSettingTab {
 	app: App;
 	plugin: unknown;
 	containerEl: HTMLElement = document.createElement("div");
+	updates = 0;
 	constructor(app: App, plugin: unknown) {
 		this.app = app;
 		this.plugin = plugin;
 	}
+	update(): void {
+		this.updates++;
+	}
 }
 
+// ---------------------------------------------------------------------------
+// Modal and the Setting components (DOM-backed, enough for the plugin's own screens)
+// ---------------------------------------------------------------------------
+
 export class Modal {
+	static opened: Modal[] = [];
 	app: App;
 	contentEl: HTMLElement = document.createElement("div");
+	isOpen = false;
 	constructor(app: App) {
 		this.app = app;
 	}
-	open(): void {}
-	close(): void {}
+	onOpen(): void {}
+	onClose(): void {}
+	open(): void {
+		this.isOpen = true;
+		Modal.opened.push(this);
+		this.onOpen();
+	}
+	close(): void {
+		if (!this.isOpen) return;
+		this.isOpen = false;
+		this.onClose();
+	}
+}
+
+type Listener = () => void | Promise<void>;
+
+export class ButtonComponent {
+	buttonEl: HTMLButtonElement;
+	tooltip = "";
+	constructor(containerEl: HTMLElement) {
+		this.buttonEl = document.createElement("button");
+		containerEl.appendChild(this.buttonEl);
+	}
+	setButtonText(text: string): this {
+		this.buttonEl.textContent = text;
+		return this;
+	}
+	setCta(): this {
+		this.buttonEl.classList.add("mod-cta");
+		return this;
+	}
+	setTooltip(tooltip: string): this {
+		this.tooltip = tooltip;
+		return this;
+	}
+	setDisabled(disabled: boolean): this {
+		this.buttonEl.disabled = disabled;
+		return this;
+	}
+	onClick(cb: Listener): this {
+		this.buttonEl.addEventListener("click", () => void cb());
+		return this;
+	}
+}
+
+export class ExtraButtonComponent {
+	extraSettingsEl: HTMLElement;
+	icon = "";
+	tooltip = "";
+	constructor(containerEl: HTMLElement) {
+		this.extraSettingsEl = document.createElement("div");
+		containerEl.appendChild(this.extraSettingsEl);
+	}
+	setIcon(icon: string): this {
+		this.icon = icon;
+		return this;
+	}
+	setTooltip(tooltip: string): this {
+		this.tooltip = tooltip;
+		return this;
+	}
+	onClick(cb: Listener): this {
+		this.extraSettingsEl.addEventListener("click", () => void cb());
+		return this;
+	}
+}
+
+export class TextComponent {
+	inputEl: HTMLInputElement;
+	constructor(containerEl: HTMLElement) {
+		this.inputEl = document.createElement("input");
+		containerEl.appendChild(this.inputEl);
+	}
+	setValue(value: string): this {
+		this.inputEl.value = value;
+		return this;
+	}
+	getValue(): string {
+		return this.inputEl.value;
+	}
+	setPlaceholder(text: string): this {
+		this.inputEl.placeholder = text;
+		return this;
+	}
+	onChange(cb: (value: string) => void): this {
+		this.inputEl.addEventListener("input", () => cb(this.inputEl.value));
+		return this;
+	}
+	/** Test helper: type into the field the way a user would. */
+	type(value: string): void {
+		this.inputEl.value = value;
+		this.inputEl.dispatchEvent(new window.Event("input"));
+	}
 }
 
 export class Setting {
-	constructor(public containerEl: HTMLElement) {}
+	static all: Setting[] = [];
+	settingEl: HTMLElement;
+	nameEl: HTMLElement;
+	descEl: HTMLElement;
+	controlEl: HTMLElement;
+	buttons: ButtonComponent[] = [];
+	extraButtons: ExtraButtonComponent[] = [];
+	texts: TextComponent[] = [];
+	constructor(public containerEl: HTMLElement) {
+		this.settingEl = document.createElement("div");
+		this.settingEl.classList.add("setting-item");
+		const info = document.createElement("div");
+		this.nameEl = document.createElement("div");
+		this.descEl = document.createElement("div");
+		this.controlEl = document.createElement("div");
+		info.append(this.nameEl, this.descEl);
+		this.settingEl.append(info, this.controlEl);
+		containerEl.appendChild(this.settingEl);
+		Setting.all.push(this);
+	}
+	setName(name: string): this {
+		this.nameEl.textContent = name;
+		return this;
+	}
+	setDesc(desc: string): this {
+		this.descEl.textContent = desc;
+		return this;
+	}
+	setClass(cls: string): this {
+		this.settingEl.classList.add(cls);
+		return this;
+	}
+	addButton(cb: (b: ButtonComponent) => unknown): this {
+		const b = new ButtonComponent(this.controlEl);
+		this.buttons.push(b);
+		cb(b);
+		return this;
+	}
+	addExtraButton(cb: (b: ExtraButtonComponent) => unknown): this {
+		const b = new ExtraButtonComponent(this.controlEl);
+		this.extraButtons.push(b);
+		cb(b);
+		return this;
+	}
+	addText(cb: (t: TextComponent) => unknown): this {
+		const t = new TextComponent(this.controlEl);
+		this.texts.push(t);
+		cb(t);
+		return this;
+	}
 }
-
-export class ButtonComponent {}
 
 // ---------------------------------------------------------------------------
 // requestUrl
@@ -397,5 +608,7 @@ export async function requestUrl(request: RequestUrlParam | string): Promise<Req
 export function resetObsidianMock(): void {
 	Object.assign(Platform, PLATFORM_DEFAULTS);
 	Notice.recorded = [];
+	Modal.opened = [];
+	Setting.all = [];
 	network.reset();
 }

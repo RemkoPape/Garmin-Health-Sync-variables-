@@ -13,6 +13,8 @@ export class FakeProvider implements HealthProvider {
 	batchDelay: number | undefined = 2000;
 	/** Called after each fetchData starts; lets a test observe timing. */
 	onFetch: ((date: string) => void) | null = null;
+	/** When set, fetchData waits for it after recording the call (holds a sync open). */
+	gate: Promise<void> | null = null;
 
 	fetchCalls: { date: string; enabledMetrics: string[] }[] = [];
 	authCalls = 0;
@@ -32,6 +34,7 @@ export class FakeProvider implements HealthProvider {
 	async fetchData(date: string, enabledMetrics: string[]): Promise<HealthData> {
 		this.fetchCalls.push({ date, enabledMetrics });
 		this.onFetch?.(date);
+		if (this.gate) await this.gate;
 		const result = this.byDate.get(date) ?? this.defaultData;
 		if (result instanceof Error) throw result;
 		return result;

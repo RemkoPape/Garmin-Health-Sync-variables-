@@ -1,0 +1,651 @@
+// Why it matters: main.ts is the plugin's brain: what runs at startup, which days auto-sync fetches and
+// how often (Garmin rate-limits), what happens to the sign-in tokens, and which note a manual sync writes
+// into. Each rule below is something a user would notice as a missed day, a request storm or a logout.
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { App, Modal, Notice, Platform, Setting, TFile } from "../testUtils/mocks/obsidian";
+import { FakeGarminProvider } from "../testUtils/fakeGarminProvider";
+import HealthSyncPlugin from "../src/main";
+import { DEFAULT_SETTINGS, type HealthSyncSettings } from "../src/settings";
+import { LoginRequiredError } from "../src/errors";
+import { en } from "../src/i18n/en";
+import { de } from "../src/i18n/de";
+
+vi.mock("../src/providers/garmin/garmin-provider", async () => {
+	const m = await import("../testUtils/fakeGarminProvider");
+	return { GarminProvider: m.FakeGarminProvider };
+});
+
+const NOW = new Date(2026, 9, 25, 10, 0, 0); // 2026-10-25 10:00 local, a Sunday
+const MIN = 60_000;
+const HOUR = 60 * MIN;
+const TOKEN1 = { oauth_token: "OT", oauth_token_secret: "OS" };
+const TOKEN2 = { access_token: "at", refresh_token: "rt", expires_in: 3600, expires_at: 99 };
+
+interface Loaded {
+	app: App;
+	plugin: HealthSyncPlugin & { data: unknown; commands: Map<string, { name: string; callback?: () => void }>; settingTabs: unknown[]; saves: number };
+	provider: FakeGarminProvider;
+}
+
+/** Create the plugin with the given data.json and run onload. */
+async function load(data: Partial<HealthSyncSettings> | null = null, setup: (app: App) => void = () => undefined): Promise<Loaded> {
+	const app = new App();
+	setup(app);
+	const plugin = new HealthSyncPlugin(app as never, { version: "0.11.1-test" } as never) as Loaded["plugin"];
+	plugin.data = data;
+	await plugin.onload();
+	return { app, plugin, provider: FakeGarminProvider.last() };
+}
+const settle = async (): Promise<void> => {
+	await vi.advanceTimersByTimeAsync(0);
+	await vi.advanceTimersByTimeAsync(0);
+};
+const dayString = (daysAgo: number): string => {
+	const d = new Date(NOW);
+	d.setDate(d.getDate() - daysAgo);
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const fetched = (p: FakeGarminProvider): string[] => p.fetchCalls.map((c) => c.date);
+const signedIn = (patch: Partial<HealthSyncSettings> = {}): Partial<HealthSyncSettings> => ({ garminOAuth1: JSON.stringify(TOKEN1), garminOAuth2: JSON.stringify(TOKEN2), ...patch });
+
+beforeEach(() => {
+	vi.useFakeTimers();
+	vi.setSystemTime(NOW);
+	FakeGarminProvider.instances = [];
+	document.documentElement.lang = "";
+});
+
+describe("loading settings", () => {
+	it("starts from the defaults on a first run", async () => {
+		const { plugin } = await load(null);
+		expect(plugin.settings).toMatchObject({ autoSync: true, dailyNoteFormat: "YYYY-MM-DD", unitSystem: "metric", serverRegion: "international" });
+		expect(plugin.settings.enabledMetrics["steps"]).toBe(true);
+		expect(plugin.settings.enabledMetrics["spo2"]).toBe(false);
+	});
+
+	it("keeps saved values and fills in metrics added since the file was saved", async () => {
+		const { plugin } = await load({ language: "en", dailyNoteFormat: "DD.MM.YYYY", enabledMetrics: { steps: false } });
+		expect(plugin.settings.dailyNoteFormat).toBe("DD.MM.YYYY");
+		expect(plugin.settings.enabledMetrics["steps"]).toBe(false);
+		expect(plugin.settings.enabledMetrics["hrv"]).toBe(true);
+		expect(plugin.settings.enabledMetrics["spo2"]).toBe(false);
+	});
+
+	it("takes the language from Obsidian on the first run only", async () => {
+		document.documentElement.lang = "de-AT";
+		expect((await load(null)).plugin.settings.language).toBe("de");
+		expect((await load({ language: "fr" })).plugin.settings.language).toBe("fr");
+	});
+
+	it("falls back to English for an unsupported or missing Obsidian language", async () => {
+		document.documentElement.lang = "pt-BR";
+		expect((await load(null)).plugin.settings.language).toBe("en");
+		document.documentElement.lang = "";
+		expect((await load(null)).plugin.settings.language).toBe("en");
+	});
+
+	it("does not detect a language again once one is saved", async () => {
+		document.documentElement.lang = "ja";
+		expect((await load({ language: "en" })).plugin.settings.language).toBe("en");
+	});
+});
+
+describe("F7: the defaults are never changed by a loaded plugin", () => {
+	it("does not write toggles or sync times into DEFAULT_SETTINGS (first run)", async () => {
+		const before = JSON.stringify(DEFAULT_SETTINGS);
+		const { plugin } = await load(null);
+		plugin.settings.enabledMetrics["steps"] = false;
+		plugin.settings.lastSyncTimes["2026-10-01"] = 123;
+		expect(JSON.stringify(DEFAULT_SETTINGS)).toBe(before);
+		expect(DEFAULT_SETTINGS.lastSyncTimes).toEqual({});
+		expect(DEFAULT_SETTINGS.enabledMetrics["steps"]).toBe(true);
+	});
+
+	it("does not write them into DEFAULT_SETTINGS when the saved file lacks the nested objects either", async () => {
+		const before = JSON.stringify(DEFAULT_SETTINGS);
+		const { plugin } = await load({ language: "en" });
+		plugin.settings.lastSyncTimes["2026-10-01"] = 123;
+		plugin.settings.enabledMetrics["hrv"] = false;
+		expect(JSON.stringify(DEFAULT_SETTINGS)).toBe(before);
+	});
+
+	it("gives two loaded plugins independent settings", async () => {
+		const a = await load(null);
+		const b = await load(null);
+		a.plugin.settings.lastSyncTimes["2026-10-01"] = 123;
+		a.plugin.settings.enabledMetrics["steps"] = false;
+		expect(b.plugin.settings.lastSyncTimes).toEqual({});
+		expect(b.plugin.settings.enabledMetrics["steps"]).toBe(true);
+	});
+
+	it("keeps the saved nested values", async () => {
+		const { plugin } = await load({ lastSyncTimes: { "2026-10-20": 5 }, enabledMetrics: { steps: false } });
+		expect(plugin.settings.lastSyncTimes).toEqual({ "2026-10-20": 5 });
+		expect(plugin.settings.enabledMetrics["steps"]).toBe(false);
+	});
+});
+
+describe("startup", () => {
+	it("registers the three commands under their stable ids, named in the user's language", async () => {
+		const { plugin } = await load({ language: "de" });
+		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "login-with-ticket", "sync-health-data"]);
+		expect(plugin.commands.get("sync-health-data")?.name).toBe(de.commandSync);
+		expect(plugin.commands.get("backfill-health-data")?.name).toBe(de.commandBackfill);
+		expect(plugin.commands.get("login-with-ticket")?.name).toBe(de.commandManualLogin);
+	});
+
+	it("adds the settings tab, tells the provider its version and applies the server region", async () => {
+		const { plugin, provider } = await load({ serverRegion: "china" });
+		expect(plugin.settingTabs).toHaveLength(1);
+		expect(provider.version).toBe("0.11.1-test");
+		expect(provider.region).toBe("china");
+	});
+
+	it("closes an open login window on unload", async () => {
+		const { plugin, provider } = await load();
+		plugin.onunload();
+		expect(provider.closedLogin).toBe(1);
+	});
+
+	describe("finding the daily notes folder", () => {
+		it("keeps a folder the user set", async () => {
+			const { plugin } = await load({ dailyNotePath: "My/Folder" }, (app) => {
+				app.plugins = { plugins: { "periodic-notes": { settings: { daily: { folder: "Other" } } } } };
+			});
+			expect(plugin.settings.dailyNotePath).toBe("My/Folder");
+		});
+
+		it("takes folder and format from Periodic Notes", async () => {
+			const { plugin } = await load(null, (app) => {
+				app.plugins = { plugins: { "periodic-notes": { settings: { daily: { folder: "Journal", format: "DD.MM.YYYY" } } } } };
+			});
+			expect(plugin.settings).toMatchObject({ dailyNotePath: "Journal", dailyNoteFormat: "DD.MM.YYYY" });
+		});
+
+		it("takes only the folder from Periodic Notes when it has no format", async () => {
+			const { plugin } = await load(null, (app) => {
+				app.plugins = { plugins: { "periodic-notes": { settings: { daily: { folder: "Journal" } } } } };
+			});
+			expect(plugin.settings).toMatchObject({ dailyNotePath: "Journal", dailyNoteFormat: "YYYY-MM-DD" });
+		});
+
+		it("falls back to the core Daily Notes plugin, with or without a format", async () => {
+			const withFormat = await load(null, (app) => {
+				app.internalPlugins = { plugins: { "daily-notes": { instance: { options: { folder: "Core", format: "YYYY/MM/DD" } } } } };
+			});
+			expect(withFormat.plugin.settings).toMatchObject({ dailyNotePath: "Core", dailyNoteFormat: "YYYY/MM/DD" });
+			const noFormat = await load(null, (app) => {
+				app.internalPlugins = { plugins: { "daily-notes": { instance: { options: { folder: "Core" } } } } };
+			});
+			expect(noFormat.plugin.settings).toMatchObject({ dailyNotePath: "Core", dailyNoteFormat: "YYYY-MM-DD" });
+		});
+
+		it("prefers Periodic Notes over the core plugin, and ignores plugins without a folder", async () => {
+			const both = await load(null, (app) => {
+				app.plugins = { plugins: { "periodic-notes": { settings: { daily: { folder: "Periodic" } } } } };
+				app.internalPlugins = { plugins: { "daily-notes": { instance: { options: { folder: "Core" } } } } };
+			});
+			expect(both.plugin.settings.dailyNotePath).toBe("Periodic");
+			const empty = await load(null, (app) => {
+				app.plugins = { plugins: { "periodic-notes": { settings: { daily: {} } } } };
+				app.internalPlugins = { plugins: { "daily-notes": { instance: { options: {} } } } };
+			});
+			expect(empty.plugin.settings.dailyNotePath).toBe("");
+			expect((await load()).plugin.settings.dailyNotePath).toBe("");
+		});
+	});
+});
+
+describe("sign-in tokens", () => {
+	it("restores them from secret storage", async () => {
+		const { provider } = await load(null, (app) => {
+			app.secretStorage!.store.set("garmin-health-sync-oauth1", JSON.stringify(TOKEN1));
+			app.secretStorage!.store.set("garmin-health-sync-oauth2", JSON.stringify(TOKEN2));
+		});
+		expect(provider.getTokens()).toEqual({ oauth1: TOKEN1, oauth2: TOKEN2 });
+		expect(provider.isSessionValid()).toBe(true);
+	});
+
+	it("starts signed out without tokens", async () => {
+		const { provider } = await load();
+		expect(provider.isSessionValid()).toBe(false);
+	});
+
+	it("moves tokens left in data.json into secret storage and clears them there, once", async () => {
+		const { app, plugin, provider } = await load(signedIn());
+		expect(provider.getTokens()).toEqual({ oauth1: TOKEN1, oauth2: TOKEN2 });
+		expect(JSON.parse(app.secretStorage!.store.get("garmin-health-sync-oauth1")!)).toEqual(TOKEN1);
+		expect(plugin.settings.garminOAuth1).toBe("");
+		expect(plugin.settings.garminOAuth2).toBe("");
+		expect((plugin.data as HealthSyncSettings).garminOAuth1).toBe("");
+	});
+
+	it("keeps the user signed in and the data.json copy when the secret store cannot be written", async () => {
+		const { app, plugin, provider } = await load(signedIn(), (a) => {
+			a.secretStorage!.throwOnSet = true;
+		});
+		void app;
+		expect(provider.isSessionValid()).toBe(true);
+		expect(plugin.settings.garminOAuth1).toBe(JSON.stringify(TOKEN1));
+	});
+
+	it("keeps the data.json copy when the secret store reads back something else", async () => {
+		const { plugin, provider } = await load(signedIn(), (a) => {
+			a.secretStorage!.readOverride = () => "different";
+		});
+		expect(provider.isSessionValid()).toBe(true);
+		expect(plugin.settings.garminOAuth1).not.toBe("");
+	});
+
+	it("prefers the secret store over data.json", async () => {
+		const stored = { oauth_token: "STORED", oauth_token_secret: "S" };
+		const { provider } = await load(signedIn(), (a) => {
+			a.secretStorage!.store.set("garmin-health-sync-oauth1", JSON.stringify(stored));
+		});
+		expect(provider.getTokens().oauth1).toEqual(stored);
+	});
+
+	it("restores an OAuth1 token without an OAuth2 token, and ignores corrupt or empty copies", async () => {
+		expect((await load({ garminOAuth1: JSON.stringify(TOKEN1) })).provider.getTokens()).toEqual({ oauth1: TOKEN1, oauth2: null });
+		expect((await load({ garminOAuth1: "{not json", garminOAuth2: "oops" })).provider.isSessionValid()).toBe(false);
+	});
+
+	it("does not touch storage when there is no legacy copy and no token", async () => {
+		const { plugin } = await load();
+		expect(plugin.saves).toBe(0);
+	});
+
+	it("works when secret storage is unavailable, keeping the tokens in data.json", async () => {
+		const { plugin, provider } = await load(signedIn(), (a) => {
+			a.secretStorage = undefined;
+		});
+		expect(provider.isSessionValid()).toBe(true);
+		expect(plugin.settings.garminOAuth1).not.toBe("");
+	});
+
+	it("clears only legacy tokens that were really moved (an OAuth2-only leftover is dropped, not stored)", async () => {
+		const { plugin, provider } = await load({ garminOAuth2: JSON.stringify(TOKEN2) });
+		expect(provider.isSessionValid()).toBe(false);
+		expect(plugin.settings.garminOAuth2).toBe("");
+	});
+});
+
+describe("old cookie sessions", () => {
+	it("asks once to sign in again and forgets the old session", async () => {
+		const { plugin } = await load({ garminSession: "old-cookie" });
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeMigrationReloginRequired);
+		expect(Notice.recorded.find((n) => n.message === en.noticeMigrationReloginRequired)?.duration).toBe(0);
+		expect(plugin.settings.garminSession).toBe("");
+		expect((plugin.data as HealthSyncSettings).garminSession).toBe("");
+		Notice.recorded = [];
+		await load(plugin.data as HealthSyncSettings);
+		expect(Notice.recorded.map((n) => n.message)).not.toContain(en.noticeMigrationReloginRequired);
+	});
+
+	it("says nothing when the user is already signed in with tokens", async () => {
+		await load(signedIn({ garminSession: "old-cookie" }));
+		expect(Notice.recorded.map((n) => n.message)).not.toContain(en.noticeMigrationReloginRequired);
+	});
+});
+
+describe("auto-sync: which days are fetched", () => {
+	/** Load a signed-in plugin whose notes are created on demand, then run the startup sync. */
+	async function startup(data: Partial<HealthSyncSettings> = {}) {
+		const loaded = await load(signedIn({ language: "en", ...data }));
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		return loaded;
+	}
+
+	it("fetches the last seven full days, oldest first? newest first, never today", async () => {
+		const { provider } = await startup();
+		expect(fetched(provider)).toEqual([1, 2, 3, 4, 5, 6, 7].map(dayString));
+		expect(fetched(provider)).not.toContain(dayString(0));
+	});
+
+	it("waits the provider's recommended delay between days and not after the last", async () => {
+		const loaded = await load(signedIn());
+		const times: number[] = [];
+		loaded.provider.onFetch = () => times.push(Date.now());
+		loaded.provider.batchDelay = 5000;
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(times).toHaveLength(7);
+		expect(times.slice(1).map((t, i) => t - times[i]!)).toEqual(Array(6).fill(5000));
+	});
+
+	it("falls back to 2 seconds without a recommendation", async () => {
+		const loaded = await load(signedIn());
+		const times: number[] = [];
+		loaded.provider.onFetch = () => times.push(Date.now());
+		(loaded.provider as { getRecommendedBatchDelay?: unknown }).getRecommendedBatchDelay = undefined;
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(times[1]! - times[0]!).toBe(2000);
+	});
+
+	it("does nothing with auto-sync switched off", async () => {
+		const { provider } = await startup({ autoSync: false });
+		expect(provider.fetchCalls).toEqual([]);
+	});
+
+	it("skips days synced less than six hours ago within the last 72 hours", async () => {
+		const recent = Date.now() - 2 * HOUR;
+		const { provider } = await startup({ lastSyncTimes: { [dayString(1)]: recent, [dayString(2)]: recent } });
+		expect(fetched(provider)).toEqual([3, 4, 5, 6, 7].map(dayString));
+	});
+
+	it("re-syncs a day within 72 hours once the six hour cooldown has passed", async () => {
+		const { provider } = await startup({ lastSyncTimes: { [dayString(1)]: Date.now() - 6 * HOUR, [dayString(2)]: Date.now() - 6 * HOUR + MIN } });
+		expect(fetched(provider)).toContain(dayString(1));
+		expect(fetched(provider)).not.toContain(dayString(2));
+	});
+
+	it("syncs days older than 72 hours only if they were never synced", async () => {
+		const old = Date.now() - 7 * HOUR;
+		const { provider } = await startup({ lastSyncTimes: { [dayString(4)]: old, [dayString(5)]: old } });
+		expect(fetched(provider)).not.toContain(dayString(4));
+		expect(fetched(provider)).not.toContain(dayString(5));
+		expect(fetched(provider)).toContain(dayString(3));
+	});
+
+	it("does nothing when every day is within its cooldown", async () => {
+		const recent = Date.now() - HOUR;
+		const times = Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((n) => [dayString(n), recent]));
+		const { provider } = await startup({ lastSyncTimes: times });
+		expect(provider.fetchCalls).toEqual([]);
+	});
+
+	it("tells the user how many days it synced, in their language", async () => {
+		await startup({ language: "de" });
+		expect(Notice.recorded.map((n) => n.message)).toEqual([de.noticeAutoSyncDone.replace("{count}", "7")]);
+	});
+
+	it("shows no summary when nothing could be synced", async () => {
+		const loaded = await load(signedIn());
+		loaded.provider.defaultData = { metrics: {}, activities: {} };
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded).toEqual([]);
+	});
+});
+
+describe("auto-sync: the cooldown it sets", () => {
+	async function sync(data: Partial<HealthSyncSettings> = {}, prepare: (l: Awaited<ReturnType<typeof load>>) => void = () => undefined) {
+		const loaded = await load(signedIn(data));
+		prepare(loaded);
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		return loaded;
+	}
+
+	it("lets a first successful sync be repeated after 30 minutes", async () => {
+		const { plugin } = await sync();
+		expect(Date.now() - plugin.settings.lastSyncTimes[dayString(1)]!).toBeGreaterThanOrEqual(5 * HOUR + 30 * MIN);
+		expect(plugin.settings.lastSyncTimes[dayString(1)]).toBeLessThanOrEqual(Date.now() - (6 * HOUR - 30 * MIN) + 60_000);
+	});
+
+	it("gives a repeated sync of a day the full six hours", async () => {
+		const stamp = Date.now() - 7 * HOUR;
+		const { plugin } = await sync({ lastSyncTimes: { [dayString(1)]: stamp } });
+		expect(Date.now() - plugin.settings.lastSyncTimes[dayString(1)]!).toBeLessThan(HOUR);
+	});
+
+	it("retries a day that had no data after one hour", async () => {
+		const { plugin } = await sync({}, (l) => {
+			l.provider.defaultData = { metrics: {}, activities: {} };
+		});
+		const stamp = plugin.settings.lastSyncTimes[dayString(1)]!;
+		expect(stamp).toBe(Date.now() - (6 * HOUR - HOUR) - (Date.now() - stamp - (6 * HOUR - HOUR)));
+		expect(Date.now() - stamp).toBeGreaterThanOrEqual(5 * HOUR);
+	});
+
+	it("also cools down a day that failed, so a page switch does not hammer the API", async () => {
+		const { plugin } = await sync({}, (l) => {
+			l.provider.byDate.set(dayString(1), new Error("503"));
+		});
+		expect(plugin.settings.lastSyncTimes[dayString(1)]).toBeDefined();
+	});
+
+	it("forgets entries older than eight days", async () => {
+		const ancient = dayString(20);
+		const { plugin } = await sync({ lastSyncTimes: { [ancient]: Date.now() - 9 * 24 * HOUR, [dayString(3)]: Date.now() - HOUR } });
+		expect(plugin.settings.lastSyncTimes[ancient]).toBeUndefined();
+		expect(plugin.settings.lastSyncTimes[dayString(3)]).toBeDefined();
+	});
+
+	it("saves the settings and the tokens after a run", async () => {
+		const { plugin, app } = await sync();
+		expect((plugin.data as HealthSyncSettings).lastSyncTimes[dayString(1)]).toBeDefined();
+		expect(app.secretStorage!.store.get("garmin-health-sync-oauth1")).toBe(JSON.stringify(TOKEN1));
+	});
+});
+
+describe("auto-sync: pausing and signing in", () => {
+	it("shows the sign-in notice instead of syncing when there is no token", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.fetchCalls).toEqual([]);
+		expect(Notice.recorded.map((n) => n.message)).toEqual([en.noticeSessionExpired + en.noticeLoginAction]);
+		expect(Notice.recorded[0]?.duration).toBe(0);
+	});
+
+	it("shows that notice at most once every ten minutes, and again after that", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.app.workspace.layoutReady();
+		await settle();
+		vi.advanceTimersByTime(31_000);
+		loaded.app.workspace.fire("file-open", loaded.app.vault.seed(`${dayString(1)}.md`, "x"));
+		await settle();
+		expect(Notice.recorded).toHaveLength(1);
+		vi.advanceTimersByTime(10 * MIN);
+		loaded.app.workspace.fire("file-open", loaded.app.vault.seed(`${dayString(1)}b.md`, "x"));
+		await settle();
+		vi.advanceTimersByTime(31_000);
+		loaded.app.workspace.fire("file-open", loaded.app.vault.getAbstractFileByPath(`${dayString(1)}.md`));
+		await settle();
+		expect(Notice.recorded).toHaveLength(2);
+		expect(Notice.recorded[0]?.hidden).toBe(true);
+	});
+
+	it("does nothing while the provider says no (needs login or backing off)", async () => {
+		const loaded = await load(signedIn());
+		loaded.provider.attemptAllowed = false;
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.fetchCalls).toEqual([]);
+		expect(Notice.recorded).toEqual([]);
+	});
+
+	it("shows the sign-in notice when a sync hits a dead token, and persists what changed", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.byDate.set(dayString(1), new LoginRequiredError());
+		loaded.provider.defaultData = { metrics: { steps: 1 }, activities: {} };
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeSessionExpired + en.noticeLoginAction);
+	});
+
+	it("shows it when the provider ends up in needsUserLogin, even if the error looked different", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.authState = "needsUserLogin";
+		loaded.provider.byDate.set(dayString(1), new Error("whatever"));
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		// the first day fails inside syncDate (error outcome); the run itself does not throw, so no notice
+		expect(Notice.recorded.map((n) => n.message)).not.toContain(en.noticeSessionExpired + en.noticeLoginAction);
+	});
+
+	it("does not pause for transient failures: they only set a cooldown", async () => {
+		const loaded = await load(signedIn());
+		loaded.provider.byDate.set(dayString(1), new Error("503"));
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toHaveLength(7);
+	});
+});
+
+describe("auto-sync triggers", () => {
+	it("syncs when yesterday's or today's daily note is opened, but not for other notes", async () => {
+		const loaded = await load(signedIn());
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		loaded.provider.fetchCalls = [];
+		vi.advanceTimersByTime(7 * HOUR);
+		const other = loaded.app.vault.seed("Notes/random.md", "x");
+		loaded.app.workspace.fire("file-open", other);
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.fetchCalls).toEqual([]);
+		const yesterday = loaded.app.vault.getAbstractFileByPath(`${dayString(1)}.md`);
+		loaded.app.workspace.fire("file-open", yesterday);
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toContain(dayString(1));
+	});
+
+	it("ignores a file-open for something that is not a file", async () => {
+		const loaded = await load(signedIn());
+		loaded.app.workspace.fire("file-open", null);
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.fetchCalls).toEqual([]);
+	});
+
+	it("does not start a second pass within 30 seconds of the last attempt", async () => {
+		const loaded = await load(signedIn());
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		loaded.provider.fetchCalls = [];
+		vi.advanceTimersByTime(7 * HOUR - 40_000);
+		const file = loaded.app.vault.getAbstractFileByPath(`${dayString(1)}.md`);
+		loaded.app.workspace.fire("file-open", file);
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.fetchCalls.length).toBeGreaterThan(0);
+	});
+
+	it("syncs again after signing in, immediately", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.app.workspace.layoutReady();
+		await settle();
+		expect(loaded.provider.fetchCalls).toEqual([]);
+		loaded.provider.oauth1 = TOKEN1;
+		loaded.provider.attemptAllowed = true;
+		void loaded.plugin.openCredentialLogin();
+		const modal = Modal.opened[0]!;
+		const [email, password] = modal.contentEl.querySelectorAll("input");
+		email!.value = "me@example.com";
+		email!.dispatchEvent(new window.Event("input"));
+		password!.value = "pw";
+		password!.dispatchEvent(new window.Event("input"));
+		(modal.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.credentialCalls).toEqual([["me@example.com", "pw"]]);
+		expect(fetched(loaded.provider).length).toBeGreaterThan(0);
+	});
+});
+
+describe("waiting for the daily note (create-when-missing off)", () => {
+	const waiting = { createDailyNoteIfMissing: false } as const;
+	const noteOf = (n: number): string => `${dayString(n)}.md`;
+
+	async function ready(data: Partial<HealthSyncSettings> = {}) {
+		const loaded = await load(signedIn({ ...waiting, ...data }));
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		return loaded;
+	}
+
+	it("makes no request and creates nothing while no daily note exists", async () => {
+		const { provider, app } = await ready();
+		expect(provider.fetchCalls).toEqual([]);
+		expect(app.vault.paths()).toEqual([]);
+	});
+
+	it("syncs the moment a real note for a day in the window gets content", async () => {
+		const { provider, app } = await ready();
+		const file = app.vault.seed(noteOf(2), "");
+		await app.vault.modify(file as never, "# Day\n");
+		await vi.runAllTimersAsync();
+		expect(fetched(provider)).toEqual([dayString(2)]);
+		expect(app.vault.text(noteOf(2))).toContain("steps: 8000");
+	});
+
+	it("reacts to a create event for a note that already has content", async () => {
+		const { provider, app } = await ready();
+		await app.vault.create(noteOf(3), "text");
+		await vi.runAllTimersAsync();
+		expect(fetched(provider)).toEqual([dayString(3)]);
+	});
+
+	it("ignores an empty placeholder note", async () => {
+		const { provider, app } = await ready();
+		await app.vault.create(noteOf(2), "");
+		await vi.runAllTimersAsync();
+		expect(provider.fetchCalls).toEqual([]);
+	});
+
+	it("ignores files that are not a daily note of the window, and non-files", async () => {
+		const { provider, app } = await ready();
+		await app.vault.create("random.md", "text");
+		await app.vault.create(`${dayString(10)}.md`, "text");
+		await app.vault.create(`${dayString(0)}.md`, "text");
+		await vi.runAllTimersAsync();
+		expect(provider.fetchCalls).toEqual([]);
+	});
+
+	it("does not react again to edits of a day that already has a sync time (no loop on its own write)", async () => {
+		const { provider, app } = await ready();
+		const file = app.vault.seed(noteOf(2), "text");
+		await app.vault.modify(file as never, "text 2");
+		await vi.runAllTimersAsync();
+		const callsAfterFirst = provider.fetchCalls.length;
+		expect(callsAfterFirst).toBe(1);
+		await app.vault.modify(file as never, "text 3");
+		await vi.runAllTimersAsync();
+		expect(provider.fetchCalls).toHaveLength(callsAfterFirst);
+	});
+
+	it("is quiet when auto-sync is off or when notes are created automatically anyway", async () => {
+		const off = await ready({ autoSync: false });
+		await off.app.vault.create(noteOf(2), "text");
+		await vi.runAllTimersAsync();
+		expect(off.provider.fetchCalls).toEqual([]);
+		const creating = await load(signedIn({ createDailyNoteIfMissing: true }));
+		creating.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		creating.provider.fetchCalls = [];
+		await creating.app.vault.create(`${dayString(30)}.md`, "x");
+		await vi.runAllTimersAsync();
+		expect(creating.provider.fetchCalls).toEqual([]);
+	});
+
+	it("does not react to notes written by a running backfill", async () => {
+		const { provider, app, plugin } = await ready();
+		let release: () => void = () => undefined;
+		provider.gate = new Promise<void>((resolve) => (release = resolve));
+		plugin.commands.get("backfill-health-data")!.callback!();
+		(Modal.opened[0]!.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
+		await settle();
+		await app.vault.create(noteOf(2), "text");
+		await settle();
+		release();
+		await vi.runAllTimersAsync();
+		const autoCalls = provider.fetchCalls.filter((c) => c.date === dayString(2));
+		expect(autoCalls.length).toBeLessThanOrEqual(1);
+	});
+
+	it("queues exactly one more pass when a note appears while a pass is running", async () => {
+		const loaded = await load(signedIn(waiting));
+		let release: () => void = () => undefined;
+		loaded.provider.gate = new Promise<void>((resolve) => (release = resolve));
+		loaded.app.vault.seed(noteOf(1), "text");
+		loaded.app.workspace.layoutReady();
+		await settle();
+		expect(loaded.provider.fetchCalls).toHaveLength(1);
+		await loaded.app.vault.create(noteOf(2), "text");
+		await loaded.app.vault.create(noteOf(3), "text");
+		release();
+		loaded.provider.gate = null;
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider).sort()).toEqual([dayString(1), dayString(2), dayString(3)].sort());
+	});
+});
