@@ -87,6 +87,20 @@ export default class HealthSyncPlugin extends Plugin {
 	private credentialModalOpen = false;
 
 	async onload() {
+		// On iOS Obsidian's own "failed to load" message says nothing and there is no console, so show the real
+		// error in a notice that stays, then let the failure through as before.
+		try {
+			await this.onloadInner();
+		} catch (error) {
+			console.error("Garmin Health Sync: onload failed", error);
+			const lang = (this.settings as HealthSyncSettings | undefined)?.language ?? "en";
+			const reason = error instanceof Error ? error.message : String(error);
+			new Notice(t("noticeLoadFailed", lang).replace("{error}", reason), 0);
+			throw error;
+		}
+	}
+
+	private async onloadInner(): Promise<void> {
 		await this.loadSettings();
 		this.autoDetectDailyNotePath();
 
@@ -113,7 +127,7 @@ export default class HealthSyncPlugin extends Plugin {
 			name: t("commandBackfill", this.settings.language),
 			callback: () => {
 				new BackfillModal(this.app, this.settings.language, (from, to) => {
-					void (async () => {
+					this.background((async () => {
 						// Suppress the create-trigger while backfill runs: backfill
 						// creates notes itself, and we don't want those create events
 						// to kick off a parallel auto-sync of the same fresh dates.
@@ -128,7 +142,7 @@ export default class HealthSyncPlugin extends Plugin {
 							this.saveTokens();
 							await this.saveSettings();
 						}
-					})();
+					})(), "backfill");
 				}).open();
 			},
 		});
@@ -145,7 +159,7 @@ export default class HealthSyncPlugin extends Plugin {
 
 		// On startup: auto-sync only — BrowserWindow opens on demand
 		this.app.workspace.onLayoutReady(() => {
-			void this.tryAutoSync();
+			this.background(this.tryAutoSync(), "auto-sync");
 
 			// When "create daily note when missing" is off, the auto-sync waits for
 			// the note. Resume it the moment a real daily note within the sync window
@@ -163,7 +177,7 @@ export default class HealthSyncPlugin extends Plugin {
 		this.registerEvent(
 			this.app.workspace.on("file-open", (file) => {
 				if (file instanceof TFile && this.isDailyNote(file, [this.todayString(), this.yesterdayString()])) {
-					void this.tryAutoSync();
+					this.background(this.tryAutoSync(), "auto-sync");
 				}
 			})
 		);
@@ -216,7 +230,7 @@ export default class HealthSyncPlugin extends Plugin {
 			// debounce timestamp this pass just set can't swallow it).
 			if (this.autoSyncResyncQueued) {
 				this.autoSyncResyncQueued = false;
-				void this.tryAutoSync({ force: true });
+				this.background(this.tryAutoSync({ force: true }), "queued auto-sync");
 			}
 		}
 	}
@@ -290,7 +304,7 @@ export default class HealthSyncPlugin extends Plugin {
 
 		// Force past the 30s trigger-debounce: the startup sync may have just set the
 		// timestamp, and a note that only now became syncable must not be swallowed.
-		void this.tryAutoSync({ force: true });
+		this.background(this.tryAutoSync({ force: true }), "auto-sync after a new note");
 	}
 
 	private async runAutoSync(datesToSync: string[]): Promise<void> {
@@ -476,7 +490,7 @@ export default class HealthSyncPlugin extends Plugin {
 			// Fresh login → state machine is ready; trigger a sync immediately.
 			this.lastAutoSyncAttempt = 0;
 			this.lastLoginNoticeAt = 0; // reset throttle: report future errors immediately
-			void this.tryAutoSync();
+			this.background(this.tryAutoSync(), "auto-sync after sign-in");
 		} else {
 			new Notice(t(failureKey, lang));
 		}
@@ -585,7 +599,7 @@ export default class HealthSyncPlugin extends Plugin {
 			if (oauth1 && !writeStoredTokens(this.app, oauth1, oauth2)) return;
 			this.settings.garminOAuth1 = "";
 			this.settings.garminOAuth2 = "";
-			await this.saveSettings();
+			await this.saveSettingsQuietly();
 		}
 	}
 
@@ -611,7 +625,7 @@ export default class HealthSyncPlugin extends Plugin {
 			this.settings.garminSession = "";
 			// F10: await so the disk write completes — otherwise the migration notice
 			// reappears on every start if a crash happens before the write.
-			await this.saveSettings();
+			await this.saveSettingsQuietly();
 		}
 	}
 
@@ -640,7 +654,7 @@ export default class HealthSyncPlugin extends Plugin {
 		const notice = new Notice(fragment, 0);
 		this.loginRequiredNotice = notice;
 		button.addEventListener("click", () => {
-			void this.loginFromNotice(notice, button);
+			this.background(this.loginFromNotice(notice, button), "sign-in from the notice");
 		});
 	}
 
@@ -732,6 +746,23 @@ export default class HealthSyncPlugin extends Plugin {
 
 	private sleep(ms: number): Promise<void> {
 		return new Promise(resolve => window.setTimeout(resolve, ms));
+	}
+
+	/** Runs work nobody awaits. A rejection it raises is logged here instead of surfacing as an unhandled rejection,
+	 *  which a mobile WebView can report as a failed plugin load. */
+	private background(work: Promise<unknown>, what: string): void {
+		work.catch((error: unknown) => {
+			console.error(`Garmin Health Sync: ${what} failed`, error);
+		});
+	}
+
+	/** Saves the settings where a failure must not stop the caller (startup, background work). */
+	private async saveSettingsQuietly(): Promise<void> {
+		try {
+			await this.saveSettings();
+		} catch (error) {
+			console.error("Garmin Health Sync: could not save the settings", error);
+		}
 	}
 }
 

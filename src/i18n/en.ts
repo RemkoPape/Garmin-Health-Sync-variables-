@@ -79,6 +79,7 @@ export const en = {
 	noticeSyncWaitingForNote: "Sync skipped — no daily note for {date} yet. It will sync once you create it.",
 	noticeSyncError: "Error syncing health data",
 	noticeFrontmatterBroken: "Garmin Health Sync: the frontmatter in \"{path}\" is broken ({reason}). A backup was saved under _garmin-health-sync/backups/. Please repair it manually.",
+	noticeLoadFailed: "Garmin Health Sync failed to load: {error}",
 	noticeLoginRequired: "Please connect your health provider first (settings → Garmin Health Sync)",
 	noticeLoginSuccess: "Login successful!",
 	noticeLoginFailed: "Login failed or was cancelled",

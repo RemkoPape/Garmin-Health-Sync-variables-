@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.1-beta.6
+
+### Fixed
+
+- If the plugin fails to load, the real reason is shown in a notice (on iPhone Obsidian's own message says nothing), and a failing settings save at startup no longer stops the plugin from loading.
+- Failures in background work (auto-sync, backfill, the sign-in button in the notice) are logged instead of being left as unhandled errors, which a phone can report as a plugin load failure.
+- The "open in browser" button of the manual sign-in dialog opens the page in the window the dialog is in, also in a pop-out window.
+
 ## 0.11.1-beta.5
 
 ### Internal

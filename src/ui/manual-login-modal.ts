@@ -95,6 +95,9 @@ export class ManualLoginModal extends Modal {
 			busy = true;
 			try {
 				if (await this.onSubmit(v)) this.close();
+			} catch (e: unknown) {
+				// The caller reports its own failures; anything that still escapes must not become an unhandled rejection.
+				console.error("Garmin Health Sync: ticket sign-in failed", e);
 			} finally {
 				busy = false;
 			}

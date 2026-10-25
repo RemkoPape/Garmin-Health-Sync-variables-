@@ -81,6 +81,7 @@ export const ja: Record<TranslationKeys, string> = {
 	noticeSyncWaitingForNote: "同期をスキップしました — {date} のデイリーノートがまだありません。作成すると同期されます。",
 	noticeSyncError: "ヘルスデータの同期中にエラーが発生しました",
 	noticeFrontmatterBroken: "Garmin Health Sync：「{path}」のフロントマターが壊れています（{reason}）。バックアップを _garmin-health-sync/backups/ に保存しました。手動で修復してください。",
+	noticeLoadFailed: "Garmin Health Sync を読み込めませんでした：{error}",
 	noticeLoginRequired: "まずヘルスプロバイダーに接続してください（設定 → Garmin Health Sync）",
 	noticeLoginSuccess: "ログイン成功！",
 	noticeLoginFailed: "ログインに失敗またはキャンセルされました",
