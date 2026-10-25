@@ -15,18 +15,14 @@ export default defineConfig({
 				// Nothing else: every source file is measured. Do not add to this list, write the test (or
 				// delete the dead code). tests/coverageGate.test.ts pins it.
 			],
-			// Ratchet: the thresholds only go up. Set to the measured floor while the suite is being
-			// built, locked at 100 in the last test PR of 0.11.1 (tests/coverageGate.test.ts asserts
-			// the 100 once it is locked).
-			//
-			// 0.11.1 data-layer PR: every module except main.ts, settings.ts and src/ui/ is at 100 %
-			// (measured overall 70.05 stmts / 80.37 br / 66.49 fn / 69.45 lines). The floors sit just
-			// under that; the rest follows in the dates-and-settings PR.
+			// Locked at 100 on every metric (0.11.1). Unreachable code is deleted, never hidden from this
+			// report and never excluded; tests/coverageGate.test.ts pins both the thresholds and the
+			// exclude list. Raise nothing here by widening `exclude`: write the test or delete the code.
 			thresholds: {
-				lines: 69,
-				functions: 66,
-				branches: 80,
-				statements: 70,
+				lines: 100,
+				functions: 100,
+				branches: 100,
+				statements: 100,
 			},
 		},
 	},

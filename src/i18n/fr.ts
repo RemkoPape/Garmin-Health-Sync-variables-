@@ -74,8 +74,6 @@ export const fr: Record<TranslationKeys, string> = {
 	metric_body_fat_pct: "Masse grasse %",
 	metric_distance_mi: "Distance (mi)",
 	metric_weight_lbs: "Poids (lbs)",
-	metric_stress_high: "Durée de stress (min)",
-	metric_recovery_high: "Durée de récupération (min)",
 	// Notices
 	noticeSyncing: "Synchronisation des données de santé...",
 	noticeSyncSuccess: "Données de santé synchronisées avec succès",
@@ -115,6 +113,7 @@ export const fr: Record<TranslationKeys, string> = {
 	modalManualLoginOpenButton: "Ouvrir dans le navigateur",
 	modalManualLoginCopyTooltip: "Copier le lien",
 	modalManualLoginCopied: "Lien de connexion copié dans le presse-papiers",
+	modalManualLoginCopyFailed: "Impossible de copier le lien : utilisez plutôt le bouton « Ouvrir dans le navigateur ».",
 	modalManualLoginTicket: "Ticket",
 	modalManualLoginTicketDesc: "Collez ici le ticket ST-… ou l'adresse complète",
 	modalManualLoginTicketPlaceholder: "Ticket ou adresse complète",

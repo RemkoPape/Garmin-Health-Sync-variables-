@@ -72,8 +72,6 @@ export const en = {
 	metric_body_fat_pct: "Body fat %",
 	metric_distance_mi: "Distance (mi)",
 	metric_weight_lbs: "Weight (lbs)",
-	metric_stress_high: "Stress duration (min)",
-	metric_recovery_high: "Recovery duration (min)",
 	// Notices
 	noticeSyncing: "Syncing health data...",
 	noticeSyncSuccess: "Health data synced successfully",
@@ -114,6 +112,7 @@ export const en = {
 	modalManualLoginOpenButton: "Open in browser",
 	modalManualLoginCopyTooltip: "Copy link",
 	modalManualLoginCopied: "Sign-in link copied to clipboard",
+	modalManualLoginCopyFailed: "Could not copy the link — open it in your browser instead.",
 	modalManualLoginTicket: "Ticket",
 	modalManualLoginTicketDesc: "Paste the ST-… ticket or the full address here",
 	modalManualLoginTicketPlaceholder: "Ticket or full address",

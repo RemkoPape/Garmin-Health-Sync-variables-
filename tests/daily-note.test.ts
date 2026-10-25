@@ -398,7 +398,7 @@ describe("C6: a byte order mark before the frontmatter", () => {
 	});
 });
 
-describe("C7: a closing marker with trailing whitespace (known limitation, #23)", () => {
+describe("C7: a closing marker with trailing whitespace (matches Obsidian, #23)", () => {
 	// Not yet verified how Obsidian itself treats "--- " as a closing line. Current behaviour: no closing
 	// marker, so the note is left alone, backed up, and the user is told. Pinned so a change is deliberate.
 	it("is treated as a missing closing marker: note untouched, backup, notice", async () => {

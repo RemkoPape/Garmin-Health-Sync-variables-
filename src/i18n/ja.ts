@@ -74,8 +74,6 @@ export const ja: Record<TranslationKeys, string> = {
 	metric_body_fat_pct: "体脂肪率",
 	metric_distance_mi: "距離（マイル）",
 	metric_weight_lbs: "体重（ポンド）",
-	metric_stress_high: "ストレス時間（分）",
-	metric_recovery_high: "回復時間（分）",
 	// Notices
 	noticeSyncing: "ヘルスデータを同期中...",
 	noticeSyncSuccess: "ヘルスデータの同期が完了しました",
@@ -115,6 +113,7 @@ export const ja: Record<TranslationKeys, string> = {
 	modalManualLoginOpenButton: "ブラウザで開く",
 	modalManualLoginCopyTooltip: "リンクをコピー",
 	modalManualLoginCopied: "サインインリンクをクリップボードにコピーしました",
+	modalManualLoginCopyFailed: "リンクをコピーできませんでした。代わりに「ブラウザで開く」ボタンを使ってください。",
 	modalManualLoginTicket: "チケット",
 	modalManualLoginTicketDesc: "ST-… チケットまたはアドレス全体をここに貼り付けてください",
 	modalManualLoginTicketPlaceholder: "チケットまたはアドレス全体",

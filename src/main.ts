@@ -4,7 +4,7 @@ import { ManualLoginModal } from "./ui/manual-login-modal";
 import { CredentialLoginModal } from "./ui/credential-login-modal";
 import { LoginCooldown } from "./login-cooldown";
 import { SyncManager } from "./sync";
-import { matchDailyNoteDate } from "./daily-note";
+import { dateFromFormattedName, matchDailyNoteDate } from "./daily-note";
 import { GarminProvider } from "./providers/garmin/garmin-provider";
 import type { OAuth1Token, OAuth2Token } from "./providers/garmin/garmin-oauth";
 import { t } from "./i18n/t";
@@ -25,6 +25,11 @@ const DATE_TOKENS: { token: string; group: string; digits: number }[] = [
 	{ token: "MM", group: "month", digits: 2 },
 	{ token: "DD", group: "day", digits: 2 },
 ];
+
+/** YYYY-MM-DD in the user's local time zone (toISOString would give the UTC date). */
+function localDateString(d: Date): string {
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 function escapeRegex(text: string): string {
 	return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -114,16 +119,9 @@ export default class HealthSyncPlugin extends Plugin {
 						// to kick off a parallel auto-sync of the same fresh dates.
 						this.backfillRunning = true;
 						try {
+							// SyncManager.backfill handles its own errors (it shows the sign-in notice itself),
+							// so nothing is thrown out of it; the finally persists whatever happened.
 							await this.syncManager.backfill(from, to, this.settings);
-						} catch (error) {
-							// F6: persist even on error (see below) and show the re-login
-							// notice on a dead token, instead of silently leaving the dead
-							// OAuth1 token on disk.
-							if (isLoginRequiredError(error) || this.garminProvider.getAuthState() === "needsUserLogin") {
-								this.showGarminLoginRequiredNotice("backfill login_required");
-							} else {
-								console.debug("Garmin Health Sync: Backfill failed — transient", error);
-							}
 						} finally {
 							this.backfillRunning = false;
 							// Tokens may have been refreshed/invalidated during the backfill → persist.
@@ -296,8 +294,6 @@ export default class HealthSyncPlugin extends Plugin {
 	}
 
 	private async runAutoSync(datesToSync: string[]): Promise<void> {
-		if (!this.garminProvider.isSessionValid()) return;
-
 		const now = Date.now();
 
 		console.debug("Garmin Health Sync: Auto-sync — syncing:", datesToSync.join(", "));
@@ -545,7 +541,12 @@ export default class HealthSyncPlugin extends Plugin {
 	async loadSettings() {
 		const saved = await this.loadData() as Partial<HealthSyncSettings> | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+		// Object.assign is shallow: without these copies the two nested objects below would be the very objects in
+		// DEFAULT_SETTINGS, and every toggle or sync time written later would change the defaults too. (Not
+		// structuredClone: older iOS WebViews lack it and esbuild does not polyfill it.)
 		const defaults = DEFAULT_SETTINGS.enabledMetrics;
+		this.settings.enabledMetrics = { ...(saved?.enabledMetrics ?? defaults) };
+		this.settings.lastSyncTimes = { ...(saved?.lastSyncTimes ?? {}) };
 		for (const key of Object.keys(defaults)) {
 			if (this.settings.enabledMetrics[key] === undefined) {
 				this.settings.enabledMetrics[key] = defaults[key]!;
@@ -554,7 +555,7 @@ export default class HealthSyncPlugin extends Plugin {
 
 		// Detect language from Obsidian on first launch
 		if (!saved?.language) {
-			const obsidianLang = activeDocument.documentElement.lang?.slice(0, 2) ?? "en";
+			const obsidianLang = activeDocument.documentElement.lang.slice(0, 2);
 			const supported = ["en", "de", "zh", "ja", "es", "fr"];
 			this.settings.language = supported.includes(obsidianLang) ? obsidianLang : "en";
 		}
@@ -675,7 +676,7 @@ export default class HealthSyncPlugin extends Plugin {
 	}
 
 	private dateString(d: Date): string {
-		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+		return localDateString(d);
 	}
 
 	private isDailyNote(file: TFile, dates: string[]): boolean {
@@ -713,11 +714,16 @@ export default class HealthSyncPlugin extends Plugin {
 		if (!match && basePath && !format.includes("/")) {
 			match = file.basename.match(pattern);
 		}
-		if (!match?.groups) return null;
+		if (match?.groups) {
+			const { year, month, day } = match.groups;
+			if (!year || !month || !day) return null;
+			return `${year}-${month}-${day}`;
+		}
 
-		const { year, month, day } = match.groups;
-		if (!year || !month || !day) return null;
-		return `${year}-${month}-${day}`;
+		// The pattern above only knows YYYY, MM and DD. Formats with other tokens (a weekday, a month name, ...)
+		// are read back with moment instead, which must reproduce the name exactly.
+		return dateFromFormattedName(relative, format)
+			?? (basePath && !format.includes("/") ? dateFromFormattedName(file.basename, format) : null);
 	}
 
 	private matchesDailyNote(file: TFile, date: string): boolean {
@@ -744,8 +750,10 @@ class BackfillModal extends Modal {
 		const { contentEl } = this;
 		contentEl.createEl("h2", { text: t("modalBackfillTitle", this.lang) });
 
-		const today = new Date().toISOString().slice(0, 10);
-		const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+		const today = localDateString(new Date());
+		const weekAgoDate = new Date();
+		weekAgoDate.setDate(weekAgoDate.getDate() - 7);
+		const weekAgo = localDateString(weekAgoDate);
 
 		let fromDate = weekAgo;
 		let toDate = today;

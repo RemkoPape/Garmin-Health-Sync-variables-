@@ -17,8 +17,12 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("coverage gate", () => {
-	// Locked in the last test PR of 0.11.1 (thresholds go to 100 there; this becomes a real test).
-	it.todo("fails CI below 100 on every metric");
+	it("fails CI below 100 on every metric", () => {
+		const block = /thresholds:\s*\{([^}]*)\}/.exec(config)?.[1] ?? "";
+		for (const metric of ["lines", "functions", "branches", "statements"]) {
+			expect(block, metric).toMatch(new RegExp(`${metric}:\\s*100\\b`));
+		}
+	});
 
 	it("has no coverage-ignore comments in the source: unreachable code is deleted, not hidden", () => {
 		const offenders = sourceFiles(path.join(root, "src")).filter((f) =>

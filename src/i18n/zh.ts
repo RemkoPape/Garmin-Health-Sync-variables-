@@ -74,8 +74,6 @@ export const zh: Record<TranslationKeys, string> = {
 	metric_body_fat_pct: "体脂率",
 	metric_distance_mi: "距离（英里）",
 	metric_weight_lbs: "体重（磅）",
-	metric_stress_high: "压力时长（分钟）",
-	metric_recovery_high: "恢复时长（分钟）",
 	// Notices
 	noticeSyncing: "正在同步健康数据...",
 	noticeSyncSuccess: "健康数据同步成功",
@@ -115,6 +113,7 @@ export const zh: Record<TranslationKeys, string> = {
 	modalManualLoginOpenButton: "在浏览器中打开",
 	modalManualLoginCopyTooltip: "复制链接",
 	modalManualLoginCopied: "登录链接已复制到剪贴板",
+	modalManualLoginCopyFailed: "无法复制链接，请改用“在浏览器中打开”按钮。",
 	modalManualLoginTicket: "票据",
 	modalManualLoginTicketDesc: "在此粘贴 ST-… 票据或完整地址",
 	modalManualLoginTicketPlaceholder: "票据或完整地址",

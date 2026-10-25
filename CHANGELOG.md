@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.11.1-beta.4
+
+### Internal
+
+- Tests for the plugin shell (startup, tokens, auto-sync schedule, manual sync, backfill, sign-in), the settings tab and both sign-in dialogs. The whole source is now at 100 % coverage (lines, branches, functions, statements) and CI fails below that.
+- Removed a catch block in the backfill command that could never run, and two unreachable lines.
+
+### Fixed
+
+- The copy-link button in the manual sign-in dialog no longer fails silently when the clipboard is blocked; it tells you.
+- Removed the "Stress duration" and "Recovery duration" switches: they never wrote anything. They will return once they work (#31).
+- **Sync current note** now syncs the day of the note you have open also when your daily note name contains more than year, month and day (for example `2026-10-21 Wed` or `21 Oct 2026`). Before, it wrote yesterday's data into that note. Opening such a note also triggers the automatic sync again.
+- The backfill dialog pre-fills today's and last week's date in your local time (it used UTC, so after midnight or in the evening it was off by a day).
+- Settings no longer share their toggles and sync times with the built-in defaults (a latent bug that made behaviour depend on what ran before).
+
 ## 0.11.1-beta.3
 
 ### Fixed

@@ -90,7 +90,7 @@ npm run build
 
 ```bash
 npm test                    # vitest (tests/**/*.test.ts); helpers live in testUtils/, never in tests/
-npm run test:cov            # + v8 coverage; the gate is 100 % on all four metrics (locked in the last 0.11.1 test PR)
+npm run test:cov            # + v8 coverage; the gate is 100 % on all four metrics (locked since 0.11.1)
 npm run typecheck:tests     # tsc over src, tests, testUtils (tsconfig.test.json)
 npm run check:dead-code     # knip --production: code only a test reaches is reported, so delete it
 npm run lint:cloud-parity   # lint src/ with moment and @types/node hidden, as the review bot sees it

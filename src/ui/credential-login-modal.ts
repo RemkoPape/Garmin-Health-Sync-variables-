@@ -199,11 +199,10 @@ export class CredentialLoginModal extends Modal {
 		this.busy = true;
 		// Feedback while the request runs (sign-in and 2FA verify share this path). Every
 		// outcome below closes the modal or re-renders it, which restores the button.
-		const cta = this.contentEl.querySelector<HTMLButtonElement>("button.mod-cta");
-		if (cta) {
-			cta.disabled = true;
-			cta.setText(t("modalCredBusy", this.lang));
-		}
+		// Both screens that start a request (sign-in form, code form) have their primary button on screen.
+		const cta = this.contentEl.querySelector<HTMLButtonElement>("button.mod-cta")!;
+		cta.disabled = true;
+		cta.setText(t("modalCredBusy", this.lang));
 		try {
 			const outcome = await action();
 			if (outcome.status === "error" && ["blocked", "rate_limited", "captcha"].includes(outcome.reason)) {

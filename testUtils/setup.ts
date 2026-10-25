@@ -16,6 +16,7 @@ g.createFragment = (callback?: (el: DocumentFragment) => void): DocumentFragment
 };
 
 const proto = win.HTMLElement.prototype as unknown as Record<string, unknown>;
+const fragProto = win.DocumentFragment.prototype as unknown as Record<string, unknown>;
 proto.createEl = function (this: HTMLElement, tag: string, o?: { text?: string; cls?: string; attr?: Record<string, string> }) {
 	const el = this.ownerDocument.createElement(tag);
 	if (o?.text) el.textContent = o.text;
@@ -74,3 +75,15 @@ for (const name of ["setTimeout", "clearTimeout", "setInterval", "clearInterval"
 	(win as unknown as Record<string, unknown>)[name] = (...args: unknown[]): unknown =>
 		(globalThis as unknown as Record<string, (...a: unknown[]) => unknown>)[name]!(...args);
 }
+
+// Obsidian adds createDiv/createEl to DocumentFragment as well (used for rich notices).
+fragProto.createEl = function (this: DocumentFragment, tag: string, o?: { text?: string; cls?: string }) {
+	const el = win.document.createElement(tag);
+	if (o?.text) el.textContent = o.text;
+	if (o?.cls) el.className = o.cls;
+	this.appendChild(el as unknown as Node);
+	return el;
+};
+fragProto.createDiv = function (this: DocumentFragment, o?: { text?: string; cls?: string }) {
+	return (this as unknown as { createEl: (t: string, o?: unknown) => HTMLElement }).createEl("div", o);
+};
