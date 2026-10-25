@@ -93,11 +93,19 @@ describe("the ticket preview", () => {
 });
 
 describe("the browser link", () => {
-	it("opens the sign-in page", () => {
-		const openWindow = vi.fn();
-		(window as unknown as { open: unknown }).open = openWindow;
-		open().button(en.modalManualLoginOpenButton).click();
-		expect(openWindow).toHaveBeenCalledWith(URL_);
+	it("opens the sign-in page in the active window (the one the dialog is in, also a pop-out)", () => {
+		const openActive = vi.fn();
+		const openMain = vi.fn();
+		(window as unknown as { open: unknown }).open = openMain;
+		const original = (globalThis as unknown as { activeWindow: unknown }).activeWindow;
+		(globalThis as unknown as { activeWindow: unknown }).activeWindow = { open: openActive };
+		try {
+			open().button(en.modalManualLoginOpenButton).click();
+		} finally {
+			(globalThis as unknown as { activeWindow: unknown }).activeWindow = original;
+		}
+		expect(openActive).toHaveBeenCalledWith(URL_);
+		expect(openMain).not.toHaveBeenCalled();
 	});
 
 	it("copies the link and says so", async () => {

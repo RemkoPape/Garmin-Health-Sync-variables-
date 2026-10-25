@@ -56,7 +56,7 @@ export class ManualLoginModal extends Modal {
 				.onClick(() => {
 					// In Obsidian desktop window.open with an http(s) URL is
 					// forwarded to the system browser — exactly what we want here.
-					window.open(this.signinUrl);
+					activeWindow.open(this.signinUrl);
 				}))
 			.addExtraButton(btn => btn
 				.setIcon("copy")
