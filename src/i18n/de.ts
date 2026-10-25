@@ -114,6 +114,7 @@ export const de: Record<TranslationKeys, string> = {
 	modalManualLoginOpenButton: "Im Browser öffnen",
 	modalManualLoginCopyTooltip: "Link kopieren",
 	modalManualLoginCopied: "Anmelde-Link in die Zwischenablage kopiert",
+	modalManualLoginCopyFailed: "Der Link konnte nicht kopiert werden — nutze stattdessen die Schaltfläche „Im Browser öffnen“.",
 	modalManualLoginTicket: "Ticket",
 	modalManualLoginTicketDesc: "Füge hier das ST-…-Ticket oder die vollständige Adresse ein",
 	modalManualLoginTicketPlaceholder: "Ticket oder vollständige Adresse",

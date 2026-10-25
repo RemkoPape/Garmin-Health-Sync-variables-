@@ -112,6 +112,7 @@ export const en = {
 	modalManualLoginOpenButton: "Open in browser",
 	modalManualLoginCopyTooltip: "Copy link",
 	modalManualLoginCopied: "Sign-in link copied to clipboard",
+	modalManualLoginCopyFailed: "Could not copy the link — open it in your browser instead.",
 	modalManualLoginTicket: "Ticket",
 	modalManualLoginTicketDesc: "Paste the ST-… ticket or the full address here",
 	modalManualLoginTicketPlaceholder: "Ticket or full address",

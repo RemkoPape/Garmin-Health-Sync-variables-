@@ -113,6 +113,7 @@ export const ja: Record<TranslationKeys, string> = {
 	modalManualLoginOpenButton: "ブラウザで開く",
 	modalManualLoginCopyTooltip: "リンクをコピー",
 	modalManualLoginCopied: "サインインリンクをクリップボードにコピーしました",
+	modalManualLoginCopyFailed: "リンクをコピーできませんでした。代わりに「ブラウザで開く」ボタンを使ってください。",
 	modalManualLoginTicket: "チケット",
 	modalManualLoginTicketDesc: "ST-… チケットまたはアドレス全体をここに貼り付けてください",
 	modalManualLoginTicketPlaceholder: "チケットまたはアドレス全体",

@@ -113,6 +113,7 @@ export const es: Record<TranslationKeys, string> = {
 	modalManualLoginOpenButton: "Abrir en el navegador",
 	modalManualLoginCopyTooltip: "Copiar enlace",
 	modalManualLoginCopied: "Enlace de inicio de sesión copiado al portapapeles",
+	modalManualLoginCopyFailed: "No se pudo copiar el enlace: usa el botón «Abrir en el navegador».",
 	modalManualLoginTicket: "Ticket",
 	modalManualLoginTicketDesc: "Pega aquí el ticket ST-… o la dirección completa",
 	modalManualLoginTicketPlaceholder: "Ticket o dirección completa",

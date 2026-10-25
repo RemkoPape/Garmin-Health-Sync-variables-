@@ -62,8 +62,13 @@ export class ManualLoginModal extends Modal {
 				.setIcon("copy")
 				.setTooltip(t("modalManualLoginCopyTooltip", this.lang))
 				.onClick(async () => {
-					await navigator.clipboard.writeText(this.signinUrl);
-					new Notice(t("modalManualLoginCopied", this.lang));
+					try {
+						await navigator.clipboard.writeText(this.signinUrl);
+						new Notice(t("modalManualLoginCopied", this.lang));
+					} catch {
+						// Some mobile WebViews block clipboard writes: point to the other button instead.
+						new Notice(t("modalManualLoginCopyFailed", this.lang));
+					}
 				}));
 
 		let input = "";

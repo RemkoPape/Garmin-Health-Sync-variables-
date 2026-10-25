@@ -113,6 +113,7 @@ export const zh: Record<TranslationKeys, string> = {
 	modalManualLoginOpenButton: "在浏览器中打开",
 	modalManualLoginCopyTooltip: "复制链接",
 	modalManualLoginCopied: "登录链接已复制到剪贴板",
+	modalManualLoginCopyFailed: "无法复制链接，请改用“在浏览器中打开”按钮。",
 	modalManualLoginTicket: "票据",
 	modalManualLoginTicketDesc: "在此粘贴 ST-… 票据或完整地址",
 	modalManualLoginTicketPlaceholder: "票据或完整地址",
