@@ -67,3 +67,10 @@ afterEach(() => {
 	// A request nobody routed would have hit the real network: fail the test even if the code swallowed the error.
 	expect(unrouted, "requests with no registered route").toEqual([]);
 });
+
+// Obsidian code calls window.setTimeout and friends. happy-dom's window has its own timers, which
+// vi.useFakeTimers() does not patch, so delegate to the global ones at call time.
+for (const name of ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] as const) {
+	(win as unknown as Record<string, unknown>)[name] = (...args: unknown[]): unknown =>
+		(globalThis as unknown as Record<string, (...a: unknown[]) => unknown>)[name]!(...args);
+}

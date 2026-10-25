@@ -167,11 +167,6 @@ export class SyncManager {
 						});
 						count++;
 					}
-
-					// Rate limiting: skip delay after the last date
-					if (i < dates.length - 1) {
-						await this.sleep(batchDelay);
-					}
 				} catch (error) {
 					if (isLoginRequiredError(error)) {
 						new Notice(t("noticeLoginRequired", settings.language));
@@ -179,6 +174,12 @@ export class SyncManager {
 					}
 					failed++;
 					console.warn(`Garmin Health Sync: Backfill failed for ${date}`, error);
+				}
+
+				// Rate limiting: wait after every date that made requests, failed ones included (a 429 followed
+				// by an immediate next request just fails the next day too). Not after the last date.
+				if (i < dates.length - 1) {
+					await this.sleep(batchDelay);
 				}
 			}
 

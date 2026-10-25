@@ -5,6 +5,7 @@
 ### Fixed
 
 - Sleep and sleep phase durations no longer show "60min" (7h 59m 45s was written as "7h 60min"; it is now "8h 0min").
+- Backfill now waits between days after a failed day too, so a single rate-limit error no longer makes the next days fail as well.
 - The "frontmatter is broken" notice is now shown in your language instead of always in German.
 - Notes that start with a byte order mark (BOM) before the properties are recognised; a second properties block is no longer added above the mark.
 - Workout locations keep Vietnamese and other Latin names whole ("Hà Nội" was written as "Hà").
