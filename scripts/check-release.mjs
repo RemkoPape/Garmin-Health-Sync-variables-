@@ -45,9 +45,9 @@ const argValue = (flag) => {
 	const v = i === -1 ? undefined : argv[i + 1];
 	return v && !v.startsWith("--") ? v : null;
 };
+// GITHUB_REF_NAME is "15/merge" on a pull request, so only a tag ref counts as a tag.
 const rawTag =
 	argValue("--tag") ||
-	process.env.GITHUB_REF_NAME ||
 	(process.env.GITHUB_REF?.startsWith("refs/tags/") ? process.env.GITHUB_REF.slice("refs/tags/".length) : null);
 const tag = rawTag ? rawTag.replace(/^v/, "") : null;
 const runBuildAndTest = hasFlag("--with-build");
@@ -176,7 +176,7 @@ if (manifest) {
 	if (tag) {
 		report("manifest.version matches the release tag", checkTagMatchesManifest(tag, manifest.version), tag);
 	} else {
-		skip("manifest.version matches the release tag", "no --tag and no GITHUB_REF_NAME");
+		skip("manifest.version matches the release tag", "no --tag and not on a tag ref");
 		report("committed manifest.version is a stable version", checkCommittedManifestStable(manifest.version), manifest.version);
 	}
 }
