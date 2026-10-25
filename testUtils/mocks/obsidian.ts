@@ -165,6 +165,23 @@ export class Vault {
 		this.emit("modify", file);
 	}
 
+	/** Atomic read-modify-write like Obsidian's: `fn` sees the CURRENT content and returns the new content. */
+	async process(file: TFile, fn: (data: string) => string): Promise<string> {
+		this.check("process", file.path);
+		const next = fn(this.contents.get(file.path) ?? "");
+		this.setContent(file, next);
+		this.log.push({ op: "modify", path: file.path });
+		this.emit("modify", file);
+		return next;
+	}
+
+	/** Test helper: change a file behind the plugin's back (the user typing in an open note), without a write log. */
+	overwrite(path: string, content: string): void {
+		const file = this.files.get(path);
+		if (!file) throw new Error(`no such file in the test vault: ${path}`);
+		this.setContent(file, content);
+	}
+
 	private setContent(file: TFile, content: string): void {
 		this.contents.set(file.path, content);
 		file.stat = { size: new TextEncoder().encode(content).length, ctime: 0, mtime: 0 };
