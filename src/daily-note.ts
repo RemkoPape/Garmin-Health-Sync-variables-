@@ -251,13 +251,14 @@ async function updateFrontmatter(
 }
 
 type FrontmatterParse =
-	| { kind: "absent"; body: string; lineEnding: string }
+	| { kind: "absent"; body: string; lineEnding: string; bom: string }
 	| {
 			kind: "present";
 			data: Record<string, unknown>;
 			body: string;
 			lineEnding: string;
 			rawHeader: string;
+			bom: string;
 	  }
 	| { kind: "invalid"; reason: string };
 
@@ -266,12 +267,16 @@ type FrontmatterParse =
  * on its own line. The block ends at the next `---` line. Anything between
  * is parsed via parseYaml and must yield a plain object.
  */
-function extractFrontmatter(content: string): FrontmatterParse {
+function extractFrontmatter(rawContent: string): FrontmatterParse {
+	// A UTF-8 byte order mark may precede the opening `---`. Set it aside and put it back first when writing,
+	// otherwise the block is not recognised and a second one would be added above the mark.
+	const bom = rawContent.startsWith("\uFEFF") ? "\uFEFF" : "";
+	const content = bom ? rawContent.slice(1) : rawContent;
 	const lineEnding = content.includes("\r\n") ? "\r\n" : "\n";
 
 	// File doesn't open with `---\n` → no frontmatter.
 	if (!/^---\r?\n/.test(content)) {
-		return { kind: "absent", body: content, lineEnding };
+		return { kind: "absent", body: content, lineEnding, bom };
 	}
 
 	const lines = content.split(/\r?\n/);
@@ -305,6 +310,7 @@ function extractFrontmatter(content: string): FrontmatterParse {
 			body,
 			lineEnding,
 			rawHeader: "",
+			bom,
 		};
 	}
 
@@ -319,6 +325,7 @@ function extractFrontmatter(content: string): FrontmatterParse {
 		body,
 		lineEnding,
 		rawHeader: yamlText,
+		bom,
 	};
 }
 
@@ -331,7 +338,7 @@ function renderWithFrontmatter(
 	let yaml = stringifyYaml(merged);
 	// stringifyYaml ends with a newline already; trim trailing newlines so we control the joining exactly.
 	yaml = yaml.replace(/\r?\n+$/, "");
-	const yamlBlock = `---${lineEnding}${yaml.replace(/\n/g, lineEnding)}${lineEnding}---`;
+	const yamlBlock = `${parsed.bom}---${lineEnding}${yaml.replace(/\n/g, lineEnding)}${lineEnding}---`;
 
 	if (parsed.kind === "absent") {
 		// Insert frontmatter at the top. Empty file → just the FM.
