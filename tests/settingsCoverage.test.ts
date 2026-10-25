@@ -1,0 +1,63 @@
+// Why it matters: every user-editable setting must have a control in the settings tab. A setting
+// added later without one fails here, or is listed below on purpose with the reason.
+import { describe, expect, it } from "vitest";
+import { DEFAULT_SETTINGS, HealthSyncSettingTab } from "../src/settings";
+import { METRICS } from "../src/metrics";
+
+/** Settings with no control in the tab, each for a stated reason. */
+const NOT_IN_SETTINGS_TAB: Record<string, string> = {
+	lastSyncTimes: "internal bookkeeping (date -> last sync time), never user-editable",
+	garminSession: "legacy cookie session, only cleared on login; not a preference",
+	garminOAuth1: "token written by the login flow (moved to secret storage when available)",
+	garminOAuth2: "token written by the login flow (moved to secret storage when available)",
+	enabledMetrics: "edited through the per-metric toggles (keys prefixed 'metric:'), checked separately below",
+};
+
+interface AnyItem {
+	items?: AnyItem[];
+	control?: { key?: string };
+}
+
+function collectKeys(items: AnyItem[]): string[] {
+	const out: string[] = [];
+	for (const item of items) {
+		if (item.control?.key) out.push(item.control.key);
+		if (item.items) out.push(...collectKeys(item.items));
+	}
+	return out;
+}
+
+function makeTab(): HealthSyncSettingTab {
+	const settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as typeof DEFAULT_SETTINGS;
+	const plugin = { settings, isSessionValid: () => false };
+	return new HealthSyncSettingTab({} as never, plugin as never);
+}
+
+describe("settings tab covers every setting", () => {
+	const keys = collectKeys(makeTab().getSettingDefinitions() as AnyItem[]);
+
+	it("has a control for every setting that is not listed as internal", () => {
+		const missing = Object.keys(DEFAULT_SETTINGS).filter(
+			(k) => !keys.includes(k) && !(k in NOT_IN_SETTINGS_TAB),
+		);
+		expect(missing).toEqual([]);
+	});
+
+	it("lists no setting as internal that actually has a control, or that does not exist", () => {
+		const stale = Object.keys(NOT_IN_SETTINGS_TAB).filter(
+			(k) => (keys.includes(k) && k !== "enabledMetrics") || !(k in DEFAULT_SETTINGS),
+		);
+		expect(stale).toEqual([]);
+	});
+
+	it("has a toggle for every metric", () => {
+		const missing = METRICS.filter((m) => !keys.includes(`metric:${m.key}`)).map((m) => m.key);
+		expect(missing).toEqual([]);
+	});
+
+	it("has no control for a key that is not a setting", () => {
+		const metricKeys = new Set(METRICS.map((m) => `metric:${m.key}`));
+		const unknown = keys.filter((k) => !(k in DEFAULT_SETTINGS) && !metricKeys.has(k));
+		expect(unknown).toEqual([]);
+	});
+});

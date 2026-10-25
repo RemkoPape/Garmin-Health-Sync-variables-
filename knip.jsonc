@@ -1,0 +1,31 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Dead-code gate (`npm run check:dead-code`). The `!` suffix marks what ships: knip --production walks from
+  // src/main.ts and does NOT count tests as users, so code that only a test reaches is reported. That is the
+  // point: unreachable code is deleted, not tested (see AGENTS.md). The un-suffixed entries only matter for the
+  // second knip run (dependencies, binaries), which has to see tests and tooling to know what they import.
+  "entry": [
+    "src/main.ts!",
+    "tests/**/*.test.ts",
+    "testUtils/setup.ts",
+    "vitest.config.mts",
+    "version-bump.mjs",
+    "stamp-prerelease.mjs",
+    "esbuild.config.mjs",
+    "scripts/*.mjs"
+  ],
+  "project": ["src/**/*.ts!", "tests/**/*.ts", "testUtils/**/*.ts", "scripts/**/*.mjs"],
+  // An export that is only used inside its own file is not "unused".
+  "ignoreExportsUsedInFile": true,
+  "ignoreIssues": {
+    // moment is not a declared dependency on purpose: obsidian pins it exactly (2.29.4) and the mock must use
+    // that very copy. Declaring it would also trip the review lint's ban-dependencies rule on package.json.
+    "testUtils/mocks/obsidian.ts": ["unlisted"]
+  },
+  "ignoreDependencies": [
+    // eslint loads eslint.config.mts through jiti; nothing imports it.
+    "jiti",
+    // tsconfig.json sets importHelpers: true, so the compiler emits `tslib` helper imports itself.
+    "tslib"
+  ]
+}

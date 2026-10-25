@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.1-beta.2
+
+### Internal
+
+- Test tooling (vitest with coverage, a mock of the Obsidian API), a dead-code check, CI on every pull request and on `main`, and stricter release guards: releases only from tags on `main` (stable also from a `release/*` branch), tests and coverage before any release is published, and a check that the version the store advertises always has a published stable release. No change to what the plugin does; `main.js` is byte-identical to `0.11.1-beta.1`.
+- Removed the unused `isTransientStatus` helper.
+
 ## 0.11.0
 
 ### Added

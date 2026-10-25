@@ -1,0 +1,161 @@
+name: CI
+
+# Actions are pinned to full commit SHAs, not mutable tags: release.yml builds the main.js that ships
+# to users and attestation would faithfully sign a compromised build. The trailing comment records
+# the readable version; Dependabot keeps both current. Re-resolve by hand with:
+#   gh api repos/<owner>/<repo>/git/ref/tags/<tag> --jq .object.sha
+#
+# Job names are required status checks in branch protection (validate, timezones (...),
+# store-listing). Renaming one blocks every merge; tests/releaseGuards.test.ts pins them.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# Newer pushes to a PR replace older runs; never on main.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          # Tags and history: check-release compares minAppVersion with the latest stable release.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Lint (Obsidian parity)
+        run: npm run lint
+
+      - name: Typecheck tests
+        run: npm run typecheck:tests
+
+      - name: Test with coverage
+        run: npm run test:cov
+
+      # knip --production walks from src/main.ts and does not count tests as users, so code that only
+      # a test reaches fails here. Delete it; do not add ignores to make this pass.
+      - name: Check for dead code
+        run: npm run check:dead-code
+
+      - name: Release guard
+        run: npm run check-release
+
+      # Last: it renames node_modules folders while it runs (and restores them).
+      - name: Lint with the cloud review's dependency view
+        run: npm run lint:cloud-parity
+
+      - name: Check for whitespace errors
+        run: git diff --check
+
+      - name: Check the Obsidian lint plugin is current
+        # The cloud review always runs the newest eslint-plugin-obsidianmd; warn when ours is behind.
+        run: |
+          installed=$(node -p "require('eslint-plugin-obsidianmd/package.json').version")
+          latest=$(npm view eslint-plugin-obsidianmd version)
+          echo "eslint-plugin-obsidianmd installed=$installed latest=$latest"
+          if [ "$installed" != "$latest" ]; then
+            echo "::warning title=Obsidian checker outdated::eslint-plugin-obsidianmd $installed is installed but $latest is published."
+          fi
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
+
+  # Early warning for the next Node line. Never a required check, never blocks a merge or a release.
+  next-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 26
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  # Date handling is the riskiest part of this plugin: run the suite in zones on both sides of UTC.
+  timezones:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        tz: [America/Los_Angeles, Pacific/Auckland, Europe/Vienna]
+    name: timezones (${{ matrix.tz }})
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Test in ${{ matrix.tz }}
+        run: npm test
+        env:
+          TZ: ${{ matrix.tz }}
+
+  # main's manifest must always name a published stable release. On a PR that bumps the version this
+  # is red until the stable tag has published, then green on re-run; that is what makes merging the
+  # bump before the release exists impossible once this is a required check.
+  store-listing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version-file: .nvmrc
+      - name: Check the listing invariant (pull request)
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_REF: ${{ github.base_ref }}
+        run: node scripts/check-store-listing.mjs --base "origin/${BASE_REF}"
+      - name: Check the listing invariant (main)
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-store-listing.mjs
