@@ -97,6 +97,7 @@ export default tseslint.config(
 		"eslint.config.js",
 		"version-bump.mjs",
 		"stamp-prerelease.mjs",
+		"stylelint.config.mjs",
 		// Node CLI tooling (.mjs/.mts): console output and node: imports are their job. The review bot
 		// scans .ts/.js/.css, not these (like esbuild.config.mjs above).
 		"scripts/**",
