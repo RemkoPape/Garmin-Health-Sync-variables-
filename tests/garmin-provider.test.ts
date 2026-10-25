@@ -173,7 +173,6 @@ describe("fetchData", () => {
 		const log = provider.getSyncDiagnostics();
 		expect(log).toContain("mapper dailySummary: response keys: unexpectedShape, other");
 		expect(log).toContain("mapper dailySummary: mapped 0 field(s)");
-		expect(log).toContain("mapper activities" === "" ? "" : "mapper dailySummary");
 	});
 
 	it("describes unmapped array answers by length and first-element keys", async () => {
@@ -237,6 +236,17 @@ describe("C1: values that are not numbers never reach the note", () => {
 	});
 });
 
+describe("a mapper that cannot cope with a payload", () => {
+	it("is logged and skipped without dropping the other groups", async () => {
+		const rows = Array.from({ length: 200_000 }, (_, i) => [i, i % 100]);
+		route({ bodyBattery: { body: [{ bodyBatteryValuesArray: rows }] } });
+		const warn = vi.spyOn(console, "warn");
+		const data = await provider.fetchData(DATE, ["steps", "body_battery_min"]);
+		expect(data.metrics).toEqual({ steps: 8123 });
+		expect(warn.mock.calls.some((c) => String(c[0]).includes("Body Battery fetch failed"))).toBe(true);
+	});
+});
+
 describe("login passthroughs", () => {
 	it("authenticates through the desktop window and reports cancellation", async () => {
 		installElectron();
@@ -245,6 +255,17 @@ describe("login passthroughs", () => {
 		await vi.advanceTimersByTimeAsync(0);
 		FakeBrowserWindow.instances[0]!.userClose();
 		expect(await p).toEqual({ ok: false, cancelled: true });
+	});
+
+	it("reports a successful desktop login", async () => {
+		installElectron();
+		FakeBrowserWindow.reset();
+		net.on(/preauthorized/, { body: "oauth_token=OT&oauth_token_secret=OS" });
+		net.on(/exchange/, { body: { access_token: "a", refresh_token: "r", expires_in: 3600 } });
+		const p = provider.authenticate();
+		await vi.advanceTimersByTimeAsync(0);
+		FakeBrowserWindow.instances[0]!.emit("will-navigate", "https://sso.garmin.com/sso/embed?ticket=ST-12345-abc");
+		expect(await p).toEqual({ ok: true, cancelled: false });
 	});
 
 	it("reports a failed (not cancelled) desktop login", async () => {

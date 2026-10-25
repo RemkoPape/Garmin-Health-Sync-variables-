@@ -127,7 +127,7 @@ export async function oauth1Header(
 
 	// Parameter string: sorted by key, RFC-3986-encoded
 	const paramString = Object.entries(all)
-		.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+		.sort(([a], [b]) => (a < b ? -1 : 1))
 		.map(([k, v]) => `${rfc3986(k)}=${rfc3986(v)}`)
 		.join("&");
 
@@ -168,7 +168,7 @@ export async function oauth1Header(
 	return (
 		"OAuth " +
 		Object.entries(oauth)
-			.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+			.sort(([a], [b]) => (a < b ? -1 : 1))
 			.map(([k, v]) => `${rfc3986(k)}="${rfc3986(v)}"`)
 			.join(", ")
 	);

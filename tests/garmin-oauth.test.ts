@@ -162,6 +162,13 @@ describe("getConsumer", () => {
 		expect((await getConsumer()).consumer_key).toBe("fc3e99d2-118c-44b8-8ae3-03370dde24c0");
 	});
 
+	it("falls back when the failure is not an Error object", async () => {
+		net.on(URL, () => {
+			throw "string failure";
+		});
+		expect((await getConsumer()).consumer_key).toBe("fc3e99d2-118c-44b8-8ae3-03370dde24c0");
+	});
+
 	it("returns a copy of the fallback so callers cannot corrupt it", async () => {
 		net.fail(URL);
 		const first = await getConsumer();
@@ -239,6 +246,13 @@ describe("getOAuth1", () => {
 		expect((err as Error).message).toContain("offline");
 	});
 
+	it("reports a failure that is not an Error object as a network failure", async () => {
+		net.on(PRE, () => {
+			throw "string failure";
+		});
+		await expect(getOAuth1("ST-1", CONSUMER, "garmin.com")).rejects.toMatchObject({ status: 0, message: "preauthorized failed (network): string failure" });
+	});
+
 	it("rejects a 200 answer without the token fields, with the 200 status (transient, not an auth failure)", async () => {
 		net.on(PRE, { body: "nothing=here" });
 		await expect(getOAuth1("ST-1", CONSUMER, "garmin.com")).rejects.toMatchObject({ status: 200 });
@@ -303,9 +317,9 @@ describe("exchange", () => {
 		expect(net.calls[0]!.url).toContain("connectapi.garmin.cn");
 	});
 
-	// C3: a 2xx answer without access_token is accepted as a token (known limitation, #TODO-C3). The next call then
+	// C3: a 2xx answer without access_token is accepted as a token (known limitation, #24). The next call then
 	// sends "Bearer undefined", gets a 401 and logs the user out. A fix touches sign-in and ships in its own beta.
-	it("accepts a 200 answer without an access token and computes a NaN expiry (known limitation, #TODO-C3)", async () => {
+	it("accepts a 200 answer without an access token and computes a NaN expiry (known limitation, #24)", async () => {
 		net.on(EX, { body: {} });
 		const token = await exchange(TOKEN, CONSUMER, "garmin.com");
 		expect(token.access_token).toBeUndefined();

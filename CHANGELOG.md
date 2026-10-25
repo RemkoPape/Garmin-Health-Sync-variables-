@@ -12,6 +12,12 @@
 - A value Garmin sends in an unexpected form (for example text where a number is expected) is no longer written into your note as "NaN"; it is skipped.
 - Intensity minutes are counted when Garmin sends vigorous minutes but no moderate value.
 
+### Internal
+
+- Tests for the data layer (note writer, sync and backfill, Garmin sign-in, API and mappers): those modules are at 100 % coverage.
+- Removed code nothing called (an unused sign-in option, a heart rate helper, a state check) and several unreachable branches. The Garmin provider's nine request groups share one helper.
+- Known limitations are tracked as issues #23 (closing marker with trailing space), #24 (token answer without access token), #25 (empty coordinates), #26 to #29.
+
 ## 0.11.1-beta.2
 
 ### Internal

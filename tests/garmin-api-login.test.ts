@@ -19,7 +19,9 @@ function routeTokens(): void {
 	net.on(PRE, { body: "oauth_token=OT-secret&oauth_token_secret=OS-secret" });
 	net.on(EX, { body: OAUTH2 });
 }
-const flush = (): Promise<void> => vi.advanceTimersByTimeAsync(0);
+const flush = async (): Promise<void> => {
+	await vi.advanceTimersByTimeAsync(0);
+};
 const win = (): FakeBrowserWindow => FakeBrowserWindow.instances[0]!;
 
 let api: GarminApi;
@@ -114,6 +116,15 @@ describe("desktop login window", () => {
 			},
 		);
 
+		it("ignores an event object whose url is not text", async () => {
+			const p = api.loginViaOAuth();
+			await flush();
+			win().emit("will-navigate", { url: 5 });
+			expect(net.calls).toEqual([]);
+			win().userClose();
+			await p;
+		});
+
 		it("from an event object that carries the url", async () => {
 			const result = await loginVia((w) => w.emit("will-navigate", { url: "https://sso.garmin.com/sso/embed?ticket=ST-777-xyz" }));
 			expect(result.ok).toBe(true);
@@ -153,6 +164,17 @@ describe("desktop login window", () => {
 			expect(result.detail).toContain("via=webRequest");
 		});
 
+		it("ignores a network event that arrives after the ticket was already captured", async () => {
+			const p = api.loginViaOAuth();
+			await flush();
+			const late = win().completedListener!;
+			win().emit("will-navigate", "https://sso.garmin.com/sso/embed?ticket=ST-12345-abc");
+			late({ url: "https://sso.garmin.com/sso/embed?ticket=ST-99999-late", statusCode: 200, method: "GET" });
+			await flush();
+			expect((await p).ok).toBe(true);
+			expect(net.callsTo("preauthorized")).toHaveLength(1);
+		});
+
 		it("logs but ignores a completed request without a ticket", async () => {
 			const p = api.loginViaOAuth();
 			await flush();
@@ -187,6 +209,19 @@ describe("desktop login window", () => {
 			expect(popup.close).toHaveBeenCalled();
 		});
 
+		it("leaves a popup open while no ticket was found yet, and tolerates one without close()", async () => {
+			const p = api.loginViaOAuth();
+			await flush();
+			const popup = { close: vi.fn() };
+			win().emit("did-create-window", popup, { url: "https://sso.garmin.com/sso/signin" });
+			expect(popup.close).not.toHaveBeenCalled();
+			routeTokens();
+			win().emit("did-create-window", {}, { url: "https://sso.garmin.com/sso/embed?ticket=ST-335-pop" });
+			win().emit("did-create-window");
+			await flush();
+			expect((await p).ok).toBe(true);
+		});
+
 		it("survives a popup that cannot be closed", async () => {
 			const popup = { close: () => { throw new Error("gone"); } };
 			const result = await loginVia((w) => w.emit("did-create-window", popup, { url: "https://sso.garmin.com/sso/embed?ticket=ST-334-pop" }));
@@ -197,6 +232,17 @@ describe("desktop login window", () => {
 			const result = await loginVia((w) => w.emit("page-title-updated", {}, "GHS_TICKET ST-222-msg"));
 			expect(result.ok).toBe(true);
 			expect(result.detail).toContain("via=postMessage");
+		});
+
+		it("ignores a page title that arrives after the ticket was captured", async () => {
+			routeTokens();
+			const p = api.loginViaOAuth();
+			await flush();
+			win().emit("will-navigate", "https://sso.garmin.com/sso/embed?ticket=ST-12345-abc");
+			win().emit("page-title-updated", {}, "GHS_TICKET ST-77777-late");
+			await flush();
+			await p;
+			expect(net.callsTo("preauthorized")).toHaveLength(1);
 		});
 
 		it("ignores page titles that carry no ticket", async () => {
@@ -241,12 +287,15 @@ describe("desktop login window", () => {
 			expect((await p).cancelled).toBe(true);
 		});
 
-		it("insert page padding once the dom is ready, ignoring a CSS failure", async () => {
+		it("inserts page padding once the dom is ready, and ignores a CSS failure", async () => {
 			const p = api.loginViaOAuth();
 			await flush();
 			win().emit("dom-ready");
 			await flush();
 			expect(win().insertedCss[0]).toContain("padding");
+			FakeBrowserWindow.insertCssRejects = true;
+			win().emit("dom-ready");
+			await flush();
 			win().userClose();
 			await p;
 		});
@@ -299,6 +348,18 @@ describe("desktop login window", () => {
 			expect(win().destroyed).toBe(true);
 		});
 
+		it("reports a non-Error failure without a status and without a plugin version", async () => {
+			const bare = new GarminApi();
+			net.reset();
+			net.fail(/thegarth/);
+			net.on(PRE, { body: "oauth_token=OT&oauth_token_secret=OS" });
+			net.on(EX, { body: "x", jsonError: "plain string" });
+			const p = bare.loginViaOAuth();
+			await flush();
+			win().emit("will-navigate", "https://sso.garmin.com/sso/embed?ticket=ST-12345-abc");
+			expect(await p).toEqual({ ok: false, detail: "error (plugin v?): plain string" });
+		});
+
 		it("reports an error without a status for a failure that has none", async () => {
 			net.reset();
 			net.fail(/thegarth/);
@@ -330,6 +391,14 @@ describe("desktop login window", () => {
 			const result = await p;
 			expect(result).toEqual({ ok: false, detail: "no_ticket (plugin v0.11.1-test)" });
 			expect(win().destroyed).toBe(true);
+		});
+
+		it("copes with a breadcrumb that is not text, and with no plugin version set", async () => {
+			const bare = new GarminApi();
+			FakeBrowserWindow.js = () => 42;
+			const p = bare.loginViaOAuth();
+			await vi.advanceTimersByTimeAsync(120_000);
+			expect(await p).toEqual({ ok: false, detail: "no_ticket (plugin v?)" });
 		});
 
 		it("still ends cleanly when the breadcrumb script cannot run", async () => {
@@ -632,11 +701,19 @@ describe("credential login (mobile)", () => {
 		expect(api.isSessionValid()).toBe(false);
 	});
 
-	it("reports a failure that is not an HTTP error without a status", async () => {
+	it("logs an exchange failure without an HTTP status, for an Error and for a plain value", async () => {
 		net.on(SSO_LOGIN, { body: { responseStatus: { type: "SUCCESSFUL" }, serviceTicketId: "ST-cred-1" } });
-		net.on(PRE, { body: "garbage" });
-		const out = await api.loginWithCredentials("a", "b");
-		expect(out).toMatchObject({ status: "error", reason: "exchange_failed" });
+		net.on(PRE, { body: "oauth_token=OT&oauth_token_secret=OS" });
+		net.on(EX, { body: "x", jsonError: new SyntaxError("Unexpected end of JSON input") });
+		expect(await api.loginWithCredentials("a", "b")).toMatchObject({ status: "error", reason: "exchange_failed" });
+		expect(api.getLoginDiagnostics()).toContain("token exchange failed: Unexpected end of JSON input");
+		net.reset();
+		net.fail(/thegarth/);
+		net.on(SSO_LOGIN, { body: { responseStatus: { type: "SUCCESSFUL" }, serviceTicketId: "ST-cred-1" } });
+		net.on(PRE, { body: "oauth_token=OT&oauth_token_secret=OS" });
+		net.on(EX, { body: "x", jsonError: "plain" });
+		await api.loginWithCredentials("a", "b");
+		expect(api.getLoginDiagnostics()).toContain("token exchange failed: plain");
 	});
 
 	it("turns an unexpected crash into an error whose log has the type and message but never the password", async () => {
@@ -743,13 +820,24 @@ describe("manual ticket login", () => {
 		expect(api.isSessionValid()).toBe(false);
 	});
 
-	it("reports a failure without a status", async () => {
+	it("reports a failure without a status, for an Error and for a plain value", async () => {
 		net.reset();
 		net.fail(/thegarth/);
-		net.on(PRE, () => {
-			throw "plain";
-		});
-		const out = await api.loginWithTicket("ST-1234567-abcdef");
-		expect(out.ok).toBe(false);
+		net.on(PRE, { body: "oauth_token=OT&oauth_token_secret=OS" });
+		net.on(EX, { body: "x", jsonError: new SyntaxError("bad json") });
+		expect(await api.loginWithTicket("ST-1234567-abcdef")).toEqual({ ok: false, detail: "error (plugin v0.11.1-test): bad json" });
+		net.reset();
+		net.fail(/thegarth/);
+		net.on(PRE, { body: "oauth_token=OT&oauth_token_secret=OS" });
+		net.on(EX, { body: "x", jsonError: "plain" });
+		expect((await api.loginWithTicket("ST-1234567-abcdef")).detail).toContain("plain");
+	});
+
+	it("reports a failure when no plugin version is set", async () => {
+		const bare = new GarminApi();
+		net.reset();
+		net.fail(/thegarth/);
+		net.on(PRE, { status: 500 });
+		expect((await bare.loginWithTicket("ST-1234567-abcdef")).detail).toContain("(plugin v?)");
 	});
 });

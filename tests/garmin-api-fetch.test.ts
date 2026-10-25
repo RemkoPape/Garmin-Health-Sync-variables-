@@ -711,6 +711,13 @@ describe("sync diagnostics (copied into bug reports)", () => {
 		expect(api.getSyncDiagnostics()).toContain("socialProfile: failed (GarminAuthError HTTP 500)");
 	});
 
+	it("records an endpoint that throws a plain value as a generic error", async () => {
+		routeData({ hrv: () => { throw "plain"; } });
+		api.setRequiredEndpoints(["dailySummary", "hrv"]);
+		await api.fetchDataForDate(DATE);
+		expect(api.getSyncDiagnostics()).toContain("hrv: threw");
+	});
+
 	it("names non-HTTP errors by type only and falls back for odd throwables", async () => {
 		signedIn(null);
 		net.on(EX, () => {

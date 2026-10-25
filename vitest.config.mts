@@ -15,14 +15,18 @@ export default defineConfig({
 				// Nothing else: every source file is measured. Do not add to this list, write the test (or
 				// delete the dead code). tests/coverageGate.test.ts pins it.
 			],
-			// Ratchet: the thresholds only go up. Set to the measured floor while the suite is
-			// being built (0.11.1 PR A: no source file is tested yet), locked at 100 in the last
-			// test PR of 0.11.1. tests/coverageGate.test.ts asserts the 100 once it is locked.
+			// Ratchet: the thresholds only go up. Set to the measured floor while the suite is being
+			// built, locked at 100 in the last test PR of 0.11.1 (tests/coverageGate.test.ts asserts
+			// the 100 once it is locked).
+			//
+			// 0.11.1 data-layer PR: every module except main.ts, settings.ts and src/ui/ is at 100 %
+			// (measured overall 70.05 stmts / 80.37 br / 66.49 fn / 69.45 lines). The floors sit just
+			// under that; the rest follows in the dates-and-settings PR.
 			thresholds: {
-				lines: 0,
-				functions: 0,
-				branches: 0,
-				statements: 0,
+				lines: 69,
+				functions: 66,
+				branches: 80,
+				statements: 70,
 			},
 		},
 	},

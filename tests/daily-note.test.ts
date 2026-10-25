@@ -2,6 +2,7 @@
 // damage existing content (body, other properties, line endings), never rewrite a note that already
 // matches, and refuse to touch a note whose frontmatter it cannot parse. Whole files are asserted.
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as obsidian from "../testUtils/mocks/obsidian";
 import { App, Notice, moment, network as net, parseYaml } from "../testUtils/mocks/obsidian";
 import { dailyNoteExists, matchDailyNoteDate, writeToDailyNote } from "../src/daily-note";
 import type { HealthData } from "../src/providers/provider";
@@ -51,6 +52,15 @@ describe("finding the note", () => {
 		await writeToDailyNote(asApp(), DATE, health(), opts());
 		expect(vault.paths()).toEqual([note]);
 		expect(frontmatter(note)).toEqual({ steps: 8000, sleep_duration: "7h 30min" });
+	});
+
+	it("searches sibling folders until it finds the note (a folder without it is skipped)", async () => {
+		vault.seed("Daily/a/other.md", "x");
+		vault.seed("Daily/b/deeper/more.md", "x");
+		vault.seed(`Daily/c/${DATE}.md`, "Body\n");
+		await writeToDailyNote(asApp(), DATE, health(), opts());
+		expect(frontmatter(`Daily/c/${DATE}.md`)).toMatchObject({ steps: 8000 });
+		expect(vault.paths()).toHaveLength(3);
 	});
 
 	it("finds the note in a subfolder when the format has no slash", async () => {
@@ -348,6 +358,23 @@ describe("F6: the broken-frontmatter notice is in the user's language", () => {
 	});
 });
 
+describe("a YAML parser that fails in an unusual way", () => {
+	it("still leaves the note alone and tells the user when the error is not an Error object", async () => {
+		const content = "---\nmood: ok\n---\nBody\n";
+		vault.seed(note, content);
+		const spy = vi.spyOn(obsidian, "parseYaml").mockImplementation(() => {
+			throw "plain string failure";
+		});
+		try {
+			expect(await writeToDailyNote(asApp(), DATE, health(), opts())).toBe(false);
+		} finally {
+			spy.mockRestore();
+		}
+		expect(vault.text(note)).toBe(content);
+		expect(Notice.recorded[0]?.message).toContain("plain string failure");
+	});
+});
+
 describe("C6: a byte order mark before the frontmatter", () => {
 	it("recognises the frontmatter, keeps the mark first and does not add a second block", async () => {
 		vault.seed(note, "﻿---\nmood: ok\n---\nBody\n");
@@ -371,7 +398,7 @@ describe("C6: a byte order mark before the frontmatter", () => {
 	});
 });
 
-describe("C7: a closing marker with trailing whitespace (known limitation, #TODO-C7)", () => {
+describe("C7: a closing marker with trailing whitespace (known limitation, #23)", () => {
 	// Not yet verified how Obsidian itself treats "--- " as a closing line. Current behaviour: no closing
 	// marker, so the note is left alone, backed up, and the user is told. Pinned so a change is deliberate.
 	it("is treated as a missing closing marker: note untouched, backup, notice", async () => {
@@ -430,6 +457,13 @@ describe("the dirty check", () => {
 		expect(await writeToDailyNote(asApp(), DATE, health({ trainings: two }), opts({ writeTrainings: true }))).toBe(true);
 		const keyed = [{ type: "a", category: "x", calories: 1 }, two[1]!];
 		expect(await writeToDailyNote(asApp(), DATE, health({ trainings: keyed }), opts({ writeTrainings: true }))).toBe(true);
+	});
+
+	it("writes when an existing trainings entry has a different number of keys", async () => {
+		vault.seed(note, "Body\n");
+		const base = { type: "a", category: "x" };
+		await writeToDailyNote(asApp(), DATE, health({ trainings: [base] }), opts({ writeTrainings: true }));
+		expect(await writeToDailyNote(asApp(), DATE, health({ trainings: [{ ...base, calories: 5 }] }), opts({ writeTrainings: true }))).toBe(true);
 	});
 
 	it("writes when an existing property is null or a different shape", async () => {

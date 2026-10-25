@@ -140,6 +140,13 @@ describe("mobileLogin", () => {
 		expect(await mobileLogin("garmin.com", "a", "b")).toMatchObject({ kind: "error", reason: "blocked" });
 	});
 
+	it("reports a failure that is not an Error object", async () => {
+		net.on(LOGIN, () => {
+			throw "string failure";
+		});
+		expect(await mobileLogin("garmin.com", "a", "b")).toMatchObject({ reason: "network", detail: "login: network error (string failure)" });
+	});
+
 	it("reports a network failure", async () => {
 		net.fail(LOGIN, "offline");
 		expect(await mobileLogin("garmin.com", "a", "b")).toMatchObject({ kind: "error", reason: "network", detail: "login: network error (offline)" });
@@ -153,6 +160,11 @@ describe("mobileLogin", () => {
 		net.reset();
 		net.on(LOGIN, { body: { responseStatus: "x" } });
 		expect(await mobileLogin("garmin.com", "a", "b")).toMatchObject({ detail: "login: HTTP 200, responseStatus=none" });
+	});
+
+	it("ignores a responseStatus whose type is not text", async () => {
+		net.on(LOGIN, { body: { responseStatus: { type: 5 } } });
+		expect(await mobileLogin("garmin.com", "a", "b")).toMatchObject({ reason: "unexpected", detail: "login: HTTP 200, responseStatus=none" });
 	});
 
 	it("does not call SUCCESSFUL without a ticket a success", async () => {
@@ -213,6 +225,11 @@ describe("mobileVerifyMfa", () => {
 			detail: expect.stringContaining("no session cookies") as unknown as string,
 		});
 		expect(net.calls[0]!.headers).not.toHaveProperty("Cookie");
+	});
+
+	it("reports a reply without any status", async () => {
+		net.on(MFA, { body: {} });
+		expect(await mobileVerifyMfa("garmin.com", challenge(), "1")).toMatchObject({ reason: "mfa_failed", detail: "mfa: HTTP 200, responseStatus=none" });
 	});
 
 	it("passes through rate limits, blocks and network errors", async () => {
