@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.11.1-beta.5
+
+### Internal
+
+- Put back a safety check in the sync diagnostics for a response that arrives without headers (a platform HTTP stack might do that); it had been removed as unreachable and would otherwise fail the whole sync on such a device.
+- Lint now fails on warnings (`--max-warnings=0`), and the release check refuses a plugin id that ends in "plugin".
+
 ## 0.11.1-beta.4
 
 ### Internal

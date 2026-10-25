@@ -29,7 +29,9 @@ function describeResponse(res: RequestUrlResponse, json: string): string {
 }
 
 /** Case-insensitive header lookup: Android keeps the server's casing, desktop lowercases. */
-function headerValue(headers: Record<string, string>, name: string): string | undefined {
+function headerValue(headers: Record<string, string> | undefined, name: string): string | undefined {
+	// Some platform HTTP stacks may hand back a response without headers; diagnostics must never fail a sync.
+	if (!headers) return undefined;
 	const key = Object.keys(headers).find((k) => k.toLowerCase() === name);
 	const value = key ? headers[key] : undefined;
 	return typeof value === "string" ? value : undefined;
@@ -40,7 +42,8 @@ const DIAG_HEADERS = ["content-encoding", "age", "date", "cache-control", "cf-ca
 /** Response headers for the sync diagnostics: all header names, values only for a short
  *  non-identifying whitelist (cache/CDN hints), cookie NAMES only. Shows whether the platform
  *  stack hands us cookies or a cached answer. */
-function describeHeaders(headers: Record<string, string>): string {
+function describeHeaders(headers: Record<string, string> | undefined): string {
+	if (!headers) return "headers: none";
 	const names = Object.keys(headers).map((k) => k.toLowerCase()).filter((k) => k !== "set-cookie").sort();
 	const values: string[] = [];
 	for (const h of DIAG_HEADERS) {
