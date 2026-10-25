@@ -82,6 +82,7 @@ export const es: Record<TranslationKeys, string> = {
 	noticeSyncNoData: "No hay datos de salud disponibles para esta fecha",
 	noticeSyncWaitingForNote: "Sincronización omitida — aún no hay nota diaria para {date}. Se sincronizará cuando la crees.",
 	noticeSyncError: "Error al sincronizar datos de salud",
+	noticeFrontmatterBroken: "Garmin Health Sync: el frontmatter de \"{path}\" está dañado ({reason}). Se guardó una copia de seguridad en _garmin-health-sync/backups/. Repáralo manualmente.",
 	noticeLoginRequired: "Conecta tu proveedor de salud primero (Ajustes → Garmin Health Sync)",
 	noticeLoginSuccess: "¡Inicio de sesión exitoso!",
 	noticeLoginFailed: "Inicio de sesión fallido o cancelado",

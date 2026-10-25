@@ -98,6 +98,7 @@ export class SyncManager {
 				// keep createIfMissing false as a safety net should it vanish
 				// mid-sync. Otherwise (manual/auto-with-creation) create as before.
 				createIfMissing: !waitForNote,
+				language: settings.language,
 			});
 
 			if (!quiet) new Notice(t("noticeSyncSuccess", settings.language));
@@ -162,13 +163,9 @@ export class SyncManager {
 							writeTrainings: settings.writeTrainings,
 							writeWorkoutLocation: settings.writeWorkoutLocation,
 							createIfMissing: true,
+							language: settings.language,
 						});
 						count++;
-					}
-
-					// Rate limiting: skip delay after the last date
-					if (i < dates.length - 1) {
-						await this.sleep(batchDelay);
 					}
 				} catch (error) {
 					if (isLoginRequiredError(error)) {
@@ -177,6 +174,12 @@ export class SyncManager {
 					}
 					failed++;
 					console.warn(`Garmin Health Sync: Backfill failed for ${date}`, error);
+				}
+
+				// Rate limiting: wait after every date that made requests, failed ones included (a 429 followed
+				// by an immediate next request just fails the next day too). Not after the last date.
+				if (i < dates.length - 1) {
+					await this.sleep(batchDelay);
 				}
 			}
 

@@ -14,9 +14,10 @@ const USER_AGENT = "ObsidianHealthSync/1.0";
  * (e.g. "Oualidia ⵍⵡⴰⵍⵉⴷⵢⵢⴰ الوليدية"), we only want the Latin part.
  */
 function cleanMultiscript(text: string): string {
-	// Keep words that consist only of Latin characters + common special characters
+	// Drop a word only if it contains a letter outside the Latin script. Latin-Extended letters such as
+	// Vietnamese "ộ" or "Đ" (above U+0250) are Latin and must stay.
 	const words = text.split(/\s+/);
-	const latin = words.filter(w => !/[\u0250-\uFFFF]/.test(w));
+	const latin = words.filter(w => !/(?!\p{Script=Latin})\p{L}/u.test(w));
 	return latin.length > 0 ? latin.join(" ").trim() : text.trim();
 }
 

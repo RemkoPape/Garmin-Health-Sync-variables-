@@ -82,6 +82,7 @@ export const zh: Record<TranslationKeys, string> = {
 	noticeSyncNoData: "该日期没有可用的健康数据",
 	noticeSyncWaitingForNote: "已跳过同步 — {date} 还没有每日笔记。创建后将自动同步。",
 	noticeSyncError: "同步健康数据时出错",
+	noticeFrontmatterBroken: "Garmin Health Sync：“{path}”的 frontmatter 已损坏（{reason}）。已在 _garmin-health-sync/backups/ 中保存备份，请手动修复。",
 	noticeLoginRequired: "请先连接健康数据提供商（设置 → Garmin Health Sync）",
 	noticeLoginSuccess: "登录成功！",
 	noticeLoginFailed: "登录失败或已取消",

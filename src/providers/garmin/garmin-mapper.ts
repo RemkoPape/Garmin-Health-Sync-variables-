@@ -4,9 +4,9 @@ import type { TrainingEntry } from "../provider";
 /** Converts seconds to "Xh Ymin" format */
 export function secondsToHoursMin(seconds: number | null | undefined): string | null {
 	if (seconds == null || seconds <= 0) return null;
-	const hours = Math.floor(seconds / 3600);
-	const minutes = Math.round((seconds % 3600) / 60);
-	return `${hours}h ${minutes}min`;
+	// Round the total first, then split: rounding the minutes on their own turns 3599 s into "0h 60min".
+	const totalMinutes = Math.round(seconds / 60);
+	return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}min`;
 }
 
 /** Rounds to one decimal place */
@@ -43,19 +43,14 @@ function firstRecord(value: unknown): Record<string, unknown> {
 export function mapDailySummary(data: Record<string, unknown>, enabled: Set<string>): Record<string, number | string> {
 	const result: Record<string, number | string> = {};
 
-	const mappings: [string, string, ((v: unknown) => number | string | null)?][] = [
+	const mappings: [string, string, ((v: unknown) => number)?][] = [
 		["steps", "totalSteps"],
 		["resting_hr", "restingHeartRate"],
 		["stress", "averageStressLevel"],
 		["calories_total", "totalKilocalories"],
 		["calories_active", "activeKilocalories"],
-		["distance_km", "totalDistanceMeters", (v) => v != null ? round1(Number(v) / 1000) : null],
+		["distance_km", "totalDistanceMeters", (v) => round1(Number(v) / 1000)],
 		["floors", "floorsAscended", (v) => Math.round(Number(v))],
-		["intensity_min", "moderateIntensityMinutes", (v) => {
-			const moderate = Number(v) || 0;
-			const vigorous = Number(data["vigorousIntensityMinutes"]) || 0;
-			return moderate + vigorous;
-		}],
 	];
 
 	for (const [key, field, transform] of mappings) {
@@ -64,10 +59,19 @@ export function mapDailySummary(data: Record<string, unknown>, enabled: Set<stri
 		if (raw == null) continue;
 
 		if (transform) {
-			const val = transform(raw);
-			if (val != null) result[key] = val;
+			result[key] = transform(raw);
 		} else {
 			result[key] = Number(raw);
+		}
+	}
+
+	// Intensity minutes are moderate + vigorous. Garmin may send only one of them (a missing moderate
+	// value next to 30 vigorous minutes still means 30), so this is not a plain field mapping.
+	if (enabled.has("intensity_min")) {
+		const moderate = data["moderateIntensityMinutes"];
+		const vigorous = data["vigorousIntensityMinutes"];
+		if (moderate != null || vigorous != null) {
+			result["intensity_min"] = (Number(moderate) || 0) + (Number(vigorous) || 0);
 		}
 	}
 

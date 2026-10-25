@@ -45,3 +45,32 @@ proto.setText = function (this: HTMLElement, t: string) {
 proto.setAttr = function (this: HTMLElement, k: string, v: string) {
 	this.setAttribute(k, v);
 };
+
+// ---------------------------------------------------------------------------
+// Per-test hygiene
+// ---------------------------------------------------------------------------
+import { afterEach, beforeEach, expect, vi } from "vitest";
+import { network, resetObsidianMock } from "./mocks/obsidian";
+
+beforeEach(() => {
+	resetObsidianMock();
+	// The plugin logs through console.debug/warn/error; keep test output readable. Tests that assert on
+	// logging spy again (and see these calls cleared by vitest's per-test mock reset).
+	vi.spyOn(console, "debug").mockImplementation(() => undefined);
+	vi.spyOn(console, "warn").mockImplementation(() => undefined);
+	vi.spyOn(console, "error").mockImplementation(() => undefined);
+});
+
+afterEach(() => {
+	const unrouted = [...network.unrouted];
+	vi.useRealTimers();
+	// A request nobody routed would have hit the real network: fail the test even if the code swallowed the error.
+	expect(unrouted, "requests with no registered route").toEqual([]);
+});
+
+// Obsidian code calls window.setTimeout and friends. happy-dom's window has its own timers, which
+// vi.useFakeTimers() does not patch, so delegate to the global ones at call time.
+for (const name of ["setTimeout", "clearTimeout", "setInterval", "clearInterval"] as const) {
+	(win as unknown as Record<string, unknown>)[name] = (...args: unknown[]): unknown =>
+		(globalThis as unknown as Record<string, (...a: unknown[]) => unknown>)[name]!(...args);
+}
