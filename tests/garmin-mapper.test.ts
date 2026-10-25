@@ -313,7 +313,7 @@ describe("mapActivities", () => {
 
 	it("groups activities of one type with a count, summing distance, time and calories", () => {
 		const out = mapActivities([run(5000, 1800, 140, 300), run(3000, 1200, 160, 200)]);
-		expect(out.display).toEqual({ running: "2x 8 km · 50min · Ø150 bpm · 500 kcal" });
+		expect(out.display).toEqual({ running: "2x · 8 km · 50min · Ø150 bpm · 500 kcal" });
 		expect(out.trainings[0]).toMatchObject({ distance_km: 8, duration_min: 50, avg_hr: 150, calories: 500 });
 	});
 
@@ -370,5 +370,33 @@ describe("mapActivities", () => {
 
 	it("returns empty results for no activities", () => {
 		expect(mapActivities([])).toEqual({ display: {}, trainings: [], startLocation: null });
+	});
+});
+
+// ---------------------------------------------------------------------------
+// 0.11.1 fixes (each written to fail first, see CHANGELOG)
+// ---------------------------------------------------------------------------
+
+describe("F1: durations never show 60 minutes", () => {
+	it.each([
+		[3599, "1h 0min"],
+		[28785, "8h 0min"],
+		[27030, "7h 31min"],
+		[7170, "2h 0min"],
+		[7169, "1h 59min"],
+		[30, "0h 1min"],
+	])("formats %i s as %s (total minutes are rounded first, then split)", (seconds, expected) => {
+		expect(secondsToHoursMin(seconds)).toBe(expected);
+	});
+
+	it("applies to the sleep duration and the sleep phases that land in the note", () => {
+		const out = mapSleepData({ sleepTimeSeconds: 28785, deepSleepSeconds: 3599 }, all("sleep_duration", "sleep_deep"));
+		expect(out).toEqual({ sleep_duration: "8h 0min", sleep_deep: "1h 0min" });
+	});
+
+	it("never produces a 60min part for any whole number of seconds up to 24 hours", () => {
+		for (let s = 1; s <= 86400; s += 7) {
+			expect(secondsToHoursMin(s), String(s)).not.toMatch(/\b60min/);
+		}
 	});
 });

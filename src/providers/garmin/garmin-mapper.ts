@@ -4,9 +4,9 @@ import type { TrainingEntry } from "../provider";
 /** Converts seconds to "Xh Ymin" format */
 export function secondsToHoursMin(seconds: number | null | undefined): string | null {
 	if (seconds == null || seconds <= 0) return null;
-	const hours = Math.floor(seconds / 3600);
-	const minutes = Math.round((seconds % 3600) / 60);
-	return `${hours}h ${minutes}min`;
+	// Round the total first, then split: rounding the minutes on their own turns 3599 s into "0h 60min".
+	const totalMinutes = Math.round(seconds / 60);
+	return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}min`;
 }
 
 /** Rounds to one decimal place */
