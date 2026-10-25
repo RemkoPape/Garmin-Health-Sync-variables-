@@ -539,12 +539,6 @@ describe("per-endpoint accessors and the shared cache", () => {
 		expect(net.callsTo("hrv-service")).toHaveLength(3);
 	});
 
-	it("fetchHeartRate reads the daily summary", async () => {
-		routeData();
-		api.setRequiredEndpoints(["dailySummary"]);
-		expect(await api.fetchHeartRate(DATE)).toEqual({ totalSteps: 8123 });
-	});
-
 	it("turns every failure except 'log in again' into a fetch error, so a failed day does not look empty", async () => {
 		routeData({ hrv: { status: 500 } });
 		api.setRequiredEndpoints(["hrv"]);

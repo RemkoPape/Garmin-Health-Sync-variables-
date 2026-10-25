@@ -12,7 +12,6 @@ describe("AuthStateMachine", () => {
 		expect(m.state).toBe("unknown");
 		expect(m.shouldAttemptSync(0)).toBe(true);
 		expect(m.nextRetryAt).toBe(0);
-		expect(m.isPausedForLogin()).toBe(false);
 	});
 
 	it("success makes it ready and clears the backoff", () => {
@@ -46,7 +45,6 @@ describe("AuthStateMachine", () => {
 		const m = new AuthStateMachine();
 		m.onAuthError();
 		expect(m.state).toBe("needsUserLogin");
-		expect(m.isPausedForLogin()).toBe(true);
 		expect(m.shouldAttemptSync(Number.MAX_SAFE_INTEGER)).toBe(false);
 		m.onTransientError(0);
 		m.beginRefresh();

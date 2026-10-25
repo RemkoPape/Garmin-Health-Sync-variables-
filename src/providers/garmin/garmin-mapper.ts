@@ -43,13 +43,13 @@ function firstRecord(value: unknown): Record<string, unknown> {
 export function mapDailySummary(data: Record<string, unknown>, enabled: Set<string>): Record<string, number | string> {
 	const result: Record<string, number | string> = {};
 
-	const mappings: [string, string, ((v: unknown) => number | string | null)?][] = [
+	const mappings: [string, string, ((v: unknown) => number)?][] = [
 		["steps", "totalSteps"],
 		["resting_hr", "restingHeartRate"],
 		["stress", "averageStressLevel"],
 		["calories_total", "totalKilocalories"],
 		["calories_active", "activeKilocalories"],
-		["distance_km", "totalDistanceMeters", (v) => v != null ? round1(Number(v) / 1000) : null],
+		["distance_km", "totalDistanceMeters", (v) => round1(Number(v) / 1000)],
 		["floors", "floorsAscended", (v) => Math.round(Number(v))],
 	];
 
@@ -59,8 +59,7 @@ export function mapDailySummary(data: Record<string, unknown>, enabled: Set<stri
 		if (raw == null) continue;
 
 		if (transform) {
-			const val = transform(raw);
-			if (val != null) result[key] = val;
+			result[key] = transform(raw);
 		} else {
 			result[key] = Number(raw);
 		}

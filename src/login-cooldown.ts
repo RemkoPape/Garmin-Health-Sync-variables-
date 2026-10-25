@@ -24,7 +24,7 @@ const EMPTY: CooldownState = { until: 0, strikes: 0, lastAttemptAt: 0, lastStrik
 /** Escalating wait for the n-th consecutive block (1-based), in seconds. */
 export function backoffSeconds(strikes: number): number {
 	const i = Math.min(Math.max(strikes, 1), STEPS_SECONDS.length) - 1;
-	return STEPS_SECONDS[i] ?? 3600;
+	return STEPS_SECONDS[i] as number; // i is clamped to the table above
 }
 
 export function formatCountdown(totalSeconds: number): string {

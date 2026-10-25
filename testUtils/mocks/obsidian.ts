@@ -311,6 +311,8 @@ export interface MockReply {
 	/** JSON-serialised unless it is a string. `undefined` = empty body. */
 	body?: unknown;
 	headers?: Record<string, string>;
+	/** Reading `.json` throws this (e.g. a string, to exercise non-Error handling). */
+	jsonError?: unknown;
 }
 
 type Responder = MockReply | ((req: RequestUrlParam) => MockReply | Promise<MockReply>);
@@ -361,6 +363,7 @@ function buildResponse(reply: MockReply): RequestUrlResponse {
 	// Obsidian parses lazily: reading `.json` on an empty or invalid body throws.
 	Object.defineProperty(response, "json", {
 		get(): unknown {
+			if (reply.jsonError !== undefined) throw reply.jsonError;
 			return JSON.parse(text);
 		},
 	});

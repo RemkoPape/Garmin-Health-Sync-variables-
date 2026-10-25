@@ -69,7 +69,7 @@ export function collectCookies(headers: Record<string, unknown> | undefined, jar
 	for (const value of values) {
 		if (typeof value !== "string") continue;
 		for (const part of value.split(/,(?=\s*[A-Za-z0-9_.-]+=)/)) {
-			const pair = part.split(";")[0] ?? "";
+			const pair = part.split(";")[0] as string;
 			const i = pair.indexOf("=");
 			if (i > 0) jar[pair.slice(0, i).trim()] = pair.slice(i + 1).trim();
 		}

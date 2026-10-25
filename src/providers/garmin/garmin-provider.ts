@@ -160,89 +160,42 @@ export class GarminProvider implements HealthProvider {
 			console.warn(`Garmin Health Sync: ${label} fetch failed`, error);
 		};
 
-		// Daily Summary
-		const needsSummary = ["steps", "resting_hr", "stress", "calories_total", "calories_active", "distance_km", "floors", "intensity_min"]
-			.some(k => enabled.has(k));
-		if (needsSummary) {
+		// One request group: fetch, map, merge. A group that fails must not drop the others, so only a login
+		// or fetch error is rethrown; anything else (e.g. a mapper choking on a payload) is logged.
+		const group = <T>(label: string, warnLabel: string, fetched: Promise<T>, map: (data: T) => Record<string, number | string>): void => {
 			requests.push(
-				this.api.fetchDailySummary(date)
-					.then(data => merge("dailySummary", mapDailySummary(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Daily summary", e))
+				fetched
+					.then(data => merge(label, map(data), data))
+					.catch(e => warnOrRethrowAuth(warnLabel, e))
 			);
-		}
+		};
 
-		// Sleep
-		const needsSleep = ["sleep_duration", "sleep_score", "sleep_deep", "sleep_light", "sleep_rem", "sleep_awake"]
-			.some(k => enabled.has(k));
-		if (needsSleep) {
-			requests.push(
-				this.api.fetchSleepData(date)
-					.then(data => merge("sleep", mapSleepData(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Sleep data", e))
-			);
+		if (["steps", "resting_hr", "stress", "calories_total", "calories_active", "distance_km", "floors", "intensity_min"].some(k => enabled.has(k))) {
+			group("dailySummary", "Daily summary", this.api.fetchDailySummary(date), data => mapDailySummary(data, enabled));
 		}
-
-		// HRV
+		if (["sleep_duration", "sleep_score", "sleep_deep", "sleep_light", "sleep_rem", "sleep_awake"].some(k => enabled.has(k))) {
+			group("sleep", "Sleep data", this.api.fetchSleepData(date), data => mapSleepData(data, enabled));
+		}
 		if (enabled.has("hrv")) {
-			requests.push(
-				this.api.fetchHrv(date)
-					.then(data => merge("hrv", mapHrvData(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("HRV", e))
-			);
+			group("hrv", "HRV", this.api.fetchHrv(date), data => mapHrvData(data, enabled));
 		}
-
-		// Body Battery
 		if (enabled.has("body_battery") || enabled.has("body_battery_min") || enabled.has("body_battery_max")) {
-			requests.push(
-				this.api.fetchBodyBattery(date)
-					.then(data => merge("bodyBattery", mapBodyBattery(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Body Battery", e))
-			);
+			group("bodyBattery", "Body Battery", this.api.fetchBodyBattery(date), data => mapBodyBattery(data, enabled));
 		}
-
-		// SpO2
 		if (enabled.has("spo2")) {
-			requests.push(
-				this.api.fetchSpO2(date)
-					.then(data => merge("spo2", mapSpO2(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("SpO2", e))
-			);
+			group("spo2", "SpO2", this.api.fetchSpO2(date), data => mapSpO2(data, enabled));
 		}
-
-		// Respiration
 		if (enabled.has("respiration_rate")) {
-			requests.push(
-				this.api.fetchRespiration(date)
-					.then(data => merge("respiration", mapRespiration(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Respiration", e))
-			);
+			group("respiration", "Respiration", this.api.fetchRespiration(date), data => mapRespiration(data, enabled));
 		}
-
-		// Weight & Body Fat
 		if (enabled.has("weight_kg") || enabled.has("body_fat_pct")) {
-			requests.push(
-				this.api.fetchWeight(date)
-					.then(data => merge("weight", mapWeight(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Weight", e))
-			);
+			group("weight", "Weight", this.api.fetchWeight(date), data => mapWeight(data, enabled));
 		}
-
-		// Training Readiness
 		if (enabled.has("training_readiness")) {
-			requests.push(
-				this.api.fetchTrainingReadiness(date)
-					.then(data => merge("trainingReadiness", mapTrainingReadiness(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Training Readiness", e))
-			);
+			group("trainingReadiness", "Training Readiness", this.api.fetchTrainingReadiness(date), data => mapTrainingReadiness(data, enabled));
 		}
-
-		// Training Status / VO2 max
 		if (enabled.has("training_status") || enabled.has("vo2_max")) {
-			requests.push(
-				this.api.fetchTrainingStatus(date)
-					.then(data => merge("trainingStatus", mapTrainingStatus(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Training Status", e))
-			);
+			group("trainingStatus", "Training Status", this.api.fetchTrainingStatus(date), data => mapTrainingStatus(data, enabled));
 		}
 
 		// Activities

@@ -29,8 +29,7 @@ function describeResponse(res: RequestUrlResponse, json: string): string {
 }
 
 /** Case-insensitive header lookup: Android keeps the server's casing, desktop lowercases. */
-function headerValue(headers: Record<string, string> | undefined, name: string): string | undefined {
-	if (!headers) return undefined;
+function headerValue(headers: Record<string, string>, name: string): string | undefined {
 	const key = Object.keys(headers).find((k) => k.toLowerCase() === name);
 	const value = key ? headers[key] : undefined;
 	return typeof value === "string" ? value : undefined;
@@ -41,8 +40,7 @@ const DIAG_HEADERS = ["content-encoding", "age", "date", "cache-control", "cf-ca
 /** Response headers for the sync diagnostics: all header names, values only for a short
  *  non-identifying whitelist (cache/CDN hints), cookie NAMES only. Shows whether the platform
  *  stack hands us cookies or a cached answer. */
-function describeHeaders(headers: Record<string, string> | undefined): string {
-	if (!headers) return "headers: none";
+function describeHeaders(headers: Record<string, string>): string {
 	const names = Object.keys(headers).map((k) => k.toLowerCase()).filter((k) => k !== "set-cookie").sort();
 	const values: string[] = [];
 	for (const h of DIAG_HEADERS) {
@@ -334,11 +332,11 @@ export class GarminApi {
 	// `service`. On failure: navigation URLs (logged live) + HTML diagnostics.
 	// This is the regular interactive login; OAuth2 refresh + data fetching run
 	// silently afterwards without a BrowserWindow (ensureValidOAuth2/fetchDataForDate).
-	async loginViaOAuth(opts: { silent?: boolean } = {}): Promise<{ ok: boolean; detail: string; cancelled?: boolean }> {
+	async loginViaOAuth(): Promise<{ ok: boolean; detail: string; cancelled?: boolean }> {
 		// F9: concurrent login calls (settings button + notice button) share ONE
 		// window/result instead of opening two BrowserWindows racing for the tokens.
 		if (this.loginPromise) return this.loginPromise;
-		this.loginPromise = this.doLoginViaOAuth(opts);
+		this.loginPromise = this.doLoginViaOAuth();
 		try {
 			return await this.loginPromise;
 		} finally {
@@ -372,11 +370,10 @@ export class GarminApi {
 		});
 	}
 
-	private async doLoginViaOAuth(opts: { silent?: boolean } = {}): Promise<{ ok: boolean; detail: string; cancelled?: boolean }> {
+	private async doLoginViaOAuth(): Promise<{ ok: boolean; detail: string; cancelled?: boolean }> {
 		// The Electron BrowserWindow only exists on desktop; mobile uses loginWithCredentials().
 		if (!Platform.isDesktopApp) return { ok: false, detail: "unsupported_platform" };
-		const silent = opts.silent ?? false;
-		console.debug(`Garmin Health Sync: starting OAuth login (plugin v${this.pluginVersion || "?"}, region=${this.urls.domain}, silent=${silent})`);
+		console.debug(`Garmin Health Sync: starting OAuth login (plugin v${this.pluginVersion || "?"}, region=${this.urls.domain})`);
 		const BrowserWindow = this.getBrowserWindowConstructor();
 		const signinUrl = this.getSigninUrl();
 
@@ -389,7 +386,7 @@ export class GarminApi {
 		const win: BrowserWindowType = new BrowserWindow({
 			width: 500,
 			height: 700,
-			show: !silent,
+			show: true,
 			title: "Garmin Connect Login",
 			webPreferences: { nodeIntegration: false, contextIsolation: false, partition: "persist:ghs-login" },
 		});
@@ -452,7 +449,7 @@ export class GarminApi {
 			`log("patch installed on "+clean(location.href));` +
 			`}catch(e){}})()`;
 
-		const timeoutMs = silent ? 30000 : 120000;
+		const timeoutMs = 120000;
 		// Network-level capture listeners are registered on the (persistent) login
 		// session inside the promise; this holder lets finish()/finally remove them.
 		let removeWebRequestListeners: () => void = () => { /* set on registration */ };
@@ -1013,7 +1010,7 @@ export class GarminApi {
 			log(`socialProfile: failed (${describeError(e)})`);
 			throw e;
 		}
-		log(`socialProfile: ok${this.dnInfo ? ` (${this.dnInfo})` : ""}`);
+		log(`socialProfile: ok (${this.dnInfo})`);
 
 		const keys = this.requiredEndpoints ?? Object.keys(this.endpoints);
 
@@ -1086,7 +1083,7 @@ export class GarminApi {
 					if (!(status >= 200 && status < 300) && status !== 404) failed.push(key);
 					// F11: also covers the empty 200 body (Garmin occasionally returns
 					// 200 + null for missing daily data) — legitimate, but now logged.
-					console.debug(`Garmin Health Sync: endpoint ${key} → status ${status}${data == null ? " (empty)" : ""} (skipped)`);
+					console.debug(`Garmin Health Sync: endpoint ${key} → status ${status} (skipped)`);
 				}
 			} catch (e) {
 				log(`${key}: threw ${describeError(e)}, ${Date.now() - started}ms`);
@@ -1161,11 +1158,6 @@ export class GarminApi {
 	async fetchSpO2(date: string): Promise<Record<string, unknown>> {
 		const data = await this.getCachedOrFetch(date);
 		return (data.spo2 || {}) as Record<string, unknown>;
-	}
-
-	async fetchHeartRate(date: string): Promise<Record<string, unknown>> {
-		// Heart rate comes from the daily summary
-		return this.fetchDailySummary(date);
 	}
 
 	// --- Cache + lock: navigate only once per date ---

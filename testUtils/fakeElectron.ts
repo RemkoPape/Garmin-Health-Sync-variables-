@@ -14,6 +14,7 @@ export class FakeBrowserWindow {
 	static throwOnSetUserAgent = false;
 	static loadUrlRejects = false;
 	static throwOnClear = false;
+	static insertCssRejects = false;
 	static reset(): void {
 		FakeBrowserWindow.instances = [];
 		FakeBrowserWindow.options = [];
@@ -24,6 +25,7 @@ export class FakeBrowserWindow {
 		FakeBrowserWindow.throwOnSetUserAgent = false;
 		FakeBrowserWindow.loadUrlRejects = false;
 		FakeBrowserWindow.throwOnClear = false;
+		FakeBrowserWindow.insertCssRejects = false;
 	}
 
 	readonly handlers: Record<string, Handler[]> = {};
@@ -76,7 +78,7 @@ export class FakeBrowserWindow {
 			getURL: () => self.loadedUrl,
 			insertCSS: (css: string) => {
 				self.insertedCss.push(css);
-				return Promise.resolve("key");
+				return FakeBrowserWindow.insertCssRejects ? Promise.reject(new Error("destroyed")) : Promise.resolve("key");
 			},
 			setUserAgent: (ua: string) => {
 				if (FakeBrowserWindow.throwOnSetUserAgent) throw new Error("no setUserAgent");

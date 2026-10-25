@@ -97,12 +97,6 @@ export class AuthStateMachine {
 		}
 	}
 
-	/** Is auto-sync permanently paused (only needsUserLogin)? For UI/settings,
-	 *  replaces the meaning of the old `autoSyncPaused` flag. */
-	isPausedForLogin(): boolean {
-		return this._state === "needsUserLogin";
-	}
-
 	/** Full reset (e.g. after logout). */
 	reset(): void {
 		this._state = "unknown";

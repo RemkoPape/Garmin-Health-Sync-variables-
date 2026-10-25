@@ -123,19 +123,12 @@ export async function oauth1Header(
 	for (const [k, v] of u.searchParams) {
 		all[k] = v;
 	}
-	for (const k in bodyParams ?? {}) {
-		const val = (bodyParams ?? {})[k];
-		if (val !== undefined) all[k] = val;
-	}
-	for (const k in oauth) {
-		const val = oauth[k];
-		if (val !== undefined) all[k] = val;
-	}
+	Object.assign(all, bodyParams, oauth);
 
-	// Parameter string: sorted, RFC-3986-encoded
-	const paramString = Object.keys(all)
-		.sort()
-		.map((k) => `${rfc3986(k)}=${rfc3986(all[k] ?? "")}`)
+	// Parameter string: sorted by key, RFC-3986-encoded
+	const paramString = Object.entries(all)
+		.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+		.map(([k, v]) => `${rfc3986(k)}=${rfc3986(v)}`)
 		.join("&");
 
 	// Base URL without query string or fragment
@@ -174,9 +167,9 @@ export async function oauth1Header(
 	// Assemble the Authorization header (sorted)
 	return (
 		"OAuth " +
-		Object.keys(oauth)
-			.sort()
-			.map((k) => `${rfc3986(k)}="${rfc3986(oauth[k] ?? "")}"`)
+		Object.entries(oauth)
+			.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+			.map(([k, v]) => `${rfc3986(k)}="${rfc3986(v)}"`)
 			.join(", ")
 	);
 }
