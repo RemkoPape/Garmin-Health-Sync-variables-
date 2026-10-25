@@ -9,6 +9,7 @@
 - The "frontmatter is broken" notice is now shown in your language instead of always in German.
 - Notes that start with a byte order mark (BOM) before the properties are recognised; a second properties block is no longer added above the mark.
 - Workout locations keep Vietnamese and other Latin names whole ("Hà Nội" was written as "Hà").
+- A value Garmin sends in an unexpected form (for example text where a number is expected) is no longer written into your note as "NaN"; it is skipped.
 - Intensity minutes are counted when Garmin sends vigorous minutes but no moderate value.
 
 ## 0.11.1-beta.2

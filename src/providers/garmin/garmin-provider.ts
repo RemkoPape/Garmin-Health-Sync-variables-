@@ -133,7 +133,14 @@ export class GarminProvider implements HealthProvider {
 		const metrics: Record<string, number | string> = {};
 
 		const requests: Promise<void>[] = [];
-		const merge = (label: string, data: Record<string, number | string>, raw?: unknown): void => {
+		const merge = (label: string, mapped: Record<string, number | string>, raw?: unknown): void => {
+			// Garmin sometimes sends a field with a type the mapper did not expect ("BALANCED" where a number was
+			// assumed). A NaN or Infinity must never be written into a note, so such values are dropped here, in
+			// one place, for every mapper.
+			const data: Record<string, number | string> = {};
+			for (const [key, value] of Object.entries(mapped)) {
+				if (typeof value === "number" ? Number.isFinite(value) : value !== "") data[key] = value;
+			}
 			console.debug(`Garmin Health Sync: Mapper [${label}] →`, JSON.stringify(data));
 			// Diagnostic (issue #8): a non-empty response that maps to nothing means
 			// the payload shape differs from what the mapper expects. Log the
