@@ -294,8 +294,6 @@ export default class HealthSyncPlugin extends Plugin {
 	}
 
 	private async runAutoSync(datesToSync: string[]): Promise<void> {
-		if (!this.garminProvider.isSessionValid()) return;
-
 		const now = Date.now();
 
 		console.debug("Garmin Health Sync: Auto-sync — syncing:", datesToSync.join(", "));
@@ -557,7 +555,7 @@ export default class HealthSyncPlugin extends Plugin {
 
 		// Detect language from Obsidian on first launch
 		if (!saved?.language) {
-			const obsidianLang = activeDocument.documentElement.lang?.slice(0, 2) ?? "en";
+			const obsidianLang = activeDocument.documentElement.lang.slice(0, 2);
 			const supported = ["en", "de", "zh", "ja", "es", "fr"];
 			this.settings.language = supported.includes(obsidianLang) ? obsidianLang : "en";
 		}

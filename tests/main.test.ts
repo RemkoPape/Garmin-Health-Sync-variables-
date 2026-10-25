@@ -956,3 +956,421 @@ describe("backfill command", () => {
 		expect(modal.contentEl.children).toHaveLength(0);
 	});
 });
+
+// ---------------------------------------------------------------------------
+// Signing in and out
+// ---------------------------------------------------------------------------
+
+function fill(modal: Modal, values: string[]): void {
+	const inputs = [...modal.contentEl.querySelectorAll<HTMLInputElement>("input")];
+	values.forEach((v, i) => {
+		inputs[i]!.value = v;
+		inputs[i]!.dispatchEvent(new window.Event("input"));
+	});
+}
+const press = (modal: Modal, selector: string): void => (modal.contentEl.querySelector(selector) as HTMLButtonElement).click();
+
+describe("signing in with email and password", () => {
+	it("opens one dialog at a time", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.plugin.openCredentialLogin();
+		loaded.plugin.openCredentialLogin();
+		expect(Modal.opened).toHaveLength(1);
+		Modal.opened[0]!.close();
+		loaded.plugin.openCredentialLogin();
+		expect(Modal.opened).toHaveLength(2);
+	});
+
+	it("signs in, stores the tokens in secret storage, thanks the user and starts a sync", async () => {
+		const loaded = await load({ language: "en" });
+		const done = vi.fn();
+		loaded.plugin.openCredentialLogin(done);
+		const modal = Modal.opened[0]!;
+		fill(modal, ["me@example.com", "pw"]);
+		press(modal, "button.mod-cta");
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.credentialCalls).toEqual([["me@example.com", "pw"]]);
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeLoginSuccess);
+		expect(loaded.app.secretStorage!.store.get("garmin-health-sync-oauth1")).toContain("\"oauth_token\"");
+		expect(done).toHaveBeenCalledOnce();
+		expect(modal.isOpen).toBe(false);
+		expect(fetched(loaded.provider).length).toBeGreaterThan(0);
+	});
+
+	it("passes the step log and the attempt timing to the diagnostics button of the failure screen", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.provider.credentialOutcome = { status: "error", reason: "unexpected", detail: "x" };
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+		loaded.plugin.openCredentialLogin();
+		const modal = Modal.opened[0]!;
+		fill(modal, ["a@b.c", "pw"]);
+		press(modal, "button.mod-cta");
+		await vi.runAllTimersAsync();
+		const buttons = [...modal.contentEl.querySelectorAll("button")];
+		buttons.find((b) => b.textContent === en.modalCredCopyDiagnostics)!.click();
+		await vi.runAllTimersAsync();
+		expect(writeText.mock.calls[0]?.[0]).toBe("login log\nprevious attempt: none, blocks in a row: 0");
+	});
+
+	it("a rate-limited attempt starts the cooldown that the dialog counts down", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.provider.credentialOutcome = { status: "error", reason: "rate_limited", detail: "x" };
+		loaded.plugin.openCredentialLogin();
+		const modal = Modal.opened[0]!;
+		fill(modal, ["a@b.c", "pw"]);
+		press(modal, "button.mod-cta");
+		await settle();
+		expect(modal.contentEl.textContent).toContain(en.modalCredErrorRateLimited);
+		expect(modal.contentEl.textContent).toContain("5:00");
+	});
+
+	it("verifies a two-step code through the provider", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.provider.credentialOutcome = { status: "mfa", method: "email" };
+		loaded.plugin.openCredentialLogin();
+		const modal = Modal.opened[0]!;
+		fill(modal, ["a@b.c", "pw"]);
+		press(modal, "button.mod-cta");
+		await settle();
+		fill(modal, ["123456"]);
+		loaded.provider.oauth1 = TOKEN1;
+		press(modal, "button.mod-cta");
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.mfaCalls).toEqual(["123456"]);
+		expect(modal.isOpen).toBe(false);
+	});
+
+	it("falls back to the browser login from the dialog", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.plugin.openCredentialLogin();
+		const modal = Modal.opened[0]!;
+		const buttons = [...modal.contentEl.querySelectorAll("button")];
+		buttons.find((b) => b.textContent === en.modalCredBrowserFallback)!.click();
+		expect(Modal.opened).toHaveLength(2);
+		expect(Modal.opened[1]!.contentEl.querySelector("h2")?.textContent).toBe(en.modalManualLoginTitle);
+	});
+});
+
+describe("signing in with a ticket", () => {
+	async function openManual(loaded: Awaited<ReturnType<typeof load>>, done?: () => void) {
+		loaded.plugin.openManualLogin(done);
+		const modal = Modal.opened.at(-1)!;
+		fill(modal, ["ST-1234567-abcdef"]);
+		[...modal.contentEl.querySelectorAll("button")].find((b) => b.textContent === en.modalManualLoginSubmit)!.click();
+		await vi.runAllTimersAsync();
+		return modal;
+	}
+
+	it("passes the pasted ticket to the provider, then thanks the user and closes the dialog", async () => {
+		const loaded = await load({ language: "en" });
+		const done = vi.fn();
+		const modal = await openManual(loaded, done);
+		expect(loaded.provider.ticketCalls).toEqual(["ST-1234567-abcdef"]);
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeLoginSuccess);
+		expect(done).toHaveBeenCalledOnce();
+		expect(modal.isOpen).toBe(false);
+	});
+
+	it("tells the user when the ticket was refused, and keeps the dialog open", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.provider.ticketResult = false;
+		const done = vi.fn();
+		const modal = await openManual(loaded, done);
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeManualLoginFailed);
+		expect(done).not.toHaveBeenCalled();
+		expect(modal.isOpen).toBe(true);
+	});
+
+	it("treats an exception during the ticket login as a failed login", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.provider.ticketResult = new Error("boom");
+		const modal = await openManual(loaded);
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeManualLoginFailed);
+		expect(modal.isOpen).toBe(true);
+	});
+
+	it("is reachable through its command", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.plugin.commands.get("login-with-ticket")!.callback!();
+		expect(Modal.opened[0]!.contentEl.querySelector("h2")?.textContent).toBe(en.modalManualLoginTitle);
+	});
+
+	it("opens without a completion callback", async () => {
+		const loaded = await load({ language: "en" });
+		await openManual(loaded);
+		expect(loaded.provider.ticketCalls).toHaveLength(1);
+	});
+});
+
+describe("the sign-in notice", () => {
+	async function expired() {
+		const loaded = await load({ language: "en" });
+		loaded.app.workspace.layoutReady();
+		await settle();
+		const notice = Notice.recorded[0]!;
+		const button = notice.fragment!.querySelector("button")!;
+		return { ...loaded, notice, button };
+	}
+
+	it("offers a button that starts the sign-in and shows progress while it runs", async () => {
+		const { button } = await expired();
+		button.click();
+		expect(button.disabled).toBe(true);
+		expect(button.textContent).toBe(en.noticeLoginInProgress);
+		expect(Modal.opened).toHaveLength(1);
+	});
+
+	it("closes after a successful sign-in", async () => {
+		const { button, notice, provider } = await expired();
+		button.click();
+		const modal = Modal.opened[0]!;
+		fill(modal, ["a@b.c", "pw"]);
+		press(modal, "button.mod-cta");
+		await vi.runAllTimersAsync();
+		expect(provider.credentialCalls).toHaveLength(1);
+		expect(notice.hidden).toBe(true);
+	});
+
+	it("re-enables the button when the sign-in did not happen", async () => {
+		const { button } = await expired();
+		button.click();
+		await settle();
+		expect(button.disabled).toBe(false);
+		expect(button.textContent).toBe(en.noticeLoginAction);
+	});
+
+	it("closes the notice as soon as a session exists and the state is fine, even if the dialog was just closed", async () => {
+		const { button, notice, provider } = await expired();
+		provider.oauth1 = TOKEN1;
+		button.click();
+		await settle();
+		expect(notice.hidden).toBe(true);
+	});
+
+	it("keeps the notice and the button when the session exists but the provider still needs a login", async () => {
+		const { button, notice, provider } = await expired();
+		provider.oauth1 = TOKEN1;
+		provider.authState = "needsUserLogin";
+		button.click();
+		await settle();
+		expect(notice.hidden).toBe(false);
+		expect(button.disabled).toBe(false);
+	});
+});
+
+describe("logging out", () => {
+	it("clears the session, the stored tokens and every copy in data.json", async () => {
+		const loaded = await load(signedIn({ garminSession: "" }));
+		await loaded.plugin.logout();
+		expect(loaded.provider.clearedSession).toBe(1);
+		expect(loaded.provider.isSessionValid()).toBe(false);
+		expect(loaded.app.secretStorage!.store.get("garmin-health-sync-oauth1")).toBe("");
+		expect(loaded.plugin.isSessionValid()).toBe(false);
+		expect(loaded.plugin.data).toMatchObject({ garminSession: "", garminOAuth1: "", garminOAuth2: "" });
+	});
+
+	it("still logs out when the secret store cannot be cleared", async () => {
+		const loaded = await load(null, (a) => {
+			a.secretStorage = undefined;
+		});
+		const warn = vi.spyOn(console, "warn");
+		await loaded.plugin.logout();
+		expect(warn).toHaveBeenCalled();
+		expect(loaded.provider.clearedSession).toBe(1);
+	});
+});
+
+describe("diagnostics and misc", () => {
+	it("hands out the provider's sync log, or says nothing ran yet", async () => {
+		const loaded = await load();
+		expect(loaded.plugin.getSyncDiagnostics()).toBe("no sync run since the plugin started");
+		loaded.provider.diagnostics = "plugin v1, platform=ios";
+		expect(loaded.plugin.getSyncDiagnostics()).toBe("plugin v1, platform=ios");
+	});
+
+	it("applies a changed server region to the provider", async () => {
+		const loaded = await load();
+		loaded.plugin.settings.serverRegion = "china";
+		loaded.plugin.applyServerRegion();
+		expect(loaded.provider.region).toBe("china");
+	});
+
+	it("reports whether a session exists", async () => {
+		expect((await load()).plugin.isSessionValid()).toBe(false);
+		expect((await load(signedIn())).plugin.isSessionValid()).toBe(true);
+	});
+
+	it("uses mobile dialog text and does not need desktop APIs", async () => {
+		Platform.isDesktopApp = false;
+		const loaded = await load({ language: "en" });
+		loaded.plugin.openManualLogin();
+		expect(Modal.opened[0]!.contentEl.textContent).toContain(en.modalManualLoginStep3Mobile.slice(0, 20));
+	});
+
+	it("tracks every Setting row it renders in the dialogs (sanity check of the test mock)", async () => {
+		const loaded = await load();
+		loaded.plugin.openCredentialLogin();
+		expect(Setting.all.length).toBeGreaterThan(2);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Remaining branches of the plugin shell
+// ---------------------------------------------------------------------------
+
+describe("triggers while busy or too soon", () => {
+	it("a normal trigger during a running pass is dropped, not queued", async () => {
+		const loaded = await load(signedIn());
+		let release: () => void = () => undefined;
+		loaded.provider.gate = new Promise<void>((resolve) => (release = resolve));
+		loaded.app.workspace.layoutReady();
+		await settle();
+		loaded.app.workspace.fire("file-open", loaded.app.vault.seed(`${dayString(1)}.md`, "x"));
+		await settle();
+		loaded.provider.gate = null;
+		release();
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toHaveLength(7);
+	});
+
+	it("ignores a trigger within 30 seconds of the last attempt and accepts it afterwards", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.app.workspace.layoutReady();
+		await settle();
+		loaded.provider.oauth1 = TOKEN1;
+		loaded.app.workspace.fire("file-open", loaded.app.vault.seed(`${dayString(1)}.md`, "x"));
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.fetchCalls).toEqual([]);
+		vi.setSystemTime(Date.now() + 31_000);
+		loaded.app.workspace.fire("file-open", loaded.app.vault.getAbstractFileByPath(`${dayString(1)}.md`));
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider).length).toBeGreaterThan(0);
+	});
+
+	it("ignores create/modify events for folders", async () => {
+		const loaded = await load(signedIn({ createDailyNoteIfMissing: false }));
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		loaded.app.vault.fire("create", loaded.app.vault.root);
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.fetchCalls).toEqual([]);
+	});
+});
+
+describe("failures outside a single day", () => {
+	it("an auto-sync that fails for another reason is logged and retried later, without a sign-in notice", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.getRecommendedBatchDelay = () => {
+			throw new Error("boom");
+		};
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded).toEqual([]);
+		expect(loaded.plugin.saves).toBeGreaterThan(0);
+	});
+
+	it("shows the sign-in notice for that kind of failure when the provider is in needsUserLogin", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.authState = "needsUserLogin";
+		loaded.provider.getRecommendedBatchDelay = () => {
+			throw new Error("boom");
+		};
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeSessionExpired + en.noticeLoginAction);
+	});
+
+	it("a manual sync that fails outside the day shows the notice only for needsUserLogin", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.isConfigured = () => {
+			throw new Error("boom");
+		};
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded).toEqual([]);
+		loaded.provider.authState = "needsUserLogin";
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeSessionExpired + en.noticeLoginAction);
+	});
+});
+
+describe("sign-in details", () => {
+	it("reports how long ago the previous attempt was in the diagnostics", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.provider.credentialOutcome = { status: "error", reason: "invalid_credentials", detail: "x" };
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+		loaded.plugin.openCredentialLogin();
+		const modal = Modal.opened[0]!;
+		fill(modal, ["a@b.c", "pw"]);
+		press(modal, "button.mod-cta");
+		await settle();
+		vi.setSystemTime(Date.now() + 42_000);
+		fill(modal, ["a@b.c", "pw2"]);
+		loaded.provider.credentialOutcome = { status: "error", reason: "unexpected", detail: "x" };
+		press(modal, "button.mod-cta");
+		await settle();
+		[...modal.contentEl.querySelectorAll("button")].find((b) => b.textContent === en.modalCredCopyDiagnostics)!.click();
+		await settle();
+		expect(writeText.mock.calls[0]?.[0]).toContain("previous attempt: 42s ago");
+	});
+
+	it("keeps the tokens in data.json when secret storage is unavailable, and writes nothing for a missing OAuth2 token", async () => {
+		const loaded = await load({ language: "en" }, (a) => {
+			a.secretStorage = undefined;
+		});
+		loaded.provider.credentialOutcome = { status: "ok" };
+		loaded.plugin.openCredentialLogin();
+		const modal = Modal.opened[0]!;
+		fill(modal, ["a@b.c", "pw"]);
+		press(modal, "button.mod-cta");
+		await vi.runAllTimersAsync();
+		expect((loaded.plugin.data as HealthSyncSettings).garminOAuth1).toContain("oauth_token");
+		expect((loaded.plugin.data as HealthSyncSettings).garminOAuth2).toBe("");
+	});
+
+	it("a newer sign-in notice is not cleared by an older one's button", async () => {
+		const loaded = await load({ language: "en" });
+		loaded.app.workspace.layoutReady();
+		await settle();
+		const first = Notice.recorded[0]!;
+		vi.setSystemTime(Date.now() + 11 * MIN);
+		loaded.app.workspace.fire("file-open", loaded.app.vault.seed(`${dayString(1)}.md`, "x"));
+		await settle();
+		const second = Notice.recorded[1]!;
+		expect(first.hidden).toBe(true);
+		first.fragment!.querySelector("button")!.click();
+		const modal = Modal.opened[0]!;
+		fill(modal, ["a@b.c", "pw"]);
+		press(modal, "button.mod-cta");
+		await vi.runAllTimersAsync();
+		expect(second.hidden).toBe(false);
+	});
+});
+
+describe("daily note format corner cases", () => {
+	it("uses the default format when the setting is empty", async () => {
+		const loaded = await load(signedIn({ dailyNoteFormat: "" }));
+		loaded.app.workspace.fire("file-open", loaded.app.vault.seed(`${dayString(1)}.md`, "x"));
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toContain(dayString(1));
+	});
+
+	it("does not read a date from a format that has no day", async () => {
+		const loaded = await load(signedIn({ dailyNoteFormat: "YYYY-MM" }));
+		loaded.app.workspace.activeFile = loaded.app.vault.seed("2026-10.md", "x") as TFile;
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toEqual([dayString(1)]);
+	});
+
+	it("does not look at the bare file name for a format with folders", async () => {
+		const loaded = await load(signedIn({ dailyNoteFormat: "YYYY/MM/DD ddd", dailyNotePath: "Daily" }));
+		loaded.app.workspace.activeFile = loaded.app.vault.seed("Daily/misc/2026-10-20 Tue.md", "x") as TFile;
+		loaded.plugin.commands.get("sync-health-data")!.callback!();
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toEqual([dayString(1)]);
+	});
+});

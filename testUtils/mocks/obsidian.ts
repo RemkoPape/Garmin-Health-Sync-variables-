@@ -91,6 +91,11 @@ export class Vault {
 		return { name, cb };
 	}
 
+	/** Test helper: deliver an event to the listeners, e.g. for a folder, which the mock itself never announces. */
+	fire(name: "create" | "modify" | "delete" | "rename", file: TAbstractFile): void {
+		this.emit(name, file);
+	}
+
 	private emit(name: string, file: TAbstractFile): void {
 		for (const cb of this.listeners[name] ?? []) cb(file);
 	}
