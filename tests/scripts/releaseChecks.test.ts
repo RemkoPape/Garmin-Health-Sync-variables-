@@ -81,6 +81,7 @@ describe("checkManifestFields", () => {
 		["emoji", { description: "Heart ❤️." }, /emoji/],
 		["a non-kebab id", { id: "Garmin_Sync" }, /kebab-case/],
 		["obsidian in the id", { id: "my-obsidian-sync" }, /obsidian/],
+		["an id ending in plugin", { id: "garmin-sync-plugin" }, /end with "plugin"/],
 		["a non-boolean isDesktopOnly", { isDesktopOnly: "no" }, /boolean/],
 		["a non-http authorUrl", { authorUrl: "ftp://x" }, /http\(s\)/],
 	])("flags %s", (_label, patch, re) => {

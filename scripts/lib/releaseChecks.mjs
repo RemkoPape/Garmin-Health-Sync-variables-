@@ -58,6 +58,7 @@ export function checkManifestFields(manifest) {
 	if (typeof manifest.id === "string") {
 		if (!/^[a-z0-9][a-z0-9-]*$/.test(manifest.id)) problems.push("id must be lowercase kebab-case");
 		if (/obsidian/i.test(manifest.id)) problems.push('id must not contain "obsidian"');
+		if (/plugin$/.test(manifest.id)) problems.push('id must not end with "plugin"');
 	}
 	if (typeof manifest.isDesktopOnly !== "boolean") problems.push("isDesktopOnly must be a boolean");
 	if (manifest.authorUrl != null && !/^https?:\/\//.test(String(manifest.authorUrl))) {

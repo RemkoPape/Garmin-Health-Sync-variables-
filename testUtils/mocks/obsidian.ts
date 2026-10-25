@@ -534,6 +534,8 @@ export interface MockReply {
 	/** JSON-serialised unless it is a string. `undefined` = empty body. */
 	body?: unknown;
 	headers?: Record<string, string>;
+	/** Deliver a response without any headers object (`undefined`), as some platform HTTP stacks might. */
+	noHeaders?: boolean;
 	/** Reading `.json` throws this (e.g. a string, to exercise non-Error handling). */
 	jsonError?: unknown;
 }
@@ -579,7 +581,7 @@ function buildResponse(reply: MockReply): RequestUrlResponse {
 	const text = reply.body === undefined ? "" : typeof reply.body === "string" ? reply.body : JSON.stringify(reply.body);
 	const response = {
 		status,
-		headers: reply.headers ?? {},
+		headers: reply.noHeaders ? undefined : (reply.headers ?? {}),
 		text,
 		arrayBuffer: new TextEncoder().encode(text).buffer as ArrayBuffer,
 	} as RequestUrlResponse;

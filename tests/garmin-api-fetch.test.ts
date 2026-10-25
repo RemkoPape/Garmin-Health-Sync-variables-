@@ -668,6 +668,15 @@ describe("sync diagnostics (copied into bug reports)", () => {
 		expect(log).not.toContain("hidden");
 	});
 
+	it("a response without any headers object is no failure: the sync still returns its data", async () => {
+		routeData({ hrv: { body: { hrvSummary: { lastNightAvg: 40 } }, noHeaders: true } });
+		api.setRequiredEndpoints(["hrv"]);
+		const results = await api.fetchDataForDate(DATE);
+		expect(results["hrv"]).toEqual({ hrvSummary: { lastNightAvg: 40 } });
+		expect(api.getSyncDiagnostics()).toContain("hrv headers: none");
+		expect(api.getSyncDiagnostics()).toContain("type=?");
+	});
+
 	it("handles responses without headers", async () => {
 		routeData({ hrv: () => ({ body: {} }) });
 		api.setRequiredEndpoints(["hrv"]);
