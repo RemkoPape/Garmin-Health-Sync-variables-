@@ -51,11 +51,6 @@ export function mapDailySummary(data: Record<string, unknown>, enabled: Set<stri
 		["calories_active", "activeKilocalories"],
 		["distance_km", "totalDistanceMeters", (v) => v != null ? round1(Number(v) / 1000) : null],
 		["floors", "floorsAscended", (v) => Math.round(Number(v))],
-		["intensity_min", "moderateIntensityMinutes", (v) => {
-			const moderate = Number(v) || 0;
-			const vigorous = Number(data["vigorousIntensityMinutes"]) || 0;
-			return moderate + vigorous;
-		}],
 	];
 
 	for (const [key, field, transform] of mappings) {
@@ -68,6 +63,16 @@ export function mapDailySummary(data: Record<string, unknown>, enabled: Set<stri
 			if (val != null) result[key] = val;
 		} else {
 			result[key] = Number(raw);
+		}
+	}
+
+	// Intensity minutes are moderate + vigorous. Garmin may send only one of them (a missing moderate
+	// value next to 30 vigorous minutes still means 30), so this is not a plain field mapping.
+	if (enabled.has("intensity_min")) {
+		const moderate = data["moderateIntensityMinutes"];
+		const vigorous = data["vigorousIntensityMinutes"];
+		if (moderate != null || vigorous != null) {
+			result["intensity_min"] = (Number(moderate) || 0) + (Number(vigorous) || 0);
 		}
 	}
 

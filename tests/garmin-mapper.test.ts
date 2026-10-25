@@ -400,3 +400,16 @@ describe("F1: durations never show 60 minutes", () => {
 		}
 	});
 });
+describe("C2: intensity minutes when only vigorous minutes are present", () => {
+	it("counts vigorous minutes even if Garmin sends no moderate value", () => {
+		expect(mapDailySummary({ moderateIntensityMinutes: null, vigorousIntensityMinutes: 30 }, all("intensity_min"))).toEqual({
+			intensity_min: 30,
+		});
+		expect(mapDailySummary({ vigorousIntensityMinutes: 30 }, all("intensity_min"))).toEqual({ intensity_min: 30 });
+	});
+
+	it("still writes nothing when neither value is present", () => {
+		expect(mapDailySummary({ moderateIntensityMinutes: null, vigorousIntensityMinutes: null }, all("intensity_min"))).toEqual({});
+		expect(mapDailySummary({}, all("intensity_min"))).toEqual({});
+	});
+});
