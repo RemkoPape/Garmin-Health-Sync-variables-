@@ -2,7 +2,7 @@
 // into the note. It talks to a third-party service, so the request, the failure handling and the name
 // clean-up must be exact.
 import { beforeEach, describe, expect, it } from "vitest";
-import { network } from "obsidian";
+import { network } from "../testUtils/mocks/obsidian";
 import { reverseGeocode } from "../src/geocoding";
 
 const URL_RE = /^https:\/\/nominatim\.openstreetmap\.org\/reverse/;

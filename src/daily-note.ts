@@ -11,6 +11,7 @@ const momentFn = moment as unknown as MomentFn;
 import type { HealthData } from "./providers/provider";
 import { applyPrefix } from "./metrics";
 import { reverseGeocode } from "./geocoding";
+import { t } from "./i18n/t";
 
 /**
  * Searches for a daily note recursively in the given directory and all subdirectories.
@@ -137,6 +138,7 @@ export async function writeToDailyNote(
 		writeTrainings: boolean;
 		writeWorkoutLocation: boolean;
 		createIfMissing: boolean;
+		language: string;
 	}
 ): Promise<boolean> {
 	const fileName = formatDate(date, options.dailyNoteFormat);
@@ -187,7 +189,7 @@ export async function writeToDailyNote(
 	}
 
 	// Write to frontmatter (returns false if nothing would change)
-	return updateFrontmatter(app, file, properties);
+	return updateFrontmatter(app, file, properties, options.language);
 }
 
 /**
@@ -209,7 +211,8 @@ export async function writeToDailyNote(
 async function updateFrontmatter(
 	app: App,
 	file: TFile,
-	properties: Record<string, number | string | Record<string, unknown>[]>
+	properties: Record<string, number | string | Record<string, unknown>[]>,
+	language: string
 ): Promise<boolean> {
 	const content = await app.vault.read(file);
 	const parsed = extractFrontmatter(content);
@@ -217,7 +220,7 @@ async function updateFrontmatter(
 	if (parsed.kind === "invalid") {
 		// Don't overwrite a damaged file — back it up and bail with a notice.
 		await backupFile(app, file, content, parsed.reason);
-		const msg = `Garmin Health Sync: Frontmatter in "${file.path}" ist kaputt (${parsed.reason}). Ein Backup wurde unter _garmin-health-sync/backups/ abgelegt. Bitte manuell reparieren.`;
+		const msg = t("noticeFrontmatterBroken", language).replace("{path}", file.path).replace("{reason}", parsed.reason);
 		console.warn(msg);
 		new Notice(msg, 15000);
 		return false;

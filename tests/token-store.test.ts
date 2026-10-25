@@ -2,7 +2,7 @@
 // a token left in data.json leaks into synced vaults. The one-time move must only clear after a
 // verified write, and a broken secret store must never throw into the plugin.
 import { describe, expect, it } from "vitest";
-import { App } from "obsidian";
+import { App } from "../testUtils/mocks/obsidian";
 import { isSecretStorageAvailable, readStoredTokens, writeStoredTokens } from "../src/token-store";
 
 const OAUTH1 = { oauth_token: "t1", oauth_token_secret: "s1" };

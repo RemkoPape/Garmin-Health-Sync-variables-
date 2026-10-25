@@ -98,6 +98,7 @@ export class SyncManager {
 				// keep createIfMissing false as a safety net should it vanish
 				// mid-sync. Otherwise (manual/auto-with-creation) create as before.
 				createIfMissing: !waitForNote,
+				language: settings.language,
 			});
 
 			if (!quiet) new Notice(t("noticeSyncSuccess", settings.language));
@@ -162,6 +163,7 @@ export class SyncManager {
 							writeTrainings: settings.writeTrainings,
 							writeWorkoutLocation: settings.writeWorkoutLocation,
 							createIfMissing: true,
+							language: settings.language,
 						});
 						count++;
 					}

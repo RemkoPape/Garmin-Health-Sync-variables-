@@ -2,7 +2,7 @@
 // damage existing content (body, other properties, line endings), never rewrite a note that already
 // matches, and refuse to touch a note whose frontmatter it cannot parse. Whole files are asserted.
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { App, Notice, moment, network as net, parseYaml } from "obsidian";
+import { App, Notice, moment, network as net, parseYaml } from "../testUtils/mocks/obsidian";
 import { dailyNoteExists, matchDailyNoteDate, writeToDailyNote } from "../src/daily-note";
 import type { HealthData } from "../src/providers/provider";
 
@@ -312,6 +312,39 @@ describe("damaged frontmatter", () => {
 		await writeToDailyNote(asApp(), DATE, health(), opts());
 		await expect(writeToDailyNote(asApp(), DATE, health(), opts())).resolves.toBe(false);
 		expect(Notice.recorded).toHaveLength(2);
+	});
+});
+
+describe("F6: the broken-frontmatter notice is in the user's language", () => {
+	const broken = "---\nkey: [unclosed\n---\nBody\n";
+
+	it("says it in English for English users and names the file", async () => {
+		vault.seed(note, broken);
+		await writeToDailyNote(asApp(), DATE, health(), opts({ language: "en" }));
+		const message = Notice.recorded[0]?.message ?? "";
+		expect(message).toContain(note);
+		expect(message).toContain(BACKUP_DIR);
+		expect(message).toMatch(/frontmatter/i);
+		expect(message).not.toMatch(/kaputt|Ein Backup/);
+	});
+
+	it.each(["de", "es", "fr", "ja", "zh"])("uses the %s translation, filled in completely", async (lang) => {
+		vault.seed(note, broken);
+		await writeToDailyNote(asApp(), DATE, health(), opts({ language: lang }));
+		const message = Notice.recorded[0]?.message ?? "";
+		expect(message).toContain(note);
+		expect(message).not.toMatch(/\{[a-z]+\}/);
+	});
+
+	it("differs between languages", async () => {
+		const messages: string[] = [];
+		for (const lang of ["en", "de", "ja"]) {
+			vault.seed(`Daily/${lang}.md`, broken);
+			Notice.recorded = [];
+			await writeToDailyNote(asApp(), "2026-01-01", health(), opts({ language: lang, dailyNoteFormat: `[${lang}]` }));
+			messages.push((Notice.recorded[0]?.message ?? "").split(`Daily/${lang}.md`).join("FILE"));
+		}
+		expect(new Set(messages).size).toBe(3);
 	});
 });
 

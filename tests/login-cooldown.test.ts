@@ -1,7 +1,7 @@
 // Why it matters: Garmin rate-limits sign-in; hammering it makes the block longer. The cooldown must
 // escalate, forget old strikes, honour Retry-After within a cap, and survive a bad clock or storage.
 import { describe, expect, it } from "vitest";
-import { App } from "obsidian";
+import { App } from "../testUtils/mocks/obsidian";
 import { LoginCooldown, backoffSeconds, formatCountdown } from "../src/login-cooldown";
 
 const KEY = "garmin-health-sync-login-cooldown";

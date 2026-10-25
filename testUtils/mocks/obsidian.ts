@@ -6,6 +6,7 @@
 // Obsidian's, so frontmatter tests assert structure and the manual smoke test covers the real
 // thing. The semantics here were reconstructed, not captured: testUtils/fixtures/obsidian-golden.json
 // (plan 1.5b) is the place to pin values read from a real Obsidian.
+import type { TFile as ObsidianTFile } from "obsidian";
 import moment from "moment";
 import { parse, stringify } from "yaml";
 
@@ -150,7 +151,7 @@ export class Vault {
 	// ---- test helpers (not part of Obsidian's API) ----
 
 	/** Seed a file (and its parent folders) without logging or emitting events. */
-	seed(path: string, content: string): TFile {
+	seed(path: string, content: string): ObsidianTFile {
 		const parts = path.split("/");
 		let current = "";
 		for (const part of parts.slice(0, -1)) {
@@ -166,7 +167,8 @@ export class Vault {
 		file.extension = path.slice(path.lastIndexOf(".") + 1);
 		this.files.set(path, file);
 		this.setContent(file, content);
-		return file;
+		// Typed as the real TFile so tests can hand it to code under test; at runtime it is the mock class.
+		return file as unknown as ObsidianTFile;
 	}
 
 	/** Current content of a seeded or written file; throws if it does not exist. */
