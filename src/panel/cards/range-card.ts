@@ -65,16 +65,15 @@ export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: Ran
 	const card = parent.createDiv({ cls: "ghs-card" });
 	const head = card.createDiv({ cls: "ghs-card-head" });
 	head.createSpan({ cls: "ghs-card-title", text: t(spec.title, lang) });
+	if (model.value === null) {
+		card.addClass("ghs-card-empty");
+		head.createSpan({ cls: "ghs-card-value", text: t("panelNoReading", lang) });
+	} else {
+		head.createSpan({ cls: "ghs-card-value", text: `${formatNumber(model.value, lang)} ${spec.unit}` });
+	}
 	const info = head.createEl("button", { cls: "clickable-icon ghs-info", attr: { "aria-label": t("panelInfo", lang), "aria-expanded": String(explainOpen) } });
 	setIcon(info, "info");
 	info.addEventListener("click", onToggleExplain);
-
-	if (model.value === null) {
-		card.addClass("ghs-card-empty");
-		card.createDiv({ cls: "ghs-card-value", text: t("panelNoReading", lang) });
-	} else {
-		card.createDiv({ cls: "ghs-card-value", text: `${formatNumber(model.value, lang)} ${spec.unit}` });
-	}
 
 	const b = model.baseline;
 	if (!b) {
