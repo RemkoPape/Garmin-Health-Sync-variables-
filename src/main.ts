@@ -10,6 +10,7 @@ import type { OAuth1Token, OAuth2Token } from "./providers/garmin/garmin-oauth";
 import { t } from "./i18n/t";
 import { readStoredTokens, writeStoredTokens } from "./token-store";
 import { isLoginRequiredError } from "./errors";
+import { showWhatsNewIfDue, showWhatsNewNotes } from "./whats-new";
 
 const AUTO_SYNC_TRIGGER_DEBOUNCE_MS = 30 * 1000;
 const RESYNC_WINDOW_MS = 72 * 60 * 60 * 1000; // 72h — more recent data may be overwritten
@@ -85,6 +86,8 @@ export default class HealthSyncPlugin extends Plugin {
 	private loginRequiredNotice: Notice | null = null;
 	private lastLoginNoticeAt = 0;
 	private credentialModalOpen = false;
+	/** No data.json existed when the plugin loaded: a new install, which gets no release notes. */
+	private freshInstall = false;
 
 	async onload() {
 		// On iOS Obsidian's own "failed to load" message says nothing and there is no console, so show the real
@@ -154,12 +157,23 @@ export default class HealthSyncPlugin extends Plugin {
 			callback: () => this.openManualLogin(),
 		});
 
+		// Command: Show what's new
+		this.addCommand({
+			id: "show-whats-new",
+			name: t("commandWhatsNew", this.settings.language),
+			callback: () => showWhatsNewNotes(this.app, this.settings.language, this.manifest.version),
+		});
+
 		// Settings Tab
 		this.addSettingTab(new HealthSyncSettingTab(this.app, this));
 
 		// On startup: auto-sync only — BrowserWindow opens on demand
 		this.app.workspace.onLayoutReady(() => {
 			this.background(this.tryAutoSync(), "auto-sync");
+			this.background(
+				Promise.resolve().then(() => showWhatsNewIfDue(this.app, this.settings.language, this.manifest.version, this.freshInstall, performance.now())),
+				"what's new",
+			);
 
 			// When "create daily note when missing" is off, the auto-sync waits for
 			// the note. Resume it the moment a real daily note within the sync window
@@ -554,6 +568,7 @@ export default class HealthSyncPlugin extends Plugin {
 
 	async loadSettings() {
 		const saved = await this.loadData() as Partial<HealthSyncSettings> | null;
+		this.freshInstall = !saved || Object.keys(saved).length === 0;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
 		// Object.assign is shallow: without these copies the two nested objects below would be the very objects in
 		// DEFAULT_SETTINGS, and every toggle or sync time written later would change the defaults too. (Not

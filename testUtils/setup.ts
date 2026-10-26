@@ -28,6 +28,9 @@ proto.createEl = function (this: HTMLElement, tag: string, o?: { text?: string; 
 proto.createDiv = function (this: HTMLElement, o?: { text?: string; cls?: string }) {
 	return (this as unknown as { createEl: (t: string, o?: unknown) => HTMLElement }).createEl("div", o);
 };
+proto.createSpan = function (this: HTMLElement, o?: { text?: string; cls?: string }) {
+	return (this as unknown as { createEl: (t: string, o?: unknown) => HTMLElement }).createEl("span", o);
+};
 proto.empty = function (this: HTMLElement) {
 	this.textContent = "";
 };

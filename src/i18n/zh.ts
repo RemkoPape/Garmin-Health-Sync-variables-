@@ -146,4 +146,17 @@ export const zh: Record<TranslationKeys, string> = {
 	modalManualLoginTicketFound: "已找到票据：{ticket}",
 	modalManualLoginTicketNone: "尚未找到票据",
 	modalManualLoginClipboardBlocked: "无法读取剪贴板 —— 请改为将票据粘贴到下方输入框。",
+
+	// What's new
+	commandWhatsNew: "显示更新内容",
+	whatsNewTitle: "Garmin Health Sync 更新内容",
+	whatsNewCatchUp: "你错过了 {count} 个更新。",
+	whatsNewGotIt: "知道了",
+	noticeWhatsNewRestart: "已更新到 {version}。重启 Obsidian 即可查看更新内容。",
+	whatsNew0112Title: "插件内的更新说明",
+	whatsNew0112Intro: "更新后，Garmin Health Sync 现在会告诉你有哪些变化。",
+	whatsNew0112Item1Title: "应用内更新说明",
+	whatsNew0112Item1Text: "更新后会在此显示一次。点击下方按钮关闭窗口。如需再次查看，请在命令面板中搜索“更新内容”。",
+	whatsNew0112Item2Title: "更稳健的同步",
+	whatsNew0112Item2Text: "空的起始坐标不再触发无意义的地点查询，Body Battery 最低值和最高值可处理超大响应，请求计时器也会被及时清理。",
 };
