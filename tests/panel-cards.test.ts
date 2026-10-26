@@ -21,11 +21,11 @@ describe("PANEL_CARDS", () => {
 		const ids = PANEL_CARDS.map((c) => c.id);
 		expect(new Set(ids).size).toBe(ids.length);
 		const order = PANEL_CARDS.map((c) => c.section).filter((s, i, all) => s !== all[i - 1]);
-		expect(order).toEqual(["recovery", "sleep", "energy", "movement"]);
+		expect(order).toEqual(["recovery", "sleep", "energy", "movement", "training"]);
 	});
 
 	it("keeps the ids stored in users' settings", () => {
-		expect(PANEL_CARDS.map((c) => c.id)).toEqual(["hrv", "resting_hr", "spo2", "respiration_rate", "sleep", "stages", "battery", "stress", "steps", "intensity", "floors"]);
+		expect(PANEL_CARDS.map((c) => c.id)).toEqual(["hrv", "resting_hr", "spo2", "respiration_rate", "sleep", "stages", "battery", "stress", "steps", "intensity", "floors", "load", "weekly", "sessions"]);
 	});
 
 	it("names every card and section", () => {
@@ -53,7 +53,7 @@ describe("switching cards off", () => {
 
 	it("drops a section header when all its cards are off", async () => {
 		const view = await open({ sleep: false, stages: false });
-		expect(sections(view)).toEqual([en.panelSectionRecovery, en.panelSectionEnergy, en.panelSectionMovement]);
+		expect(sections(view)).toEqual([en.panelSectionRecovery, en.panelSectionEnergy, en.panelSectionMovement, en.panelSectionTraining]);
 	});
 
 	it("keeps a half-width card on its own when its partner is off", async () => {

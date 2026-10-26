@@ -1,21 +1,26 @@
 import type { TranslationKeys } from "../i18n/en";
 import { computeBattery, renderBattery } from "./cards/battery-card";
+import { computeLoad, renderLoad } from "./cards/load-card";
 import { computeFloors, renderFloors } from "./cards/floors-card";
 import { computeIntensity, renderIntensity } from "./cards/intensity-card";
 import { BREATHING_CARD, HRV_CARD, RESTING_HR_CARD, SPO2_CARD, computeRange, renderRange, type RangeCardSpec } from "./cards/range-card";
 import { computeSleep, renderSleep } from "./cards/sleep-card";
+import { computeSessions, renderSessions } from "./cards/sessions-card";
 import { computeStages, renderStages } from "./cards/stages-card";
 import { computeSteps, renderSteps } from "./cards/steps-card";
 import { computeStress, renderStress } from "./cards/stress-card";
+import { computeWeekly, renderWeekly } from "./cards/weekly-card";
 import type { DayIndex } from "./index";
 
-export type SectionId = "recovery" | "sleep" | "energy" | "movement";
+export type SectionId = "recovery" | "sleep" | "energy" | "movement" | "training";
 
 export interface CardContext {
 	parent: HTMLElement;
 	index: DayIndex;
 	date: string;
 	lang: string;
+	/** The notes use miles and pounds. */
+	imperial: boolean;
 	explainOpen: boolean;
 	onToggleExplain: () => void;
 }
@@ -24,7 +29,7 @@ export interface PanelCard {
 	id: string;
 	title: TranslationKeys;
 	section: SectionId;
-	/** Frontmatter metrics the card reads; the card is empty when none of them is synced. */
+	/** Frontmatter metrics the card reads; the card is empty when none of them is synced. No metrics = always available (activities have no switch). */
 	metrics: string[];
 	/** Shown at half width next to the next half-width card. */
 	half?: boolean;
@@ -53,6 +58,9 @@ export const PANEL_CARDS: PanelCard[] = [
 	{ id: "steps", title: "panelStepsTitle", section: "movement", metrics: ["steps"], render: (c) => renderSteps(c.parent, computeSteps(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "intensity", title: "panelIntensityTitle", section: "movement", metrics: ["intensity_min"], render: (c) => renderIntensity(c.parent, computeIntensity(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "floors", title: "panelFloorsTitle", section: "movement", metrics: ["floors"], render: (c) => renderFloors(c.parent, computeFloors(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "load", title: "panelLoadTitle", section: "training", metrics: [], render: (c) => renderLoad(c.parent, computeLoad(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "weekly", title: "panelWeeklyTitle", section: "training", metrics: [], render: (c) => renderWeekly(c.parent, computeWeekly(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "sessions", title: "panelSessionsTitle", section: "training", metrics: [], render: (c) => renderSessions(c.parent, computeSessions(c.index, c.date), c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
 ];
 
 export const SECTION_TITLES: Record<SectionId, TranslationKeys> = {
@@ -60,4 +68,5 @@ export const SECTION_TITLES: Record<SectionId, TranslationKeys> = {
 	sleep: "panelSectionSleep",
 	energy: "panelSectionEnergy",
 	movement: "panelSectionMovement",
+	training: "panelSectionTraining",
 };

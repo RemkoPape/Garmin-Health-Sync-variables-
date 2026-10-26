@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0-beta.8
+
+### Added
+
+- **Training** section in the health panel, built from the activities in your daily notes (either the per-type lines like `running: 5 km · 46min · Ø142 bpm` or the machine-readable `trainings` list, per note, also mixed). Breathwork and meditation count as recovery and are left out of the load.
+  - **Load balance**: your last 7 days against your weekly average of the last 28 days, each session weighted by how hard it was for you, on a five-zone bar (detrain, maintain, build, strain, overreach) with a suggestion. Garmin's own training status is shown as a small label only.
+  - **Weekly load**: this week's minutes as a bar of sessions coloured by intensity, with your average of the previous weeks and a cap 10 percent above it, and how many minutes are left to the cap.
+  - **Sessions**: the day's sessions with minutes, distance, heart rate, calories and the workout location; the border colour shows how hard a session was compared with your last 90 sessions (needs 10 sessions with a heart rate), recovery sessions are dashed.
+- Load balance and weekly load need at least one previous week with notes and say "Based on N of 4 weeks" until four weeks are available.
+
+### Fixed
+
+- Intensity colours, zone labels and ticks no longer overlap.
+
 ## 0.12.0-beta.7
 
 ### Added
