@@ -125,8 +125,23 @@
 
 .ghs-card-value {
 	margin-left: auto;
-	font-size: var(--font-ui-large);
+	font-size: var(--font-ui-larger);
+	font-weight: var(--font-bold);
+}
+
+.ghs-unit {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-normal);
+}
+
+.ghs-section {
+	margin-top: var(--size-4-1);
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-semibold);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
 }
 
 .ghs-card-note,
@@ -147,54 +162,139 @@
 	margin: -12px -10px;
 }
 
-.ghs-range {
-	position: relative;
-	height: 14px;
+.ghs-card-action {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
 }
 
-.ghs-range svg {
-	display: block;
-	width: 100%;
-	height: 14px;
+/* Range bar: colour scale from the usual range outwards */
+.ghs-range {
+	position: relative;
+	height: 12px;
+	margin: var(--size-2-2) 0 var(--size-4-4);
 }
 
 .ghs-range-track {
-	fill: var(--background-modifier-border);
+	height: 8px;
+	margin-top: 2px;
+	border-radius: var(--radius-s);
 }
 
-.ghs-range-band {
-	fill: var(--color-green);
-	opacity: 0.45;
+.ghs-range-track-both {
+	background: linear-gradient(to right, var(--color-red) 0%, var(--color-orange) 17%, var(--color-green) 33%, var(--color-green) 67%, var(--color-orange) 83%, var(--color-red) 100%);
+}
+
+.ghs-range-track-high {
+	background: linear-gradient(to right, var(--color-green) 0%, var(--color-green) 67%, var(--color-orange) 83%, var(--color-red) 100%);
+}
+
+.ghs-tick {
+	position: absolute;
+	top: -3px;
+	bottom: -3px;
+	left: var(--ghs-x, 50%);
+	border-left: 1px dashed var(--text-muted);
+}
+
+.ghs-range-labels {
+	position: absolute;
+	top: 16px;
+	left: 0;
+	right: 0;
+}
+
+.ghs-tick-label {
+	position: absolute;
+	left: var(--ghs-x, 50%);
+	transform: translateX(-50%);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
 }
 
 .ghs-dot {
 	position: absolute;
-	top: 50%;
+	top: 6px;
 	left: var(--ghs-x, 50%);
 	width: 16px;
 	height: 16px;
+	box-sizing: border-box;
 	border-radius: 50%;
-	border: 2px solid var(--background-secondary);
+	border: 3px solid var(--color-green);
+	background: var(--text-on-accent);
 	transform: translate(-50%, -50%);
-}
-
-.ghs-dot-ok {
-	background: var(--color-green);
+	box-shadow: 0 0 0 1px var(--background-secondary);
 }
 
 .ghs-dot-warn {
-	background: var(--color-orange);
+	border-color: var(--color-orange);
 }
 
 .ghs-dot-bad {
-	background: var(--color-red);
+	border-color: var(--color-red);
 }
 
-.ghs-card-warning {
-	color: var(--text-warning);
+/* Sleep: one bar per night against the need */
+.ghs-nights {
+	position: relative;
+	display: flex;
+	align-items: flex-end;
+	gap: var(--size-4-2);
+	height: 64px;
+	padding-right: var(--size-4-6);
+	margin-bottom: var(--size-4-5);
 }
 
-.ghs-card-action {
-	font-size: var(--font-ui-small);
-	font-weight: var(--font-semibold);
+.ghs-night {
+	position: relative;
+	flex: 1;
+	height: 100%;
+	display: flex;
+	align-items: flex-end;
+}
+
+.ghs-night-bar {
+	width: 100%;
+	height: var(--ghs-h, 0%);
+	border-radius: var(--radius-s) var(--radius-s) 0 0;
+	background: var(--color-blue);
+	opacity: 0.6;
+}
+
+.ghs-night-bar-last {
+	opacity: 1;
+}
+
+.ghs-night-bar-missing {
+	height: 2px;
+	background: var(--background-modifier-border);
+	opacity: 1;
+}
+
+.ghs-night-day {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	margin-top: var(--size-2-1);
+	text-align: center;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-nights-need {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: var(--ghs-y, 50%);
+	border-top: 1px dashed var(--text-muted);
+	pointer-events: none;
+}
+
+.ghs-nights-need-label {
+	position: absolute;
+	right: 0;
+	bottom: var(--ghs-y, 50%);
+	transform: translateY(-2px);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
 }

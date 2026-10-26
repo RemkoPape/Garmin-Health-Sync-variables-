@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0-beta.4
+
+### Changed
+
+- Panel visuals follow the original concept more closely. HRV and resting heart rate show a colour scale (green in your usual range, orange then red further out; for resting heart rate only upwards) with a dot at the value and the edges of your usual range marked with their numbers. The value is bigger with a small muted unit.
+- The Sleep card now has a bar per night for the last 7 nights against a dashed 7 hour line, with weekday initials; the sleep score sits next to the value.
+- Cards are grouped under **Recovery** and **Sleep** headers.
+
 ## 0.12.0-beta.3
 
 ### Added

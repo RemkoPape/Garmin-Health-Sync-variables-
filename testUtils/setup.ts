@@ -46,14 +46,6 @@ proto.toggleClass = function (this: HTMLElement, c: string, on: boolean) {
 proto.setText = function (this: HTMLElement, t: string) {
 	this.textContent = t;
 };
-const svgProto = win.SVGElement.prototype as unknown as Record<string, unknown>;
-proto.createSvg = svgProto.createSvg = function (this: HTMLElement, tag: string, o?: { cls?: string; attr?: Record<string, string> }) {
-	const el = this.ownerDocument.createElementNS("http://www.w3.org/2000/svg", tag);
-	if (o?.cls) el.setAttribute("class", o.cls);
-	for (const [k, v] of Object.entries(o?.attr ?? {})) el.setAttribute(k, v);
-	this.appendChild(el);
-	return el;
-};
 proto.setCssProps = function (this: HTMLElement, props: Record<string, string>) {
 	for (const [k, v] of Object.entries(props)) this.style.setProperty(k, v);
 };
