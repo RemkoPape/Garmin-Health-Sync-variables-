@@ -4,7 +4,10 @@ import { dateFromDailyNote } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
 import { computeRange, renderRange, HRV_CARD, RESTING_HR_CARD } from "./cards/range-card";
+import { computeFloors, renderFloors } from "./cards/floors-card";
+import { computeIntensity, renderIntensity } from "./cards/intensity-card";
 import { computeSleep, renderSleep } from "./cards/sleep-card";
+import { computeSteps, renderSteps } from "./cards/steps-card";
 import { formatPanelDate } from "./format";
 import { DayIndex } from "./index";
 
@@ -105,6 +108,10 @@ export class HealthPanelView extends ItemView {
 		}
 		root.createDiv({ cls: "ghs-section", text: t("panelSectionSleep", lang) });
 		renderSleep(root, computeSleep(this.index, this.date), lang, this.explain === "sleep", toggleExplain("sleep"));
+		root.createDiv({ cls: "ghs-section", text: t("panelSectionMovement", lang) });
+		renderSteps(root, computeSteps(this.index, this.date), lang, this.explain === "steps", toggleExplain("steps"));
+		renderIntensity(root, computeIntensity(this.index, this.date), lang, this.explain === "intensity", toggleExplain("intensity"));
+		renderFloors(root, computeFloors(this.index, this.date), lang, this.explain === "floors", toggleExplain("floors"));
 	}
 
 	private navButton(parent: HTMLElement, icon: string, label: string, onClick: () => void, disabled: boolean): void {

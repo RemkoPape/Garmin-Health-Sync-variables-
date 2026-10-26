@@ -29,3 +29,9 @@ export function baseline(values: number[], min: number, sdFloor: number): Baseli
 export function zScore(x: number, b: Baseline): number {
 	return (x - b.mean) / b.sd;
 }
+
+/** Mean of the valid values on the `days` days before `date`, or null with fewer than `min`. */
+export function average(index: DayIndex, key: string, date: string, days: number, min: number): number | null {
+	const values = windowValues(index, key, date, days);
+	return values.length < min ? null : values.reduce((a, b) => a + b, 0) / values.length;
+}

@@ -8,3 +8,10 @@ export function shiftDate(date: string, days: number): string {
 	const [y, m, d] = date.split("-").map(Number) as [number, number, number];
 	return localDateString(new Date(y, m - 1, d + days));
 }
+
+/** The Monday of the ISO week a YYYY-MM-DD date falls in. */
+export function weekStart(date: string): string {
+	const [y, m, d] = date.split("-").map(Number) as [number, number, number];
+	const weekday = new Date(y, m - 1, d).getDay(); // 0 = Sunday
+	return shiftDate(date, -((weekday + 6) % 7));
+}

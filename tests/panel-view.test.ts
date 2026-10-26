@@ -63,14 +63,14 @@ describe("health panel view", () => {
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("58 ms");
 	});
 
-	it("shows the cards in order: HRV, resting heart rate, sleep", async () => {
+	it("shows the cards in order: recovery, sleep, movement", async () => {
 		const { view } = await open();
-		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelHrvTitle, en.panelRestingHrTitle, en.panelSleepTitle]);
+		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelHrvTitle, en.panelRestingHrTitle, en.panelSleepTitle, en.panelStepsTitle, en.panelIntensityTitle, en.panelFloorsTitle]);
 	});
 
-	it("groups the cards under Recovery and Sleep headers", async () => {
+	it("groups the cards under Recovery, Sleep and Movement headers", async () => {
 		const { view } = await open();
-		expect(Array.from(view.contentEl.querySelectorAll(".ghs-section")).map((e) => e.textContent)).toEqual([en.panelSectionRecovery, en.panelSectionSleep]);
+		expect(Array.from(view.contentEl.querySelectorAll(".ghs-section")).map((e) => e.textContent)).toEqual([en.panelSectionRecovery, en.panelSectionSleep, en.panelSectionMovement]);
 	});
 
 	it("opens one explanation at a time", async () => {
@@ -153,7 +153,7 @@ describe("health panel view", () => {
 
 	it("labels the buttons in the plugin language", async () => {
 		const { view } = await open({ language: "de" });
-		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelInfo, de.panelInfo, de.panelInfo]);
+		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);
 	});
 
 	it("skips rendering while hidden and renders on the next reveal", async () => {
