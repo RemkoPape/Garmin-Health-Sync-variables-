@@ -3,6 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Platform, network as net, type MockReply } from "../testUtils/mocks/obsidian";
 import { GarminProvider } from "../src/providers/garmin/garmin-provider";
+import * as mapper from "../src/providers/garmin/garmin-mapper";
 import { LoginRequiredError, SyncFetchError } from "../src/errors";
 import { FakeBrowserWindow, installElectron } from "../testUtils/fakeElectron";
 
@@ -260,8 +261,8 @@ describe("F8: metric keys that no longer exist", () => {
 
 describe("a mapper that cannot cope with a payload", () => {
 	it("is logged and skipped without dropping the other groups", async () => {
-		const rows = Array.from({ length: 200_000 }, (_, i) => [i, i % 100]);
-		route({ bodyBattery: { body: [{ bodyBatteryValuesArray: rows }] } });
+		route();
+		vi.spyOn(mapper, "mapBodyBattery").mockImplementation(() => { throw new RangeError("mapper cannot cope"); });
 		const warn = vi.spyOn(console, "warn");
 		const data = await provider.fetchData(DATE, ["steps", "body_battery_min"]);
 		expect(data.metrics).toEqual({ steps: 8123 });

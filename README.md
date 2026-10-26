@@ -92,7 +92,7 @@ trainings:
 
 ### Manual
 
-1. Download `main.js` and `manifest.json` from the [latest release](https://github.com/fcandi/garmin-health-sync/releases)
+1. Download `main.js` and `manifest.json` from the [latest release](https://github.com/davadev/Garmin-Health-Sync/releases)
 2. Create a folder `.obsidian/plugins/garmin-health-sync/` in your vault
 3. Copy both files into that folder
 4. Enable the plugin in Settings → Community Plugins
@@ -188,3 +188,7 @@ npm install
 npm run dev    # watch mode
 npm run build  # production build
 ```
+
+## Credits
+
+Originally created by [fcandi](https://github.com/fcandi). Maintained and developed further by [davadev](https://github.com/davadev).

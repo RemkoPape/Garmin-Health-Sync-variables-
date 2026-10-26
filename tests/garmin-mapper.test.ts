@@ -177,6 +177,11 @@ describe("mapBodyBattery", () => {
 		expect(mapBodyBattery({ ...rows, bodyBatteryValueDescriptorDTOList: noLevel }, on)).toEqual({ body_battery_min: 30, body_battery_max: 80 });
 	});
 
+	it("handles a payload far larger than a spread call could take", () => {
+		const rows = { bodyBatteryValuesArray: Array.from({ length: 300_000 }, (_, i) => [i, (i % 90) + 5]) };
+		expect(mapBodyBattery(rows, all("body_battery_min", "body_battery_max"))).toEqual({ body_battery_min: 5, body_battery_max: 94 });
+	});
+
 	it("skips rows and levels that are not numbers", () => {
 		const rows = { bodyBatteryValuesArray: ["junk", [1, "x"], [2, NaN], [3, 50]] };
 		expect(mapBodyBattery(rows, all("body_battery_min", "body_battery_max"))).toEqual({ body_battery_min: 50, body_battery_max: 50 });
@@ -372,11 +377,10 @@ describe("mapActivities", () => {
 		expect(mapActivities([run(1000, 600, undefined, undefined, { startLatitude: 50 })]).startLocation).toBeNull();
 	});
 
-	// C9: an empty string where Garmin normally sends null is read as the coordinates (0, 0), so the geocoder is asked
-	// about a point in the Atlantic. Nothing wrong is written (the lookup finds no address), so this is not fixed now.
-	it("reads empty-string coordinates as (0, 0) (known limitation, #25)", () => {
-		const act = run(1000, 600, undefined, undefined, { startLatitude: "", startLongitude: "" });
-		expect(mapActivities([act]).startLocation).toEqual({ lat: 0, lon: 0 });
+	it("treats empty or blank string coordinates as no location, not as (0, 0)", () => {
+		expect(mapActivities([run(1000, 600, undefined, undefined, { startLatitude: "", startLongitude: "" })]).startLocation).toBeNull();
+		expect(mapActivities([run(1000, 600, undefined, undefined, { startLatitude: " ", startLongitude: 7 })]).startLocation).toBeNull();
+		expect(mapActivities([run(1000, 600, undefined, undefined, { startLatitude: 0, startLongitude: 0 })]).startLocation).toEqual({ lat: 0, lon: 0 });
 	});
 
 	it("returns empty results for no activities", () => {

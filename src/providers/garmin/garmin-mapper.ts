@@ -145,8 +145,15 @@ export function mapBodyBattery(data: Record<string, unknown>, enabled: Set<strin
 	if (wantMin || wantMax) {
 		const levels = extractBodyBatteryLevels(data);
 		if (levels.length > 0) {
-			if (wantMin) result["body_battery_min"] = Math.min(...levels);
-			if (wantMax) result["body_battery_max"] = Math.max(...levels);
+			// A loop instead of Math.min(...levels): spreading a huge array throws a RangeError.
+			let min = levels[0]!;
+			let max = min;
+			for (const level of levels) {
+				if (level < min) min = level;
+				if (level > max) max = level;
+			}
+			if (wantMin) result["body_battery_min"] = min;
+			if (wantMax) result["body_battery_max"] = max;
 		}
 	}
 
@@ -315,7 +322,8 @@ export function mapActivities(activities: Record<string, unknown>[]): ActivityRe
 		if (!startLocation) {
 			const latRaw = act["startLatitude"];
 			const lonRaw = act["startLongitude"];
-			if (latRaw != null && lonRaw != null) {
+			const blank = (v: unknown): boolean => v == null || (typeof v === "string" && v.trim() === "");
+			if (!blank(latRaw) && !blank(lonRaw)) {
 				const lat = Number(latRaw);
 				const lon = Number(lonRaw);
 				if (!isNaN(lat) && !isNaN(lon)) {

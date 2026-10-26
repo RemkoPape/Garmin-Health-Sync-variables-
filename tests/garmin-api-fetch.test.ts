@@ -575,6 +575,13 @@ describe("per-endpoint accessors and the shared cache", () => {
 		expect(api.getSyncDiagnostics()).toContain("fetch timeout after 30000ms");
 	});
 
+	it("leaves no 30 second timer behind once a fetch has finished", async () => {
+		routeData();
+		api.setRequiredEndpoints(["hrv"]);
+		await api.fetchHrv(DATE);
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
 	it("a timeout that fires after the fetch finished writes nothing to the diagnostics", async () => {
 		routeData();
 		api.setRequiredEndpoints(["hrv"]);
