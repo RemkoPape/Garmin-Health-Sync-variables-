@@ -5,6 +5,7 @@ import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
 import { CHRONIC_WEEKS, heartRateHistory, previousWeeks, sessionLoad } from "../load";
 import { isRecovery } from "../sessions";
+import { maxHrAt } from "../zones";
 import { renderCard } from "./shell";
 
 const ACUTE_DAYS = 7;
@@ -31,6 +32,8 @@ export interface LoadModel {
 	zone: Zone | null;
 	/** Garmin's own training status, shown as a label only. */
 	garmin: string | null;
+	/** Session intensity comes from heart rate zones (a birth year is set). */
+	zones: boolean;
 }
 
 /** "PRODUCTIVE_2" -> "Productive". */
@@ -39,14 +42,15 @@ export function garminLabel(status: string): string {
 	return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-export function computeLoad(index: DayIndex, date: string): LoadModel {
+export function computeLoad(index: DayIndex, date: string, birthYear: number | null = null): LoadModel {
+	const maxHr = maxHrAt(birthYear, date);
 	const weeks = previousWeeks(index, date).length;
 	const history = heartRateHistory(index, date);
 	let acute = 0;
 	let chronic = 0;
 	for (let i = 0; i < CHRONIC_DAYS; i++) {
 		let day = 0;
-		for (const s of index.sessions(shiftDate(date, -i))) if (!isRecovery(s)) day += sessionLoad(s, history);
+		for (const s of index.sessions(shiftDate(date, -i))) if (!isRecovery(s)) day += sessionLoad(s, history, maxHr);
 		if (i < ACUTE_DAYS) acute += day;
 		chronic += day;
 	}
@@ -54,14 +58,14 @@ export function computeLoad(index: DayIndex, date: string): LoadModel {
 	const ratio = weeks === 0 || weeklyAverage === 0 ? null : acute / weeklyAverage;
 	const zone = ratio === null ? null : (ZONES.findIndex((z) => ratio < z.upTo) as Zone);
 	const status = index.text("training_status", date);
-	return { weeks, ratio, zone, garmin: status === null ? null : garminLabel(status) };
+	return { weeks, ratio, zone, garmin: status === null ? null : garminLabel(status), zones: maxHr !== null };
 }
 
 const pct = (r: number): number => Math.min(100, Math.max(0, ((r - DOMAIN_LOW) / (DOMAIN_HIGH - DOMAIN_LOW)) * 100));
 
 export function renderLoad(parent: HTMLElement, model: LoadModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.ratio === null ? null : formatNumber(model.ratio, lang, 2);
-	renderCard(parent, { title: t("panelLoadTitle", lang), value: model.ratio === null ? undefined : value, explain: t("panelLoadExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelLoadTitle", lang), value: model.ratio === null ? undefined : value, explain: model.zones ? `${t("panelLoadExplain", lang)} ${t("panelHardnessZones", lang)}` : t("panelLoadExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
 		if (model.weeks === 0) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLoadLocked", lang) });
 			return;

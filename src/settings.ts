@@ -9,7 +9,7 @@ import {
 import type HealthSyncPlugin from "./main";
 import { METRICS, getDefaultEnabledMetrics } from "./metrics";
 import { PANEL_CARDS } from "./panel/cards";
-import { parseBirthYear } from "./panel/zones";
+import { maxHrAt, parseBirthYear } from "./panel/zones";
 import { t } from "./i18n/t";
 import type { TranslationKeys } from "./i18n/en";
 
@@ -146,7 +146,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 					},
 					{
 						name: t("settingsBirthYear", lang),
-						desc: t("settingsBirthYearDesc", lang),
+						desc: this.birthYearDesc(lang),
 						control: { type: "text", key: "birthYear", placeholder: "1985" },
 					},
 					...this.panelCardDefinitions(lang),
@@ -238,6 +238,13 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 		}
 	}
 
+	/** The explanation, plus the maximum heart rate it leads to once a year is set. */
+	private birthYearDesc(lang: string): string {
+		const year = this.plugin.settings.birthYear;
+		const base = t("settingsBirthYearDesc", lang);
+		return year === null ? base : `${base} ${t("settingsBirthYearMax", lang).replace("{max}", String(maxHrAt(year, `${new Date().getFullYear()}-01-01`)))}`;
+	}
+
 	/** One switch per card. A card whose metrics are not synced says so, because it would only show "No reading". */
 	private panelCardDefinitions(lang: string): SettingDefinition[] {
 		const enabled = this.plugin.settings.enabledMetrics;
@@ -270,6 +277,8 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			this.plugin.settings.birthYear = parseBirthYear(value, new Date().getFullYear());
 			await this.plugin.saveSettings();
 			this.plugin.refreshPanels();
+			// the description shows the maximum heart rate for the new year
+			this.update();
 			return;
 		}
 		if (key.startsWith(PANEL_CARD_KEY_PREFIX)) {

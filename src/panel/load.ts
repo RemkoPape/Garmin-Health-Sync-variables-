@@ -2,6 +2,7 @@ import { shiftDate, weekStart } from "../dates";
 import type { DayIndex } from "./index";
 import { isRecovery, type Session } from "./sessions";
 import { percentileRank } from "./stats";
+import { zoneOf } from "./zones";
 
 /** Intensity steps, easy to hard, from where a session's heart rate ranks among the user's recent sessions. */
 export type Step = 0 | 1 | 2 | 3 | 4;
@@ -25,16 +26,25 @@ export function heartRateHistory(index: DayIndex, date: string): number[] {
 	return out;
 }
 
-/** The intensity step of a session, or null without a heart rate or with too little history. */
-export function intensityStep(session: Session, history: number[]): Step | null {
-	if (session.avgHr === null || isRecovery(session) || history.length < MIN_SESSIONS_FOR_INTENSITY) return null;
+/**
+ * The intensity step of a session, or null without a heart rate. With an estimated maximum heart rate it is the
+ * heart rate zone (zone 0 and 1 are both easy), which works from the first session; without it, where the heart
+ * rate ranks among the recent sessions, which needs enough of them.
+ */
+export function intensityStep(session: Session, history: number[], maxHr: number | null = null): Step | null {
+	if (session.avgHr === null || isRecovery(session)) return null;
+	if (maxHr !== null) {
+		const zone = zoneOf(session.avgHr, maxHr);
+		return (zone === 0 ? 0 : zone - 1) as Step;
+	}
+	if (history.length < MIN_SESSIONS_FOR_INTENSITY) return null;
 	const p = percentileRank(session.avgHr, history);
 	return p < 0.2 ? 0 : p < 0.4 ? 1 : p < 0.6 ? 2 : p < 0.8 ? 3 : 4;
 }
 
 /** Minutes times the factor of the session's intensity (1.0 while intensity is unknown). */
-export function sessionLoad(session: Session, history: number[]): number {
-	const step = intensityStep(session, history);
+export function sessionLoad(session: Session, history: number[], maxHr: number | null = null): number {
+	const step = intensityStep(session, history, maxHr);
 	return session.minutes * (step === null ? 1 : STEP_FACTORS[step]!);
 }
 

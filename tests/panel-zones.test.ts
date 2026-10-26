@@ -1,7 +1,7 @@
 // Why it matters: the birth year is the one personal detail the panel asks for. It must accept only a believable
 // year, estimate the maximum heart rate with a sound formula and cut the zones at the usual 10 percent steps.
 import { describe, expect, it } from "vitest";
-import { maxHeartRate, parseBirthYear, zoneOf } from "../src/panel/zones";
+import { ageAt, maxHeartRate, maxHrAt, parseBirthYear, zoneOf } from "../src/panel/zones";
 
 describe("parseBirthYear", () => {
 	it.each([[1985, 1985], ["1985", 1985], [" 1990 ", 1990], [2016, 2016], [1926, 1926]])("accepts %j", (input, year) => {
@@ -35,5 +35,17 @@ describe("zoneOf", () => {
 		expect(zoneOf(161, 180)).toBe(4);
 		expect(zoneOf(162, 180)).toBe(5);
 		expect(zoneOf(200, 180)).toBe(5);
+	});
+});
+
+describe("ageAt and maxHrAt", () => {
+	it("count the age from the year of the day", () => {
+		expect(ageAt("2026-10-22", 1986)).toBe(40);
+		expect(ageAt("2027-01-01", 1986)).toBe(41);
+	});
+
+	it("estimate the maximum heart rate on a day, or none without a year", () => {
+		expect(maxHrAt(1986, "2026-10-22")).toBe(180);
+		expect(maxHrAt(null, "2026-10-22")).toBeNull();
 	});
 });

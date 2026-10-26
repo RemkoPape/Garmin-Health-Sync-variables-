@@ -117,6 +117,34 @@ describe("load balance card", () => {
 	});
 });
 
+describe("load balance and weekly load with a birth year", () => {
+	const born = 2026 - 40; // maximum 180 bpm
+
+	it("weights load balance by zone from the first session", async () => {
+		// recent days in zone 4 (150 bpm, x1.2), earlier days in zone 2 (115 bpm, x0.8)
+		const index = await indexOf((ago) => ({ running: `30min · Ø${ago < 7 ? 150 : 115} bpm` }));
+		const plain = computeLoad(index, END).ratio;
+		const zoned = computeLoad(index, END, born);
+		expect(plain).toBe(1); // no intensity history before 10 sessions ranks equally... all weights 1.0
+		expect(zoned.ratio).toBeGreaterThan(1.3);
+		expect(zoned.zones).toBe(true);
+		expect(computeLoad(index, END).zones).toBe(false);
+		renderLoad(root, zoned, "en", true, noop);
+		expect(text(".ghs-explain")).toBe(`${en.panelLoadExplain} ${en.panelHardnessZones}`);
+	});
+
+	it("colours the weekly segments by zone and extends the explanation", async () => {
+		const index = await indexOf(() => ({ running: "30min · Ø150 bpm" }));
+		const model = computeWeekly(index, END, born);
+		expect(model.zones).toBe(true);
+		expect(model.segments.every((s) => s.step === 3)).toBe(true);
+		renderWeekly(root, model, "en", false, true, noop);
+		expect(root.querySelector(".ghs-weekly-seg.ghs-step-3")).not.toBeNull();
+		expect(text(".ghs-explain")).toBe(`${en.panelWeeklyExplain} ${en.panelHardnessZones}`);
+		expect(computeWeekly(index, END).zones).toBe(false);
+	});
+});
+
 describe("weekly load card", () => {
 	/** `perDay` minutes every day: the four previous weeks have 210 minutes each. */
 	const week = (perDay: number | ((ago: number) => number), days = 35) => indexOf((ago) => ({ running: `${typeof perDay === "number" ? perDay : perDay(ago)}min` }), days);

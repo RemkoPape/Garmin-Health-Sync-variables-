@@ -20,3 +20,13 @@ export function zoneOf(heartRate: number, max: number): Zone {
 	const p = heartRate / max;
 	return p < 0.5 ? 0 : p < 0.6 ? 1 : p < 0.7 ? 2 : p < 0.8 ? 3 : p < 0.9 ? 4 : 5;
 }
+
+/** Age in whole years on the day, counted by birth year only. */
+export function ageAt(date: string, birthYear: number): number {
+	return Number(date.slice(0, 4)) - birthYear;
+}
+
+/** The estimated maximum heart rate on a day, or null without a birth year. */
+export function maxHrAt(birthYear: number | null, date: string): number | null {
+	return birthYear === null ? null : maxHeartRate(ageAt(date, birthYear));
+}

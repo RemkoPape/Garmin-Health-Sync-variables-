@@ -140,6 +140,17 @@ describe("the settings layout", () => {
 		expect(plugin.saveSettings).toHaveBeenCalledTimes(4);
 	});
 
+	it("tells the estimated maximum heart rate once a birth year is set, and rebuilds the screen", async () => {
+		const desc = (t: ReturnType<typeof make>): string | undefined => (flat(t.defs()).find((i) => i.control?.key === "birthYear") as { desc?: string }).desc;
+		const without = make();
+		expect(desc(without)).toBe(en.settingsBirthYearDesc);
+		const year = new Date().getFullYear() - 40;
+		const withYear = make({ birthYear: year });
+		expect(desc(withYear)).toBe(`${en.settingsBirthYearDesc} Estimated maximum heart rate: 180 bpm.`);
+		await without.tab.setControlValue("birthYear", String(year));
+		expect((without.tab as unknown as { updates: number }).updates).toBe(1);
+	});
+
 	it("rebuilds the screen after a metric toggle so the card hints follow", async () => {
 		const { tab } = make();
 		await tab.setControlValue("metric:spo2", true);

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.12
+
+### Changed
+
+- The **Birth year** (in **Settings → Garmin Health Sync → Side panel**) now makes more of the panel age-aware, and shows the estimated maximum heart rate right in the setting.
+  - **Load balance and Weekly load** take how hard a session was from its heart rate zone, so intensity weights and segment colours work from the very first session instead of after 10 sessions with a heart rate.
+  - **Intensity minutes**: for someone under 18 the weekly goal starts at 420 minutes (60 a day, the recommendation for children and teenagers) instead of 150; the goal still moves up when you regularly do more.
+  - **Sleep**: the need is 8 hours for ages 14 to 17 and 9 hours for ages 10 to 13 (7 hours for adults, and without a birth year), and the debt, the tip for tonight, the 7 hour line and the dashed box in the timeline follow it.
+- Other cards (HRV, resting heart rate, SpO₂, breathing, body battery, stress, steps) keep using your own history only, because personal baselines are better than age averages.
+
 ## 0.12.0-beta.11
 
 ### Added
