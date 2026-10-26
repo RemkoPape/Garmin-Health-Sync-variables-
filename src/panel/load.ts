@@ -47,15 +47,38 @@ export function minutesBetween(index: DayIndex, from: string, to: string): numbe
 	return total;
 }
 
-/** Minutes of each of the previous complete weeks (up to four, nearest first) that have enough notes to be trusted. */
-export function previousWeeks(index: DayIndex, date: string): number[] {
+/** Monday of each of the previous complete weeks (up to four, nearest first) that have enough notes to be trusted. */
+function previousWeekStarts(index: DayIndex, date: string): string[] {
 	const thisWeek = weekStart(date);
-	const out: number[] = [];
+	const out: string[] = [];
 	for (let i = 1; i <= CHRONIC_WEEKS; i++) {
 		const start = shiftDate(thisWeek, -7 * i);
 		let notes = 0;
 		for (let d = 0; d < 7; d++) if (index.hasNote(shiftDate(start, d))) notes++;
-		if (notes >= MIN_NOTES_PER_WEEK) out.push(minutesBetween(index, start, shiftDate(start, 6)));
+		if (notes >= MIN_NOTES_PER_WEEK) out.push(start);
 	}
 	return out;
+}
+
+/** Minutes of each of the previous complete weeks that have enough notes, nearest first. */
+export function previousWeeks(index: DayIndex, date: string): number[] {
+	return previousWeekStarts(index, date).map((start) => minutesBetween(index, start, shiftDate(start, 6)));
+}
+
+/** Sports whose weekly distance is tracked next to the minutes. */
+export const DISTANCE_CATEGORIES = ["running", "cycling"] as const;
+export type DistanceCategory = (typeof DISTANCE_CATEGORIES)[number];
+
+/** Kilometres of one category from `from` to `to`, both included. */
+export function kmBetween(index: DayIndex, from: string, to: string, category: DistanceCategory): number {
+	let total = 0;
+	for (let day = from; day <= to; day = shiftDate(day, 1)) {
+		for (const s of index.sessions(day)) if (s.category === category && s.km !== null) total += s.km;
+	}
+	return total;
+}
+
+/** Kilometres of one category in each of the previous complete weeks that have enough notes. */
+export function previousWeeksKm(index: DayIndex, date: string, category: DistanceCategory): number[] {
+	return previousWeekStarts(index, date).map((start) => kmBetween(index, start, shiftDate(start, 6), category));
 }

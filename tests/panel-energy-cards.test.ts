@@ -180,27 +180,37 @@ describe("sleep stages card", () => {
 });
 
 describe("body battery card", () => {
-	const battery = (today: Record<string, number>, usual: Record<string, number>, nights = 30) => indexOf((ago) => (ago === 0 ? today : ago <= nights ? usual : null));
+	const battery = (today: Record<string, number>, usual: Record<string, number> | ((ago: number) => Record<string, number>), nights = 30) =>
+		indexOf((ago) => (ago === 0 ? today : ago <= nights ? (typeof usual === "function" ? usual(ago) : usual) : null));
+	const rows = (): { label: string; value: string }[] =>
+		Array.from(root.querySelectorAll(".ghs-battery-row")).map((r) => ({ label: r.querySelector(".ghs-battery-row-label")?.textContent ?? "", value: r.querySelector(".ghs-battery-row-head span:last-child")?.textContent ?? "" }));
 
-	it("draws the day's range against its usual peak and the overnight charge against the usual", async () => {
-		const model = computeBattery(await battery({ body_battery_max: 83, body_battery_min: 18, body_battery: 65 }, { body_battery_max: 78, body_battery: 56 }), END);
-		expect(model.usualPeak).toBe(78);
+	it("shows your usual peaks and today as two bars on the same scale", async () => {
+		// the peaks of the 30 days before are 70 and 90 in turn: usual range 70 to 90, mean 80
+		const model = computeBattery(await battery({ body_battery_max: 86, body_battery_min: 38, body_battery: 48 }, (ago) => ({ body_battery_max: ago % 2 ? 70 : 90, body_battery: 55 })), END);
+		expect(model.usualRange).toEqual({ low: 70, high: 90 });
+		expect(model.usualPeak).toBe(80);
 		renderBattery(root, model, "en", false, noop);
-		expect(text(".ghs-card-value")).toBe("83 Peak");
-		const fill = root.querySelector(".ghs-battery-fill") as HTMLElement;
-		expect(fill.style.getPropertyValue("--ghs-x")).toBe("18%");
-		expect(fill.style.getPropertyValue("--ghs-w")).toBe("65%");
-		expect((root.querySelector(".ghs-tick") as HTMLElement).style.getPropertyValue("--ghs-x")).toBe("78%");
-		expect(Array.from(root.querySelectorAll(".ghs-tick-label")).map((e) => e.textContent)).toEqual(["18 low", "Usual"]);
-		expect(text(".ghs-foot-value")).toBe("+65 · usual +56");
+		expect(text(".ghs-card-value")).toBe("86 Peak");
+		expect(rows()).toEqual([
+			{ label: en.panelBatteryUsualRow, value: "70–90" },
+			{ label: en.panelBatteryToday, value: "38 → 86" },
+		]);
+		const usual = root.querySelector(".ghs-battery-usual") as HTMLElement;
+		expect(usual.style.getPropertyValue("--ghs-x")).toBe("70%");
+		expect(usual.style.getPropertyValue("--ghs-w")).toBe("20%");
+		expect((root.querySelector(".ghs-tick") as HTMLElement).style.getPropertyValue("--ghs-x")).toBe("80%");
+		const today = root.querySelector(".ghs-battery-fill") as HTMLElement;
+		expect(today.style.getPropertyValue("--ghs-x")).toBe("38%");
+		expect(today.style.getPropertyValue("--ghs-w")).toBe("48%");
+		expect(text(".ghs-foot-value")).toBe("+48 · usual +55");
 		expect(root.querySelector(".ghs-card-warning")).toBeNull();
 	});
 
-	it("works with only the peak: no minimum label, no charge row", async () => {
+	it("works with only the peak: one value for today and no usual bar", async () => {
 		renderBattery(root, computeBattery(await battery({ body_battery_max: 90 }, {}, 0), END), "en", false, noop);
-		expect(root.querySelector(".ghs-battery-fill")).not.toBeNull();
-		expect(root.querySelector(".ghs-tick-label")).toBeNull();
-		expect(root.querySelector(".ghs-tick")).toBeNull();
+		expect(rows()).toEqual([{ label: en.panelBatteryToday, value: "90" }]);
+		expect(root.querySelector(".ghs-battery-usual")).toBeNull();
 		expect(root.querySelector(".ghs-foot")).toBeNull();
 	});
 
@@ -213,9 +223,10 @@ describe("body battery card", () => {
 		expect(fill.style.getPropertyValue("--ghs-w")).toBe("100%");
 	});
 
-	it("warns that the usual peak is an early estimate until 14 days", async () => {
+	it("warns that the usual peaks are an early estimate until 14 days", async () => {
 		renderBattery(root, computeBattery(await battery({ body_battery_max: 80 }, { body_battery_max: 78 }, 8), END), "en", false, noop);
 		expect(text(".ghs-card-warning")).toBe("Early estimate from 8 days, likely inaccurate until 14 days.");
+		expect(rows()[0]!.value).toBe("78–78");
 	});
 
 	it("says there is no reading without a peak", async () => {
@@ -228,6 +239,7 @@ describe("body battery card", () => {
 		renderBattery(root, computeBattery(await battery({ body_battery_max: 83, body_battery: 65 }, { body_battery_max: 78, body_battery: 56 }), END), "de", true, noop);
 		expect(text(".ghs-foot-label")).toBe(de.panelRecharged);
 		expect(text(".ghs-explain")).toBe(de.panelBatteryExplain);
+		expect(rows()[1]!.label).toBe(de.panelBatteryToday);
 	});
 });
 

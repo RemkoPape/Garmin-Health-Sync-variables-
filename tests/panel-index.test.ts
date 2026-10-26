@@ -63,6 +63,15 @@ describe("DayIndex", () => {
 		expect(index.minutes("sleep_duration", "2020-01-01")).toBeNull();
 	});
 
+	it("reads clock times as minutes since midnight", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 2, frontmatter: (ago) => [{ sleep_start: "23:15" }, { ohs_sleep_start: "00:30" }][ago]! });
+		const index = new DayIndex(app as never, () => settings);
+		expect(index.clock("sleep_start", "2026-10-22")).toBe(1395);
+		expect(index.clock("sleep_start", "2026-10-21")).toBe(30);
+		expect(index.clock("sleep_start", "2020-01-01")).toBeNull();
+	});
+
 	it("rebuilds after invalidate and not before", async () => {
 		const app = new App();
 		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 50 }) });

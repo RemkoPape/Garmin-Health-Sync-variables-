@@ -110,6 +110,20 @@ export function mapSleepData(data: Record<string, unknown>, enabled: Set<string>
 		if (formatted) result[key] = formatted;
 	}
 
+	// Garmin's "Local" timestamps are epoch milliseconds of the local wall-clock time read as if it were UTC,
+	// so the UTC fields of the date are the clock time the user saw.
+	const sleepTimes: [string, string][] = [
+		["sleep_start", "sleepStartTimestampLocal"],
+		["sleep_end", "sleepEndTimestampLocal"],
+	];
+	for (const [key, field] of sleepTimes) {
+		if (!enabled.has(key)) continue;
+		const ms = Number(data[field]);
+		if (!Number.isFinite(ms) || ms <= 0) continue;
+		const d = new Date(ms);
+		result[key] = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+	}
+
 	return result;
 }
 

@@ -1,8 +1,7 @@
 import { t } from "../../i18n/t";
-import { shiftDate } from "../../dates";
 import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
-import { average } from "../stats";
+import { average, windowValues } from "../stats";
 import { computeTrend, type Trend } from "../trend";
 import { renderCard } from "./shell";
 
@@ -18,6 +17,8 @@ export interface BatteryModel {
 	charged: number | null;
 	/** 30-day mean of the daily peak. */
 	usualPeak: number | null;
+	/** The lowest and highest daily peak of the last 30 days: the range your peaks usually fall in. */
+	usualRange: { low: number; high: number } | null;
 	/** 30-day mean of the overnight charge. */
 	usualCharged: number | null;
 	/** Days with a peak in the window. */
@@ -25,17 +26,17 @@ export interface BatteryModel {
 }
 
 export function computeBattery(index: DayIndex, date: string): BatteryModel {
-	const usualPeak = average(index, "body_battery_max", date, WINDOW_DAYS, BATTERY_EARLY_MIN_DAYS);
-	let have = 0;
-	for (let i = 1; i <= WINDOW_DAYS; i++) if (index.value("body_battery_max", shiftDate(date, -i)) !== null) have++;
+	const peaks = windowValues(index, "body_battery_max", date, WINDOW_DAYS);
+	const enough = peaks.length >= BATTERY_EARLY_MIN_DAYS;
 	return {
 		trend: computeTrend((d) => index.value("body_battery_max", d), date),
 		max: index.value("body_battery_max", date),
 		min: index.value("body_battery_min", date),
 		charged: index.value("body_battery", date),
-		usualPeak,
+		usualPeak: enough ? peaks.reduce((a, b) => a + b, 0) / peaks.length : null,
+		usualRange: enough ? { low: Math.min(...peaks), high: Math.max(...peaks) } : null,
 		usualCharged: average(index, "body_battery", date, WINDOW_DAYS, BATTERY_EARLY_MIN_DAYS),
-		have,
+		have: peaks.length,
 	};
 }
 
@@ -45,17 +46,25 @@ export function renderBattery(parent: HTMLElement, model: BatteryModel, lang: st
 	const value = model.max === null ? null : formatNumber(model.max, lang, 0);
 	renderCard(parent, { title: t("panelBatteryTitle", lang), value, unit: t("panelBatteryUnit", lang), explain: t("panelBatteryExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 0) } }, (card) => {
 		if (model.max === null) return;
-		const low = model.min ?? model.max;
-		const bar = card.createDiv({ cls: "ghs-range ghs-battery", attr: { role: "img", "aria-label": `${low}–${model.max}` } });
-		bar.createDiv({ cls: "ghs-battery-track" });
-		const fill = bar.createDiv({ cls: "ghs-battery-fill" });
-		fill.setCssProps({ "--ghs-x": `${pct(low)}%`, "--ghs-w": `${pct(model.max) - pct(low)}%` });
-		const labels = bar.createDiv({ cls: "ghs-range-labels" });
-		if (model.min !== null) labels.createSpan({ cls: "ghs-tick-label", text: t("panelBatteryLow", lang).replace("{n}", formatNumber(model.min, lang, 0)) }).setCssProps({ "--ghs-x": `${pct(low)}%` });
-		if (model.usualPeak !== null) {
-			bar.createDiv({ cls: "ghs-tick ghs-tick-solid" }).setCssProps({ "--ghs-x": `${pct(model.usualPeak)}%` });
-			labels.createSpan({ cls: "ghs-tick-label", text: t("panelBatteryUsual", lang) }).setCssProps({ "--ghs-x": `${pct(model.usualPeak)}%` });
+		// Two bars on the same 0 to 100 scale: where your daily peaks usually fall, and today.
+		if (model.usualRange !== null && model.usualPeak !== null) {
+			const row = card.createDiv({ cls: "ghs-battery-row" });
+			const head = row.createDiv({ cls: "ghs-battery-row-head" });
+			head.createSpan({ cls: "ghs-battery-row-label", text: t("panelBatteryUsualRow", lang) });
+			head.createSpan({ text: `${formatNumber(model.usualRange.low, lang, 0)}–${formatNumber(model.usualRange.high, lang, 0)}` });
+			const usual = row.createDiv({ cls: "ghs-battery-bar" });
+			usual.createDiv({ cls: "ghs-battery-track" });
+			usual.createDiv({ cls: "ghs-battery-usual" }).setCssProps({ "--ghs-x": `${pct(model.usualRange.low)}%`, "--ghs-w": `${pct(model.usualRange.high) - pct(model.usualRange.low)}%` });
+			usual.createDiv({ cls: "ghs-tick ghs-tick-solid" }).setCssProps({ "--ghs-x": `${pct(model.usualPeak)}%` });
 		}
+		const low = model.min ?? model.max;
+		const today = card.createDiv({ cls: "ghs-battery-row" });
+		const head = today.createDiv({ cls: "ghs-battery-row-head" });
+		head.createSpan({ cls: "ghs-battery-row-label", text: t("panelBatteryToday", lang) });
+		head.createSpan({ text: model.min === null ? formatNumber(model.max, lang, 0) : `${formatNumber(model.min, lang, 0)} → ${formatNumber(model.max, lang, 0)}` });
+		const bar = today.createDiv({ cls: "ghs-battery-bar", attr: { role: "img", "aria-label": `${low}–${model.max}` } });
+		bar.createDiv({ cls: "ghs-battery-track" });
+		bar.createDiv({ cls: "ghs-battery-fill" }).setCssProps({ "--ghs-x": `${pct(low)}%`, "--ghs-w": `${pct(model.max) - pct(low)}%` });
 		if (model.charged !== null) {
 			const foot = card.createDiv({ cls: "ghs-foot" });
 			foot.createSpan({ cls: "ghs-foot-label", text: t("panelRecharged", lang) });

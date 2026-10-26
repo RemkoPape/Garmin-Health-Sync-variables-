@@ -162,7 +162,7 @@ function getEndpoints(apiBase: string): Record<string, (displayName: string, dat
 /** Which metrics require which endpoint */
 const ENDPOINT_METRIC_MAP: Record<string, string[]> = {
 	dailySummary: ["steps", "resting_hr", "stress", "calories_total", "calories_active", "distance_km", "floors", "intensity_min"],
-	sleep: ["sleep_duration", "sleep_score", "sleep_deep", "sleep_light", "sleep_rem", "sleep_awake"],
+	sleep: ["sleep_duration", "sleep_score", "sleep_deep", "sleep_light", "sleep_rem", "sleep_awake", "sleep_start", "sleep_end"],
 	hrv: ["hrv"],
 	bodyBattery: ["body_battery", "body_battery_min", "body_battery_max"],
 	activities: [], // Always load — dynamic frontmatter keys

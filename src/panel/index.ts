@@ -1,6 +1,6 @@
 import type { App } from "obsidian";
 import { dateFromDailyNote } from "../daily-note";
-import { parseDuration } from "./parse";
+import { parseClock, parseDuration } from "./parse";
 import { parseSessions, type Session } from "./sessions";
 
 /** Frontmatter prefix the sync adds when "use prefix" is on. Notes of both kinds can sit in one vault. */
@@ -58,6 +58,11 @@ export class DayIndex {
 	/** The place name of the day's first GPS workout, if the sync wrote one. */
 	location(date: string): string | null {
 		return this.text("workout_location", date);
+	}
+
+	/** A clock time ("23:15") on a day in minutes since midnight, or null. */
+	clock(key: string, date: string): number | null {
+		return parseClock(this.raw(key, date));
 	}
 
 	/** The frontmatter value under the plain or the prefixed key. */
