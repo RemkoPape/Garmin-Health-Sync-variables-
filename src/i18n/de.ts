@@ -158,6 +158,10 @@ export const de: Record<TranslationKeys, string> = {
 	whatsNew0112Intro: "Nach einem Update zeigt dir Garmin Health Sync jetzt, was sich geändert hat.",
 	whatsNew0112Item1Title: "Versionshinweise im Plugin",
 	whatsNew0112Item1Text: "Nach einem Update siehst du sie einmal hier. Schließe das Fenster mit dem Button darunter. Zum erneuten Lesen suchst du in der Befehlspalette nach „Neuigkeiten“.",
-	whatsNew0112Item2Title: "Robusterer Sync",
-	whatsNew0112Item2Text: "Leere Start-Koordinaten lösen keine unnötige Ortsabfrage mehr aus, Body-Battery-Minimum und -Maximum verkraften auch riesige Antworten, und Zeitlimits für Anfragen werden aufgeräumt.",
+	whatsNew0112Item2Title: "Falls du es verpasst hast",
+	whatsNew0112Item2Text: "Version 0.11.0 hat die Mobil-Kompatibilität gebracht: Das Plugin funktioniert jetzt auch in Obsidian auf dem Handy.",
+	whatsNew0112Item3Title: "Stabilität zuerst",
+	whatsNew0112Item3Text: "Die Versionen 0.11.1 und 0.11.2 konzentrieren sich auf Stabilität und legen die Grundlage für kommende Funktionen.",
+	whatsNew0112Item4Title: "Demnächst",
+	whatsNew0112Item4Text: "Geplant ist ein Seitenpanel zur Visualisierung deiner Daten.",
 };

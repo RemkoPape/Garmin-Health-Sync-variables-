@@ -157,6 +157,10 @@ export const ja: Record<TranslationKeys, string> = {
 	whatsNew0112Intro: "アップデート後に、Garmin Health Sync が変更内容をお知らせします。",
 	whatsNew0112Item1Title: "アプリ内リリースノート",
 	whatsNew0112Item1Text: "アップデート後に一度だけここに表示されます。下のボタンでウィンドウを閉じます。もう一度読むには、コマンドパレットで「新機能」を検索してください。",
-	whatsNew0112Item2Title: "より堅牢な同期",
-	whatsNew0112Item2Text: "空の開始座標では無駄な場所の検索を行わなくなり、Body Battery の最小値・最大値は巨大なレスポンスでも処理でき、リクエストのタイマーも片付けられます。",
+	whatsNew0112Item2Title: "見逃した方へ",
+	whatsNew0112Item2Text: "バージョン 0.11.0 でモバイル対応が追加され、スマートフォンの Obsidian でもプラグインを使えるようになりました。",
+	whatsNew0112Item3Title: "まずは安定性",
+	whatsNew0112Item3Text: "バージョン 0.11.1 と 0.11.2 は安定性の向上に重点を置き、今後の機能追加に向けた土台づくりを行っています。",
+	whatsNew0112Item4Title: "近日公開予定",
+	whatsNew0112Item4Text: "データを可視化するサイドパネルを予定しています。",
 };

@@ -156,8 +156,12 @@ export const en = {
 	whatsNew0112Intro: "After an update, Garmin Health Sync now tells you what changed.",
 	whatsNew0112Item1Title: "Release notes in the app",
 	whatsNew0112Item1Text: "After an update you see them here once. Close the window with the button below. To read them again, search the command palette for what's new.",
-	whatsNew0112Item2Title: "More robust sync",
-	whatsNew0112Item2Text: "Empty start coordinates no longer trigger a pointless place lookup, the body battery minimum and maximum cope with huge responses, and request timers are cleaned up.",
+	whatsNew0112Item2Title: "In case you missed it",
+	whatsNew0112Item2Text: "Version 0.11.0 added mobile compatibility: the plugin now also works in Obsidian on your phone.",
+	whatsNew0112Item3Title: "Stability first",
+	whatsNew0112Item3Text: "Versions 0.11.1 and 0.11.2 focus on stability and lay the groundwork for future feature releases.",
+	whatsNew0112Item4Title: "Coming soon",
+	whatsNew0112Item4Text: "A side panel with data visualisation is planned.",
 };
 
 export type TranslationKeys = keyof typeof en;

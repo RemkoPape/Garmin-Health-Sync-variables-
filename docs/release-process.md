@@ -25,7 +25,7 @@ A `-beta.N` manifest on `main` got the plugin delisted on 2026-09-18. Every guar
 
 1. Merge the PR into `main` (merge commit). `main`'s manifest stays on the current stable version.
 2. `npm run check-release -- --with-build` and `npm run lint:cloud-parity` clean.
-3. Add a `## X.Y.Z-beta.N` section to `CHANGELOG.md` (the release notes are taken from it). A release with something users should know about also gets an entry in `src/release-notes.ts` (plain `X.Y.Z`, newest first, never remove an entry of the current minor line) with its texts in **all six** `src/i18n/*.ts` files (`whatsNewXYZ…` keys); the plugin shows it once after the update, and `tests/release-notes.test.ts` fails when a language is missing.
+3. Add a `## X.Y.Z-beta.N` section to `CHANGELOG.md` (the release notes are taken from it). A release with something users should know about also gets an entry in `src/release-notes.ts` (plain `X.Y.Z`, newest first, never remove an entry of the current minor line) with its texts in **all six** `src/i18n/*.ts` files (`whatsNewXYZ…` keys); the plugin shows it once after the update (the 0.11.2 entry also carries a recap of 0.11.0 and a "coming soon" item; that is a one-off, normal entries only describe their own release), and `tests/release-notes.test.ts` fails when a language is missing.
 4. Tag `main` and push that one tag by name. `release.yml` stamps, tests and publishes a prerelease.
 5. Verify with `gh release view`, compare the sha256 of the asset `main.js` with a local build of the tagged commit.
 6. A published beta number is never reused; a fix gets the next number.
