@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.2
+
+### Changed
+
+- The HRV card shows your usual range from 5 days of data instead of 21, with a warning that the range is an early estimate and likely inaccurate until 21 days are available. Below 5 days the card still says how many days are missing.
+
 ## 0.12.0-beta.1
 
 ### Added

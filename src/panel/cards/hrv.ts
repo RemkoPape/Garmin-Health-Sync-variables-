@@ -5,9 +5,11 @@ import type { DayIndex } from "../index";
 import { rangeBar } from "../svg";
 import { baseline, windowValues, zScore, type Baseline } from "../stats";
 
-/** Window and minimum of valid days before the personal range unlocks (spec: about 21 of the last 30). */
+/** Window and days needed for a reliable personal range (spec: about 21 of the last 30). */
 export const HRV_WINDOW_DAYS = 30;
 export const HRV_MIN_DAYS = 21;
+/** From this many days on the range is shown, marked as an early estimate (new watch, few days of data). */
+export const HRV_EARLY_MIN_DAYS = 5;
 const HRV_SD_FLOOR_MS = 2;
 
 export interface HrvModel {
@@ -15,15 +17,17 @@ export interface HrvModel {
 	/** Days with a reading in the window. */
 	have: number;
 	baseline: Baseline | null;
+	/** The range rests on fewer than HRV_MIN_DAYS days and is likely inaccurate. */
+	early: boolean;
 	/** Distance from the personal mean in standard deviations. */
 	z: number | null;
 }
 
 export function computeHrv(index: DayIndex, date: string): HrvModel {
 	const values = windowValues(index, "hrv", date, HRV_WINDOW_DAYS);
-	const b = baseline(values, HRV_MIN_DAYS, HRV_SD_FLOOR_MS);
+	const b = baseline(values, HRV_EARLY_MIN_DAYS, HRV_SD_FLOOR_MS);
 	const value = index.value("hrv", date);
-	return { value, have: values.length, baseline: b, z: value !== null && b ? zScore(value, b) : null };
+	return { value, have: values.length, baseline: b, early: values.length < HRV_MIN_DAYS, z: value !== null && b ? zScore(value, b) : null };
 }
 
 function toneOf(z: number): "ok" | "warn" | "bad" {
@@ -51,7 +55,7 @@ export function renderHrv(parent: HTMLElement, model: HrvModel, lang: string, ex
 	if (!b) {
 		card.createDiv({
 			cls: "ghs-card-note",
-			text: t("panelLocked", lang).replace("{need}", String(HRV_MIN_DAYS)).replace("{have}", String(model.have)),
+			text: t("panelLocked", lang).replace("{need}", String(HRV_EARLY_MIN_DAYS)).replace("{have}", String(model.have)),
 		});
 	} else {
 		if (model.value !== null && model.z !== null) rangeBar(card, model.value, b.mean, b.sd, toneOf(model.z));
@@ -61,6 +65,12 @@ export function renderHrv(parent: HTMLElement, model: HrvModel, lang: string, ex
 				.replace("{low}", formatNumber(b.mean - b.sd, lang))
 				.replace("{high}", formatNumber(b.mean + b.sd, lang)),
 		});
+		if (model.early) {
+			card.createDiv({
+				cls: "ghs-card-note ghs-card-warning",
+				text: t("panelEarly", lang).replace("{have}", String(model.have)).replace("{need}", String(HRV_MIN_DAYS)),
+			});
+		}
 	}
 
 	if (explainOpen) card.createDiv({ cls: "ghs-explain", text: t("panelHrvExplain", lang) });

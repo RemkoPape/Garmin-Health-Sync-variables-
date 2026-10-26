@@ -162,6 +162,7 @@ export const zh: Record<TranslationKeys, string> = {
 	panelNoReading: "无读数",
 	panelLocked: "积累 {need} 天数据后解锁 · 目前 {have} 天",
 	panelUsualRange: "常规范围 {low}–{high} ms",
+	panelEarly: "基于 {have} 天数据的初步估计，在积累到 {need} 天之前可能不准确。",
 	panelHrvExplain: "心率变异性（HRV）是心跳间隔的变化，反映你的恢复情况。常规范围是最近 30 天的平均值加减一个标准差。在范围内对你来说属于正常；明显偏离的数值值得留意，但不是诊断。这不是医疗建议。",
 	whatsNewTitle: "Garmin Health Sync 更新内容",
 	whatsNewCatchUp: "你错过了 {count} 个更新。",

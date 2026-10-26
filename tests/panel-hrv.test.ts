@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DayIndex } from "../src/panel/index";
-import { computeHrv, renderHrv, HRV_MIN_DAYS } from "../src/panel/cards/hrv";
+import { computeHrv, renderHrv, HRV_EARLY_MIN_DAYS, HRV_MIN_DAYS } from "../src/panel/cards/hrv";
 import { en } from "../src/i18n/en";
 import { de } from "../src/i18n/de";
 
@@ -39,12 +39,20 @@ describe("computeHrv", () => {
 		expect(m.z).toBe(3);
 	});
 
-	it("has no range before enough days exist, but still reports the value", async () => {
-		const m = computeHrv(await indexWith(60, HRV_MIN_DAYS - 2), END);
+	it("has no range with fewer than the early minimum, but still reports the value", async () => {
+		const m = computeHrv(await indexWith(60, HRV_EARLY_MIN_DAYS - 1), END);
 		expect(m.baseline).toBeNull();
-		expect(m.have).toBe(HRV_MIN_DAYS - 2);
+		expect(m.have).toBe(HRV_EARLY_MIN_DAYS - 1);
 		expect(m.z).toBeNull();
 		expect(m.value).toBe(60);
+	});
+
+	it("gives an early range from the early minimum and a reliable one from 21 days", async () => {
+		const early = computeHrv(await indexWith(60, HRV_EARLY_MIN_DAYS), END);
+		expect(early.baseline).not.toBeNull();
+		expect(early.early).toBe(true);
+		expect(computeHrv(await indexWith(60, HRV_MIN_DAYS - 1), END).early).toBe(true);
+		expect(computeHrv(await indexWith(60, HRV_MIN_DAYS), END).early).toBe(false);
 	});
 
 	it("keeps the range when the day has no reading", async () => {
@@ -92,9 +100,22 @@ describe("renderHrv", () => {
 		expect(text(".ghs-card-note")).toBe("Usual range 58–62 ms");
 	});
 
+	it("shows the range of a young history with a warning that it is likely inaccurate", async () => {
+		render(computeHrv(await indexWith(60, 10), END));
+		const notes = Array.from(root.querySelectorAll(".ghs-card-note")).map((n) => n.textContent);
+		expect(notes).toEqual(["Usual range 58–62 ms", "Early estimate from 10 days, likely inaccurate until 21 days."]);
+		expect(root.querySelector(".ghs-card-warning")).not.toBeNull();
+		expect(root.querySelector(".ghs-dot")).not.toBeNull();
+	});
+
+	it("shows no warning once the history is long enough", async () => {
+		render(computeHrv(await indexWith(60), END));
+		expect(root.querySelector(".ghs-card-warning")).toBeNull();
+	});
+
 	it("explains why there is no range yet", async () => {
-		render(computeHrv(await indexWith(60, 12), END));
-		expect(text(".ghs-card-note")).toBe("Unlocks after 21 days of data · 12 so far");
+		render(computeHrv(await indexWith(60, 3), END));
+		expect(text(".ghs-card-note")).toBe("Unlocks after 5 days of data · 3 so far");
 		expect(root.querySelector(".ghs-range")).toBeNull();
 	});
 

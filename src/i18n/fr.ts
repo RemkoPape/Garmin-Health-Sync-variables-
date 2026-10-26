@@ -162,6 +162,7 @@ export const fr: Record<TranslationKeys, string> = {
 	panelNoReading: "Aucune mesure",
 	panelLocked: "Se débloque après {need} jours de données · {have} pour l’instant",
 	panelUsualRange: "Plage habituelle {low}–{high} ms",
+	panelEarly: "Estimation initiale sur {have} jours, probablement imprécise avant {need} jours.",
 	panelHrvExplain: "La variabilité de la fréquence cardiaque (VFC) est la variation entre les battements et reflète votre récupération. Votre plage habituelle est la moyenne des 30 derniers jours plus ou moins un écart type. À l’intérieur, c’est normal pour vous ; les valeurs très éloignées méritent attention, pas un diagnostic. Ceci n’est pas un avis médical.",
 	whatsNewTitle: "Nouveautés de Garmin Health Sync",
 	whatsNewCatchUp: "Vous avez manqué {count} mises à jour.",
