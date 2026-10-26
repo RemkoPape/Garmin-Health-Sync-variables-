@@ -58,6 +58,7 @@ describe("the settings layout", () => {
 			["serverRegion", "dropdown"],
 			["unitSystem", "dropdown"],
 			["panelEnabled", "toggle"],
+			["birthYear", "text"],
 			["autoSync", "toggle"],
 			["createDailyNoteIfMissing", "toggle"],
 			["dailyNotePath", "text"],
@@ -93,9 +94,9 @@ describe("the settings layout", () => {
 
 	it("lists one switch per panel card after the panel switch, each in the user's language", () => {
 		const page = make().defs().find((i) => i.name === en.settingsPanel)!;
-		expect(page.items!.map((i) => i.control!.key)).toEqual(["panelEnabled", ...PANEL_CARDS.map((c) => `panel:${c.id}`)]);
+		expect(page.items!.map((i) => i.control!.key)).toEqual(["panelEnabled", "birthYear", ...PANEL_CARDS.map((c) => `panel:${c.id}`)]);
 		const german = make({ language: "de" }).defs().find((i) => i.name === de.settingsPanel)!;
-		expect(german.items!.slice(1).map((i) => i.name)).toEqual(PANEL_CARDS.map((c) => de[c.title]));
+		expect(german.items!.slice(2).map((i) => i.name)).toEqual(PANEL_CARDS.map((c) => de[c.title]));
 	});
 
 	it("says when a card's metric is not synced", () => {
@@ -122,6 +123,21 @@ describe("the settings layout", () => {
 		expect(tab.getControlValue("panel:hrv")).toBe(false);
 		expect(plugin.saveSettings).toHaveBeenCalledOnce();
 		expect(plugin.refreshPanels).toHaveBeenCalledOnce();
+	});
+
+	it("shows the birth year as text and stores only a believable year, otherwise nothing", async () => {
+		const { tab, plugin } = make();
+		expect(tab.getControlValue("birthYear")).toBe("");
+		await tab.setControlValue("birthYear", "1985");
+		expect(plugin.settings.birthYear).toBe(1985);
+		expect(tab.getControlValue("birthYear")).toBe("1985");
+		expect(plugin.refreshPanels).toHaveBeenCalledTimes(1);
+		await tab.setControlValue("birthYear", "19");
+		expect(plugin.settings.birthYear).toBeNull();
+		await tab.setControlValue("birthYear", "1985");
+		await tab.setControlValue("birthYear", "");
+		expect(plugin.settings.birthYear).toBeNull();
+		expect(plugin.saveSettings).toHaveBeenCalledTimes(4);
 	});
 
 	it("rebuilds the screen after a metric toggle so the card hints follow", async () => {

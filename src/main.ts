@@ -11,6 +11,7 @@ import type { OAuth1Token, OAuth2Token } from "./providers/garmin/garmin-oauth";
 import { t } from "./i18n/t";
 import { readStoredTokens, writeStoredTokens } from "./token-store";
 import { isLoginRequiredError } from "./errors";
+import { parseBirthYear } from "./panel/zones";
 import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "./panel/view";
 import { showWhatsNewIfDue, showWhatsNewNotes } from "./whats-new";
 
@@ -566,6 +567,7 @@ export default class HealthSyncPlugin extends Plugin {
 		this.settings.enabledMetrics = { ...(saved?.enabledMetrics ?? defaults) };
 		this.settings.lastSyncTimes = { ...(saved?.lastSyncTimes ?? {}) };
 		this.settings.panelCards = { ...(saved?.panelCards ?? {}) };
+		this.settings.birthYear = parseBirthYear(saved?.birthYear, new Date().getFullYear());
 		for (const key of Object.keys(defaults)) {
 			if (this.settings.enabledMetrics[key] === undefined) {
 				this.settings.enabledMetrics[key] = defaults[key]!;

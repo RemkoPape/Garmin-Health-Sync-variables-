@@ -23,6 +23,8 @@ export interface CardContext {
 	lang: string;
 	/** The notes use miles and pounds. */
 	imperial: boolean;
+	/** From the settings, for the heart rate zones. */
+	birthYear: number | null;
 	explainOpen: boolean;
 	onToggleExplain: () => void;
 }
@@ -64,7 +66,7 @@ export const PANEL_CARDS: PanelCard[] = [
 	{ id: "body", title: "panelBodyTitle", section: "fitness", metrics: ["weight_kg", "body_fat_pct"], render: (c) => renderBody(c.parent, computeBody(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "load", title: "panelLoadTitle", section: "training", metrics: [], render: (c) => renderLoad(c.parent, computeLoad(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "weekly", title: "panelWeeklyTitle", section: "training", metrics: [], render: (c) => renderWeekly(c.parent, computeWeekly(c.index, c.date), c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
-	{ id: "sessions", title: "panelSessionsTitle", section: "training", metrics: [], render: (c) => renderSessions(c.parent, computeSessions(c.index, c.date), c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
+	{ id: "sessions", title: "panelSessionsTitle", section: "training", metrics: [], render: (c) => renderSessions(c.parent, computeSessions(c.index, c.date, c.birthYear), c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
 ];
 
 export const SECTION_TITLES: Record<SectionId, TranslationKeys> = {
