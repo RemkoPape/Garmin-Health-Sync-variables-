@@ -2,6 +2,10 @@
 
 ## 0.12.0-beta.2
 
+### Added
+
+- **Resting heart rate** card in the health panel. It compares the day with your average of the 30 days before it, like the HRV card, and only a value above your usual is flagged (amber from one standard deviation or 3 bpm above, red from two or 5 bpm); a lower resting heart rate is never a warning.
+
 ### Changed
 
 - The HRV card shows your usual range from 5 days of data instead of 21, with a warning that the range is an early estimate and likely inaccurate until 21 days are available. Below 5 days the card still says how many days are missing.

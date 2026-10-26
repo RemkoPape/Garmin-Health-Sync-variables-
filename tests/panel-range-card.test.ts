@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DayIndex } from "../src/panel/index";
-import { computeHrv, renderHrv, HRV_EARLY_MIN_DAYS, HRV_MIN_DAYS } from "../src/panel/cards/hrv";
+import { computeRange, renderRange, HRV_CARD, RESTING_HR_CARD, RANGE_EARLY_MIN_DAYS as HRV_EARLY_MIN_DAYS, RANGE_MIN_DAYS as HRV_MIN_DAYS, type RangeCardSpec } from "../src/panel/cards/range-card";
 import { en } from "../src/i18n/en";
 import { de } from "../src/i18n/de";
 
@@ -27,7 +27,8 @@ let root: HTMLElement;
 beforeEach(() => {
 	root = document.createElement("div");
 });
-const render = (model: ReturnType<typeof computeHrv>, lang = "en", open = false, toggle = () => undefined): void => renderHrv(root, model, lang, open, toggle);
+const computeHrv = (index: DayIndex, date: string): ReturnType<typeof computeRange> => computeRange(HRV_CARD, index, date);
+const render = (model: ReturnType<typeof computeRange>, lang = "en", open = false, toggle = () => undefined, spec: RangeCardSpec = HRV_CARD): void => renderRange(root, spec, model, lang, open, toggle);
 const text = (sel: string): string => root.querySelector(sel)?.textContent ?? "";
 
 describe("computeHrv", () => {
@@ -139,5 +140,44 @@ describe("renderHrv", () => {
 		render(model, "en", true);
 		expect(root.querySelector("button")?.getAttribute("aria-expanded")).toBe("true");
 		expect(text(".ghs-explain")).toBe(en.panelHrvExplain);
+	});
+});
+
+describe("resting heart rate card", () => {
+	/** 30 prior days alternating 58 / 62 bpm (mean 60, sd 2). */
+	async function rhr(today: number): Promise<DayIndex> {
+		const app = new App();
+		await seedHistory(app, { end: END, days: 31, frontmatter: (ago) => ({ resting_hr: ago === 0 ? today : ago % 2 === 0 ? 62 : 58 }) });
+		return new DayIndex(app as never, () => settings);
+	}
+	const tone = async (value: number): Promise<string | undefined> => {
+		root.empty();
+		render(computeRange(RESTING_HR_CARD, await rhr(value), END), "en", false, () => undefined, RESTING_HR_CARD);
+		return Array.from(root.querySelector(".ghs-dot")?.classList ?? []).find((c) => c.startsWith("ghs-dot-"));
+	};
+
+	it("titles the card and shows bpm", async () => {
+		await tone(60);
+		expect(text(".ghs-card-title")).toBe(en.panelRestingHrTitle);
+		expect(text(".ghs-card-value")).toBe("60 bpm");
+		expect(text(".ghs-card-note")).toBe("Usual range 58–62 bpm");
+	});
+
+	it("is green at or below the usual, however low", async () => {
+		expect(await tone(60)).toBe("ghs-dot-ok");
+		expect(await tone(40)).toBe("ghs-dot-ok");
+	});
+
+	it("is amber more than one deviation or 3 bpm above and red beyond two deviations or 5 bpm", async () => {
+		expect(await tone(62.5)).toBe("ghs-dot-warn"); // z 1.25
+		expect(await tone(63)).toBe("ghs-dot-warn"); // +3 bpm
+		expect(await tone(64.5)).toBe("ghs-dot-bad"); // z 2.25
+		expect(await tone(65)).toBe("ghs-dot-bad"); // +5 bpm
+	});
+
+	it("uses its own explanation", async () => {
+		root.empty();
+		render(computeRange(RESTING_HR_CARD, await rhr(60), END), "en", true, () => undefined, RESTING_HR_CARD);
+		expect(text(".ghs-explain")).toBe(en.panelRestingHrExplain);
 	});
 });
