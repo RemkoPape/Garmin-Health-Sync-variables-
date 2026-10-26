@@ -3,14 +3,7 @@ import type HealthSyncPlugin from "../main";
 import { dateFromDailyNote } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
-import { computeRange, renderRange, BREATHING_CARD, HRV_CARD, RESTING_HR_CARD, SPO2_CARD } from "./cards/range-card";
-import { computeBattery, renderBattery } from "./cards/battery-card";
-import { computeFloors, renderFloors } from "./cards/floors-card";
-import { computeIntensity, renderIntensity } from "./cards/intensity-card";
-import { computeSleep, renderSleep } from "./cards/sleep-card";
-import { computeStages, renderStages } from "./cards/stages-card";
-import { computeSteps, renderSteps } from "./cards/steps-card";
-import { computeStress, renderStress } from "./cards/stress-card";
+import { PANEL_CARDS, SECTION_TITLES, type SectionId } from "./cards";
 import { formatPanelDate } from "./format";
 import { DayIndex } from "./index";
 
@@ -101,28 +94,34 @@ export class HealthPanelView extends ItemView {
 		const isToday = this.date >= localDateString(new Date());
 		this.navButton(nav, "chevron-right", t("panelNextDay", lang), () => this.move(1), isToday);
 
-		const toggleExplain = (id: string) => (): void => {
-			this.explain = this.explain === id ? null : id;
-			this.render();
-		};
-		root.createDiv({ cls: "ghs-section", text: t("panelSectionRecovery", lang) });
-		for (const spec of [HRV_CARD, RESTING_HR_CARD]) {
-			renderRange(root, spec, computeRange(spec, this.index, this.date), lang, this.explain === spec.id, toggleExplain(spec.id));
+		this.renderCards(root, lang);
+	}
+
+	/** The cards the user has not switched off, in order, under their section headers; half-width cards pair up. */
+	private renderCards(root: HTMLElement, lang: string): void {
+		let section: SectionId | null = null;
+		let pair: HTMLElement | null = null;
+		for (const card of PANEL_CARDS) {
+			if (this.plugin.settings.panelCards[card.id] === false) continue;
+			if (card.section !== section) {
+				section = card.section;
+				pair = null;
+				root.createDiv({ cls: "ghs-section", text: t(SECTION_TITLES[section], lang) });
+			}
+			if (card.half) pair ??= root.createDiv({ cls: "ghs-pair" });
+			else pair = null;
+			card.render({
+				parent: card.half ? (pair as HTMLElement) : root,
+				index: this.index,
+				date: this.date,
+				lang,
+				explainOpen: this.explain === card.id,
+				onToggleExplain: () => {
+					this.explain = this.explain === card.id ? null : card.id;
+					this.render();
+				},
+			});
 		}
-		const pair = root.createDiv({ cls: "ghs-pair" });
-		for (const spec of [SPO2_CARD, BREATHING_CARD]) {
-			renderRange(pair, spec, computeRange(spec, this.index, this.date), lang, this.explain === spec.id, toggleExplain(spec.id));
-		}
-		root.createDiv({ cls: "ghs-section", text: t("panelSectionSleep", lang) });
-		renderSleep(root, computeSleep(this.index, this.date), lang, this.explain === "sleep", toggleExplain("sleep"));
-		renderStages(root, computeStages(this.index, this.date), lang, this.explain === "stages", toggleExplain("stages"));
-		root.createDiv({ cls: "ghs-section", text: t("panelSectionEnergy", lang) });
-		renderBattery(root, computeBattery(this.index, this.date), lang, this.explain === "battery", toggleExplain("battery"));
-		renderStress(root, computeStress(this.index, this.date), lang, this.explain === "stress", toggleExplain("stress"));
-		root.createDiv({ cls: "ghs-section", text: t("panelSectionMovement", lang) });
-		renderSteps(root, computeSteps(this.index, this.date), lang, this.explain === "steps", toggleExplain("steps"));
-		renderIntensity(root, computeIntensity(this.index, this.date), lang, this.explain === "intensity", toggleExplain("intensity"));
-		renderFloors(root, computeFloors(this.index, this.date), lang, this.explain === "floors", toggleExplain("floors"));
 	}
 
 	private navButton(parent: HTMLElement, icon: string, label: string, onClick: () => void, disabled: boolean): void {

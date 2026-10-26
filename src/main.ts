@@ -565,6 +565,7 @@ export default class HealthSyncPlugin extends Plugin {
 		const defaults = DEFAULT_SETTINGS.enabledMetrics;
 		this.settings.enabledMetrics = { ...(saved?.enabledMetrics ?? defaults) };
 		this.settings.lastSyncTimes = { ...(saved?.lastSyncTimes ?? {}) };
+		this.settings.panelCards = { ...(saved?.panelCards ?? {}) };
 		for (const key of Object.keys(defaults)) {
 			if (this.settings.enabledMetrics[key] === undefined) {
 				this.settings.enabledMetrics[key] = defaults[key]!;

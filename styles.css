@@ -548,3 +548,43 @@
 .ghs-range-track-stress {
 	background: linear-gradient(to right, var(--color-cyan) 0%, var(--color-cyan) 25%, var(--color-blue) 25%, var(--color-blue) 50%, var(--color-yellow) 50%, var(--color-yellow) 75%, var(--color-red) 75%, var(--color-red) 100%);
 }
+
+/* Trend line: 14 tiny bars and a sentence */
+.ghs-trend {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-trend-bars {
+	display: flex;
+	align-items: flex-end;
+	gap: 2px;
+	height: 16px;
+	flex: 0 0 auto;
+}
+
+.ghs-trend-bar {
+	width: 4px;
+	height: var(--ghs-h, 0%);
+	border-radius: 1px;
+	background: var(--text-faint);
+}
+
+.ghs-trend-bar-last {
+	background: var(--text-muted);
+}
+
+.ghs-trend-bar-missing {
+	height: 2px;
+	background: var(--background-modifier-border);
+}
+
+/* "No reading" is a note, not a headline, and must fit in a half-width card */
+.ghs-card-empty .ghs-card-value {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-normal);
+}
