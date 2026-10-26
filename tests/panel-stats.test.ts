@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DayIndex } from "../src/panel/index";
-import { average, baseline, windowValues, zScore } from "../src/panel/stats";
+import { average, baseline, slope, windowValues, zScore } from "../src/panel/stats";
 
 const settings = { dailyNotePath: "", dailyNoteFormat: "YYYY-MM-DD" };
 
@@ -48,5 +48,18 @@ describe("average", () => {
 		// the 5 days before the 22nd: 2000..6000
 		expect(average(index, "steps", "2026-10-22", 7, 5)).toBe(4000);
 		expect(average(index, "steps", "2026-10-22", 7, 6)).toBeNull();
+	});
+});
+
+describe("slope", () => {
+	it("is the least-squares change of y per x", () => {
+		expect(slope([{ x: 0, y: 1 }, { x: 1, y: 3 }, { x: 2, y: 5 }])).toBe(2);
+		expect(slope([{ x: 0, y: 5 }, { x: 4, y: 1 }])).toBe(-1);
+		expect(slope([{ x: 0, y: 1 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 4 }])).toBeCloseTo(0.9, 6);
+	});
+
+	it("is 0 for a flat series or when x does not vary", () => {
+		expect(slope([{ x: 0, y: 4 }, { x: 1, y: 4 }])).toBe(0);
+		expect(slope([{ x: 2, y: 1 }, { x: 2, y: 9 }])).toBe(0);
 	});
 });

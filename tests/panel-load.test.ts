@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DayIndex } from "../src/panel/index";
-import { heartRateHistory, intensityStep, kmBetween, minutesBetween, previousWeeks, previousWeeksKm, sessionLoad } from "../src/panel/load";
+import { heartRateHistory, intensityStep, kmBetween, minutesBetween, previousWeekSums, previousWeeks, previousWeeksKm, sessionLoad } from "../src/panel/load";
 import { percentileRank } from "../src/panel/stats";
 import type { Session } from "../src/panel/sessions";
 
@@ -116,5 +116,13 @@ describe("kilometres per sport", () => {
 		const index = await indexOf(() => ({ running: "5 km · 30min" }), 35);
 		expect(previousWeeksKm(index, END, "running")).toEqual([35, 35, 35, 35]);
 		expect(previousWeeksKm(index, END, "cycling")).toEqual([0, 0, 0, 0]);
+	});
+});
+
+describe("previousWeekSums", () => {
+	it("sums a numeric metric over each previous complete week with enough notes", async () => {
+		const index = await indexOf(() => ({ intensity_min: 10 }), 35);
+		expect(previousWeekSums(index, END, "intensity_min")).toEqual([70, 70, 70, 70]);
+		expect(previousWeekSums(index, END, "floors")).toEqual([0, 0, 0, 0]);
 	});
 });

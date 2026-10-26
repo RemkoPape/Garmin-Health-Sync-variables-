@@ -14,3 +14,9 @@ export function weekdayInitial(date: string, lang: string): string {
 	const [y, m, d] = date.split("-").map(Number) as [number, number, number];
 	return new Intl.DateTimeFormat(lang, { weekday: "narrow" }).format(new Date(y, m - 1, d, 12));
 }
+
+/** A signed change ("+0.7", "−3") that never shows a minus sign in front of a value that rounds to zero. */
+export function formatSigned(value: number, lang: string, digits = 1): string {
+	const abs = formatNumber(Math.abs(value), lang, digits);
+	return `${value < 0 && Number(abs.replace(/\D/g, "")) !== 0 ? "−" : "+"}${abs}`;
+}

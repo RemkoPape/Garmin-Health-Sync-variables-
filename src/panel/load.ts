@@ -82,3 +82,12 @@ export function kmBetween(index: DayIndex, from: string, to: string, category: D
 export function previousWeeksKm(index: DayIndex, date: string, category: DistanceCategory): number[] {
 	return previousWeekStarts(index, date).map((start) => kmBetween(index, start, shiftDate(start, 6), category));
 }
+
+/** The sum of a numeric metric in each of the previous complete weeks that have enough notes, nearest first. */
+export function previousWeekSums(index: DayIndex, date: string, key: string): number[] {
+	return previousWeekStarts(index, date).map((start) => {
+		let sum = 0;
+		for (let d = 0; d < 7; d++) sum += index.value(key, shiftDate(start, d)) ?? 0;
+		return sum;
+	});
+}

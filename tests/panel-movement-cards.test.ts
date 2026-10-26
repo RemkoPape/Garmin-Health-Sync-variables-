@@ -175,6 +175,38 @@ describe("intensity minutes card", () => {
 		expect(root.querySelectorAll(".ghs-night-bar-missing")).toHaveLength(4);
 	});
 
+	it("keeps 150 when the previous weeks are below it, and says nothing about a personal goal", async () => {
+		const index = await indexOf(() => ({ intensity_min: 10 }), 35); // 70 a week
+		const model = computeIntensity(index, END);
+		expect(model.goal).toBe(150);
+		expect(model.goalWeeks).toBe(0);
+		renderIntensity(root, model, "en", false, noop);
+		expect(text(".ghs-card-value")).toBe("40 / 150 wk");
+		expect(root.querySelector(".ghs-card-note")).toBeNull();
+	});
+
+	it("raises the goal to a little above the average of a sportier person, in steps of 5, with no upper limit", async () => {
+		// 49 minutes a day = 343 a week; +10 % = 377.3 -> 380
+		const index = await indexOf(() => ({ intensity_min: 49 }), 35);
+		const model = computeIntensity(index, END);
+		expect(model.goal).toBe(380);
+		expect(model.goalWeeks).toBe(4);
+		renderIntensity(root, model, "en", false, noop);
+		expect(text(".ghs-card-value")).toBe("196 / 380 wk");
+		// 380 - 196 = 184 over Fri, Sat, Sun = 62 a day
+		expect(text(".ghs-foot-value")).toBe("184 min · 62/day");
+		expect(text(".ghs-card-note")).toBe("Your goal is set a little above your own average of the last 4 weeks, because you already do more than 150 minutes.");
+	});
+
+	it("reaches the goal at the personal level and scales the bars to it", async () => {
+		const index = await indexOf((ago) => ({ intensity_min: ago < 4 ? 100 : 49 }), 35);
+		const model = computeIntensity(index, END);
+		expect(model.total).toBe(400);
+		expect(model.remaining).toBe(0);
+		renderIntensity(root, model, "en", false, noop);
+		expect(text(".ghs-foot-value")).toBe(en.panelGoalReached);
+	});
+
 	it("speaks the plugin language and shows the explanation", async () => {
 		renderIntensity(root, computeIntensity(await week([20, 30, 40, 28]), END), "de", true, noop);
 		expect(text(".ghs-foot-value")).toBe("32 Min. · 11/Tag");

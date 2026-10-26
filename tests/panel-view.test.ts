@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App, TFile, WorkspaceLeaf } from "../testUtils/mocks/obsidian";
 import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "../src/panel/view";
-import { formatNumber, formatPanelDate, weekdayInitial } from "../src/panel/format";
+import { formatNumber, formatPanelDate, formatSigned, weekdayInitial } from "../src/panel/format";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DEFAULT_SETTINGS } from "../src/settings";
 import { en } from "../src/i18n/en";
@@ -65,12 +65,12 @@ describe("health panel view", () => {
 
 	it("shows the cards in order: recovery, sleep, movement", async () => {
 		const { view } = await open();
-		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelHrvTitle, en.panelRestingHrTitle, en.panelSpo2Title, en.panelBreathingTitle, en.panelSleepTitle, en.panelStagesTitle, en.panelBatteryTitle, en.panelStressTitle, en.panelStepsTitle, en.panelIntensityTitle, en.panelFloorsTitle, en.panelLoadTitle, en.panelWeeklyTitle, en.panelSessionsTitle]);
+		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelHrvTitle, en.panelRestingHrTitle, en.panelSpo2Title, en.panelBreathingTitle, en.panelSleepTitle, en.panelStagesTitle, en.panelBatteryTitle, en.panelStressTitle, en.panelStepsTitle, en.panelIntensityTitle, en.panelFloorsTitle, en.panelVo2Title, en.panelBodyTitle, en.panelLoadTitle, en.panelWeeklyTitle, en.panelSessionsTitle]);
 	});
 
-	it("groups the cards under Recovery, Sleep, Energy, Movement and Training headers", async () => {
+	it("groups the cards under Recovery, Sleep, Energy, Movement, Fitness and Training headers", async () => {
 		const { view } = await open();
-		expect(Array.from(view.contentEl.querySelectorAll(".ghs-section")).map((e) => e.textContent)).toEqual([en.panelSectionRecovery, en.panelSectionSleep, en.panelSectionEnergy, en.panelSectionMovement, en.panelSectionTraining]);
+		expect(Array.from(view.contentEl.querySelectorAll(".ghs-section")).map((e) => e.textContent)).toEqual([en.panelSectionRecovery, en.panelSectionSleep, en.panelSectionEnergy, en.panelSectionMovement, en.panelSectionFitness, en.panelSectionTraining]);
 	});
 
 	it("puts SpO2 and breathing side by side", async () => {
@@ -158,7 +158,7 @@ describe("health panel view", () => {
 
 	it("labels the buttons in the plugin language", async () => {
 		const { view } = await open({ language: "de" });
-		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);
+		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);
 	});
 
 	it("skips rendering while hidden and renders on the next reveal", async () => {
@@ -195,6 +195,14 @@ describe("formatPanelDate", () => {
 });
 
 describe("number and weekday formats", () => {
+	it("signs a change and never shows a minus in front of zero", () => {
+		expect(formatSigned(0.74, "en")).toBe("+0.7");
+		expect(formatSigned(-3, "en", 0)).toBe("−3");
+		expect(formatSigned(-0.04, "en")).toBe("+0");
+		expect(formatSigned(0, "en")).toBe("+0");
+		expect(formatSigned(-1.5, "de")).toBe("−1,5");
+	});
+
 	it("limits decimals as asked", () => {
 		expect(formatNumber(45.24, "en")).toBe("45.2");
 		expect(formatNumber(45.6, "en", 0)).toBe("46");

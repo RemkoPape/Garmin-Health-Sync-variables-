@@ -41,3 +41,13 @@ export function average(index: DayIndex, key: string, date: string, days: number
 export function percentileRank(x: number, values: number[]): number {
 	return values.filter((v) => v <= x).length / values.length;
 }
+
+/** Least-squares slope of y over x, in y per x; 0 when x does not vary. */
+export function slope(points: { x: number; y: number }[]): number {
+	const n = points.length;
+	const mx = points.reduce((a, p) => a + p.x, 0) / n;
+	const my = points.reduce((a, p) => a + p.y, 0) / n;
+	const num = points.reduce((a, p) => a + (p.x - mx) * (p.y - my), 0);
+	const den = points.reduce((a, p) => a + (p.x - mx) ** 2, 0);
+	return den === 0 ? 0 : num / den;
+}

@@ -2,10 +2,14 @@ import { t } from "../../i18n/t";
 import { shiftDate, weekStart } from "../../dates";
 import { formatNumber, weekdayInitial } from "../format";
 import type { DayIndex } from "../index";
+import { previousWeekSums } from "../load";
 import { renderCard } from "./shell";
 
-/** WHO guideline: 150 minutes of moderate activity a week. */
+/** The common health guideline: 150 minutes of moderate activity a week. It is the lowest goal, never the highest. */
 export const WEEKLY_GOAL_MIN = 150;
+/** A person who already does more gets a goal a little above their own average, in steps of 5 minutes. */
+const GOAL_STRETCH = 1.1;
+const GOAL_STEP_MIN = 5;
 
 export interface IntensityDay {
 	date: string;
@@ -17,6 +21,10 @@ export interface IntensityDay {
 export interface IntensityModel {
 	/** The shown day. */
 	date: string;
+	/** Minutes a week to aim for: 150, or a little above your own average when that is higher. */
+	goal: number;
+	/** Previous weeks the goal was based on when it is above 150, otherwise 0. */
+	goalWeeks: number;
 	/** Monday to Sunday of the shown day's week. */
 	days: IntensityDay[];
 	/** Minutes so far this week, up to and including the shown day, or null when no day of the week has a value. */
@@ -41,16 +49,19 @@ export function computeIntensity(index: DayIndex, date: string): IntensityModel 
 		}
 		days.push({ date: day, minutes, future });
 	}
-	const remaining = Math.max(0, WEEKLY_GOAL_MIN - total);
+	const before = previousWeekSums(index, date, "intensity_min");
+	const average = before.length === 0 ? 0 : before.reduce((a, b) => a + b, 0) / before.length;
+	const goal = Math.max(WEEKLY_GOAL_MIN, Math.ceil((average * GOAL_STRETCH) / GOAL_STEP_MIN) * GOAL_STEP_MIN);
+	const remaining = Math.max(0, goal - total);
 	const daysLeft = days.filter((d) => d.future).length;
-	return { date, days, total: any ? total : null, remaining, perDay: daysLeft === 0 ? null : Math.ceil(remaining / daysLeft) };
+	return { date, goal, goalWeeks: goal > WEEKLY_GOAL_MIN ? before.length : 0, days, total: any ? total : null, remaining, perDay: daysLeft === 0 ? null : Math.ceil(remaining / daysLeft) };
 }
 
 export function renderIntensity(parent: HTMLElement, model: IntensityModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.total === null ? null : formatNumber(model.total, lang, 0);
-	const unit = t("panelIntensityUnit", lang).replace("{goal}", String(WEEKLY_GOAL_MIN));
+	const unit = t("panelIntensityUnit", lang).replace("{goal}", String(model.goal));
 	renderCard(parent, { title: t("panelIntensityTitle", lang), value, unit, explain: t("panelIntensityExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
-		const top = Math.max(WEEKLY_GOAL_MIN / 7, ...model.days.map((d) => d.minutes ?? 0));
+		const top = Math.max(model.goal / 7, ...model.days.map((d) => d.minutes ?? 0));
 		const perDayHeight = model.perDay === null ? 0 : Math.min(100, (model.perDay / top) * 100);
 		const chart = card.createDiv({ cls: "ghs-nights ghs-week" });
 		for (const d of model.days) {
@@ -72,5 +83,6 @@ export function renderIntensity(parent: HTMLElement, model: IntensityModel, lang
 					? t("panelIntensityToGoLastDay", lang).replace("{min}", formatNumber(model.remaining, lang, 0))
 					: t("panelIntensityToGo", lang).replace("{min}", formatNumber(model.remaining, lang, 0)).replace("{perDay}", String(model.perDay));
 		foot.createSpan({ cls: "ghs-foot-value", text });
+		if (model.goalWeeks > 0) card.createDiv({ cls: "ghs-card-note", text: t("panelIntensityGoalPersonal", lang).replace("{n}", String(model.goalWeeks)) });
 	});
 }
