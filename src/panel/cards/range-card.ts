@@ -2,7 +2,7 @@ import type { TranslationKeys } from "../../i18n/en";
 import { t } from "../../i18n/t";
 import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
-import { rangeBar } from "../svg";
+import { rangeBar } from "../range-bar";
 import { renderCard } from "./shell";
 import { baseline, windowValues, zScore, type Baseline } from "../stats";
 
@@ -22,6 +22,7 @@ export interface RangeCardSpec {
 	title: TranslationKeys;
 	explain: TranslationKeys;
 	unit: string;
+	sided: "both" | "high";
 	/** Smallest standard deviation used, so a very stable user does not get a razor-thin band. */
 	sdFloor: number;
 	tone: (value: number, b: Baseline) => Tone;
@@ -39,8 +40,8 @@ function highIsBad(value: number, b: Baseline): Tone {
 	return z > 2 || delta >= 5 ? "bad" : z > 1 || delta >= 3 ? "warn" : "ok";
 }
 
-export const HRV_CARD: RangeCardSpec = { id: "hrv", key: "hrv", title: "panelHrvTitle", explain: "panelHrvExplain", unit: "ms", sdFloor: 2, tone: twoSided };
-export const RESTING_HR_CARD: RangeCardSpec = { id: "resting_hr", key: "resting_hr", title: "panelRestingHrTitle", explain: "panelRestingHrExplain", unit: "bpm", sdFloor: 1.5, tone: highIsBad };
+export const HRV_CARD: RangeCardSpec = { id: "hrv", key: "hrv", title: "panelHrvTitle", explain: "panelHrvExplain", unit: "ms", sided: "both", sdFloor: 2, tone: twoSided };
+export const RESTING_HR_CARD: RangeCardSpec = { id: "resting_hr", key: "resting_hr", title: "panelRestingHrTitle", explain: "panelRestingHrExplain", unit: "bpm", sided: "high", sdFloor: 1.5, tone: highIsBad };
 
 export interface RangeModel {
 	value: number | null;
@@ -62,8 +63,8 @@ export function computeRange(spec: RangeCardSpec, index: DayIndex, date: string)
 
 /** A range card: the day's value against the personal range, with the explanation behind an (i) button. */
 export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: RangeModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
-	const value = model.value === null ? null : `${formatNumber(model.value, lang)} ${spec.unit}`;
-	renderCard(parent, { title: t(spec.title, lang), value, explain: t(spec.explain, lang), explainOpen, onToggleExplain, lang }, (card) => {
+	const value = model.value === null ? null : formatNumber(model.value, lang);
+	renderCard(parent, { title: t(spec.title, lang), value, unit: spec.unit, explain: t(spec.explain, lang), explainOpen, onToggleExplain, lang }, (card) => {
 		const b = model.baseline;
 		if (!b) {
 			card.createDiv({
@@ -72,14 +73,15 @@ export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: Ran
 			});
 			return;
 		}
-		if (model.value !== null && model.z !== null) rangeBar(card, model.value, b.mean, b.sd, spec.tone(model.value, b));
-		card.createDiv({
-			cls: "ghs-card-note",
-			text: t("panelUsualRange", lang)
-				.replace("{low}", formatNumber(b.mean - b.sd, lang))
-				.replace("{high}", formatNumber(b.mean + b.sd, lang))
-				.replace("{unit}", spec.unit),
-		});
+		const label = t("panelUsualRange", lang)
+			.replace("{low}", formatNumber(b.mean - b.sd, lang))
+			.replace("{high}", formatNumber(b.mean + b.sd, lang))
+			.replace("{unit}", spec.unit);
+		if (model.value !== null) {
+			rangeBar(card, { value: model.value, mean: b.mean, sd: b.sd, sided: spec.sided, tone: spec.tone(model.value, b), label, lang });
+		} else {
+			card.createDiv({ cls: "ghs-card-note", text: label });
+		}
 		if (model.early) {
 			card.createDiv({
 				cls: "ghs-card-note ghs-card-warning",

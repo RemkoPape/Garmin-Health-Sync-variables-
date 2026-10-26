@@ -99,9 +99,11 @@ export class HealthPanelView extends ItemView {
 			this.explain = this.explain === id ? null : id;
 			this.render();
 		};
+		root.createDiv({ cls: "ghs-section", text: t("panelSectionRecovery", lang) });
 		for (const spec of [HRV_CARD, RESTING_HR_CARD]) {
 			renderRange(root, spec, computeRange(spec, this.index, this.date), lang, this.explain === spec.id, toggleExplain(spec.id));
 		}
+		root.createDiv({ cls: "ghs-section", text: t("panelSectionSleep", lang) });
 		renderSleep(root, computeSleep(this.index, this.date), lang, this.explain === "sleep", toggleExplain("sleep"));
 	}
 

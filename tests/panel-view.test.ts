@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App, TFile, WorkspaceLeaf } from "../testUtils/mocks/obsidian";
 import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "../src/panel/view";
-import { formatPanelDate } from "../src/panel/format";
+import { formatNumber, formatPanelDate, weekdayInitial } from "../src/panel/format";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DEFAULT_SETTINGS } from "../src/settings";
 import { en } from "../src/i18n/en";
@@ -66,6 +66,11 @@ describe("health panel view", () => {
 	it("shows the cards in order: HRV, resting heart rate, sleep", async () => {
 		const { view } = await open();
 		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelHrvTitle, en.panelRestingHrTitle, en.panelSleepTitle]);
+	});
+
+	it("groups the cards under Recovery and Sleep headers", async () => {
+		const { view } = await open();
+		expect(Array.from(view.contentEl.querySelectorAll(".ghs-section")).map((e) => e.textContent)).toEqual([en.panelSectionRecovery, en.panelSectionSleep]);
 	});
 
 	it("opens one explanation at a time", async () => {
@@ -181,5 +186,18 @@ describe("formatPanelDate", () => {
 	it("formats per language", () => {
 		expect(formatPanelDate("2026-10-22", "en")).toContain("22");
 		expect(formatPanelDate("2026-10-22", "ja")).not.toBe(formatPanelDate("2026-10-22", "en"));
+	});
+});
+
+describe("number and weekday formats", () => {
+	it("limits decimals as asked", () => {
+		expect(formatNumber(45.24, "en")).toBe("45.2");
+		expect(formatNumber(45.6, "en", 0)).toBe("46");
+		expect(formatNumber(61.5, "de")).toBe("61,5");
+	});
+
+	it("gives a one-letter weekday in the plugin language", () => {
+		expect(weekdayInitial("2026-10-26", "en")).toBe("M");
+		expect(weekdayInitial("2026-10-26", "ja")).toBe("月");
 	});
 });

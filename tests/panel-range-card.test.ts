@@ -69,9 +69,11 @@ describe("renderHrv", () => {
 		render(computeHrv(await indexWith(61), END));
 		expect(text(".ghs-card-title")).toBe("HRV");
 		expect(text(".ghs-card-value")).toBe("61 ms");
-		expect(text(".ghs-card-note")).toBe("Usual range 58–62 ms");
+		expect(root.querySelector(".ghs-range")?.getAttribute("aria-label")).toBe("Usual range 58–62 ms");
+		expect(Array.from(root.querySelectorAll(".ghs-tick-label")).map((e) => e.textContent)).toEqual(["58", "62"]);
+		expect(root.querySelectorAll(".ghs-tick")).toHaveLength(2);
+		expect(root.querySelector(".ghs-range-track-both")).not.toBeNull();
 		expect(root.querySelector(".ghs-dot-ok")).not.toBeNull();
-		expect(root.querySelectorAll("svg rect")).toHaveLength(2);
 	});
 
 	it.each([
@@ -104,7 +106,8 @@ describe("renderHrv", () => {
 	it("shows the range of a young history with a warning that it is likely inaccurate", async () => {
 		render(computeHrv(await indexWith(60, 10), END));
 		const notes = Array.from(root.querySelectorAll(".ghs-card-note")).map((n) => n.textContent);
-		expect(notes).toEqual(["Usual range 58–62 ms", "Early estimate from 10 days, likely inaccurate until 21 days."]);
+		expect(notes).toEqual(["Early estimate from 10 days, likely inaccurate until 21 days."]);
+		expect(root.querySelector(".ghs-range")?.getAttribute("aria-label")).toBe("Usual range 58–62 ms");
 		expect(root.querySelector(".ghs-card-warning")).not.toBeNull();
 		expect(root.querySelector(".ghs-dot")).not.toBeNull();
 	});
@@ -123,7 +126,7 @@ describe("renderHrv", () => {
 	it("formats numbers and texts in the plugin language", async () => {
 		render(computeHrv(await indexWith(61.5), END), "de");
 		expect(text(".ghs-card-value")).toBe("61,5 ms");
-		expect(text(".ghs-card-note")).toBe("Üblicher Bereich 58–62 ms");
+		expect(root.querySelector(".ghs-range")?.getAttribute("aria-label")).toBe("Üblicher Bereich 58–62 ms");
 		expect(root.querySelector("button")?.getAttribute("aria-label")).toBe(de.panelInfo);
 	});
 
@@ -160,7 +163,8 @@ describe("resting heart rate card", () => {
 		await tone(60);
 		expect(text(".ghs-card-title")).toBe(en.panelRestingHrTitle);
 		expect(text(".ghs-card-value")).toBe("60 bpm");
-		expect(text(".ghs-card-note")).toBe("Usual range 58–62 bpm");
+		expect(root.querySelector(".ghs-range")?.getAttribute("aria-label")).toBe("Usual range 58–62 bpm");
+		expect(root.querySelector(".ghs-range-track-high")).not.toBeNull();
 	});
 
 	it("is green at or below the usual, however low", async () => {

@@ -88,10 +88,31 @@ describe("renderSleep", () => {
 	it("shows last night, the debt, tonight's target and the score", async () => {
 		render(computeSleep(await indexOf([360, 390, 420, 480, 300, 450, 405], 77), END));
 		expect(root.querySelector(".ghs-card-title")?.textContent).toBe(en.panelSleepTitle);
-		expect(root.querySelector(".ghs-card-value")?.textContent).toBe("6 h");
-		expect(notes()).toEqual(["Sleep debt, last 7 nights: 3 h 45 min", "Sleep score 77"]);
+		expect(root.querySelector(".ghs-card-value")?.textContent).toBe("6 h · 77");
+		expect(notes()).toEqual(["Sleep debt, last 7 nights: 3 h 45 min"]);
 		expect(root.querySelector(".ghs-card-action")?.textContent).toBe("Tonight: aim for 7 h 45 min");
 		expect(root.querySelector(".ghs-card-warning")).toBeNull();
+	});
+
+	it("draws one bar per night, oldest first, with the shown night highlighted and the need as a line", async () => {
+		render(computeSleep(await indexOf([360, 390, null, 480, 300, 450, 405]), END));
+		const bars = Array.from(root.querySelectorAll<HTMLElement>(".ghs-night-bar"));
+		expect(bars).toHaveLength(7);
+		expect(bars[6]!.classList.contains("ghs-night-bar-last")).toBe(true);
+		expect(bars[5]!.classList.contains("ghs-night-bar-last")).toBe(false);
+		// the night 2 days before the shown day has no note: a thin placeholder, not a bar of height 0 min
+		expect(bars[4]!.classList.contains("ghs-night-bar-missing")).toBe(true);
+		// heights are relative to the tallest of (need * 1.2, longest night): 480 min is the tallest here
+		expect(bars[3]!.style.getPropertyValue("--ghs-h")).toBe(`${(480 / 504) * 100}%`);
+		expect(root.querySelector(".ghs-nights-need-label")?.textContent).toBe("7 h");
+		expect((root.querySelector(".ghs-nights-need") as HTMLElement).style.getPropertyValue("--ghs-y")).toBe(`${(420 / 504) * 100}%`);
+		expect(Array.from(root.querySelectorAll(".ghs-night-day")).map((e) => e.textContent)).toEqual(["F", "S", "S", "M", "T", "W", "T"]);
+	});
+
+	it("scales the bars to a night longer than the need", async () => {
+		render(computeSleep(await indexOf([600, 420, 420, 420, 420, 420, 420]), END));
+		const bars = Array.from(root.querySelectorAll<HTMLElement>(".ghs-night-bar"));
+		expect(bars[6]!.style.getPropertyValue("--ghs-h")).toBe("100%");
 	});
 
 	it("says so when there is no debt", async () => {
