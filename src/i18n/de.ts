@@ -163,6 +163,7 @@ export const de: Record<TranslationKeys, string> = {
 	panelNoReading: "Kein Messwert",
 	panelLocked: "Wird nach {need} Tagen Daten freigeschaltet · bisher {have}",
 	panelUsualRange: "Üblicher Bereich {low}–{high} ms",
+	panelEarly: "Frühe Schätzung aus {have} Tagen, vermutlich ungenau bis {need} Tage vorliegen.",
 	panelHrvExplain: "Die Herzfrequenzvariabilität (HRV) ist die Schwankung zwischen den Herzschlägen und zeigt, wie gut du dich erholst. Dein üblicher Bereich ist der Durchschnitt der letzten 30 Tage plus/minus eine Standardabweichung. Darin ist es für dich normal; Werte weit außerhalb sind ein Hinweis, keine Diagnose. Das ist keine medizinische Beratung.",
 	whatsNewTitle: "Neu in Garmin Health Sync",
 	whatsNewCatchUp: "Du hast {count} Updates verpasst.",

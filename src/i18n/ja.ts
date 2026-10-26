@@ -162,6 +162,7 @@ export const ja: Record<TranslationKeys, string> = {
 	panelNoReading: "計測なし",
 	panelLocked: "データが{need}日分たまると利用できます · 現在{have}日分",
 	panelUsualRange: "通常の範囲 {low}–{high} ms",
+	panelEarly: "{have}日分からの暫定値です。{need}日分たまるまでは精度が低い可能性があります。",
 	panelHrvExplain: "心拍変動（HRV）は心拍間隔のゆらぎで、回復の度合いを反映します。通常の範囲は、直近30日の平均±標準偏差1つ分です。この範囲内ならあなたにとって通常の状態で、大きく外れた値は診断ではなく気づきの目安です。医療上のアドバイスではありません。",
 	whatsNewTitle: "Garmin Health Sync の新機能",
 	whatsNewCatchUp: "{count} 件のアップデートをまとめて表示しています。",

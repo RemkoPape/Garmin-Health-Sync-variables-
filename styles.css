@@ -186,3 +186,7 @@
 .ghs-dot-bad {
 	background: var(--color-red);
 }
+
+.ghs-card-warning {
+	color: var(--text-warning);
+}
