@@ -63,6 +63,20 @@ describe("health panel view", () => {
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("58 ms");
 	});
 
+	it("shows the cards in order: HRV, then resting heart rate", async () => {
+		const { view } = await open();
+		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelHrvTitle, en.panelRestingHrTitle]);
+	});
+
+	it("opens one explanation at a time", async () => {
+		const { view } = await open();
+		const infos = (): HTMLButtonElement[] => Array.from(view.contentEl.querySelectorAll(".ghs-info"));
+		infos()[0]!.click();
+		infos()[1]!.click();
+		const open2 = Array.from(view.contentEl.querySelectorAll(".ghs-explain")).map((e) => e.textContent);
+		expect(open2).toEqual([en.panelRestingHrExplain]);
+	});
+
 	it("opens and closes the explanation, one card at a time", async () => {
 		const { view } = await open();
 		const info = (): HTMLButtonElement => view.contentEl.querySelector(".ghs-info") as HTMLButtonElement;
@@ -134,7 +148,7 @@ describe("health panel view", () => {
 
 	it("labels the buttons in the plugin language", async () => {
 		const { view } = await open({ language: "de" });
-		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelInfo]);
+		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelInfo, de.panelInfo]);
 	});
 
 	it("skips rendering while hidden and renders on the next reveal", async () => {

@@ -3,7 +3,7 @@ import type HealthSyncPlugin from "../main";
 import { dateFromDailyNote } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
-import { renderHrv, computeHrv } from "./cards/hrv";
+import { computeRange, renderRange, HRV_CARD, RESTING_HR_CARD } from "./cards/range-card";
 import { formatPanelDate } from "./format";
 import { DayIndex } from "./index";
 
@@ -94,10 +94,12 @@ export class HealthPanelView extends ItemView {
 		const isToday = this.date >= localDateString(new Date());
 		this.navButton(nav, "chevron-right", t("panelNextDay", lang), () => this.move(1), isToday);
 
-		renderHrv(root, computeHrv(this.index, this.date), lang, this.explain === "hrv", () => {
-			this.explain = this.explain === "hrv" ? null : "hrv";
-			this.render();
-		});
+		for (const spec of [HRV_CARD, RESTING_HR_CARD]) {
+			renderRange(root, spec, computeRange(spec, this.index, this.date), lang, this.explain === spec.id, () => {
+				this.explain = this.explain === spec.id ? null : spec.id;
+				this.render();
+			});
+		}
 	}
 
 	private navButton(parent: HTMLElement, icon: string, label: string, onClick: () => void, disabled: boolean): void {
