@@ -8,6 +8,7 @@
 
 ### Internal
 
+- New CI check `check:i18n-sync`: a pull request that adds, rewords or removes an English text must do the same in the five other language files (an English-only typo fix declares itself with an `I18n-Unchanged: <key>` line in a commit message).
 - Dev tooling: ESLint 10.12.0 and `@eslint/js` 9.39.5 (Dependabot group, #45).
 
 ## 0.11.2-beta.2

@@ -66,6 +66,14 @@ jobs:
       - name: Release guard
         run: npm run check-release
 
+      # A changed English text must be changed in every other language file of the same pull request
+      # (escape hatch for typos: an `I18n-Unchanged: <key>` line in a commit message).
+      - name: Check translations move together
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: npm run check:i18n-sync -- --base "$BASE_SHA"
+
       # Last: it renames node_modules folders while it runs (and restores them).
       - name: Lint with the cloud review's dependency view
         run: npm run lint:cloud-parity
