@@ -1593,6 +1593,19 @@ describe("what's new", () => {
 	});
 });
 
+describe("panel card settings", () => {
+	it("starts with no card switched off, and copies the saved ones instead of sharing the defaults", async () => {
+		const { plugin } = await load(null);
+		expect(plugin.settings.panelCards).toEqual({});
+		plugin.settings.panelCards["hrv"] = false;
+		expect(DEFAULT_SETTINGS.panelCards).toEqual({});
+		const saved = { hrv: false };
+		const { plugin: again } = await load({ panelCards: saved });
+		expect(again.settings.panelCards).toEqual({ hrv: false });
+		expect(again.settings.panelCards).not.toBe(saved);
+	});
+});
+
 describe("health panel", () => {
 	const PANEL = "garmin-health-panel";
 

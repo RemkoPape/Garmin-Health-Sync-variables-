@@ -3,6 +3,7 @@ import { shiftDate } from "../../dates";
 import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
 import { average } from "../stats";
+import { computeTrend, type Trend } from "../trend";
 import { renderCard } from "./shell";
 
 /** Days with a peak before the usual peak is shown, and before it is called reliable. */
@@ -11,6 +12,7 @@ export const BATTERY_MIN_DAYS = 14;
 const WINDOW_DAYS = 30;
 
 export interface BatteryModel {
+	trend: Trend | null;
 	max: number | null;
 	min: number | null;
 	charged: number | null;
@@ -27,6 +29,7 @@ export function computeBattery(index: DayIndex, date: string): BatteryModel {
 	let have = 0;
 	for (let i = 1; i <= WINDOW_DAYS; i++) if (index.value("body_battery_max", shiftDate(date, -i)) !== null) have++;
 	return {
+		trend: computeTrend((d) => index.value("body_battery_max", d), date),
 		max: index.value("body_battery_max", date),
 		min: index.value("body_battery_min", date),
 		charged: index.value("body_battery", date),
@@ -40,7 +43,7 @@ const pct = (v: number): number => Math.min(100, Math.max(0, v));
 
 export function renderBattery(parent: HTMLElement, model: BatteryModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.max === null ? null : formatNumber(model.max, lang, 0);
-	renderCard(parent, { title: t("panelBatteryTitle", lang), value, unit: t("panelBatteryUnit", lang), explain: t("panelBatteryExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelBatteryTitle", lang), value, unit: t("panelBatteryUnit", lang), explain: t("panelBatteryExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 0) } }, (card) => {
 		if (model.max === null) return;
 		const low = model.min ?? model.max;
 		const bar = card.createDiv({ cls: "ghs-range ghs-battery", attr: { role: "img", "aria-label": `${low}–${model.max}` } });

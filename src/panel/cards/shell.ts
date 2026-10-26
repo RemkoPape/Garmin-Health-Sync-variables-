@@ -1,5 +1,6 @@
 import { setIcon } from "obsidian";
 import { t } from "../../i18n/t";
+import { renderTrend, type TrendView } from "../trend";
 
 export interface CardShell {
 	title: string;
@@ -11,6 +12,8 @@ export interface CardShell {
 	explainOpen: boolean;
 	onToggleExplain: () => void;
 	lang: string;
+	/** Small trend line at the bottom of the card. */
+	trend?: TrendView;
 }
 
 /** The frame every card shares: title, headline value, (i) button, the details and, when open, the explanation. */
@@ -29,5 +32,6 @@ export function renderCard(parent: HTMLElement, shell: CardShell, details: (card
 	setIcon(info, "info");
 	info.addEventListener("click", shell.onToggleExplain);
 	details(card);
+	if (shell.trend) renderTrend(card, shell.trend, shell.lang);
 	if (shell.explainOpen) card.createDiv({ cls: "ghs-explain", text: shell.explain });
 }

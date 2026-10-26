@@ -2,6 +2,7 @@ import { t } from "../../i18n/t";
 import { shiftDate } from "../../dates";
 import { weekdayInitial } from "../format";
 import type { DayIndex } from "../index";
+import { computeTrend, type Trend } from "../trend";
 import { renderCard } from "./shell";
 
 const NIGHTS = 7;
@@ -18,6 +19,7 @@ export interface SleepNight {
 }
 
 export interface SleepModel {
+	trend: Trend | null;
 	/** The last seven nights, oldest first, the shown day last. */
 	nights: SleepNight[];
 	/** Last night's sleep in minutes. */
@@ -45,7 +47,7 @@ export function computeSleep(index: DayIndex, date: string): SleepModel {
 	}
 	const ready = have >= SLEEP_MIN_NIGHTS;
 	const target = ready ? Math.floor((NEED_MIN + Math.min(debt / 4, MAX_CATCH_UP_MIN)) / TARGET_STEP_MIN) * TARGET_STEP_MIN : null;
-	return { nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target };
+	return { trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target };
 }
 
 /** "7 h 30 min": plain units that read the same in every supported language. */
@@ -72,7 +74,7 @@ function nightsChart(parent: HTMLElement, nights: SleepNight[], lang: string): v
 export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.minutes === null ? null : formatMinutes(model.minutes);
 	const unit = model.minutes !== null && model.score !== null ? `· ${Math.round(model.score)}` : undefined;
-	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: t("panelSleepExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: t("panelSleepExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
 		if (model.debt === null || model.target === null) {
 			card.createDiv({
 				cls: "ghs-card-note",

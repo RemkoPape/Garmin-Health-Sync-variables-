@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SETTINGS, HealthSyncSettingTab } from "../src/settings";
 import { METRICS } from "../src/metrics";
+import { PANEL_CARDS } from "../src/panel/cards";
 
 /** Settings with no control in the tab, each for a stated reason. */
 const NOT_IN_SETTINGS_TAB: Record<string, string> = {
@@ -10,6 +11,7 @@ const NOT_IN_SETTINGS_TAB: Record<string, string> = {
 	garminSession: "legacy cookie session, only cleared on login; not a preference",
 	garminOAuth1: "token written by the login flow (moved to secret storage when available)",
 	garminOAuth2: "token written by the login flow (moved to secret storage when available)",
+	panelCards: "edited through the per-card toggles (keys prefixed 'panel:'), checked separately below",
 	enabledMetrics: "edited through the per-metric toggles (keys prefixed 'metric:'), checked separately below",
 };
 
@@ -45,7 +47,7 @@ describe("settings tab covers every setting", () => {
 
 	it("lists no setting as internal that actually has a control, or that does not exist", () => {
 		const stale = Object.keys(NOT_IN_SETTINGS_TAB).filter(
-			(k) => (keys.includes(k) && k !== "enabledMetrics") || !(k in DEFAULT_SETTINGS),
+			(k) => (keys.includes(k) && k !== "enabledMetrics" && k !== "panelCards") || !(k in DEFAULT_SETTINGS),
 		);
 		expect(stale).toEqual([]);
 	});
@@ -55,9 +57,15 @@ describe("settings tab covers every setting", () => {
 		expect(missing).toEqual([]);
 	});
 
+	it("has a toggle for every panel card", () => {
+		const missing = PANEL_CARDS.filter((c) => !keys.includes(`panel:${c.id}`)).map((c) => c.id);
+		expect(missing).toEqual([]);
+	});
+
 	it("has no control for a key that is not a setting", () => {
 		const metricKeys = new Set(METRICS.map((m) => `metric:${m.key}`));
-		const unknown = keys.filter((k) => !(k in DEFAULT_SETTINGS) && !metricKeys.has(k));
+		const cardKeys = new Set(PANEL_CARDS.map((c) => `panel:${c.id}`));
+		const unknown = keys.filter((k) => !(k in DEFAULT_SETTINGS) && !metricKeys.has(k) && !cardKeys.has(k));
 		expect(unknown).toEqual([]);
 	});
 });

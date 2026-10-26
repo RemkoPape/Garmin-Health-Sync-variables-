@@ -8,6 +8,7 @@ import {
 } from "obsidian";
 import type HealthSyncPlugin from "./main";
 import { METRICS, getDefaultEnabledMetrics } from "./metrics";
+import { PANEL_CARDS } from "./panel/cards";
 import { t } from "./i18n/t";
 import type { TranslationKeys } from "./i18n/en";
 
@@ -23,6 +24,8 @@ const IMPERIAL_LABEL_MAP: Partial<Record<string, TranslationKeys>> = {
  * and mapped back in `getControlValue`/`setControlValue`.
  */
 const METRIC_KEY_PREFIX = "metric:";
+/** Control-key prefix for the per-card panel switches, stored in `panelCards`. */
+const PANEL_CARD_KEY_PREFIX = "panel:";
 
 export type ServerRegion = "international" | "china";
 export type UnitSystem = "metric" | "imperial";
@@ -45,6 +48,7 @@ export interface HealthSyncSettings {
 	serverRegion: ServerRegion;
 	unitSystem: UnitSystem;
 	panelEnabled: boolean; // Side panel with health cards
+	panelCards: Record<string, boolean>; // Cards switched off in the panel (missing = on)
 }
 
 export const DEFAULT_SETTINGS: HealthSyncSettings = {
@@ -65,6 +69,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	serverRegion: "international",
 	unitSystem: "metric",
 	panelEnabled: false,
+	panelCards: {},
 };
 
 export class HealthSyncSettingTab extends PluginSettingTab {
@@ -136,6 +141,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 						desc: t("settingsPanelShowDesc", lang),
 						control: { type: "toggle", key: "panelEnabled" },
 					},
+					...this.panelCardDefinitions(lang),
 				],
 			},
 			{
@@ -224,7 +230,23 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 		}
 	}
 
+	/** One switch per card. A card whose metrics are not synced says so, because it would only show "No reading". */
+	private panelCardDefinitions(lang: string): SettingDefinition[] {
+		const enabled = this.plugin.settings.enabledMetrics;
+		return PANEL_CARDS.map((card) => {
+			const metric = (key: string): boolean => enabled[key] ?? METRICS.find((m) => m.key === key)!.defaultEnabled;
+			return {
+				name: t(card.title, lang),
+				desc: card.metrics.some(metric) ? "" : t("settingsPanelCardNotSynced", lang),
+				control: { type: "toggle", key: `${PANEL_CARD_KEY_PREFIX}${card.id}` },
+			};
+		});
+	}
+
 	getControlValue(key: string): unknown {
+		if (key.startsWith(PANEL_CARD_KEY_PREFIX)) {
+			return this.plugin.settings.panelCards[key.slice(PANEL_CARD_KEY_PREFIX.length)] ?? true;
+		}
 		if (key.startsWith(METRIC_KEY_PREFIX)) {
 			const metricKey = key.slice(METRIC_KEY_PREFIX.length);
 			const metric = METRICS.find((m) => m.key === metricKey);
@@ -234,10 +256,18 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 	}
 
 	async setControlValue(key: string, value: unknown): Promise<void> {
+		if (key.startsWith(PANEL_CARD_KEY_PREFIX)) {
+			this.plugin.settings.panelCards[key.slice(PANEL_CARD_KEY_PREFIX.length)] = Boolean(value);
+			await this.plugin.saveSettings();
+			this.plugin.refreshPanels();
+			return;
+		}
 		if (key.startsWith(METRIC_KEY_PREFIX)) {
 			const metricKey = key.slice(METRIC_KEY_PREFIX.length);
 			this.plugin.settings.enabledMetrics[metricKey] = Boolean(value);
 			await this.plugin.saveSettings();
+			// the card switches say whether their metrics are synced
+			this.update();
 			return;
 		}
 

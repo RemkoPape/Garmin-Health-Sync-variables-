@@ -3,6 +3,7 @@ import { localDateString, shiftDate } from "../../dates";
 import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
 import { average } from "../stats";
+import { computeTrend, type Trend } from "../trend";
 import { renderCard } from "./shell";
 
 /** Days that must have steps among the 7 before the shown day. */
@@ -14,6 +15,7 @@ const DOMAIN_FACTOR = 1.6;
 const STEPS_PER_MINUTE = 100;
 
 export interface StepsModel {
+	trend: Trend | null;
 	steps: number | null;
 	have: number;
 	/** The usual daily steps (7-day average) or null while too few days exist. */
@@ -34,6 +36,7 @@ export function computeSteps(index: DayIndex, date: string): StepsModel {
 	const distanceValue = km ?? mi;
 	const active = index.value("calories_active", date);
 	return {
+		trend: computeTrend((d) => index.value("steps", d), date),
 		steps: index.value("steps", date),
 		have,
 		base,
@@ -61,7 +64,7 @@ function chip(parent: HTMLElement, label: string, value: string, delta: number |
 
 export function renderSteps(parent: HTMLElement, model: StepsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.steps === null ? null : formatNumber(model.steps, lang, 0);
-	renderCard(parent, { title: t("panelStepsTitle", lang), value, explain: t("panelStepsExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelStepsTitle", lang), value, explain: t("panelStepsExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 0) } }, (card) => {
 		if (model.base === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLocked", lang).replace("{need}", String(STEPS_MIN_DAYS)).replace("{have}", String(model.have)) });
 			return;

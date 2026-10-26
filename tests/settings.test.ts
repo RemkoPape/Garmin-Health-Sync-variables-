@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App, Notice, Setting } from "../testUtils/mocks/obsidian";
 import { DEFAULT_SETTINGS, HealthSyncSettingTab, type HealthSyncSettings } from "../src/settings";
 import { METRICS } from "../src/metrics";
+import { PANEL_CARDS } from "../src/panel/cards";
 import { en } from "../src/i18n/en";
 import { de } from "../src/i18n/de";
 
@@ -50,7 +51,7 @@ beforeEach(() => {
 describe("the settings layout", () => {
 	it("lists the controls in order with their kinds", () => {
 		const controls = flat(make().defs())
-			.filter((i) => i.control && !i.control.key.startsWith("metric:"))
+			.filter((i) => i.control && !i.control.key.startsWith("metric:") && !i.control.key.startsWith("panel:"))
 			.map((i) => [i.control!.key, i.control!.type]);
 		expect(controls).toEqual([
 			["language", "dropdown"],
@@ -87,7 +88,46 @@ describe("the settings layout", () => {
 	it("puts the side panel switch on its own page", () => {
 		const page = make().defs().find((i) => i.name === en.settingsPanel)!;
 		expect(page.type).toBe("page");
-		expect(page.items!.map((i) => i.control!.key)).toEqual(["panelEnabled"]);
+		expect(page.items![0]!.control!.key).toBe("panelEnabled");
+	});
+
+	it("lists one switch per panel card after the panel switch, each in the user's language", () => {
+		const page = make().defs().find((i) => i.name === en.settingsPanel)!;
+		expect(page.items!.map((i) => i.control!.key)).toEqual(["panelEnabled", ...PANEL_CARDS.map((c) => `panel:${c.id}`)]);
+		const german = make({ language: "de" }).defs().find((i) => i.name === de.settingsPanel)!;
+		expect(german.items!.slice(1).map((i) => i.name)).toEqual(PANEL_CARDS.map((c) => de[c.title]));
+	});
+
+	it("says when a card's metric is not synced", () => {
+		const { defs } = make({ enabledMetrics: { ...DEFAULT_SETTINGS.enabledMetrics, spo2: false } });
+		const page = defs().find((i) => i.name === en.settingsPanel)!;
+		const desc = (key: string) => (page.items!.find((i) => i.control?.key === key) as { desc?: string }).desc;
+		expect(desc("panel:spo2")).toBe(en.settingsPanelCardNotSynced);
+		expect(desc("panel:hrv")).toBe("");
+		// stages needs any of its four metrics
+		expect(desc("panel:stages")).toBe(en.settingsPanelCardNotSynced);
+		const on = make({ enabledMetrics: { ...DEFAULT_SETTINGS.enabledMetrics, sleep_rem: true } }).defs().find((i) => i.name === en.settingsPanel)!;
+		expect((on.items!.find((i) => i.control?.key === "panel:stages") as { desc?: string }).desc).toBe("");
+		// a metric missing from the record falls back to its default
+		const fallback = make({ enabledMetrics: {} }).defs().find((i) => i.name === en.settingsPanel)!;
+		expect((fallback.items!.find((i) => i.control?.key === "panel:hrv") as { desc?: string }).desc).toBe("");
+		expect((fallback.items!.find((i) => i.control?.key === "panel:spo2") as { desc?: string }).desc).toBe(en.settingsPanelCardNotSynced);
+	});
+
+	it("reads and writes a card switch, defaulting to on, and refreshes the panels", async () => {
+		const { tab, plugin } = make();
+		expect(tab.getControlValue("panel:hrv")).toBe(true);
+		await tab.setControlValue("panel:hrv", false);
+		expect(plugin.settings.panelCards).toEqual({ hrv: false });
+		expect(tab.getControlValue("panel:hrv")).toBe(false);
+		expect(plugin.saveSettings).toHaveBeenCalledOnce();
+		expect(plugin.refreshPanels).toHaveBeenCalledOnce();
+	});
+
+	it("rebuilds the screen after a metric toggle so the card hints follow", async () => {
+		const { tab } = make();
+		await tab.setControlValue("metric:spo2", true);
+		expect((tab as unknown as { updates: number }).updates).toBe(1);
 	});
 
 	it("labels every metric in the user's language", () => {

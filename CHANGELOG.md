@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.7
+
+### Added
+
+- A small **trend line** at the bottom of most cards: 14 tiny bars for the last two weeks and a sentence such as "↑ +3 ms vs the week before". It compares the last 7 days with the 7 days before and needs at least 4 days with a value in each week; a change under 2 percent counts as steady. It is deliberately neutral in colour, because up is not always good. Sleep stages and intensity minutes have none (a composition and a weekly plan).
+- A switch per card under **Settings → Garmin Health Sync → Side panel**. Cards are on by default; a card whose metric is not synced says so in the settings. Switching a card off also removes its section header when it was the last one in the section.
+
+### Fixed
+
+- "No reading" no longer overflows the half-width SpO₂ and breathing cards.
+
 ## 0.12.0-beta.6
 
 ### Added
