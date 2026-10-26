@@ -377,6 +377,11 @@ export class Modal {
 	isOpen = false;
 	constructor(app: App) {
 		this.app = app;
+		// Obsidian's own close icon: a click ends in close(), like Escape and a click outside.
+		const closeButton = document.createElement("div");
+		closeButton.className = "modal-close-button";
+		closeButton.addEventListener("click", () => this.close());
+		this.modalEl.appendChild(closeButton);
 	}
 	onOpen(): void {}
 	onClose(): void {}
