@@ -2,6 +2,10 @@
 
 ## 0.11.2-beta.2
 
+### Changed
+
+- The "what's new" window of this release now also recalls that 0.11.0 brought mobile compatibility, says that 0.11.1 and 0.11.2 focus on stability and groundwork, and mentions the planned side panel with data visualisation. This recap and outlook are a one-off for this release.
+
 ### Internal
 
 - ESLint 10 (the 9 line is end-of-life). Lint rule set unchanged: 174 configured, 141 enabled, 38 `obsidianmd/*`, 43 `@typescript-eslint/*` before and after, empty stderr. `@eslint/js` stays on 9 because eslint-plugin-obsidianmd peers it.

@@ -18,7 +18,11 @@ const RELEASE_NOTES: ReleaseNote[] = [
 		intro: "whatsNew0112Intro",
 		items: [
 			{ title: "whatsNew0112Item1Title", text: "whatsNew0112Item1Text" },
+			// Items 2 and 4 (a recap of 0.11.0 and a look ahead) are a one-off for 0.11.2, the first release with this
+			// window. They are not part of the regular notes: later entries only describe their own release.
 			{ title: "whatsNew0112Item2Title", text: "whatsNew0112Item2Text" },
+			{ title: "whatsNew0112Item3Title", text: "whatsNew0112Item3Text" },
+			{ title: "whatsNew0112Item4Title", text: "whatsNew0112Item4Text" },
 		],
 	},
 ];

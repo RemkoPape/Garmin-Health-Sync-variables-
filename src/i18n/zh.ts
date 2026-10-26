@@ -157,6 +157,10 @@ export const zh: Record<TranslationKeys, string> = {
 	whatsNew0112Intro: "更新后，Garmin Health Sync 现在会告诉你有哪些变化。",
 	whatsNew0112Item1Title: "应用内更新说明",
 	whatsNew0112Item1Text: "更新后会在此显示一次。点击下方按钮关闭窗口。如需再次查看，请在命令面板中搜索“更新内容”。",
-	whatsNew0112Item2Title: "更稳健的同步",
-	whatsNew0112Item2Text: "空的起始坐标不再触发无意义的地点查询，Body Battery 最低值和最高值可处理超大响应，请求计时器也会被及时清理。",
+	whatsNew0112Item2Title: "以防你错过",
+	whatsNew0112Item2Text: "0.11.0 版本加入了移动端兼容：现在插件也可以在手机版 Obsidian 中使用。",
+	whatsNew0112Item3Title: "稳定性优先",
+	whatsNew0112Item3Text: "0.11.1 和 0.11.2 版本专注于提升稳定性，并为未来的新功能打好基础。",
+	whatsNew0112Item4Title: "即将推出",
+	whatsNew0112Item4Text: "计划推出带有数据可视化的侧边栏。",
 };
