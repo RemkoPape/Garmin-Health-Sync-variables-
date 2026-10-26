@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.11
+
+### Added
+
+- **Heart rate zones in Sessions.** A new setting **Birth year** under **Settings → Garmin Health Sync → Side panel** (only the year, optional; anything that is not a believable year is ignored). With it the plugin estimates your maximum heart rate (Tanaka: 208 − 0.7 × age) and every session shows its zone: the border colour, a "Zone 1 to 5" label (or "Below zone 1") and a five-part zone bar with the current zone highlighted. Zones are 50, 60, 70, 80 and 90 percent of the estimated maximum, and they come from the session's *average* heart rate, so a session with intervals can sit in a lower zone than its hardest minutes. Without a birth year the border keeps showing how hard the session was compared with your last 90 sessions, and the card suggests adding the year.
+
 ## 0.12.0-beta.10
 
 ### Added

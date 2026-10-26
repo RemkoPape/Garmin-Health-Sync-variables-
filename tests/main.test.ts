@@ -1593,6 +1593,15 @@ describe("what's new", () => {
 	});
 });
 
+describe("birth year setting", () => {
+	it("keeps a believable year and drops anything else from a hand-edited data.json", async () => {
+		expect((await load({ birthYear: 1985 })).plugin.settings.birthYear).toBe(1985);
+		expect((await load({ birthYear: 1850 })).plugin.settings.birthYear).toBeNull();
+		expect((await load({ birthYear: "1985" as never })).plugin.settings.birthYear).toBe(1985);
+		expect((await load(null)).plugin.settings.birthYear).toBeNull();
+	});
+});
+
 describe("panel card settings", () => {
 	it("starts with no card switched off, and copies the saved ones instead of sharing the defaults", async () => {
 		const { plugin } = await load(null);

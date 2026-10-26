@@ -9,6 +9,7 @@ import {
 import type HealthSyncPlugin from "./main";
 import { METRICS, getDefaultEnabledMetrics } from "./metrics";
 import { PANEL_CARDS } from "./panel/cards";
+import { parseBirthYear } from "./panel/zones";
 import { t } from "./i18n/t";
 import type { TranslationKeys } from "./i18n/en";
 
@@ -49,6 +50,7 @@ export interface HealthSyncSettings {
 	unitSystem: UnitSystem;
 	panelEnabled: boolean; // Side panel with health cards
 	panelCards: Record<string, boolean>; // Cards switched off in the panel (missing = on)
+	birthYear: number | null; // Only the year: estimates max heart rate for the heart rate zones in the panel
 }
 
 export const DEFAULT_SETTINGS: HealthSyncSettings = {
@@ -70,6 +72,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	unitSystem: "metric",
 	panelEnabled: false,
 	panelCards: {},
+	birthYear: null,
 };
 
 export class HealthSyncSettingTab extends PluginSettingTab {
@@ -140,6 +143,11 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 						name: t("settingsPanelShow", lang),
 						desc: t("settingsPanelShowDesc", lang),
 						control: { type: "toggle", key: "panelEnabled" },
+					},
+					{
+						name: t("settingsBirthYear", lang),
+						desc: t("settingsBirthYearDesc", lang),
+						control: { type: "text", key: "birthYear", placeholder: "1985" },
 					},
 					...this.panelCardDefinitions(lang),
 				],
@@ -244,6 +252,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 	}
 
 	getControlValue(key: string): unknown {
+		if (key === "birthYear") return this.plugin.settings.birthYear === null ? "" : String(this.plugin.settings.birthYear);
 		if (key.startsWith(PANEL_CARD_KEY_PREFIX)) {
 			return this.plugin.settings.panelCards[key.slice(PANEL_CARD_KEY_PREFIX.length)] ?? true;
 		}
@@ -256,6 +265,13 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 	}
 
 	async setControlValue(key: string, value: unknown): Promise<void> {
+		if (key === "birthYear") {
+			// anything that is not a believable year clears it
+			this.plugin.settings.birthYear = parseBirthYear(value, new Date().getFullYear());
+			await this.plugin.saveSettings();
+			this.plugin.refreshPanels();
+			return;
+		}
 		if (key.startsWith(PANEL_CARD_KEY_PREFIX)) {
 			this.plugin.settings.panelCards[key.slice(PANEL_CARD_KEY_PREFIX.length)] = Boolean(value);
 			await this.plugin.saveSettings();
