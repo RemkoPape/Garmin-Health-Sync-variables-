@@ -2,12 +2,10 @@ import { App, Modal, Setting } from "obsidian";
 import { t } from "../i18n/t";
 import type { ReleaseNote } from "../release-notes";
 
-/** The "what's new" window. It closes only on an explicit confirmation: the **Got it** button or the close
- *  icon, which counts as the same thing. Escape, a click next to the window and the Android back gesture end
- *  in `close()` too, which does nothing until the user confirmed, so they cannot dismiss it by accident. */
+/** The "what's new" window. It closes every normal way (**Got it**, the close icon, Escape, a click next to
+ *  the window, the Android back gesture): a user must never be stuck in it. The version is recorded before it
+ *  opens, so however it was closed, it is not shown again. */
 export class WhatsNewModal extends Modal {
-	private acknowledged = false;
-
 	constructor(app: App, private readonly lang: string, private readonly notes: ReleaseNote[]) {
 		super(app);
 	}
@@ -15,8 +13,6 @@ export class WhatsNewModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		this.modalEl.addClass("ghs-whats-new-modal");
-		// Capture phase: runs before Obsidian's own click handler on the icon, which calls close().
-		this.modalEl.querySelector(".modal-close-button")?.addEventListener("click", () => { this.acknowledged = true; }, true);
 		contentEl.createEl("h2", { text: t("whatsNewTitle", this.lang) });
 
 		// The text scrolls, the button below it stays on screen (small phones).
@@ -43,16 +39,9 @@ export class WhatsNewModal extends Modal {
 			.addButton(btn => {
 				btn.setButtonText(t("whatsNewGotIt", this.lang))
 					.setCta()
-					.onClick(() => {
-						this.acknowledged = true;
-						this.close();
-					});
+					.onClick(() => this.close());
 				btn.buttonEl.focus();
 			});
-	}
-
-	close(): void {
-		if (this.acknowledged) super.close();
 	}
 
 	onClose(): void {

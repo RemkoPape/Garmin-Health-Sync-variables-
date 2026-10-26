@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.2-beta.4
+
+### Fixed
+
+- The "what's new" window can be closed every normal way again (Escape, a click next to it, the close icon, the back gesture), not only with **Got it**. Being stuck in it on some device is worse than closing it by accident; either way it is not shown again.
+
 ## 0.11.2-beta.3
 
 ### Fixed
@@ -32,7 +38,7 @@
 
 ### Added
 
-- A "what's new" window after an update, in all six languages. It closes only with its **Got it** button, shows once per device, and not on a new install. The command **Show what's new** opens it again. There is no setting for it.
+- A "what's new" window after an update, in all six languages. It shows once per device, and not on a new install. The command **Show what's new** opens it again. There is no setting for it.
 
 ### Changed
 

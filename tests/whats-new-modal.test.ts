@@ -62,32 +62,20 @@ describe("content", () => {
 });
 
 describe("closing", () => {
-	it("treats the close icon like Got it", () => {
-		const { modal, root, isOpen } = open();
-		(modal.modalEl.querySelector(".modal-close-button") as HTMLElement).click();
-		expect(isOpen()).toBe(false);
-		expect(root.childElementCount).toBe(0);
-	});
-
-	it("still opens when a future Obsidian has no close icon", () => {
-		const modal = new WhatsNewModal(new App() as never, "en", [NOTE]);
-		modal.modalEl.querySelector(".modal-close-button")?.remove();
-		modal.open();
-		modal.contentEl.querySelector("button")!.click();
-		expect((modal as unknown as { isOpen: boolean }).isOpen).toBe(false);
-	});
-
-	it("ignores every other close request (Escape, backdrop, back gesture) until Got it was pressed", () => {
-		const { modal, isOpen } = open();
-		modal.close();
-		modal.close();
-		expect(isOpen()).toBe(true);
-	});
-
 	it("closes and empties the window when Got it is pressed", () => {
 		const { root, button, isOpen } = open();
 		button.click();
 		expect(isOpen()).toBe(false);
 		expect(root.childElementCount).toBe(0);
+	});
+
+	it("closes every other way too (close icon, Escape, a click outside and the back gesture all call close()), so nobody is stuck", () => {
+		const icon = open();
+		(icon.modal.modalEl.querySelector(".modal-close-button") as HTMLElement).click();
+		expect(icon.isOpen()).toBe(false);
+		const other = open();
+		other.modal.close();
+		expect(other.isOpen()).toBe(false);
+		expect(other.root.childElementCount).toBe(0);
 	});
 });
