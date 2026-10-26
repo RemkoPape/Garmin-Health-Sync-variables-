@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.2-beta.2
+
+### Internal
+
+- ESLint 10 (the 9 line is end-of-life). Lint rule set unchanged: 174 configured, 141 enabled, 38 `obsidianmd/*`, 43 `@typescript-eslint/*` before and after, empty stderr. `@eslint/js` stays on 9 because eslint-plugin-obsidianmd peers it.
+
 ## 0.11.2-beta.1
 
 ### Fixed
