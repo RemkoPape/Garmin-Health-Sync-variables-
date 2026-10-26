@@ -2,6 +2,17 @@
 
 ## 0.11.2
 
+### Fixed
+
+- Activities with empty-string start coordinates are no longer read as the point (0, 0), so no pointless place lookup is sent (#25).
+- Body Battery minimum and maximum no longer break on an absurdly large response (#29).
+- The 30 second timeout of a data request is cleared as soon as the request has finished instead of lingering (#26, the timeout still does not feed the sign-in backoff).
+- An internal sign-in error message is in English like the rest of the log (#28).
+
+### Changed
+
+- The README links the releases page of this repository (it pointed at the original repository) and credits the original author, fcandi, in all languages.
+
 ### Internal
 
 - Dev tooling updated (obsidian 1.14.4 with its exact `@codemirror` peers, TypeScript 5.9, typescript-eslint 8.71, happy-dom 20.14.6 security fix, knip, jiti, tslib, globals 17) and GitHub Actions moved to checkout 7, setup-node 7, upload-artifact 7.0.2. The built `main.js` is byte-identical.

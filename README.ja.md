@@ -90,7 +90,7 @@ trainings:
 
 ### 手動インストール
 
-1. [最新リリース](https://github.com/fcandi/garmin-health-sync/releases)から `main.js` と `manifest.json` をダウンロード
+1. [最新リリース](https://github.com/davadev/Garmin-Health-Sync/releases)から `main.js` と `manifest.json` をダウンロード
 2. Vault 内に `.obsidian/plugins/garmin-health-sync/` フォルダを作成
 3. 両方のファイルをそのフォルダにコピー
 4. 設定 → Community Plugins でプラグインを有効化
@@ -186,3 +186,7 @@ npm install
 npm run dev    # ウォッチモード
 npm run build  # プロダクションビルド
 ```
+
+## クレジット
+
+[fcandi](https://github.com/fcandi) が作成したプラグインです。現在は [davadev](https://github.com/davadev) がメンテナンスと開発を行っています。

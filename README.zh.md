@@ -90,7 +90,7 @@ trainings:
 
 ### 手动安装
 
-1. 从[最新发布](https://github.com/fcandi/garmin-health-sync/releases)下载 `main.js` 和 `manifest.json`
+1. 从[最新发布](https://github.com/davadev/Garmin-Health-Sync/releases)下载 `main.js` 和 `manifest.json`
 2. 在你的 vault 中创建文件夹 `.obsidian/plugins/garmin-health-sync/`
 3. 将两个文件复制到该文件夹
 4. 在设置 → Community Plugins 中启用插件
@@ -186,3 +186,7 @@ npm install
 npm run dev    # 监听模式
 npm run build  # 生产构建
 ```
+
+## 致谢
+
+最初由 [fcandi](https://github.com/fcandi) 创建，现由 [davadev](https://github.com/davadev) 维护和继续开发。

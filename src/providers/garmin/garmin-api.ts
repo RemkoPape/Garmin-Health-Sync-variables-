@@ -971,7 +971,7 @@ export class GarminApi {
 				return dn;
 			}
 		}
-		throw new GarminAuthError(status, "socialProfile lieferte keinen displayName");
+		throw new GarminAuthError(status, "socialProfile returned no displayName");
 	}
 
 	private getBrowserWindowConstructor(): new (opts: object) => BrowserWindowType {
@@ -1185,16 +1185,17 @@ export class GarminApi {
 		const seq = ++this.fetchSeq;
 		this.currentFetchSeq = seq;
 		const FETCH_TIMEOUT_MS = 30000;
-		let settled = false;
+		let timer = 0;
+		// The timer is cleared as soon as the race is decided, so it can only fire while the fetch is still running.
 		const withTimeout = Promise.race([
-			this.fetchDataForDate(date, seq).finally(() => { settled = true; }),
-			new Promise<never>((_, reject) =>
-				window.setTimeout(() => {
-					if (!settled) this.writeSyncDiag(seq, `fetch timeout after ${FETCH_TIMEOUT_MS}ms`);
+			this.fetchDataForDate(date, seq),
+			new Promise<never>((_, reject) => {
+				timer = window.setTimeout(() => {
+					this.writeSyncDiag(seq, `fetch timeout after ${FETCH_TIMEOUT_MS}ms`);
 					reject(new Error("fetch timeout"));
-				}, FETCH_TIMEOUT_MS)
-			),
-		]);
+				}, FETCH_TIMEOUT_MS);
+			}),
+		]).finally(() => window.clearTimeout(timer));
 
 		this.pendingDate = date;
 		this.fetchPromise = withTimeout.then(data => {
