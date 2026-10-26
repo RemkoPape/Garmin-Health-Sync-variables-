@@ -193,3 +193,8 @@
 .ghs-card-warning {
 	color: var(--text-warning);
 }
+
+.ghs-card-action {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}

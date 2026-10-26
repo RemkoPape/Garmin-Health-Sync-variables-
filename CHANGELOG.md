@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.3
+
+### Added
+
+- **Sleep** card in the health panel: last night's sleep, your sleep debt over the last 7 nights against 7 hours, and a tip for tonight (7 hours plus a quarter of the debt, at most one extra hour, in 15 minute steps). It needs 5 nights with data; with fewer than 7 it says how many nights the debt is based on. The sleep score is shown when it is in the note.
+
+### Changed
+
+- Cards are more compact (the value sits in the title row) and the colour bar and dot are thicker.
+
 ## 0.12.0-beta.2
 
 ### Added

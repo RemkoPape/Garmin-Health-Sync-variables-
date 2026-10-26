@@ -53,6 +53,16 @@ describe("DayIndex", () => {
 		expect(index.value("hrv", "2026-10-21")).toBeNull();
 	});
 
+	it("reads duration strings as minutes", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 3, frontmatter: (ago) => [{ sleep_duration: "6h 13min" }, { ohs_sleep_duration: "7h" }, { sleep_duration: 5 }][ago]! });
+		const index = new DayIndex(app as never, () => settings);
+		expect(index.minutes("sleep_duration", "2026-10-22")).toBe(373);
+		expect(index.minutes("sleep_duration", "2026-10-21")).toBe(420);
+		expect(index.minutes("sleep_duration", "2026-10-20")).toBeNull();
+		expect(index.minutes("sleep_duration", "2020-01-01")).toBeNull();
+	});
+
 	it("rebuilds after invalidate and not before", async () => {
 		const app = new App();
 		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 50 }) });
