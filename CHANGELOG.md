@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.11.1-beta.6
+## 0.11.1
 
 ### Fixed
 
@@ -8,57 +8,27 @@
 - If the plugin fails to load, the real reason is shown in a notice (on iPhone Obsidian's own message says nothing), and a failing settings save at startup no longer stops the plugin from loading.
 - Failures in background work (auto-sync, backfill, the sign-in button in the notice) are logged instead of being left as unhandled errors, which a phone can report as a plugin load failure.
 - The "open in browser" button of the manual sign-in dialog opens the page in the window the dialog is in, also in a pop-out window.
-
-### Internal
-
-- `styles.css` is now linted like Obsidian's review does (no `!important`, no partially supported CSS features), in CI, in the release workflow and in the release check.
-
-## 0.11.1-beta.5
-
-### Internal
-
-- Put back a safety check in the sync diagnostics for a response that arrives without headers (a platform HTTP stack might do that); it had been removed as unreachable and would otherwise fail the whole sync on such a device.
-- Lint now fails on warnings (`--max-warnings=0`), and the release check refuses a plugin id that ends in "plugin".
-
-## 0.11.1-beta.4
-
-### Internal
-
-- Tests for the plugin shell (startup, tokens, auto-sync schedule, manual sync, backfill, sign-in), the settings tab and both sign-in dialogs. The whole source is now at 100 % coverage (lines, branches, functions, statements) and CI fails below that.
-- Removed a catch block in the backfill command that could never run, and two unreachable lines.
-
-### Fixed
-
-- The copy-link button in the manual sign-in dialog no longer fails silently when the clipboard is blocked; it tells you.
-- Removed the "Stress duration" and "Recovery duration" switches: they never wrote anything. They will return once they work (#31).
 - **Sync current note** now syncs the day of the note you have open also when your daily note name contains more than year, month and day (for example `2026-10-21 Wed` or `21 Oct 2026`). Before, it wrote yesterday's data into that note. Opening such a note also triggers the automatic sync again.
-- The backfill dialog pre-fills today's and last week's date in your local time (it used UTC, so after midnight or in the evening it was off by a day).
-- Settings no longer share their toggles and sync times with the built-in defaults (a latent bug that made behaviour depend on what ran before).
-
-## 0.11.1-beta.3
-
-### Fixed
-
 - Sleep and sleep phase durations no longer show "60min" (7h 59m 45s was written as "7h 60min"; it is now "8h 0min").
-- Backfill now waits between days after a failed day too, so a single rate-limit error no longer makes the next days fail as well.
+- Backfill now waits between days after a failed day too, so a single rate-limit error no longer makes the next days fail as well. Its dialog pre-fills today's and last week's date in your local time (it used UTC, so after midnight or in the evening it was off by a day).
+- The copy-link button in the manual sign-in dialog no longer fails silently when the clipboard is blocked; it tells you.
 - The "frontmatter is broken" notice is now shown in your language instead of always in German.
 - Notes that start with a byte order mark (BOM) before the properties are recognised; a second properties block is no longer added above the mark.
 - Workout locations keep Vietnamese and other Latin names whole ("Hà Nội" was written as "Hà").
 - A value Garmin sends in an unexpected form (for example text where a number is expected) is no longer written into your note as "NaN"; it is skipped.
 - Intensity minutes are counted when Garmin sends vigorous minutes but no moderate value.
+- Settings no longer share their toggles and sync times with the built-in defaults (a latent bug that made behaviour depend on what ran before).
+
+### Changed
+
+- Removed the "Stress duration" and "Recovery duration" switches: they never wrote anything. They will return once they work (#31).
 
 ### Internal
 
-- Tests for the data layer (note writer, sync and backfill, Garmin sign-in, API and mappers): those modules are at 100 % coverage.
-- Removed code nothing called (an unused sign-in option, a heart rate helper, a state check) and several unreachable branches. The Garmin provider's nine request groups share one helper.
+- Test tooling (vitest with coverage, a mock of the Obsidian API), a dead-code check, CI on every pull request and on `main`, and stricter release guards: releases only from tags on `main` (stable also from a `release/*` branch), tests and coverage before any release is published, and a check that the version the store advertises always has a published stable release. The whole source is at 100 % coverage and CI fails below that.
+- `styles.css` is linted like Obsidian's review does (no `!important`, no partially supported CSS features), in CI, in the release workflow and in the release check. Lint fails on warnings, and the release check refuses a plugin id that ends in "plugin".
+- Removed code nothing called (an unused sign-in option, a heart rate helper, a state check, unreachable branches). The Garmin provider's nine request groups share one helper.
 - Known limitations are tracked as issues #23 (closing marker with trailing space), #24 (token answer without access token), #25 (empty coordinates), #26 to #29.
-
-## 0.11.1-beta.2
-
-### Internal
-
-- Test tooling (vitest with coverage, a mock of the Obsidian API), a dead-code check, CI on every pull request and on `main`, and stricter release guards: releases only from tags on `main` (stable also from a `release/*` branch), tests and coverage before any release is published, and a check that the version the store advertises always has a published stable release. No change to what the plugin does; `main.js` is byte-identical to `0.11.1-beta.1`.
-- Removed the unused `isTransientStatus` helper.
 
 ## 0.11.0
 
