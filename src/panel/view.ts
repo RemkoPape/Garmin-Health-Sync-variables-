@@ -3,11 +3,14 @@ import type HealthSyncPlugin from "../main";
 import { dateFromDailyNote } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
-import { computeRange, renderRange, HRV_CARD, RESTING_HR_CARD } from "./cards/range-card";
+import { computeRange, renderRange, BREATHING_CARD, HRV_CARD, RESTING_HR_CARD, SPO2_CARD } from "./cards/range-card";
+import { computeBattery, renderBattery } from "./cards/battery-card";
 import { computeFloors, renderFloors } from "./cards/floors-card";
 import { computeIntensity, renderIntensity } from "./cards/intensity-card";
 import { computeSleep, renderSleep } from "./cards/sleep-card";
+import { computeStages, renderStages } from "./cards/stages-card";
 import { computeSteps, renderSteps } from "./cards/steps-card";
+import { computeStress, renderStress } from "./cards/stress-card";
 import { formatPanelDate } from "./format";
 import { DayIndex } from "./index";
 
@@ -106,8 +109,16 @@ export class HealthPanelView extends ItemView {
 		for (const spec of [HRV_CARD, RESTING_HR_CARD]) {
 			renderRange(root, spec, computeRange(spec, this.index, this.date), lang, this.explain === spec.id, toggleExplain(spec.id));
 		}
+		const pair = root.createDiv({ cls: "ghs-pair" });
+		for (const spec of [SPO2_CARD, BREATHING_CARD]) {
+			renderRange(pair, spec, computeRange(spec, this.index, this.date), lang, this.explain === spec.id, toggleExplain(spec.id));
+		}
 		root.createDiv({ cls: "ghs-section", text: t("panelSectionSleep", lang) });
 		renderSleep(root, computeSleep(this.index, this.date), lang, this.explain === "sleep", toggleExplain("sleep"));
+		renderStages(root, computeStages(this.index, this.date), lang, this.explain === "stages", toggleExplain("stages"));
+		root.createDiv({ cls: "ghs-section", text: t("panelSectionEnergy", lang) });
+		renderBattery(root, computeBattery(this.index, this.date), lang, this.explain === "battery", toggleExplain("battery"));
+		renderStress(root, computeStress(this.index, this.date), lang, this.explain === "stress", toggleExplain("stress"));
 		root.createDiv({ cls: "ghs-section", text: t("panelSectionMovement", lang) });
 		renderSteps(root, computeSteps(this.index, this.date), lang, this.explain === "steps", toggleExplain("steps"));
 		renderIntensity(root, computeIntensity(this.index, this.date), lang, this.explain === "intensity", toggleExplain("intensity"));

@@ -125,11 +125,13 @@
 
 .ghs-card-value {
 	margin-left: auto;
+	white-space: nowrap;
 	font-size: var(--font-ui-larger);
 	font-weight: var(--font-bold);
 }
 
 .ghs-unit {
+	text-transform: lowercase;
 	color: var(--text-muted);
 	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-normal);
@@ -205,6 +207,7 @@
 
 .ghs-tick-label {
 	position: absolute;
+	text-transform: lowercase;
 	left: var(--ghs-x, 50%);
 	transform: translateX(-50%);
 	color: var(--text-muted);
@@ -414,4 +417,134 @@
 
 .ghs-week {
 	padding-right: 0;
+}
+
+/* Half-width pair: SpO2 and breathing */
+.ghs-pair {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: var(--size-4-3);
+}
+
+.ghs-range-compact {
+	margin-bottom: var(--size-2-3);
+}
+
+.ghs-status {
+	text-transform: lowercase;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.ghs-status-ok {
+	color: var(--color-green);
+}
+
+.ghs-status-warn {
+	color: var(--color-orange);
+}
+
+.ghs-status-bad {
+	color: var(--color-red);
+}
+
+.ghs-range-track-low {
+	background: linear-gradient(to right, var(--color-red) 0%, var(--color-orange) 17%, var(--color-green) 33%, var(--color-green) 100%);
+}
+
+.ghs-dot-neutral {
+	border-color: var(--text-muted);
+}
+
+.ghs-tick-solid {
+	border-left-style: solid;
+}
+
+/* Sleep stages */
+.ghs-stack {
+	display: flex;
+	height: 10px;
+	overflow: hidden;
+	border-radius: var(--radius-s);
+}
+
+.ghs-stack-part {
+	width: var(--ghs-w, 0%);
+}
+
+.ghs-stage-deep {
+	background: var(--color-orange);
+}
+
+.ghs-stage-rem {
+	background: var(--color-purple);
+}
+
+.ghs-stage-light {
+	background: var(--color-blue);
+}
+
+.ghs-stage-awake {
+	background: var(--color-yellow);
+}
+
+.ghs-stage-row {
+	display: grid;
+	grid-template-columns: 4.5em 1fr 7.5em;
+	align-items: center;
+	gap: var(--size-4-2);
+	font-size: var(--font-ui-small);
+}
+
+.ghs-stage-label {
+	color: var(--text-muted);
+}
+
+.ghs-stage-track {
+	position: relative;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--background-modifier-border);
+}
+
+.ghs-stage-fill {
+	height: 100%;
+	width: var(--ghs-w, 0%);
+	border-radius: 2px;
+}
+
+.ghs-stage-mean {
+	position: absolute;
+	top: -3px;
+	bottom: -3px;
+	left: 50%;
+	border-left: 2px solid var(--text-normal);
+}
+
+.ghs-stage-value {
+	font-weight: var(--font-semibold);
+	text-align: right;
+}
+
+/* Body battery: the day's range on a 0 to 100 track */
+.ghs-battery-track {
+	height: 8px;
+	margin-top: 2px;
+	border-radius: var(--radius-s);
+	background: var(--background-modifier-border);
+}
+
+.ghs-battery-fill {
+	position: absolute;
+	top: 2px;
+	left: var(--ghs-x, 0%);
+	width: var(--ghs-w, 0%);
+	height: 8px;
+	border-radius: var(--radius-s);
+	background: linear-gradient(to right, var(--color-red), var(--color-orange), var(--color-green));
+}
+
+/* Stress: Garmin's four bands */
+.ghs-range-track-stress {
+	background: linear-gradient(to right, var(--color-cyan) 0%, var(--color-cyan) 25%, var(--color-blue) 25%, var(--color-blue) 50%, var(--color-yellow) 50%, var(--color-yellow) 75%, var(--color-red) 75%, var(--color-red) 100%);
 }
