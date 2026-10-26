@@ -159,7 +159,7 @@
 .is-mobile .ghs-info {
 	min-width: 44px;
 	min-height: 44px;
-	margin: -12px -10px;
+	margin: -8px -10px;
 }
 
 .ghs-card-action {
@@ -171,7 +171,7 @@
 .ghs-range {
 	position: relative;
 	height: 12px;
-	margin: var(--size-2-2) 0 var(--size-4-4);
+	margin: var(--size-2-2) 0 var(--size-4-6);
 }
 
 .ghs-range-track {
@@ -241,7 +241,7 @@
 	gap: var(--size-4-2);
 	height: 64px;
 	padding-right: var(--size-4-6);
-	margin-bottom: var(--size-4-5);
+	margin: var(--size-4-2) 0 var(--size-4-5);
 }
 
 .ghs-night {
@@ -297,4 +297,121 @@
 	transform: translateY(-2px);
 	color: var(--text-muted);
 	font-size: var(--font-ui-smaller);
+}
+
+/* Steps, intensity minutes and floors */
+.ghs-range-track-steps {
+	background: linear-gradient(to right, var(--color-yellow) 0%, var(--color-yellow) 45%, var(--color-green) 62.5%, var(--color-cyan) 100%);
+	opacity: 0.85;
+}
+
+.ghs-zone {
+	position: absolute;
+	top: 0;
+	left: 62.5%;
+	width: 6.25%;
+	height: 12px;
+	box-sizing: border-box;
+	border: 2px solid var(--color-green);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+	opacity: 0.35;
+}
+
+.ghs-foot {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	font-size: var(--font-ui-small);
+}
+
+.ghs-foot-label {
+	color: var(--text-muted);
+}
+
+.ghs-foot-value {
+	color: var(--color-green);
+	font-weight: var(--font-semibold);
+	text-align: right;
+}
+
+.ghs-chips {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+	gap: var(--size-4-2);
+}
+
+.ghs-chip {
+	display: flex;
+	flex-direction: column;
+	padding: var(--size-2-3) var(--size-4-2);
+	background: var(--background-primary);
+	border-radius: var(--radius-s);
+}
+
+.ghs-chip-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-chip-value {
+	font-weight: var(--font-semibold);
+}
+
+.ghs-chip-delta {
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-chip-delta-up {
+	color: var(--color-green);
+}
+
+.ghs-chip-delta-down {
+	color: var(--color-yellow);
+}
+
+.ghs-week-bar {
+	background: var(--color-green);
+}
+
+.ghs-week-bar-future {
+	background: transparent;
+	border: 1px dashed var(--text-faint);
+	opacity: 1;
+}
+
+.ghs-blocks {
+	display: flex;
+	gap: var(--size-2-1);
+}
+
+.ghs-block {
+	flex: 1;
+	height: 10px;
+	border-radius: 2px;
+	background: var(--background-modifier-border);
+}
+
+.ghs-block-filled {
+	background: var(--color-yellow);
+}
+
+.ghs-block-zone {
+	box-sizing: border-box;
+	background: transparent;
+	border: 1px solid var(--color-green);
+}
+
+/* The two zone labels sit 6 % apart: the first ends at its tick, the second starts at its tick */
+.ghs-steps-bar .ghs-tick-label:first-child {
+	transform: translateX(-100%);
+}
+
+.ghs-steps-bar .ghs-tick-label:last-child {
+	transform: none;
+}
+
+.ghs-week {
+	padding-right: 0;
 }

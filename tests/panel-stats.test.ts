@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DayIndex } from "../src/panel/index";
-import { baseline, windowValues, zScore } from "../src/panel/stats";
+import { average, baseline, windowValues, zScore } from "../src/panel/stats";
 
 const settings = { dailyNotePath: "", dailyNoteFormat: "YYYY-MM-DD" };
 
@@ -37,5 +37,16 @@ describe("windowValues", () => {
 		// 22nd = 50 (the shown day), 21st = 51, 20th missing, 19th = 53, 18th = 54
 		expect(windowValues(index, "hrv", "2026-10-22", 4)).toEqual([51, 53, 54]);
 		expect(windowValues(index, "hrv", "2026-10-22", 2)).toEqual([51]);
+	});
+});
+
+describe("average", () => {
+	it("is the mean of the days before, or null with too few", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 6, frontmatter: (ago) => ({ steps: 1000 * (ago + 1) }) });
+		const index = new DayIndex(app as never, () => settings);
+		// the 5 days before the 22nd: 2000..6000
+		expect(average(index, "steps", "2026-10-22", 7, 5)).toBe(4000);
+		expect(average(index, "steps", "2026-10-22", 7, 6)).toBeNull();
 	});
 });

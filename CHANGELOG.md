@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.5
+
+### Added
+
+- **Movement** section in the health panel with three cards. **Steps**: your zone is your average of the last 7 days up to 10 percent above it, with a bar, the steps and walking minutes still missing, and distance, active and total calories (active calories with the difference to your usual). **Intensity minutes**: a bar per day Monday to Sunday against the weekly goal of 150 minutes, with the daily amount needed over the days still to come. **Floors**: blocks for the day with your zone outlined, and how many floors are left to reach it. Steps and floors need 5 of the last 7 days with data.
+
+### Fixed
+
+- The (i) button no longer overlaps the text and charts below it on a phone, and there is more room between the range labels and the note under a bar.
+
 ## 0.12.0-beta.4
 
 ### Changed
