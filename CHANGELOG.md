@@ -1,44 +1,17 @@
 # Changelog
 
-## 0.11.2-beta.4
+## 0.11.2
 
-### Fixed
+### Added
 
-- The "what's new" window can be closed every normal way again (Escape, a click next to it, the close icon, the back gesture), not only with **Got it**. Being stuck in it on some device is worse than closing it by accident; either way it is not shown again.
-
-## 0.11.2-beta.3
-
-### Fixed
-
-- The close icon of the "what's new" window now works like **Got it** instead of being hidden. Escape, a click next to the window and the Android back gesture still do nothing, so the window cannot vanish by accident.
-
-### Internal
-
-- New CI check `check:i18n-sync`: a pull request that adds, rewords or removes an English text must do the same in the five other language files (an English-only typo fix declares itself with an `I18n-Unchanged: <key>` line in a commit message).
-- Dev tooling: ESLint 10.12.0 and `@eslint/js` 9.39.5 (Dependabot group, #45).
-
-## 0.11.2-beta.2
-
-### Changed
-
-- The "what's new" window of this release now also recalls that 0.11.0 brought mobile compatibility, says that 0.11.1 and 0.11.2 focus on stability and groundwork, and mentions the planned side panel with data visualisation. This recap and outlook are a one-off for this release.
-
-### Internal
-
-- ESLint 10 (the 9 line is end-of-life). Lint rule set unchanged: 174 configured, 141 enabled, 38 `obsidianmd/*`, 43 `@typescript-eslint/*` before and after, empty stderr. `@eslint/js` stays on 9 because eslint-plugin-obsidianmd peers it.
-
-## 0.11.2-beta.1
+- A "what's new" window after an update, in all six languages. It shows once per device, not on a new install, and can be closed any normal way. The command **Show what's new** opens it again. There is no setting for it. This first one also recalls that 0.11.0 brought mobile compatibility, says that 0.11.1 and 0.11.2 focus on stability and groundwork for future features, and mentions the planned side panel with data visualisation (a one-off for this release).
 
 ### Fixed
 
 - Activities with empty-string start coordinates are no longer read as the point (0, 0), so no pointless place lookup is sent (#25).
 - Body Battery minimum and maximum no longer break on an absurdly large response (#29).
-- The 30 second timeout of a data request is cleared as soon as the request has finished instead of lingering (#26, the timeout still does not feed the sign-in backoff).
+- The 30 second timeout of a data request is cleared as soon as the request has finished instead of lingering (#26; the timeout still does not feed the sign-in backoff).
 - An internal sign-in error message is in English like the rest of the log (#28).
-
-### Added
-
-- A "what's new" window after an update, in all six languages. It shows once per device, and not on a new install. The command **Show what's new** opens it again. There is no setting for it.
 
 ### Changed
 
@@ -46,7 +19,9 @@
 
 ### Internal
 
-- Dev tooling updated (obsidian 1.14.4 with its exact `@codemirror` peers, TypeScript 5.9, typescript-eslint 8.71, happy-dom 20.14.6 security fix, knip, jiti, tslib, globals 17) and GitHub Actions moved to checkout 7, setup-node 7, upload-artifact 7.0.2. The built `main.js` is byte-identical.
+- New CI check `check:i18n-sync`: a pull request that adds, rewords or removes an English text must do the same in the five other language files (an English-only typo fix declares itself with an `I18n-Unchanged: <key>` line in a commit message).
+- ESLint 10 (the 9 line is end-of-life; rule counts unchanged at 174 configured, 141 enabled, 38 `obsidianmd/*`, 43 `@typescript-eslint/*`). `@eslint/js` stays on 9 because eslint-plugin-obsidianmd peers it.
+- Dev tooling updated (obsidian 1.14.4 with its exact `@codemirror` peers, TypeScript 5.9, typescript-eslint 8.71, happy-dom 20.14.6 security fix, knip, jiti, tslib, globals 17) and GitHub Actions moved to checkout 7, setup-node 7, upload-artifact 7.0.2.
 
 ## 0.11.1
 
