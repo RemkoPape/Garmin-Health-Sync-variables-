@@ -52,7 +52,7 @@ describe("content", () => {
 		expect(button.textContent).toBe(de.whatsNewGotIt);
 	});
 
-	it("marks its window so the close icon can be hidden, and has the button focused", () => {
+	it("marks its window and has the button focused", () => {
 		const { modal, button } = open();
 		expect(modal.modalEl.classList.contains("ghs-whats-new-modal")).toBe(true);
 		expect(document.activeElement === button || !button.isConnected).toBe(true);
@@ -62,7 +62,22 @@ describe("content", () => {
 });
 
 describe("closing", () => {
-	it("ignores every close request (Escape, backdrop, close icon, back gesture) until Got it was pressed", () => {
+	it("treats the close icon like Got it", () => {
+		const { modal, root, isOpen } = open();
+		(modal.modalEl.querySelector(".modal-close-button") as HTMLElement).click();
+		expect(isOpen()).toBe(false);
+		expect(root.childElementCount).toBe(0);
+	});
+
+	it("still opens when a future Obsidian has no close icon", () => {
+		const modal = new WhatsNewModal(new App() as never, "en", [NOTE]);
+		modal.modalEl.querySelector(".modal-close-button")?.remove();
+		modal.open();
+		modal.contentEl.querySelector("button")!.click();
+		expect((modal as unknown as { isOpen: boolean }).isOpen).toBe(false);
+	});
+
+	it("ignores every other close request (Escape, backdrop, back gesture) until Got it was pressed", () => {
 		const { modal, isOpen } = open();
 		modal.close();
 		modal.close();

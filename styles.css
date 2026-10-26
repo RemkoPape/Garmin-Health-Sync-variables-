@@ -50,12 +50,7 @@
 	font-size: var(--font-smaller);
 }
 
-/* "What's new" window: it closes only through its button, so the close icon is hidden and the
-   text scrolls while the button stays on screen. */
-.ghs-whats-new-modal .modal-close-button {
-	display: none;
-}
-
+/* "What's new" window: the text scrolls while the button stays on screen. */
 .ghs-whats-new-body {
 	max-height: 60vh;
 	overflow-y: auto;

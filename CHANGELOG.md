@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.2-beta.3
+
+### Fixed
+
+- The close icon of the "what's new" window now works like **Got it** instead of being hidden. Escape, a click next to the window and the Android back gesture still do nothing, so the window cannot vanish by accident.
+
+### Internal
+
+- Dev tooling: ESLint 10.12.0 and `@eslint/js` 9.39.5 (Dependabot group, #45).
+
 ## 0.11.2-beta.2
 
 ### Changed
