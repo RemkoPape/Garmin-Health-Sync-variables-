@@ -12,11 +12,11 @@ function pct(value: number, mean: number, sd: number): number {
  */
 export function rangeBar(parent: HTMLElement, value: number, mean: number, sd: number, tone: "ok" | "warn" | "bad"): HTMLElement {
 	const wrap = parent.createDiv({ cls: "ghs-range" });
-	const svg = wrap.createSvg("svg", { attr: { viewBox: "0 0 100 10", preserveAspectRatio: "none", width: "100%", height: "10" } });
-	svg.createSvg("rect", { cls: "ghs-range-track", attr: { x: "0", y: "3", width: "100", height: "4", rx: "2" } });
+	const svg = wrap.createSvg("svg", { attr: { viewBox: "0 0 100 14", preserveAspectRatio: "none", width: "100%", height: "14" } });
+	svg.createSvg("rect", { cls: "ghs-range-track", attr: { x: "0", y: "2", width: "100", height: "10" } });
 	const left = pct(mean - sd, mean, sd);
 	const right = pct(mean + sd, mean, sd);
-	svg.createSvg("rect", { cls: "ghs-range-band", attr: { x: String(left), y: "3", width: String(right - left), height: "4" } });
+	svg.createSvg("rect", { cls: "ghs-range-band", attr: { x: String(left), y: "2", width: String(right - left), height: "10" } });
 	const dot = wrap.createDiv({ cls: `ghs-dot ghs-dot-${tone}` });
 	dot.setCssProps({ "--ghs-x": `${pct(value, mean, sd)}%` });
 	return wrap;
