@@ -1,7 +1,7 @@
 // Why it matters: main.ts is the plugin's brain: what runs at startup, which days auto-sync fetches and
 // how often (Garmin rate-limits), what happens to the sign-in tokens, and which note a manual sync writes
 // into. Each rule below is something a user would notice as a missed day, a request storm or a logout.
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App, Modal, Notice, Platform, Setting, TFile } from "../testUtils/mocks/obsidian";
 import { FakeGarminProvider } from "../testUtils/fakeGarminProvider";
 import HealthSyncPlugin from "../src/main";
@@ -28,10 +28,10 @@ interface Loaded {
 }
 
 /** Create the plugin with the given data.json and run onload. */
-async function load(data: Partial<HealthSyncSettings> | null = null, setup: (app: App) => void = () => undefined): Promise<Loaded> {
+async function load(data: Partial<HealthSyncSettings> | null = null, setup: (app: App) => void = () => undefined, version = "0.11.1-test"): Promise<Loaded> {
 	const app = new App();
 	setup(app);
-	const plugin = new HealthSyncPlugin(app as never, { version: "0.11.1-test" } as never) as Loaded["plugin"];
+	const plugin = new HealthSyncPlugin(app as never, { version } as never) as Loaded["plugin"];
 	plugin.data = data;
 	await plugin.onload();
 	return { app, plugin, provider: FakeGarminProvider.last() };
@@ -141,9 +141,10 @@ describe("F8: switches that never did anything are gone, old files still load", 
 });
 
 describe("startup", () => {
-	it("registers the three commands under their stable ids, named in the user's language", async () => {
+	it("registers the four commands under their stable ids, named in the user's language", async () => {
 		const { plugin } = await load({ language: "de" });
-		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "login-with-ticket", "sync-health-data"]);
+		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "login-with-ticket", "show-whats-new", "sync-health-data"]);
+		expect(plugin.commands.get("show-whats-new")?.name).toBe(de.commandWhatsNew);
 		expect(plugin.commands.get("sync-health-data")?.name).toBe(de.commandSync);
 		expect(plugin.commands.get("backfill-health-data")?.name).toBe(de.commandBackfill);
 		expect(plugin.commands.get("login-with-ticket")?.name).toBe(de.commandManualLogin);
@@ -1533,5 +1534,61 @@ describe("onload", () => {
 		void NoticeClass;
 		await expect(plugin.onload()).rejects.toBe("plain failure");
 		expect(Notice.recorded.at(-1)!.message).toContain("plain failure");
+	});
+});
+
+describe("what's new", () => {
+	const SEEN = "garmin-health-sync-whats-new-seen";
+	beforeEach(() => { Modal.opened = []; Notice.recorded = []; });
+	afterEach(() => { vi.restoreAllMocks(); });
+
+	it("shows the notes of an update once the layout is ready, in the user's language, and records the version", async () => {
+		const { app } = await load({ language: "de", dailyNoteFormat: "YYYY-MM-DD" }, undefined, "0.11.2");
+		expect(Modal.opened).toHaveLength(0);
+		app.workspace.layoutReady();
+		await settle();
+		expect(Modal.opened).toHaveLength(1);
+		expect((Modal.opened[0] as unknown as { contentEl: HTMLElement }).contentEl.querySelector("h2")?.textContent).toBe(de.whatsNewTitle);
+		expect(app.loadLocalStorage(SEEN)).toBe("0.11.2");
+	});
+
+	it("shows nothing on a fresh install and only records the version", async () => {
+		const { app } = await load(null, undefined, "0.11.2");
+		app.workspace.layoutReady();
+		await settle();
+		expect(Modal.opened).toHaveLength(0);
+		expect(app.loadLocalStorage(SEEN)).toBe("0.11.2");
+	});
+
+	it("treats an empty data.json like a fresh install", async () => {
+		const { app } = await load({}, undefined, "0.11.2");
+		app.workspace.layoutReady();
+		await settle();
+		expect(Modal.opened).toHaveLength(0);
+	});
+
+	it("gives a restart hint instead of a window when Obsidian has been running for a while", async () => {
+		const { app } = await load({ language: "en" }, undefined, "0.11.2");
+		vi.spyOn(performance, "now").mockReturnValue(300_000);
+		app.workspace.layoutReady();
+		await settle();
+		expect(Modal.opened).toHaveLength(0);
+		expect(Notice.messages()).toContain(en.noticeWhatsNewRestart.replace("{version}", "0.11.2"));
+	});
+
+	it("logs a failure to show the notes and keeps the plugin running", async () => {
+		const { app } = await load({ language: "en" }, undefined, "0.11.2");
+		app.saveLocalStorage = () => undefined;
+		vi.spyOn(Modal.prototype, "open").mockImplementation(() => { throw new Error("no window"); });
+		const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+		app.workspace.layoutReady();
+		await settle();
+		expect(error.mock.calls.some((c) => String(c[0]).includes("what's new failed"))).toBe(true);
+	});
+
+	it("opens the notes of the running line from the command", async () => {
+		const { plugin } = await load({ language: "en" }, undefined, "0.11.2");
+		plugin.commands.get("show-whats-new")!.callback!();
+		expect(Modal.opened).toHaveLength(1);
 	});
 });

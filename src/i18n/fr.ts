@@ -146,4 +146,17 @@ export const fr: Record<TranslationKeys, string> = {
 	modalManualLoginTicketFound: "Ticket trouvé : {ticket}",
 	modalManualLoginTicketNone: "Aucun ticket trouvé pour l’instant",
 	modalManualLoginClipboardBlocked: "Impossible de lire le presse-papiers — collez plutôt le ticket dans le champ ci-dessous.",
+
+	// What's new
+	commandWhatsNew: "Afficher les nouveautés",
+	whatsNewTitle: "Nouveautés de Garmin Health Sync",
+	whatsNewCatchUp: "Vous avez manqué {count} mises à jour.",
+	whatsNewGotIt: "Compris",
+	noticeWhatsNewRestart: "Mis à jour vers {version}. Redémarrez Obsidian pour voir les nouveautés.",
+	whatsNew0112Title: "Nouveautés dans le plugin",
+	whatsNew0112Intro: "Après une mise à jour, Garmin Health Sync vous indique désormais ce qui a changé.",
+	whatsNew0112Item1Title: "Notes de version dans l’app",
+	whatsNew0112Item1Text: "Après une mise à jour, vous les voyez ici une seule fois. Fermez la fenêtre avec le bouton ci-dessous. Pour les relire, cherchez « nouveautés » dans la palette de commandes.",
+	whatsNew0112Item2Title: "Synchronisation plus robuste",
+	whatsNew0112Item2Text: "Des coordonnées de départ vides ne déclenchent plus de recherche de lieu inutile, le minimum et le maximum de Body Battery supportent des réponses énormes et les minuteurs des requêtes sont nettoyés.",
 };

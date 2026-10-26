@@ -373,6 +373,7 @@ export class Modal {
 	static opened: Modal[] = [];
 	app: App;
 	contentEl: HTMLElement = document.createElement("div");
+	modalEl: HTMLElement = document.createElement("div");
 	isOpen = false;
 	constructor(app: App) {
 		this.app = app;

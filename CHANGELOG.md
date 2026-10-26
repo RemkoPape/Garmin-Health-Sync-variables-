@@ -9,6 +9,10 @@
 - The 30 second timeout of a data request is cleared as soon as the request has finished instead of lingering (#26, the timeout still does not feed the sign-in backoff).
 - An internal sign-in error message is in English like the rest of the log (#28).
 
+### Added
+
+- A "what's new" window after an update, in all six languages. It closes only with its **Got it** button, shows once per device, and not on a new install. The command **Show what's new** opens it again. There is no setting for it.
+
 ### Changed
 
 - The README links the releases page of this repository (it pointed at the original repository) and credits the original author, fcandi, in all languages.

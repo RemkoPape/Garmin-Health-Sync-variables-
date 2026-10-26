@@ -146,4 +146,17 @@ export const ja: Record<TranslationKeys, string> = {
 	modalManualLoginTicketFound: "チケットを検出しました: {ticket}",
 	modalManualLoginTicketNone: "チケットはまだ見つかっていません",
 	modalManualLoginClipboardBlocked: "クリップボードを読み取れませんでした。代わりに下の欄にチケットを貼り付けてください。",
+
+	// What's new
+	commandWhatsNew: "新機能を表示",
+	whatsNewTitle: "Garmin Health Sync の新機能",
+	whatsNewCatchUp: "{count} 件のアップデートをまとめて表示しています。",
+	whatsNewGotIt: "了解",
+	noticeWhatsNewRestart: "{version} に更新しました。新機能を見るには Obsidian を再起動してください。",
+	whatsNew0112Title: "プラグイン内のリリースノート",
+	whatsNew0112Intro: "アップデート後に、Garmin Health Sync が変更内容をお知らせします。",
+	whatsNew0112Item1Title: "アプリ内リリースノート",
+	whatsNew0112Item1Text: "アップデート後に一度だけここに表示されます。下のボタンでウィンドウを閉じます。もう一度読むには、コマンドパレットで「新機能」を検索してください。",
+	whatsNew0112Item2Title: "より堅牢な同期",
+	whatsNew0112Item2Text: "空の開始座標では無駄な場所の検索を行わなくなり、Body Battery の最小値・最大値は巨大なレスポンスでも処理でき、リクエストのタイマーも片付けられます。",
 };

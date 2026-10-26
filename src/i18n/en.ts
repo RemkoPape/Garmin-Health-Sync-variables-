@@ -145,6 +145,19 @@ export const en = {
 	modalManualLoginTicketFound: "Ticket found: {ticket}",
 	modalManualLoginTicketNone: "No ticket found yet",
 	modalManualLoginClipboardBlocked: "Could not read the clipboard — paste the ticket into the field below instead.",
+
+	// What's new
+	commandWhatsNew: "Show what's new",
+	whatsNewTitle: "What's new in Garmin Health Sync",
+	whatsNewCatchUp: "You are catching up on {count} updates.",
+	whatsNewGotIt: "Got it",
+	noticeWhatsNewRestart: "Updated to {version}. Restart Obsidian to see what's new.",
+	whatsNew0112Title: "Release notes inside the plugin",
+	whatsNew0112Intro: "After an update, Garmin Health Sync now tells you what changed.",
+	whatsNew0112Item1Title: "Release notes in the app",
+	whatsNew0112Item1Text: "After an update you see them here once. Close the window with the button below. To read them again, search the command palette for what's new.",
+	whatsNew0112Item2Title: "More robust sync",
+	whatsNew0112Item2Text: "Empty start coordinates no longer trigger a pointless place lookup, the body battery minimum and maximum cope with huge responses, and request timers are cleaned up.",
 };
 
 export type TranslationKeys = keyof typeof en;

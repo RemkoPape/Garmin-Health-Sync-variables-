@@ -147,4 +147,17 @@ export const de: Record<TranslationKeys, string> = {
 	modalManualLoginTicketFound: "Ticket gefunden: {ticket}",
 	modalManualLoginTicketNone: "Noch kein Ticket gefunden",
 	modalManualLoginClipboardBlocked: "Zwischenablage konnte nicht gelesen werden — füge das Ticket stattdessen in das Feld unten ein.",
+
+	// What's new
+	commandWhatsNew: "Neuigkeiten anzeigen",
+	whatsNewTitle: "Neu in Garmin Health Sync",
+	whatsNewCatchUp: "Du hast {count} Updates verpasst.",
+	whatsNewGotIt: "Verstanden",
+	noticeWhatsNewRestart: "Auf {version} aktualisiert. Starte Obsidian neu, um die Neuigkeiten zu sehen.",
+	whatsNew0112Title: "Versionshinweise direkt im Plugin",
+	whatsNew0112Intro: "Nach einem Update zeigt dir Garmin Health Sync jetzt, was sich geändert hat.",
+	whatsNew0112Item1Title: "Versionshinweise im Plugin",
+	whatsNew0112Item1Text: "Nach einem Update siehst du sie einmal hier. Schließe das Fenster mit dem Button darunter. Zum erneuten Lesen suchst du in der Befehlspalette nach „Neuigkeiten“.",
+	whatsNew0112Item2Title: "Robusterer Sync",
+	whatsNew0112Item2Text: "Leere Start-Koordinaten lösen keine unnötige Ortsabfrage mehr aus, Body-Battery-Minimum und -Maximum verkraften auch riesige Antworten, und Zeitlimits für Anfragen werden aufgeräumt.",
 };
