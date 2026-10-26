@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.13
+
+### Changed
+
+- Every card switch under **Settings → Garmin Health Sync → Side panel** now says what the card needs and when it unlocks (for example "Needs HRV. Your usual range appears from 5 days of data and is reliable from 21."), lists by name the required metrics that are still off ("Turn on in the metric settings: …") and, separately, the metrics that only add detail ("Adds more detail when turned on: Bedtime, Wake-up time"). The list follows your language and unit system and updates when you toggle a metric.
+
 ## 0.12.0-beta.12
 
 ### Changed

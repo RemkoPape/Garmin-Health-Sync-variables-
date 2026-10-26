@@ -99,20 +99,53 @@ describe("the settings layout", () => {
 		expect(german.items!.slice(2).map((i) => i.name)).toEqual(PANEL_CARDS.map((c) => de[c.title]));
 	});
 
-	it("says when a card's metric is not synced", () => {
-		const { defs } = make({ enabledMetrics: { ...DEFAULT_SETTINGS.enabledMetrics, spo2: false } });
-		const page = defs().find((i) => i.name === en.settingsPanel)!;
-		const desc = (key: string) => (page.items!.find((i) => i.control?.key === key) as { desc?: string }).desc;
-		expect(desc("panel:spo2")).toBe(en.settingsPanelCardNotSynced);
-		expect(desc("panel:hrv")).toBe("");
-		// stages needs any of its four metrics
-		expect(desc("panel:stages")).toBe(en.settingsPanelCardNotSynced);
-		const on = make({ enabledMetrics: { ...DEFAULT_SETTINGS.enabledMetrics, sleep_rem: true } }).defs().find((i) => i.name === en.settingsPanel)!;
-		expect((on.items!.find((i) => i.control?.key === "panel:stages") as { desc?: string }).desc).toBe("");
-		// a metric missing from the record falls back to its default
-		const fallback = make({ enabledMetrics: {} }).defs().find((i) => i.name === en.settingsPanel)!;
-		expect((fallback.items!.find((i) => i.control?.key === "panel:hrv") as { desc?: string }).desc).toBe("");
-		expect((fallback.items!.find((i) => i.control?.key === "panel:spo2") as { desc?: string }).desc).toBe(en.settingsPanelCardNotSynced);
+	describe("what each panel card needs", () => {
+		const descs = (patch: Partial<HealthSyncSettings> = {}): ((id: string) => string | undefined) => {
+			const page = make(patch).defs().find((i) => i.name === (patch.language === "de" ? de.settingsPanel : en.settingsPanel))!;
+			return (id) => (page.items!.find((i) => i.control?.key === `panel:${id}`) as { desc?: string }).desc;
+		};
+
+		it("describes what every card needs and when it unlocks, in the user's language", () => {
+			expect(descs()("hrv")).toBe(en.panelNeedsHrv);
+			expect(descs({ language: "de" })("hrv")).toBe(de.panelNeedsHrv);
+			for (const c of PANEL_CARDS) expect(descs()(c.id)!.startsWith(en[c.needs])).toBe(true);
+		});
+
+		it("lists the required metrics that are off, by name", () => {
+			expect(descs()("spo2")).toBe(`${en.panelNeedsSpo2} ${en.panelCardTurnOn.replace("{metrics}", en.metric_spo2)}`);
+			// all four stages are off by default
+			expect(descs()("stages")).toBe(`${en.panelNeedsStages} ${en.panelCardTurnOn.replace("{metrics}", "Deep sleep, REM sleep, Light sleep, Awake time")}`);
+			const some = descs({ enabledMetrics: { ...DEFAULT_SETTINGS.enabledMetrics, sleep_rem: true, sleep_deep: true } })("stages");
+			expect(some).toBe(`${en.panelNeedsStages} ${en.panelCardTurnOn.replace("{metrics}", "Light sleep, Awake time")}`);
+			const all = descs({ enabledMetrics: { ...DEFAULT_SETTINGS.enabledMetrics, sleep_rem: true, sleep_deep: true, sleep_light: true, sleep_awake: true } })("stages");
+			expect(all).toBe(en.panelNeedsStages);
+		});
+
+		it("lists the metrics that only add detail, separately", () => {
+			// sleep duration and score are on by default; bedtime and wake-up time are not
+			expect(descs()("sleep")).toBe(`${en.panelNeedsSleep} ${en.panelCardAlsoUseful.replace("{metrics}", "Bedtime, Wake-up time")}`);
+			expect(descs()("steps")).toBe(`${en.panelNeedsSteps} ${en.panelCardAlsoUseful.replace("{metrics}", "Distance (km), Active calories, Total calories")}`);
+			const on = { ...DEFAULT_SETTINGS.enabledMetrics, distance_km: true, calories_active: true, calories_total: true };
+			expect(descs({ enabledMetrics: on })("steps")).toBe(en.panelNeedsSteps);
+		});
+
+		it("names distance in miles for imperial users", () => {
+			expect(descs({ unitSystem: "imperial" })("steps")).toContain("Distance (mi)");
+		});
+
+		it("says both when a required and an optional metric are off", () => {
+			expect(descs()("battery")).toBe(`${en.panelNeedsBattery} ${en.panelCardTurnOn.replace("{metrics}", "Body battery (highest)")} ${en.panelCardAlsoUseful.replace("{metrics}", "Body battery (lowest), Body battery")}`);
+		});
+
+		it("adds nothing for the cards that need only the activities", () => {
+			for (const id of ["load", "weekly", "sessions"]) expect(descs()(id)!.includes(en.panelCardTurnOn.split("{")[0]!)).toBe(false);
+			expect(descs()("load")).toBe(en.panelNeedsLoad);
+		});
+
+		it("falls back to the default of a metric missing from the record", () => {
+			expect(descs({ enabledMetrics: {} })("hrv")).toBe(en.panelNeedsHrv);
+			expect(descs({ enabledMetrics: {} })("spo2")).toContain(en.panelCardTurnOn.split("{")[0]!);
+		});
 	});
 
 	it("reads and writes a card switch, defaulting to on, and refreshes the panels", async () => {

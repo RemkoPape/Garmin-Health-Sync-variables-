@@ -245,17 +245,31 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 		return year === null ? base : `${base} ${t("settingsBirthYearMax", lang).replace("{max}", String(maxHrAt(year, `${new Date().getFullYear()}-01-01`)))}`;
 	}
 
-	/** One switch per card. A card whose metrics are not synced says so, because it would only show "No reading". */
+	/**
+	 * One switch per card, with what the card needs and when it unlocks, and which of its metrics are off: the
+	 * required ones (the card stays empty without them) and the ones that only add detail.
+	 */
 	private panelCardDefinitions(lang: string): SettingDefinition[] {
 		const enabled = this.plugin.settings.enabledMetrics;
+		const off = (keys: string[]): string => keys.filter((key) => !(enabled[key] ?? METRICS.find((m) => m.key === key)!.defaultEnabled)).map((key) => this.metricLabel(key, lang)).join(", ");
 		return PANEL_CARDS.map((card) => {
-			const metric = (key: string): boolean => enabled[key] ?? METRICS.find((m) => m.key === key)!.defaultEnabled;
+			const missing = off(card.metrics);
+			const detail = off(card.extra ?? []);
+			const parts = [t(card.needs, lang)];
+			if (missing) parts.push(t("panelCardTurnOn", lang).replace("{metrics}", missing));
+			if (detail) parts.push(t("panelCardAlsoUseful", lang).replace("{metrics}", detail));
 			return {
 				name: t(card.title, lang),
-				desc: card.metrics.length === 0 || card.metrics.some(metric) ? "" : t("settingsPanelCardNotSynced", lang),
+				desc: parts.join(" "),
 				control: { type: "toggle", key: `${PANEL_CARD_KEY_PREFIX}${card.id}` },
 			};
 		});
+	}
+
+	/** The label of a metric in the user's language and unit system. */
+	private metricLabel(key: string, lang: string): string {
+		const labelKey = (this.plugin.settings.unitSystem === "imperial" && IMPERIAL_LABEL_MAP[key]) || (`metric_${key}` as TranslationKeys);
+		return t(labelKey, lang);
 	}
 
 	getControlValue(key: string): unknown {
@@ -315,13 +329,9 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 		category: "standard" | "extended",
 		lang: string
 	): SettingDefinition[] {
-		const isImperial = this.plugin.settings.unitSystem === "imperial";
 		return METRICS.filter((m) => m.category === category).map((metric) => {
-			const labelKey =
-				(isImperial && IMPERIAL_LABEL_MAP[metric.key]) ||
-				(`metric_${metric.key}` as TranslationKeys);
 			return {
-				name: t(labelKey, lang),
+				name: this.metricLabel(metric.key, lang),
 				control: { type: "toggle", key: `${METRIC_KEY_PREFIX}${metric.key}` },
 			};
 		});
