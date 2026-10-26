@@ -126,7 +126,7 @@ describe("weekly load card", () => {
 		expect(model.minutes).toBe(120); // Mon..Thu
 		expect(model.average).toBe(210);
 		expect(model.cap).toBeCloseTo(231);
-		renderWeekly(root, model, "en", false, noop);
+		renderWeekly(root, model, "en", false, false, noop);
 		expect(text(".ghs-card-value")).toBe("120 min");
 		expect(text(".ghs-foot-value")).toBe("111 min left this week");
 		expect(text(".ghs-foot-label")).toBe(en.panelWeeklyFoot);
@@ -137,7 +137,7 @@ describe("weekly load card", () => {
 	it("draws one segment per session of the week, in order", async () => {
 		const model = computeWeekly(await week(30), END);
 		expect(model.segments).toHaveLength(4);
-		renderWeekly(root, model, "en", false, noop);
+		renderWeekly(root, model, "en", false, false, noop);
 		const segs = Array.from(root.querySelectorAll<HTMLElement>(".ghs-weekly-seg"));
 		expect(segs).toHaveLength(4);
 		const domain = Math.max(231 * 1.25, 120 * 1.05);
@@ -149,13 +149,13 @@ describe("weekly load card", () => {
 		const index = await indexOf((ago) => ({ running: `30min · Ø${120 + (ago % 5) * 15} bpm` }));
 		const model = computeWeekly(index, END);
 		expect(model.segments.every((s) => s.step !== null)).toBe(true);
-		renderWeekly(root, model, "en", false, noop);
+		renderWeekly(root, model, "en", false, false, noop);
 		expect(root.querySelector(".ghs-weekly-seg.ghs-step-none")).toBeNull();
 	});
 
 	it("warns when the week is over the cap", async () => {
 		const model = computeWeekly(await week((ago) => (ago < 4 ? 90 : 30)), END);
-		renderWeekly(root, model, "en", false, noop);
+		renderWeekly(root, model, "en", false, false, noop);
 		expect(text(".ghs-foot-value")).toBe(en.panelWeeklyOver);
 		expect(root.querySelector(".ghs-foot-over")).not.toBeNull();
 	});
@@ -166,22 +166,99 @@ describe("weekly load card", () => {
 	});
 
 	it("warns that the average rests on fewer than four weeks", async () => {
-		renderWeekly(root, computeWeekly(await week(30, 18), END), "en", false, noop);
+		renderWeekly(root, computeWeekly(await week(30, 18), END), "en", false, false, noop);
 		expect(text(".ghs-card-warning")).toBe("Based on 2 of 4 weeks.");
 	});
 
 	it("is locked without a previous week of notes but still shows this week", async () => {
 		const model = computeWeekly(await week(30, 4), END);
 		expect(model.average).toBeNull();
-		renderWeekly(root, model, "en", false, noop);
+		renderWeekly(root, model, "en", false, false, noop);
 		expect(text(".ghs-card-note")).toBe(en.panelLoadLocked);
 		expect(text(".ghs-card-value")).toBe("120 min");
 	});
 
 	it("speaks the plugin language and shows the explanation", async () => {
-		renderWeekly(root, computeWeekly(await week(30), END), "de", true, noop);
+		renderWeekly(root, computeWeekly(await week(30), END), "de", false, true, noop);
 		expect(text(".ghs-foot-value")).toBe("Noch 111 Min. diese Woche");
 		expect(text(".ghs-explain")).toBe(de.panelWeeklyExplain);
+	});
+});
+
+describe("weekly distance of running and cycling", () => {
+	/** Running `perDay` km every day: the previous weeks have 7 x perDay each. */
+	const km = (perDay: number | ((ago: number) => number), extra: Record<string, unknown> = {}) =>
+		indexOf((ago) => ({ running: `${typeof perDay === "number" ? perDay : perDay(ago)} km · 30min`, ...extra }));
+	const row = (i = 0): { label: string; value: string; foot: string; left: string } => {
+		const r = root.querySelectorAll(".ghs-battery-row")[i]!;
+		return {
+			label: r.querySelector(".ghs-battery-row-label")?.textContent ?? "",
+			value: r.querySelector(".ghs-battery-row-head span:last-child")?.textContent ?? "",
+			foot: r.querySelector(".ghs-foot-label")?.textContent ?? "",
+			left: r.querySelector(".ghs-foot-value")?.textContent ?? "",
+		};
+	};
+
+	it("shows this week's kilometres against the average of the previous weeks and a cap 10 percent above", async () => {
+		// 5 km a day: 35 km in each previous week, cap 38.5; Mon..Thu this week = 20 km
+		const model = computeWeekly(await km(5), END);
+		expect(model.distances).toEqual([{ category: "running", km: 20, average: 35, cap: expect.closeTo(38.5, 6) }]);
+		renderWeekly(root, model, "en", false, false, noop);
+		expect(row()).toEqual({ label: en.panelCategoryRunning, value: "20 km", foot: "Average 35 km · cap 38.5 km", left: "18.5 km left" });
+		expect(root.querySelectorAll(".ghs-battery-row")).toHaveLength(1);
+		const over = root.querySelector(".ghs-battery-bar .ghs-weekly-over") as HTMLElement;
+		expect(over).not.toBeNull();
+	});
+
+	it("warns when over the cap", async () => {
+		renderWeekly(root, computeWeekly(await km((ago) => (ago < 4 ? 12 : 5)), END), "en", false, false, noop);
+		// 48 km this week against a cap of 38.5 km
+		expect(row().left).toBe(en.panelWeeklyOver);
+		expect(root.querySelector(".ghs-battery-row .ghs-foot-over")).not.toBeNull();
+	});
+
+	it("shows miles for imperial users", async () => {
+		renderWeekly(root, computeWeekly(await km(5), END), "en", true, false, noop);
+		expect(row().value).toBe("12.4 mi");
+		expect(row().foot).toBe("Average 21.7 mi · cap 23.9 mi");
+	});
+
+	it("tracks cycling too and lists the sports in a fixed order", async () => {
+		const index = await indexOf(() => ({ cycling: "20 km · 60min", running: "5 km · 30min" }));
+		renderWeekly(root, computeWeekly(index, END), "en", false, false, noop);
+		expect([row(0).label, row(1).label]).toEqual([en.panelCategoryRunning, en.panelCategoryCycling]);
+	});
+
+	it("leaves a sport out when it has no kilometres this week or before, and uses the written category", async () => {
+		const none = await indexOf(() => ({ yoga: "30min" }));
+		expect(computeWeekly(none, END).distances).toEqual([]);
+		renderWeekly(root, computeWeekly(none, END), "en", false, false, noop);
+		expect(root.querySelector(".ghs-battery-row")).toBeNull();
+		const viaList = await indexOf(() => ({ trainings: [{ type: "trail_running", category: "running", distance_km: 10, duration_min: 60 }] }));
+		expect(computeWeekly(viaList, END).distances[0]).toMatchObject({ category: "running", km: 40 });
+	});
+
+	it("shows a sport that was only run in earlier weeks, with nothing yet this week", async () => {
+		const index = await indexOf((ago) => (ago >= 7 ? { running: "5 km · 30min" } : { hrv: 40 }));
+		const model = computeWeekly(index, END);
+		expect(model.distances[0]).toMatchObject({ km: 0, average: expect.any(Number) });
+		renderWeekly(root, model, "en", false, false, noop);
+		expect(row().value).toBe("0 km");
+	});
+
+	it("shows a sport that was started this week with no average yet", async () => {
+		const index = await indexOf((ago) => (ago < 2 ? { running: "5 km · 30min" } : { hrv: 40 }));
+		const model = computeWeekly(index, END);
+		expect(model.distances[0]).toMatchObject({ km: 10, average: 0, cap: 0 });
+		renderWeekly(root, model, "en", false, false, noop);
+		expect(row().left).toBe(en.panelWeeklyOver);
+	});
+
+	it("speaks the plugin language", async () => {
+		renderWeekly(root, computeWeekly(await km(5), END), "de", false, false, noop);
+		expect(row().label).toBe(de.panelCategoryRunning);
+		expect(row().left).toBe("Noch 18,5 km");
+		expect(row().foot).toBe("Schnitt 35 km · Grenze 38,5 km");
 	});
 });
 

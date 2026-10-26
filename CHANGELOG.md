@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.9
+
+### Added
+
+- **Sleep timeline.** Two new optional metrics, **Bedtime** (`sleep_start`) and **Wake-up time** (`sleep_end`), written as `HH:MM` (extended metrics, off by default; turn them on and backfill to fill earlier nights). With them on, the Sleep card draws one column per night on a clock: a faint bar from bedtime to getting up, a solid bar for the time asleep and a dashed box that is 7 hours long from bedtime, so a solid bar that stops above the box is a night with too little sleep. Underneath it shows your average bedtime and wake-up time and how much they vary (±minutes). Without the times the card keeps its bars of sleep duration against the 7 hour line.
+- **Weekly distance** for running and cycling in the Weekly load card: this week's kilometres (miles with imperial units) against the average of your previous weeks and a cap 10 percent above it, with what is left to the cap.
+
+### Changed
+
+- **Body battery** now shows two clearly labelled bars on the same 0 to 100 scale: where your daily peaks of the last 30 days fell (with a tick at the average) and today's lowest to highest value.
+
 ## 0.12.0-beta.8
 
 ### Added

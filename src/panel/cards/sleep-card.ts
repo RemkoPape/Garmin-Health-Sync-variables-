@@ -15,11 +15,31 @@ const TARGET_STEP_MIN = 15;
 
 export interface SleepNight {
 	date: string;
+	/** Time asleep. */
 	minutes: number | null;
+	/** Bedtime in minutes since midnight, counted past 24:00 after midnight (00:30 is 1470); null without the times. */
+	bed: number | null;
+	/** Minutes from bedtime to getting up. */
+	span: number | null;
 }
+
+/** Bedtime and wake-up averages over the nights that have times, with how much they vary. */
+export interface SleepSchedule {
+	/** Minutes since midnight. */
+	bed: number;
+	bedSd: number;
+	wake: number;
+	wakeSd: number;
+}
+
+/** From this many nights with times the chart shows when you slept instead of only how long. */
+export const SLEEP_MIN_TIMED_NIGHTS = 3;
+const DAY = 1440;
 
 export interface SleepModel {
 	trend: Trend | null;
+	/** Null while fewer than SLEEP_MIN_TIMED_NIGHTS nights have a bedtime and wake-up time. */
+	schedule: SleepSchedule | null;
 	/** The last seven nights, oldest first, the shown day last. */
 	nights: SleepNight[];
 	/** Last night's sleep in minutes. */
@@ -40,14 +60,37 @@ export function computeSleep(index: DayIndex, date: string): SleepModel {
 	for (let i = NIGHTS - 1; i >= 0; i--) {
 		const day = shiftDate(date, -i);
 		const m = index.minutes("sleep_duration", day);
-		nights.push({ date: day, minutes: m });
+		const start = index.clock("sleep_start", day);
+		const end = index.clock("sleep_end", day);
+		const timed = start !== null && end !== null;
+		// a bedtime before noon belongs to the night after midnight
+		nights.push({ date: day, minutes: m, bed: timed ? (start < DAY / 2 ? start + DAY : start) : null, span: timed ? (end - start + DAY) % DAY : null });
 		if (m === null) continue;
 		have++;
 		debt += Math.max(0, NEED_MIN - m);
 	}
 	const ready = have >= SLEEP_MIN_NIGHTS;
 	const target = ready ? Math.floor((NEED_MIN + Math.min(debt / 4, MAX_CATCH_UP_MIN)) / TARGET_STEP_MIN) * TARGET_STEP_MIN : null;
-	return { trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target };
+	return { schedule: scheduleOf(nights), trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target };
+}
+
+function meanAndSd(values: number[]): { mean: number; sd: number } {
+	const mean = values.reduce((a, b) => a + b, 0) / values.length;
+	return { mean, sd: Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length) };
+}
+
+function scheduleOf(nights: SleepNight[]): SleepSchedule | null {
+	const timed = nights.filter((n) => n.bed !== null && n.span !== null);
+	if (timed.length < SLEEP_MIN_TIMED_NIGHTS) return null;
+	const bed = meanAndSd(timed.map((n) => n.bed as number));
+	const wake = meanAndSd(timed.map((n) => (n.bed as number) + (n.span as number)));
+	return { bed: bed.mean % DAY, bedSd: bed.sd, wake: wake.mean % DAY, wakeSd: wake.sd };
+}
+
+/** "07:05" from minutes since midnight. */
+export function formatClock(minutes: number): string {
+	const m = Math.round(minutes) % DAY;
+	return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 }
 
 /** "7 h 30 min": plain units that read the same in every supported language. */
@@ -58,7 +101,7 @@ export function formatMinutes(total: number): string {
 }
 
 /** Seven bars, one per night, against a dashed line at the need; the shown night is the light one. */
-function nightsChart(parent: HTMLElement, nights: SleepNight[], lang: string): void {
+function durationChart(parent: HTMLElement, nights: SleepNight[], lang: string): void {
 	const top = Math.max(NEED_MIN * 1.2, ...nights.map((n) => n.minutes ?? 0));
 	const chart = parent.createDiv({ cls: "ghs-nights" });
 	chart.createDiv({ cls: "ghs-nights-need" }).setCssProps({ "--ghs-y": `${(NEED_MIN / top) * 100}%` });
@@ -71,10 +114,37 @@ function nightsChart(parent: HTMLElement, nights: SleepNight[], lang: string): v
 	});
 }
 
+/**
+ * One column per night on a clock that runs downwards: a faint bar from bedtime to getting up, a solid bar for
+ * the time asleep and a dashed box that is the need long from bedtime. A solid bar that stops above the end
+ * of the box is a night with too little sleep; where the bars start and end shows how regular the nights are.
+ */
+function timelineChart(parent: HTMLElement, nights: SleepNight[], lang: string): void {
+	const timed = nights.filter((n) => n.bed !== null && n.span !== null);
+	const first = Math.min(...timed.map((n) => n.bed as number)) - 30;
+	const last = Math.max(...timed.map((n) => Math.max((n.bed as number) + (n.span as number), (n.bed as number) + NEED_MIN))) + 30;
+	const top = Math.floor(first / 60) * 60;
+	const range = Math.ceil(last / 60) * 60 - top;
+	const chart = parent.createDiv({ cls: "ghs-nights ghs-nights-timeline" });
+	chart.createSpan({ cls: "ghs-axis-label ghs-axis-top", text: formatClock(top) });
+	chart.createSpan({ cls: "ghs-axis-label ghs-axis-bottom", text: formatClock(top + range) });
+	nights.forEach((n, i) => {
+		const col = chart.createDiv({ cls: "ghs-night" });
+		if (n.bed !== null && n.span !== null) {
+			const y = `${((n.bed - top) / range) * 100}%`;
+			const place = (el: HTMLElement, minutes: number): void => el.setCssProps({ "--ghs-y": y, "--ghs-h": `${(minutes / range) * 100}%` });
+			place(col.createDiv({ cls: "ghs-night-need" }), NEED_MIN);
+			place(col.createDiv({ cls: "ghs-night-window" }), n.span);
+			place(col.createDiv({ cls: `ghs-night-asleep${i === nights.length - 1 ? " ghs-night-asleep-last" : ""}` }), n.minutes ?? n.span);
+		}
+		col.createSpan({ cls: "ghs-night-day", text: weekdayInitial(n.date, lang) });
+	});
+}
+
 export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.minutes === null ? null : formatMinutes(model.minutes);
 	const unit = model.minutes !== null && model.score !== null ? `· ${Math.round(model.score)}` : undefined;
-	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: t("panelSleepExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
+	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: model.schedule ? `${t("panelSleepExplain", lang)} ${t("panelSleepExplainTimes", lang)}` : t("panelSleepExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
 		if (model.debt === null || model.target === null) {
 			card.createDiv({
 				cls: "ghs-card-note",
@@ -82,11 +152,23 @@ export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string
 			});
 			return;
 		}
-		nightsChart(card, model.nights, lang);
+		if (model.schedule) timelineChart(card, model.nights, lang);
+		else durationChart(card, model.nights, lang);
 		card.createDiv({
 			cls: "ghs-card-note",
 			text: model.debt === 0 ? t("panelSleepNoDebt", lang) : t("panelSleepDebt", lang).replace("{debt}", formatMinutes(model.debt)),
 		});
+		if (model.schedule) {
+			const sc = model.schedule;
+			card.createDiv({
+				cls: "ghs-card-note",
+				text: t("panelSleepSchedule", lang)
+					.replace("{bed}", formatClock(sc.bed))
+					.replace("{bedSd}", String(Math.round(sc.bedSd)))
+					.replace("{wake}", formatClock(sc.wake))
+					.replace("{wakeSd}", String(Math.round(sc.wakeSd))),
+			});
+		}
 		card.createDiv({ cls: "ghs-card-action", text: t("panelSleepTonight", lang).replace("{target}", formatMinutes(model.target)) });
 		if (model.have < NIGHTS) {
 			card.createDiv({ cls: "ghs-card-note ghs-card-warning", text: t("panelSleepPartial", lang).replace("{have}", String(model.have)) });

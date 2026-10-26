@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DayIndex } from "../src/panel/index";
-import { heartRateHistory, intensityStep, minutesBetween, previousWeeks, sessionLoad } from "../src/panel/load";
+import { heartRateHistory, intensityStep, kmBetween, minutesBetween, previousWeeks, previousWeeksKm, sessionLoad } from "../src/panel/load";
 import { percentileRank } from "../src/panel/stats";
 import type { Session } from "../src/panel/sessions";
 
@@ -102,5 +102,19 @@ describe("previousWeeks", () => {
 
 	it("is empty without notes in the previous weeks", async () => {
 		expect(previousWeeks(await indexOf(() => ({ running: "30min" }), 4), END)).toEqual([]);
+	});
+});
+
+describe("kilometres per sport", () => {
+	it("adds the distance of one category in a range and ignores sessions without distance", async () => {
+		const index = await indexOf(() => ({ running: "5 km · 30min", cycling: "20 km · 60min", yoga: "30min" }), 10);
+		expect(kmBetween(index, "2026-10-19", END, "running")).toBe(20);
+		expect(kmBetween(index, "2026-10-19", END, "cycling")).toBe(80);
+	});
+
+	it("gives the kilometres of the previous weeks that have enough notes", async () => {
+		const index = await indexOf(() => ({ running: "5 km · 30min" }), 35);
+		expect(previousWeeksKm(index, END, "running")).toEqual([35, 35, 35, 35]);
+		expect(previousWeeksKm(index, END, "cycling")).toEqual([0, 0, 0, 0]);
 	});
 });

@@ -173,7 +173,7 @@ export class GarminProvider implements HealthProvider {
 		if (["steps", "resting_hr", "stress", "calories_total", "calories_active", "distance_km", "floors", "intensity_min"].some(k => enabled.has(k))) {
 			group("dailySummary", "Daily summary", this.api.fetchDailySummary(date), data => mapDailySummary(data, enabled));
 		}
-		if (["sleep_duration", "sleep_score", "sleep_deep", "sleep_light", "sleep_rem", "sleep_awake"].some(k => enabled.has(k))) {
+		if (["sleep_duration", "sleep_score", "sleep_deep", "sleep_light", "sleep_rem", "sleep_awake", "sleep_start", "sleep_end"].some(k => enabled.has(k))) {
 			group("sleep", "Sleep data", this.api.fetchSleepData(date), data => mapSleepData(data, enabled));
 		}
 		if (enabled.has("hrv")) {

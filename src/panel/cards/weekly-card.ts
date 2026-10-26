@@ -2,7 +2,7 @@ import { shiftDate, weekStart } from "../../dates";
 import { t } from "../../i18n/t";
 import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
-import { CHRONIC_WEEKS, heartRateHistory, intensityStep, minutesBetween, previousWeeks, type Step } from "../load";
+import { CHRONIC_WEEKS, DISTANCE_CATEGORIES, heartRateHistory, intensityStep, kmBetween, minutesBetween, previousWeeks, previousWeeksKm, type DistanceCategory, type Step } from "../load";
 import { isRecovery } from "../sessions";
 import { renderCard } from "./shell";
 
@@ -14,7 +14,17 @@ export interface WeekSegment {
 	step: Step | null;
 }
 
+/** The week of a distance sport: kilometres so far against the average of the previous weeks and a cap 10 percent above it. */
+export interface WeeklyDistance {
+	category: DistanceCategory;
+	km: number;
+	average: number;
+	cap: number;
+}
+
 export interface WeeklyModel {
+	/** Running and cycling distance, for the sports that have any this week or in the previous weeks. */
+	distances: WeeklyDistance[];
 	/** Minutes so far this week, up to and including the shown day. */
 	minutes: number;
 	/** The sessions of the week so far in order. */
@@ -34,10 +44,19 @@ export function computeWeekly(index: DayIndex, date: string): WeeklyModel {
 	}
 	const previous = previousWeeks(index, date);
 	const average = previous.length === 0 ? null : previous.reduce((a, b) => a + b, 0) / previous.length;
-	return { minutes: minutesBetween(index, start, date), segments, weeks: previous.length, average, cap: average === null ? null : average * CAP_FACTOR };
+	const distances: WeeklyDistance[] = [];
+	for (const category of DISTANCE_CATEGORIES) {
+		const before = previousWeeksKm(index, date, category);
+		const km = kmBetween(index, start, date, category);
+		const average = before.length === 0 ? 0 : before.reduce((a, b) => a + b, 0) / before.length;
+		if (km > 0 || average > 0) distances.push({ category, km, average, cap: average * CAP_FACTOR });
+	}
+	return { distances, minutes: minutesBetween(index, start, date), segments, weeks: previous.length, average, cap: average === null ? null : average * CAP_FACTOR };
 }
 
-export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
+const KM_PER_MILE = 1.609344;
+
+export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: string, imperial: boolean, explainOpen: boolean, onToggleExplain: () => void): void {
 	renderCard(parent, { title: t("panelWeeklyTitle", lang), value: formatNumber(model.minutes, lang, 0), unit: "min", explain: t("panelWeeklyExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
 		if (model.average === null || model.cap === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLoadLocked", lang) });
@@ -63,8 +82,33 @@ export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: stri
 			cls: `ghs-foot-value${left < 0 ? " ghs-foot-over" : ""}`,
 			text: left < 0 ? t("panelWeeklyOver", lang) : t("panelWeeklyLeft", lang).replace("{min}", formatNumber(left, lang, 0)),
 		});
+		for (const d of model.distances) distanceRow(card, d, lang, imperial);
 		if (model.weeks < CHRONIC_WEEKS) {
 			card.createDiv({ cls: "ghs-card-note ghs-card-warning", text: t("panelWeeksBasis", lang).replace("{have}", String(model.weeks)).replace("{need}", String(CHRONIC_WEEKS)) });
 		}
+	});
+}
+
+/** A sport's weekly distance: a bar with the average and the cap, and what is left to the cap. */
+function distanceRow(card: HTMLElement, d: WeeklyDistance, lang: string, imperial: boolean): void {
+	const unit = imperial ? "mi" : "km";
+	const show = (km: number): string => `${formatNumber(imperial ? km / KM_PER_MILE : km, lang, 1)} ${unit}`;
+	const domain = Math.max(d.cap * 1.25, d.km * 1.05, 0.1);
+	const row = card.createDiv({ cls: "ghs-battery-row" });
+	const head = row.createDiv({ cls: "ghs-battery-row-head" });
+	head.createSpan({ cls: "ghs-battery-row-label", text: t(d.category === "running" ? "panelCategoryRunning" : "panelCategoryCycling", lang) });
+	head.createSpan({ text: show(d.km) });
+	const bar = row.createDiv({ cls: "ghs-battery-bar", attr: { role: "img", "aria-label": show(d.km) } });
+	bar.createDiv({ cls: "ghs-battery-track" });
+	bar.createDiv({ cls: "ghs-battery-fill ghs-distance-fill" }).setCssProps({ "--ghs-x": "0%", "--ghs-w": `${(d.km / domain) * 100}%` });
+	bar.createDiv({ cls: "ghs-weekly-over" }).setCssProps({ "--ghs-x": `${(d.cap / domain) * 100}%` });
+	bar.createDiv({ cls: "ghs-tick ghs-tick-solid" }).setCssProps({ "--ghs-x": `${(d.average / domain) * 100}%` });
+	bar.createDiv({ cls: "ghs-tick ghs-tick-solid ghs-tick-cap" }).setCssProps({ "--ghs-x": `${(d.cap / domain) * 100}%` });
+	const foot = row.createDiv({ cls: "ghs-foot" });
+	foot.createSpan({ cls: "ghs-foot-label", text: t("panelDistanceBasis", lang).replace("{avg}", show(d.average)).replace("{cap}", show(d.cap)) });
+	const left = d.cap - d.km;
+	foot.createSpan({
+		cls: `ghs-foot-value${left < 0 ? " ghs-foot-over" : ""}`,
+		text: left < 0 ? t("panelWeeklyOver", lang) : t("panelDistanceLeft", lang).replace("{km}", show(left)),
 	});
 }

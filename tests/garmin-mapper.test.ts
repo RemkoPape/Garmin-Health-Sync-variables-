@@ -110,6 +110,20 @@ describe("mapSleepData", () => {
 		});
 	});
 
+	it("maps bedtime and wake-up time from the local timestamps as HH:MM", () => {
+		// 2026-10-21 23:07 and 2026-10-22 06:45 local, as Garmin sends them (wall clock read as UTC)
+		const local = { sleepStartTimestampLocal: Date.UTC(2026, 9, 21, 23, 7), sleepEndTimestampLocal: Date.UTC(2026, 9, 22, 6, 45) };
+		expect(mapSleepData(local, all("sleep_start", "sleep_end"))).toEqual({ sleep_start: "23:07", sleep_end: "06:45" });
+		expect(mapSleepData(local, all("sleep_end"))).toEqual({ sleep_end: "06:45" });
+		expect(mapSleepData(local, all())).toEqual({});
+	});
+
+	it("pads times and writes nothing for a missing, zero or invalid timestamp", () => {
+		expect(mapSleepData({ sleepStartTimestampLocal: Date.UTC(2026, 9, 22, 0, 5) }, all("sleep_start"))).toEqual({ sleep_start: "00:05" });
+		expect(mapSleepData({ sleepStartTimestampLocal: 0, sleepEndTimestampLocal: "abc" }, all("sleep_start", "sleep_end"))).toEqual({});
+		expect(mapSleepData({}, all("sleep_start", "sleep_end"))).toEqual({});
+	});
+
 	it("falls back to overallSleepScore when the nested score is missing", () => {
 		expect(mapSleepData({ overallSleepScore: 77 }, all("sleep_score"))).toEqual({ sleep_score: 77 });
 		expect(mapSleepData({ sleepScores: { overall: {} }, overallSleepScore: 70 }, all("sleep_score"))).toEqual({ sleep_score: 70 });

@@ -59,7 +59,7 @@ export const PANEL_CARDS: PanelCard[] = [
 	{ id: "intensity", title: "panelIntensityTitle", section: "movement", metrics: ["intensity_min"], render: (c) => renderIntensity(c.parent, computeIntensity(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "floors", title: "panelFloorsTitle", section: "movement", metrics: ["floors"], render: (c) => renderFloors(c.parent, computeFloors(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "load", title: "panelLoadTitle", section: "training", metrics: [], render: (c) => renderLoad(c.parent, computeLoad(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "weekly", title: "panelWeeklyTitle", section: "training", metrics: [], render: (c) => renderWeekly(c.parent, computeWeekly(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "weekly", title: "panelWeeklyTitle", section: "training", metrics: [], render: (c) => renderWeekly(c.parent, computeWeekly(c.index, c.date), c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
 	{ id: "sessions", title: "panelSessionsTitle", section: "training", metrics: [], render: (c) => renderSessions(c.parent, computeSessions(c.index, c.date), c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
 ];
 
