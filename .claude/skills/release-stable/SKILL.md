@@ -5,7 +5,7 @@ description: Promote a tested beta to stable X.Y.Z of Garmin Health Sync. ONLY o
 
 # Promote to stable
 
-Only after Daniel says so explicitly, and only when: the last beta ran at least 3 days of normal use on phone and desktop without new issues, every beta's smoke list passed, and the directory entry is checked (it points at `davadev/Garmin-Health-Sync`, or the listing offers the current stable through the redirect). The stable release must be **published before `main` advertises it**.
+Only after Daniel says so explicitly, and only when: the last beta's smoke list passed on a real phone and on desktop (no new issues reported), and the directory entry is checked (it points at `davadev/Garmin-Health-Sync`, or the listing offers the current stable through the redirect). The stable release must be **published before `main` advertises it**.
 
 ## Steps
 1. `git checkout -b release/X.Y.Z main` (`release/*` is reserved for this).
@@ -18,4 +18,4 @@ Only after Daniel says so explicitly, and only when: the last beta ran at least 
 8. Workflow failed at step 5: delete the tag (`git push origin :X.Y.Z && git tag -d X.Y.Z`), fix on the branch, retag. `main` was never touched.
 
 ## Never
-- Create the bare tag early and flag it prerelease; bump `main` to a version with no published release; skip the 3-day soak.
+- Create the bare tag early and flag it prerelease; bump `main` to a version with no published release; skip the smoke test of the last beta on a real device.

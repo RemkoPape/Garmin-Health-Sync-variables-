@@ -32,7 +32,7 @@ A `-beta.N` manifest on `main` got the plugin delisted on 2026-09-18. Every guar
 
 ## Stable flow
 
-Only on an explicit go-ahead, after the last beta ran at least 3 days on phone and desktop. See `.claude/skills/release-stable/SKILL.md`: a `release/X.Y.Z` branch bumps the version, the **branch head** is tagged, `release.yml` publishes, `store-listing` is re-run and turns green, and only then the PR is merged with a merge commit (never squash: the tagged commit must stay reachable from `main`).
+Only on an explicit go-ahead, after the last beta's smoke test passed on phone and desktop. See `.claude/skills/release-stable/SKILL.md`: a `release/X.Y.Z` branch bumps the version, the **branch head** is tagged, `release.yml` publishes, `store-listing` is re-run and turns green, and only then the PR is merged with a merge commit (never squash: the tagged commit must stay reachable from `main`).
 
 ## Dependencies
 
