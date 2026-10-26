@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.0-beta.1
+
+### Added
+
+- First preview of the **health panel**, a read-only panel in the right sidebar. It is off by default: turn it on under **Settings → Garmin Health Sync → Side panel**, then open it with the command **Open health panel** or the ribbon icon. It follows the daily note you have open (otherwise today) and has ‹ › buttons to step through days. It only reads your daily notes and never changes them; nothing is fetched from Garmin.
+- The first card is **HRV**: the day's value against your own average of the 30 days before it, with an (i) explanation. The personal range unlocks once 21 of those days have a reading. More cards follow in later betas.
+- All panel texts are in the six supported languages.
+
+### Internal
+
+- Day index built lazily from Obsidian's metadata cache, with a 300 ms debounce after note changes; the panel does no work while hidden.
+- `localDateString` moved to `src/dates.ts`; the date-from-note logic moved from `main.ts` to `daily-note.ts`.
+
 ## 0.11.2
 
 ### Added
