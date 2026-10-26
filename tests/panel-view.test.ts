@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App, TFile, WorkspaceLeaf } from "../testUtils/mocks/obsidian";
 import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "../src/panel/view";
 import { formatPanelDate } from "../src/panel/format";
+import { seedHistory } from "../testUtils/fakeHistory";
 import { DEFAULT_SETTINGS } from "../src/settings";
 import { en } from "../src/i18n/en";
 import { de } from "../src/i18n/de";
@@ -45,10 +46,68 @@ describe("health panel view", () => {
 		expect(view.getIcon()).toBe("activity");
 	});
 
-	it("shows today and the empty state when no daily note is open", async () => {
+	it("shows today and a card that says why there is no data yet", async () => {
 		const { view } = await open();
 		expect(dateText(view)).toBe(formatPanelDate("2026-10-22", "en"));
-		expect(view.contentEl.querySelector(".ghs-panel-empty")?.textContent).toBe(en.panelEmpty);
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
+		expect(view.contentEl.querySelector(".ghs-card-note")?.textContent).toContain("0 so far");
+	});
+
+	it("shows the HRV of the shown day from the daily notes", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 31, frontmatter: (ago) => ({ hrv: ago % 2 === 0 ? 62 : 58 }) });
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS } } as never);
+		await view.onOpen();
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("62 ms");
+		buttons(view)[0]!.click();
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("58 ms");
+	});
+
+	it("opens and closes the explanation, one card at a time", async () => {
+		const { view } = await open();
+		const info = (): HTMLButtonElement => view.contentEl.querySelector(".ghs-info") as HTMLButtonElement;
+		info().click();
+		expect(view.contentEl.querySelector(".ghs-explain")?.textContent).toBe(en.panelHrvExplain);
+		info().click();
+		expect(view.contentEl.querySelector(".ghs-explain")).toBeNull();
+	});
+
+	it("re-renders once, 300 ms after a burst of note changes, with fresh data", async () => {
+		const app = new App();
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS } } as never);
+		await view.onOpen();
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
+		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 64 }) });
+		const file = app.vault.getMarkdownFiles()[0]!;
+		app.metadataCache.fireChanged(file);
+		app.metadataCache.fireChanged(file);
+		await vi.advanceTimersByTimeAsync(299);
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms");
+	});
+
+	it.each(["delete", "rename"] as const)("refreshes when a note is %sd", async (event) => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 64 }) });
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS } } as never);
+		await view.onOpen();
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms");
+		app.metadataCache.frontmatter.clear();
+		app.vault.fire(event, app.vault.getMarkdownFiles()[0]!);
+		await vi.advanceTimersByTimeAsync(300);
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
+	});
+
+	it("drops a pending render when closed", async () => {
+		const { app, view } = await open();
+		app.metadataCache.fireChanged(new TFile());
+		await view.onClose();
+		const before = view.contentEl.innerHTML;
+		view.contentEl.empty();
+		await vi.advanceTimersByTimeAsync(500);
+		expect(view.contentEl.innerHTML).toBe("");
+		expect(before).not.toBe("");
 	});
 
 	it("follows the open daily note and falls back to today for other files", async () => {
@@ -75,7 +134,7 @@ describe("health panel view", () => {
 
 	it("labels the buttons in the plugin language", async () => {
 		const { view } = await open({ language: "de" });
-		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay]);
+		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelInfo]);
 	});
 
 	it("skips rendering while hidden and renders on the next reveal", async () => {
@@ -100,7 +159,7 @@ describe("health panel view", () => {
 		const { view, plugin } = await open();
 		plugin.settings.language = "de";
 		view.refresh();
-		expect(view.contentEl.querySelector(".ghs-panel-empty")?.textContent).toBe(de.panelEmpty);
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(de.panelNoReading);
 	});
 });
 

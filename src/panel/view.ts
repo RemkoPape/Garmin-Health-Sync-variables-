@@ -3,18 +3,26 @@ import type HealthSyncPlugin from "../main";
 import { dateFromDailyNote } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
+import { renderHrv, computeHrv } from "./cards/hrv";
 import { formatPanelDate } from "./format";
+import { DayIndex } from "./index";
 
 export const VIEW_TYPE_HEALTH_PANEL = "garmin-health-panel";
+const RENDER_DEBOUNCE_MS = 300;
 
 /** Read-only side panel. Cards are computed from the daily notes' frontmatter; nothing is written or fetched. */
 export class HealthPanelView extends ItemView {
 	private date = localDateString(new Date());
 	/** A render was skipped while the leaf was hidden; do it when it is shown again. */
 	private dirty = false;
+	private readonly index: DayIndex;
+	private renderTimer = 0;
+	/** Card whose explanation is open; only one at a time. */
+	private explain: string | null = null;
 
 	constructor(leaf: WorkspaceLeaf, private readonly plugin: HealthSyncPlugin) {
 		super(leaf);
+		this.index = new DayIndex(this.app, () => this.plugin.settings);
 	}
 
 	getViewType(): string {
@@ -38,7 +46,21 @@ export class HealthPanelView extends ItemView {
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => {
 			if (this.dirty) this.render();
 		}));
+		// The sync writes notes in bursts: rebuild the index lazily and render once after the burst.
+		const changed = (): void => {
+			this.index.invalidate();
+			window.clearTimeout(this.renderTimer);
+			this.renderTimer = window.setTimeout(() => this.render(), RENDER_DEBOUNCE_MS);
+		};
+		this.registerEvent(this.app.metadataCache.on("changed", changed));
+		this.registerEvent(this.app.vault.on("delete", changed));
+		this.registerEvent(this.app.vault.on("rename", changed));
 		this.render();
+		return Promise.resolve();
+	}
+
+	onClose(): Promise<void> {
+		window.clearTimeout(this.renderTimer);
 		return Promise.resolve();
 	}
 
@@ -72,7 +94,10 @@ export class HealthPanelView extends ItemView {
 		const isToday = this.date >= localDateString(new Date());
 		this.navButton(nav, "chevron-right", t("panelNextDay", lang), () => this.move(1), isToday);
 
-		root.createDiv({ cls: "ghs-panel-empty", text: t("panelEmpty", lang) });
+		renderHrv(root, computeHrv(this.index, this.date), lang, this.explain === "hrv", () => {
+			this.explain = this.explain === "hrv" ? null : "hrv";
+			this.render();
+		});
 	}
 
 	private navButton(parent: HTMLElement, icon: string, label: string, onClick: () => void, disabled: boolean): void {

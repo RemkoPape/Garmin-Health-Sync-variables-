@@ -1663,7 +1663,7 @@ describe("health panel", () => {
 		plugin.settings.language = "de";
 		plugin.refreshPanels();
 		const view = app.workspace.getLeavesOfType(PANEL)[0]!.view!;
-		expect(view.contentEl.textContent).toContain(de.panelEmpty);
+		expect(view.contentEl.textContent).toContain(de.panelNoReading);
 	});
 
 	it("skips leaves that are not the panel when refreshing", async () => {
