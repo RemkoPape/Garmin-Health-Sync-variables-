@@ -148,6 +148,15 @@ export const en = {
 
 	// What's new
 	commandWhatsNew: "Show what's new",
+	commandOpenPanel: "Open health panel",
+	settingsPanel: "Side panel",
+	settingsPanelShow: "Show the health panel",
+	settingsPanelShowDesc: "Adds a health panel to the right sidebar. It reads your daily notes and never changes them.",
+	noticePanelDisabled: "Turn on the health panel in the plugin settings first.",
+	panelTitle: "Health",
+	panelPrevDay: "Previous day",
+	panelNextDay: "Next day",
+	panelEmpty: "Health cards appear here as your daily notes collect data.",
 	whatsNewTitle: "What's new in Garmin Health Sync",
 	whatsNewCatchUp: "You are catching up on {count} updates.",
 	whatsNewGotIt: "Got it",

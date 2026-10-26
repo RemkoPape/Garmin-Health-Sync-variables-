@@ -20,6 +20,7 @@ Sync steps, sleep, heart rate, stress, activities and more from Garmin Connect i
 - **Language auto-detection** — UI language is set from your Obsidian language (EN, DE, ZH, JA, ES, FR)
 - **Optional structured data** — machine-readable `trainings` field for advanced Dataview queries
 - **Property prefix** — optionally adds an `ohs_` prefix to all frontmatter properties to avoid naming conflicts with other plugins
+- **Health panel (beta)** — optional right sidebar panel that reads your daily notes and never changes them; turn it on under **Settings → Garmin Health Sync → Side panel**
 
 ## Frontmatter Output
 

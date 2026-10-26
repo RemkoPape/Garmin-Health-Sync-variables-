@@ -18,6 +18,7 @@
 - **子目录支持** —— 在嵌套文件夹中查找已有的 Daily Notes（例如 `Journal/2024-07/`）；文件名格式包含 `/` 时会按日期创建子文件夹（例如 `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`）
 - **语言自动检测** —— UI 语言根据你的 Obsidian 语言设置自动适配（EN、DE、ZH、JA、ES、FR）
 - **可选的结构化数据** —— 机器可读的 `trainings` 字段，用于高级 Dataview 查询
+- **健康面板（测试版）** — 可选的右侧边栏面板，只读取每日笔记，不会修改；在**设置 → Garmin Health Sync → 侧边面板**中启用
 
 ## Frontmatter 输出
 

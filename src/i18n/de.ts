@@ -150,6 +150,15 @@ export const de: Record<TranslationKeys, string> = {
 
 	// What's new
 	commandWhatsNew: "Neuigkeiten anzeigen",
+	commandOpenPanel: "Gesundheitspanel öffnen",
+	settingsPanel: "Seitenpanel",
+	settingsPanelShow: "Gesundheitspanel anzeigen",
+	settingsPanelShowDesc: "Fügt der rechten Seitenleiste ein Gesundheitspanel hinzu. Es liest deine Tagesnotizen und ändert sie nie.",
+	noticePanelDisabled: "Aktiviere zuerst das Gesundheitspanel in den Plugin-Einstellungen.",
+	panelTitle: "Gesundheit",
+	panelPrevDay: "Vorheriger Tag",
+	panelNextDay: "Nächster Tag",
+	panelEmpty: "Gesundheitskarten erscheinen hier, sobald deine Tagesnotizen genug Daten enthalten.",
 	whatsNewTitle: "Neu in Garmin Health Sync",
 	whatsNewCatchUp: "Du hast {count} Updates verpasst.",
 	whatsNewGotIt: "Verstanden",

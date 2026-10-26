@@ -1,16 +1,17 @@
-import { App, Modal, Notice, Plugin, Setting, TAbstractFile, TFile } from "obsidian";
+import { App, Modal, Notice, Platform, Plugin, Setting, TAbstractFile, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, HealthSyncSettings, HealthSyncSettingTab } from "./settings";
 import { ManualLoginModal } from "./ui/manual-login-modal";
 import { CredentialLoginModal } from "./ui/credential-login-modal";
 import { LoginCooldown } from "./login-cooldown";
 import { SyncManager } from "./sync";
-import { dateFromFormattedName, matchDailyNoteDate } from "./daily-note";
+import { dateFromDailyNote, matchDailyNoteDate } from "./daily-note";
 import { localDateString } from "./dates";
 import { GarminProvider } from "./providers/garmin/garmin-provider";
 import type { OAuth1Token, OAuth2Token } from "./providers/garmin/garmin-oauth";
 import { t } from "./i18n/t";
 import { readStoredTokens, writeStoredTokens } from "./token-store";
 import { isLoginRequiredError } from "./errors";
+import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "./panel/view";
 import { showWhatsNewIfDue, showWhatsNewNotes } from "./whats-new";
 
 const AUTO_SYNC_TRIGGER_DEBOUNCE_MS = 30 * 1000;
@@ -20,56 +21,6 @@ const FIRST_RESYNC_AFTER_MS = 30 * 60 * 1000; // 30min — first re-sync happens
 const NO_DATA_COOLDOWN_MS = 1 * 60 * 60 * 1000; // 1h cooldown for dates that returned no data
 const CLEANUP_AGE_MS = 8 * 24 * 60 * 60 * 1000;
 const LOGIN_NOTICE_THROTTLE_MS = 10 * 60 * 1000; // 10min: re-show login notice no more often than this
-
-/** Date tokens understood when parsing a note path back into a date. */
-const DATE_TOKENS: { token: string; group: string; digits: number }[] = [
-	{ token: "YYYY", group: "year", digits: 4 },
-	{ token: "MM", group: "month", digits: 2 },
-	{ token: "DD", group: "day", digits: 2 },
-];
-
-function escapeRegex(text: string): string {
-	return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Builds a regex that recovers year/month/day from a path formatted with the
- * given moment format. Understands the YYYY, MM and DD tokens plus moment's
- * literal escapes ("[text]"); every other character is matched verbatim.
- * A token that appears more than once becomes a backreference, so
- * "YYYY/YYYY-MM-DD" only matches when both years agree.
- */
-function dateFormatToRegex(format: string): RegExp {
-	const seen = new Set<string>();
-	let pattern = "";
-
-	for (let i = 0; i < format.length; ) {
-		// moment escape: [literal text] is taken verbatim, tokens inside are not expanded
-		if (format[i] === "[") {
-			const end = format.indexOf("]", i + 1);
-			if (end !== -1) {
-				pattern += escapeRegex(format.substring(i + 1, end));
-				i = end + 1;
-				continue;
-			}
-		}
-
-		const token = DATE_TOKENS.find(candidate => format.startsWith(candidate.token, i));
-		if (token) {
-			pattern += seen.has(token.token)
-				? `\\k<${token.group}>`
-				: `(?<${token.group}>\\d{${token.digits}})`;
-			seen.add(token.token);
-			i += token.token.length;
-			continue;
-		}
-
-		pattern += escapeRegex(format.charAt(i));
-		i += 1;
-	}
-
-	return new RegExp(`^${pattern}$`);
-}
 
 export default class HealthSyncPlugin extends Plugin {
 	settings: HealthSyncSettings;
@@ -160,6 +111,15 @@ export default class HealthSyncPlugin extends Plugin {
 			callback: () => showWhatsNewNotes(this.app, this.settings.language, this.manifest.version),
 		});
 
+		// Side panel: the view is always registered so Obsidian can restore it with the workspace.
+		this.registerView(VIEW_TYPE_HEALTH_PANEL, (leaf) => new HealthPanelView(leaf, this));
+		this.addRibbonIcon("activity", t("commandOpenPanel", this.settings.language), () => this.background(this.openPanel(), "open panel"));
+		this.addCommand({
+			id: "open-health-panel",
+			name: t("commandOpenPanel", this.settings.language),
+			callback: () => this.background(this.openPanel(), "open panel"),
+		});
+
 		// Settings Tab
 		this.addSettingTab(new HealthSyncSettingTab(this.app, this));
 
@@ -191,6 +151,39 @@ export default class HealthSyncPlugin extends Plugin {
 				}
 			})
 		);
+	}
+
+	/** Reveals the health panel in the right sidebar, creating it on first use. */
+	async openPanel(): Promise<void> {
+		const lang = this.settings.language;
+		if (!this.settings.panelEnabled) {
+			new Notice(t("noticePanelDisabled", lang));
+			return;
+		}
+		const { workspace } = this.app;
+		let leaf = workspace.getLeavesOfType(VIEW_TYPE_HEALTH_PANEL)[0] ?? null;
+		if (!leaf) {
+			leaf = workspace.getRightLeaf(false);
+			if (!leaf) return;
+			await leaf.setViewState({ type: VIEW_TYPE_HEALTH_PANEL, active: true });
+		}
+		await workspace.revealLeaf(leaf);
+	}
+
+	/** The panel switch changed: off closes the panel; on shows it once, except on a phone where it would cover the note. */
+	async applyPanelEnabled(): Promise<void> {
+		if (!this.settings.panelEnabled) {
+			this.app.workspace.detachLeavesOfType(VIEW_TYPE_HEALTH_PANEL);
+		} else if (!Platform.isPhone) {
+			await this.openPanel();
+		}
+	}
+
+	/** Re-render open panels (language change). */
+	refreshPanels(): void {
+		for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_HEALTH_PANEL)) {
+			if (leaf.view instanceof HealthPanelView) leaf.view.refresh();
+		}
 	}
 
 	/** F12: on disable/reload, close any still-open Garmin login window instead of
@@ -425,7 +418,7 @@ export default class HealthSyncPlugin extends Plugin {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) return yesterday;
 
-		const noteDate = this.dateFromDailyNote(activeFile);
+		const noteDate = dateFromDailyNote(activeFile, this.settings);
 		if (!noteDate) return yesterday;
 
 		return noteDate;
@@ -711,48 +704,8 @@ export default class HealthSyncPlugin extends Plugin {
 		return false;
 	}
 
-	/**
-	 * Recovers the date a note belongs to from its path.
-	 *
-	 * The filename format may itself contain "/" (the core Daily Notes plugin
-	 * allows this, and writeToDailyNote creates the matching subfolders), so the
-	 * format is matched against the note path *relative to the configured
-	 * folder* — matching the basename alone would silently fail for everyone
-	 * using a format like "YYYY/YYYY-MM-DD".
-	 */
-	private dateFromDailyNote(file: TFile): string | null {
-		const format = this.settings.dailyNoteFormat || "YYYY-MM-DD";
-		const basePath = (this.settings.dailyNotePath || "").replace(/^\/+|\/+$/g, "");
-
-		const notePath = file.path.replace(/\.md$/i, "");
-		let relative = notePath;
-		if (basePath) {
-			if (!notePath.startsWith(basePath + "/")) return null;
-			relative = notePath.substring(basePath.length + 1);
-		}
-
-		const pattern = dateFormatToRegex(format);
-		let match = relative.match(pattern);
-
-		// Fallback: match the basename alone, so notes that were moved into
-		// hand-made subfolders below the configured folder stay recognisable.
-		if (!match && basePath && !format.includes("/")) {
-			match = file.basename.match(pattern);
-		}
-		if (match?.groups) {
-			const { year, month, day } = match.groups;
-			if (!year || !month || !day) return null;
-			return `${year}-${month}-${day}`;
-		}
-
-		// The pattern above only knows YYYY, MM and DD. Formats with other tokens (a weekday, a month name, ...)
-		// are read back with moment instead, which must reproduce the name exactly.
-		return dateFromFormattedName(relative, format)
-			?? (basePath && !format.includes("/") ? dateFromFormattedName(file.basename, format) : null);
-	}
-
 	private matchesDailyNote(file: TFile, date: string): boolean {
-		return this.dateFromDailyNote(file) === date;
+		return dateFromDailyNote(file, this.settings) === date;
 	}
 
 	private sleep(ms: number): Promise<void> {

@@ -149,6 +149,15 @@ export const fr: Record<TranslationKeys, string> = {
 
 	// What's new
 	commandWhatsNew: "Afficher les nouveautés",
+	commandOpenPanel: "Ouvrir le panneau santé",
+	settingsPanel: "Panneau latéral",
+	settingsPanelShow: "Afficher le panneau santé",
+	settingsPanelShowDesc: "Ajoute un panneau santé à la barre latérale droite. Il lit vos notes quotidiennes et ne les modifie jamais.",
+	noticePanelDisabled: "Activez d’abord le panneau santé dans les réglages du plugin.",
+	panelTitle: "Santé",
+	panelPrevDay: "Jour précédent",
+	panelNextDay: "Jour suivant",
+	panelEmpty: "Les cartes santé apparaîtront ici dès que vos notes quotidiennes contiendront des données.",
 	whatsNewTitle: "Nouveautés de Garmin Health Sync",
 	whatsNewCatchUp: "Vous avez manqué {count} mises à jour.",
 	whatsNewGotIt: "Compris",

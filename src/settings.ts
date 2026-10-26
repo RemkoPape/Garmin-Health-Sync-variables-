@@ -44,6 +44,7 @@ export interface HealthSyncSettings {
 	writeWorkoutLocation: boolean; // Reverse-geocoded workout location in frontmatter
 	serverRegion: ServerRegion;
 	unitSystem: UnitSystem;
+	panelEnabled: boolean; // Side panel with health cards
 }
 
 export const DEFAULT_SETTINGS: HealthSyncSettings = {
@@ -63,6 +64,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	writeWorkoutLocation: true,
 	serverRegion: "international",
 	unitSystem: "metric",
+	panelEnabled: false,
 };
 
 export class HealthSyncSettingTab extends PluginSettingTab {
@@ -124,6 +126,17 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 						imperial: t("unitImperial", lang),
 					},
 				},
+			},
+			{
+				type: "page",
+				name: t("settingsPanel", lang),
+				items: [
+					{
+						name: t("settingsPanelShow", lang),
+						desc: t("settingsPanelShowDesc", lang),
+						control: { type: "toggle", key: "panelEnabled" },
+					},
+				],
 			},
 			{
 				name: t("settingsGarminLogin", lang),
@@ -234,9 +247,12 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 
 		if (key === "serverRegion") {
 			this.plugin.applyServerRegion();
+		} else if (key === "panelEnabled") {
+			await this.plugin.applyPanelEnabled();
 		} else if (key === "language" || key === "unitSystem") {
 			// Rebuild the definitions so labels reflect the new locale / units.
 			this.update();
+			this.plugin.refreshPanels();
 		}
 	}
 

@@ -64,3 +64,35 @@
 	flex-shrink: 0;
 	justify-content: flex-end;
 }
+
+/* Health panel (right sidebar) */
+.ghs-panel {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+}
+
+.ghs-daynav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.ghs-daynav-date {
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+}
+
+.is-mobile .ghs-daynav .clickable-icon {
+	min-width: 44px;
+	min-height: 44px;
+}
+
+.ghs-panel-empty {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	text-align: center;
+	padding: var(--size-4-6) var(--size-4-2);
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--radius-m);
+}

@@ -141,9 +141,9 @@ describe("F8: switches that never did anything are gone, old files still load", 
 });
 
 describe("startup", () => {
-	it("registers the four commands under their stable ids, named in the user's language", async () => {
+	it("registers the five commands under their stable ids, named in the user's language", async () => {
 		const { plugin } = await load({ language: "de" });
-		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "login-with-ticket", "show-whats-new", "sync-health-data"]);
+		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "login-with-ticket", "open-health-panel", "show-whats-new", "sync-health-data"]);
 		expect(plugin.commands.get("show-whats-new")?.name).toBe(de.commandWhatsNew);
 		expect(plugin.commands.get("sync-health-data")?.name).toBe(de.commandSync);
 		expect(plugin.commands.get("backfill-health-data")?.name).toBe(de.commandBackfill);
@@ -1590,5 +1590,86 @@ describe("what's new", () => {
 		const { plugin } = await load({ language: "en" }, undefined, "0.11.2");
 		plugin.commands.get("show-whats-new")!.callback!();
 		expect(Modal.opened).toHaveLength(1);
+	});
+});
+
+describe("health panel", () => {
+	const PANEL = "garmin-health-panel";
+
+	it("registers the view, the command and a ribbon icon", async () => {
+		const { app, plugin } = await load(null);
+		expect(app.workspace.viewFactories.has(PANEL)).toBe(true);
+		expect(plugin.commands.get("open-health-panel")?.name).toBe(en.commandOpenPanel);
+		expect((plugin as unknown as { ribbonIcons: { icon: string; title: string }[] }).ribbonIcons).toEqual([
+			expect.objectContaining({ icon: "activity", title: en.commandOpenPanel }),
+		]);
+	});
+
+	it("opens the panel from the ribbon icon", async () => {
+		const { app, plugin } = await load({ panelEnabled: true });
+		(plugin as unknown as { ribbonIcons: { callback: () => void }[] }).ribbonIcons[0]!.callback();
+		await settle();
+		expect(app.workspace.getLeavesOfType(PANEL)).toHaveLength(1);
+	});
+
+	it("tells the user to switch the panel on first", async () => {
+		const { app, plugin } = await load(null);
+		plugin.commands.get("open-health-panel")!.callback!();
+		await settle();
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticePanelDisabled);
+		expect(app.workspace.leaves).toHaveLength(0);
+	});
+
+	it("opens the panel in the right sidebar and reuses it on the next call", async () => {
+		const { app, plugin } = await load({ panelEnabled: true });
+		plugin.commands.get("open-health-panel")!.callback!();
+		await settle();
+		expect(app.workspace.getLeavesOfType(PANEL)).toHaveLength(1);
+		expect(app.workspace.revealed).toHaveLength(1);
+		plugin.commands.get("open-health-panel")!.callback!();
+		await settle();
+		expect(app.workspace.getLeavesOfType(PANEL)).toHaveLength(1);
+		expect(app.workspace.revealed).toHaveLength(2);
+	});
+
+	it("does nothing when there is no right sidebar", async () => {
+		const { app, plugin } = await load({ panelEnabled: true });
+		app.workspace.rightLeafAvailable = false;
+		await plugin.openPanel();
+		expect(app.workspace.leaves).toHaveLength(0);
+	});
+
+	it("shows the panel once when switched on, but never on a phone", async () => {
+		const { app, plugin } = await load({ panelEnabled: true });
+		await plugin.applyPanelEnabled();
+		expect(app.workspace.getLeavesOfType(PANEL)).toHaveLength(1);
+		app.workspace.detachLeavesOfType(PANEL);
+		Platform.isPhone = true;
+		await plugin.applyPanelEnabled();
+		expect(app.workspace.leaves).toHaveLength(0);
+	});
+
+	it("closes the panel when switched off", async () => {
+		const { app, plugin } = await load({ panelEnabled: true });
+		await plugin.openPanel();
+		plugin.settings.panelEnabled = false;
+		await plugin.applyPanelEnabled();
+		expect(app.workspace.leaves).toHaveLength(0);
+	});
+
+	it("re-renders the open panel after a language change", async () => {
+		const { app, plugin } = await load({ panelEnabled: true });
+		await plugin.openPanel();
+		plugin.settings.language = "de";
+		plugin.refreshPanels();
+		const view = app.workspace.getLeavesOfType(PANEL)[0]!.view!;
+		expect(view.contentEl.textContent).toContain(de.panelEmpty);
+	});
+
+	it("skips leaves that are not the panel when refreshing", async () => {
+		const { app, plugin } = await load({ panelEnabled: true });
+		await plugin.openPanel();
+		app.workspace.getLeavesOfType(PANEL)[0]!.view = null;
+		expect(() => plugin.refreshPanels()).not.toThrow();
 	});
 });

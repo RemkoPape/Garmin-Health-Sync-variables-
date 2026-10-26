@@ -13,6 +13,99 @@ import { applyPrefix } from "./metrics";
 import { reverseGeocode } from "./geocoding";
 import { t } from "./i18n/t";
 
+/** Date tokens understood when parsing a note path back into a date. */
+const DATE_TOKENS: { token: string; group: string; digits: number }[] = [
+	{ token: "YYYY", group: "year", digits: 4 },
+	{ token: "MM", group: "month", digits: 2 },
+	{ token: "DD", group: "day", digits: 2 },
+];
+
+function escapeRegex(text: string): string {
+	return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Builds a regex that recovers year/month/day from a path formatted with the
+ * given moment format. Understands the YYYY, MM and DD tokens plus moment's
+ * literal escapes ("[text]"); every other character is matched verbatim.
+ * A token that appears more than once becomes a backreference, so
+ * "YYYY/YYYY-MM-DD" only matches when both years agree.
+ */
+function dateFormatToRegex(format: string): RegExp {
+	const seen = new Set<string>();
+	let pattern = "";
+
+	for (let i = 0; i < format.length; ) {
+		// moment escape: [literal text] is taken verbatim, tokens inside are not expanded
+		if (format[i] === "[") {
+			const end = format.indexOf("]", i + 1);
+			if (end !== -1) {
+				pattern += escapeRegex(format.substring(i + 1, end));
+				i = end + 1;
+				continue;
+			}
+		}
+
+		const token = DATE_TOKENS.find(candidate => format.startsWith(candidate.token, i));
+		if (token) {
+			pattern += seen.has(token.token)
+				? `\\k<${token.group}>`
+				: `(?<${token.group}>\\d{${token.digits}})`;
+			seen.add(token.token);
+			i += token.token.length;
+			continue;
+		}
+
+		pattern += escapeRegex(format.charAt(i));
+		i += 1;
+	}
+
+	return new RegExp(`^${pattern}$`);
+}
+
+/**
+ * Recovers the date a note belongs to from its path.
+ *
+ * The filename format may itself contain "/" (the core Daily Notes plugin
+ * allows this, and writeToDailyNote creates the matching subfolders), so the
+ * format is matched against the note path *relative to the configured
+ * folder* — matching the basename alone would silently fail for everyone
+ * using a format like "YYYY/YYYY-MM-DD".
+ */
+export function dateFromDailyNote(
+	file: TFile,
+	settings: { dailyNotePath: string; dailyNoteFormat: string }
+): string | null {
+	const format = settings.dailyNoteFormat || "YYYY-MM-DD";
+	const basePath = (settings.dailyNotePath || "").replace(/^\/+|\/+$/g, "");
+
+	const notePath = file.path.replace(/\.md$/i, "");
+	let relative = notePath;
+	if (basePath) {
+		if (!notePath.startsWith(basePath + "/")) return null;
+		relative = notePath.substring(basePath.length + 1);
+	}
+
+	const pattern = dateFormatToRegex(format);
+	let match = relative.match(pattern);
+
+	// Fallback: match the basename alone, so notes that were moved into
+	// hand-made subfolders below the configured folder stay recognisable.
+	if (!match && basePath && !format.includes("/")) {
+		match = file.basename.match(pattern);
+	}
+	if (match?.groups) {
+		const { year, month, day } = match.groups;
+		if (!year || !month || !day) return null;
+		return `${year}-${month}-${day}`;
+	}
+
+	// The pattern above only knows YYYY, MM and DD. Formats with other tokens (a weekday, a month name, ...)
+	// are read back with moment instead, which must reproduce the name exactly.
+	return dateFromFormattedName(relative, format)
+		?? (basePath && !format.includes("/") ? dateFromFormattedName(file.basename, format) : null);
+}
+
 /**
  * Searches for a daily note recursively in the given directory and all subdirectories.
  * Returns the TFile if found, null otherwise.

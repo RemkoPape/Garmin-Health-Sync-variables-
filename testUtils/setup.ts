@@ -46,6 +46,9 @@ proto.toggleClass = function (this: HTMLElement, c: string, on: boolean) {
 proto.setText = function (this: HTMLElement, t: string) {
 	this.textContent = t;
 };
+proto.isShown = function () {
+	return true;
+};
 proto.setAttr = function (this: HTMLElement, k: string, v: string) {
 	this.setAttribute(k, v);
 };

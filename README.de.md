@@ -19,6 +19,7 @@ Synchronisiere Schritte, Schlaf, Herzfrequenz, Stress, Aktivitäten und mehr aut
 - **Unterordner-Unterstützung** — findet bestehende Daily Notes in verschachtelten Ordnern (z.B. `Journal/2024-07/`) und legt datumsbasierte Unterordner an, wenn das Dateinamen-Format ein `/` enthält (z.B. `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Automatische Spracherkennung** — die UI-Sprache wird aus deiner Obsidian-Sprache übernommen (EN, DE, ZH, JA, ES, FR)
 - **Optionale strukturierte Daten** — maschinenlesbares `trainings`-Feld für erweiterte Dataview-Abfragen
+- **Gesundheitspanel (Beta)** — optionales Panel in der rechten Seitenleiste, das deine Tagesnotizen nur liest und nie ändert; einschalten unter **Einstellungen → Garmin Health Sync → Seitenpanel**
 
 ## Frontmatter-Ausgabe
 
