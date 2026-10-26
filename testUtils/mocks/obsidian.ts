@@ -117,6 +117,10 @@ export class Vault {
 		return this.files.get(path) ?? this.folders.get(path) ?? null;
 	}
 
+	getMarkdownFiles(): TFile[] {
+		return this.getFiles().filter((f) => f.extension === "md");
+	}
+
 	getFiles(): TFile[] {
 		return [...this.files.values()];
 	}
@@ -363,8 +367,26 @@ export class Workspace {
 	}
 }
 
+export class MetadataCache {
+	frontmatter = new Map<string, Record<string, unknown>>();
+	private listeners: ((file: TFile) => void)[] = [];
+	getFileCache(file: TFile): { frontmatter?: Record<string, unknown> } | null {
+		const fm = this.frontmatter.get(file.path);
+		return fm ? { frontmatter: fm } : null;
+	}
+	on(_name: "changed", cb: (file: TFile) => void): { name: string } {
+		this.listeners.push(cb);
+		return { name: "changed" };
+	}
+	/** Test helper: deliver a "changed" event. */
+	fireChanged(file: TFile): void {
+		for (const cb of this.listeners) cb(file);
+	}
+}
+
 export class App {
 	vault = new Vault();
+	metadataCache = new MetadataCache();
 	workspace = new Workspace(this);
 	secretStorage: SecretStorageFake | undefined = new SecretStorageFake();
 	local = new Map<string, unknown>();
