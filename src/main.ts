@@ -5,6 +5,7 @@ import { CredentialLoginModal } from "./ui/credential-login-modal";
 import { LoginCooldown } from "./login-cooldown";
 import { SyncManager } from "./sync";
 import { dateFromFormattedName, matchDailyNoteDate } from "./daily-note";
+import { localDateString } from "./dates";
 import { GarminProvider } from "./providers/garmin/garmin-provider";
 import type { OAuth1Token, OAuth2Token } from "./providers/garmin/garmin-oauth";
 import { t } from "./i18n/t";
@@ -26,11 +27,6 @@ const DATE_TOKENS: { token: string; group: string; digits: number }[] = [
 	{ token: "MM", group: "month", digits: 2 },
 	{ token: "DD", group: "day", digits: 2 },
 ];
-
-/** YYYY-MM-DD in the user's local time zone (toISOString would give the UTC date). */
-function localDateString(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 function escapeRegex(text: string): string {
 	return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
