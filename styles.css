@@ -832,3 +832,33 @@
 .ghs-distance-fill {
 	background: var(--color-blue);
 }
+
+/* VO2 max: twelve weekly values */
+.ghs-vo2-bars {
+	height: 32px;
+	gap: 4px;
+}
+
+.ghs-vo2-bars .ghs-trend-bar {
+	flex: 1;
+	width: auto;
+}
+
+/* Body: the last 28 days of weight as dots */
+.ghs-dots {
+	position: relative;
+	height: 48px;
+	margin: var(--size-2-2) var(--size-2-3);
+}
+
+.ghs-dots-point {
+	position: absolute;
+	left: var(--ghs-x, 0%);
+	bottom: var(--ghs-y, 0%);
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--color-blue);
+	opacity: 0.7;
+	transform: translate(-50%, 50%);
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { localDateString, shiftDate, weekStart } from "../src/dates";
+import { daysBetween, localDateString, shiftDate, weekStart } from "../src/dates";
 
 describe("localDateString", () => {
 	it("pads month and day", () => {
@@ -41,5 +41,15 @@ describe("weekStart", () => {
 		expect(weekStart("2026-03-31")).toBe("2026-03-30");
 		expect(weekStart("2026-03-29")).toBe("2026-03-23"); // DST change day in Europe
 		expect(weekStart("2026-04-05")).toBe("2026-03-30"); // DST change day in Auckland
+	});
+});
+
+describe("daysBetween", () => {
+	it("counts whole days, negative backwards, also across DST changes and year ends", () => {
+		expect(daysBetween("2026-10-22", "2026-10-22")).toBe(0);
+		expect(daysBetween("2026-10-22", "2026-11-19")).toBe(28);
+		expect(daysBetween("2026-11-19", "2026-10-22")).toBe(-28);
+		expect(daysBetween("2026-03-28", "2026-03-30")).toBe(2); // Europe DST change in between
+		expect(daysBetween("2026-12-30", "2027-01-02")).toBe(3);
 	});
 });

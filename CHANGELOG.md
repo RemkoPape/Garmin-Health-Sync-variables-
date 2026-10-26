@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.0-beta.10
+
+### Added
+
+- **Fitness and body** section with two cards.
+  - **Cardio fitness (VO₂ max)**: the latest value of each of the last 12 weeks as bars, the change over those 12 weeks (from the slope; under 0.3 counts as steady) and a short suggestion. It needs 3 weeks with a value and a value from the last 28 days.
+  - **Body**: your weight as the mean of the last 7 days, the last 28 days of readings as dots, the change per week and your body fat. Colours stay neutral because without a goal no direction is good or bad; a change faster than 1 percent of your weight a week is flagged. It needs 3 weight readings in the last 14 days and reads pounds from notes written with imperial units.
+
+### Changed
+
+- **Intensity minutes**: the weekly goal is still 150 minutes at least, but if you regularly do more it moves to a little above your own average of the previous weeks (10 percent above, in steps of 5 minutes, with no upper limit; for example about 380 for someone who averages 345). The card says when the goal was personalised.
+
 ## 0.12.0-beta.9
 
 ### Added
