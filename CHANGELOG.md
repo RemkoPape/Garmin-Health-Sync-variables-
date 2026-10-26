@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.0-beta.6
+
+### Added
+
+- **SpO₂** and **Breathing** cards side by side under Recovery, each with a compact colour scale and a status word (in range, low, high). SpO₂ is flagged below your usual range and always below 90 percent (amber under 94); breathing is flagged both ways, and 1.5 breaths a minute above your usual always counts.
+- **Sleep stages** card: the night's mix of deep, REM, light and awake time as a bar, one row per stage with your usual amount as a tick and the deviation in minutes, and a tip for tonight when deep or REM is clearly low or awake time clearly high. It needs the four sleep stage metrics enabled in the sync settings.
+- **Energy and stress** section: **Body battery** (the day's lowest to highest value on a 0 to 100 track, your usual peak, and the overnight recharge against your usual) and **Stress** (Garmin's four bands with your level and a marker for your 7-day average). The stress minutes split bar follows once the sync writes those values.
+
+### Changed
+
+- Values keep their sensible number of decimals (whole numbers for HRV, heart rate and SpO₂; one decimal for breathing). Small labels like "usual" and "low" are shown in lowercase.
+
 ## 0.12.0-beta.5
 
 ### Added

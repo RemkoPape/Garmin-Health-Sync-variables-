@@ -124,8 +124,8 @@ describe("renderHrv", () => {
 	});
 
 	it("formats numbers and texts in the plugin language", async () => {
-		render(computeHrv(await indexWith(61.5), END), "de");
-		expect(text(".ghs-card-value")).toBe("61,5 ms");
+		render(computeHrv(await indexWith(61.4), END), "de");
+		expect(text(".ghs-card-value")).toBe("61 ms");
 		expect(root.querySelector(".ghs-range")?.getAttribute("aria-label")).toBe("Üblicher Bereich 58–62 ms");
 		expect(root.querySelector("button")?.getAttribute("aria-label")).toBe(de.panelInfo);
 	});

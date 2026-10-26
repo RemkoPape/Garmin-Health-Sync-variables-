@@ -12,12 +12,14 @@ export interface RangeBarOptions {
 	value: number;
 	mean: number;
 	sd: number;
-	/** "both": too low and too high are flagged; "high": only a value above the usual is. */
-	sided: "both" | "high";
+	/** "both": too low and too high are flagged; "high" / "low": only a value above / below the usual is. */
+	sided: "both" | "high" | "low";
 	tone: "ok" | "warn" | "bad";
 	/** Accessible description of the bar ("Usual range 58–62 ms"). */
 	label: string;
 	lang: string;
+	/** Number labels under the edges of the usual range; off for the half-width cards. */
+	labels?: boolean;
 }
 
 /**
@@ -30,12 +32,13 @@ export function rangeBar(parent: HTMLElement, o: RangeBarOptions): HTMLElement {
 	wrap.createDiv({ cls: `ghs-range-track ghs-range-track-${o.sided}` });
 	const low = o.mean - o.sd;
 	const high = o.mean + o.sd;
-	const labels = wrap.createDiv({ cls: "ghs-range-labels" });
+	const labels = o.labels === false ? null : wrap.createDiv({ cls: "ghs-range-labels" });
 	for (const edge of [low, high]) {
 		const x = `${pct(edge, o.mean, o.sd)}%`;
 		wrap.createDiv({ cls: "ghs-tick" }).setCssProps({ "--ghs-x": x });
-		labels.createSpan({ cls: "ghs-tick-label", text: formatNumber(edge, o.lang, 0) }).setCssProps({ "--ghs-x": x });
+		labels?.createSpan({ cls: "ghs-tick-label", text: formatNumber(edge, o.lang, 0) }).setCssProps({ "--ghs-x": x });
 	}
+	if (o.labels === false) wrap.addClass("ghs-range-compact");
 	wrap.createDiv({ cls: `ghs-dot ghs-dot-${o.tone}` }).setCssProps({ "--ghs-x": `${pct(o.value, o.mean, o.sd)}%` });
 	return wrap;
 }

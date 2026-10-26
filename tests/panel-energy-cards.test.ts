@@ -1,0 +1,282 @@
+// Why it matters: these cards flag things like a low blood oxygen or a short deep sleep. A tone or a tip in the
+// wrong place is either a false alarm or a missed one, so the thresholds and the fallbacks are pinned here.
+import { beforeEach, describe, expect, it } from "vitest";
+import { App } from "../testUtils/mocks/obsidian";
+import { seedHistory } from "../testUtils/fakeHistory";
+import { DayIndex } from "../src/panel/index";
+import { computeRange, renderRange, BREATHING_CARD, SPO2_CARD, type RangeCardSpec } from "../src/panel/cards/range-card";
+import { computeStages, renderStages } from "../src/panel/cards/stages-card";
+import { computeBattery, renderBattery } from "../src/panel/cards/battery-card";
+import { computeStress, renderStress } from "../src/panel/cards/stress-card";
+import { en } from "../src/i18n/en";
+import { de } from "../src/i18n/de";
+
+const settings = { dailyNotePath: "", dailyNoteFormat: "YYYY-MM-DD" };
+const END = "2026-10-22";
+const noop = (): void => undefined;
+
+async function indexOf(frontmatter: (ago: number) => Record<string, unknown> | null, days = 31): Promise<DayIndex> {
+	const app = new App();
+	await seedHistory(app, { end: END, days, frontmatter });
+	return new DayIndex(app as never, () => settings);
+}
+
+let root: HTMLElement;
+beforeEach(() => {
+	root = document.createElement("div");
+});
+const text = (sel: string): string => root.querySelector(sel)?.textContent ?? "";
+
+describe("SpO2 and breathing (half-width range cards)", () => {
+	/** 30 prior days alternating `a` and `b`, then the shown day. */
+	const series = (key: string, today: number, a: number, b: number) => indexOf((ago) => ({ [key]: ago === 0 ? today : ago % 2 === 0 ? a : b }));
+	const tone = (): string | undefined => Array.from(root.querySelector(".ghs-dot")?.classList ?? []).find((c) => c.startsWith("ghs-dot-"));
+	const render = async (spec: RangeCardSpec, idx: DayIndex, lang = "en", open = false): Promise<void> => {
+		root.empty();
+		renderRange(root, spec, computeRange(spec, idx, END), lang, open, noop);
+	};
+
+	it("shows a compact bar without tick numbers, a status word and the value with its unit", async () => {
+		await render(SPO2_CARD, await series("spo2", 96, 96, 97));
+		expect(text(".ghs-card-title")).toBe("SpO₂");
+		expect(text(".ghs-card-value")).toBe("96 %");
+		expect(root.querySelector(".ghs-range-compact")).not.toBeNull();
+		expect(root.querySelector(".ghs-tick-label")).toBeNull();
+		expect(root.querySelector(".ghs-range-track-low")).not.toBeNull();
+		expect(text(".ghs-status")).toBe(en.panelInRange);
+		expect(root.querySelector(".ghs-status-ok")).not.toBeNull();
+	});
+
+	it.each([
+		[96, "ghs-dot-ok"],
+		[93, "ghs-dot-warn"], // under 94 percent regardless of the personal range
+		[89, "ghs-dot-bad"], // under 90 percent
+	])("SpO2 %s percent is %s", async (value, cls) => {
+		await render(SPO2_CARD, await series("spo2", value, 96, 97));
+		expect(tone()).toBe(cls);
+	});
+
+	it("SpO2 below the personal range is flagged even when above the absolute floor", async () => {
+		// usual 98 +/- 0.7 (floor), today 96.4 is more than 2 sd under but above 94
+		await render(SPO2_CARD, await series("spo2", 96.4, 98, 98));
+		expect(tone()).toBe("ghs-dot-bad");
+		expect(text(".ghs-status")).toBe(en.panelLow);
+		await render(SPO2_CARD, await series("spo2", 97.0, 98, 98));
+		expect(tone()).toBe("ghs-dot-warn");
+	});
+
+	it("breathing is two-sided and shows one decimal", async () => {
+		// 13.0 / 15.4 -> mean 14.2, sd 1.2
+		const at = (v: number) => series("respiration_rate", v, 13, 15.4);
+		await render(BREATHING_CARD, await at(14.5));
+		expect(text(".ghs-card-value")).toBe("14.5 /min");
+		expect(tone()).toBe("ghs-dot-ok");
+		await render(BREATHING_CARD, await at(15.9));
+		expect(tone()).toBe("ghs-dot-warn"); // z 1.4
+		expect(text(".ghs-status")).toBe(en.panelHigh);
+		await render(BREATHING_CARD, await at(17.5));
+		expect(tone()).toBe("ghs-dot-bad");
+		await render(BREATHING_CARD, await at(11.5));
+		expect(tone()).toBe("ghs-dot-bad"); // low breathing too
+		await render(BREATHING_CARD, await at(12.5));
+		expect(tone()).toBe("ghs-dot-warn");
+		expect(text(".ghs-status")).toBe(en.panelLow);
+	});
+
+	it("breathing 1.5 above the usual is flagged even within one standard deviation", async () => {
+		// 12.6 / 15.8 -> mean 14.2, sd 1.6; 15.8 is z 1.0 (not above) but +1.6
+		await render(BREATHING_CARD, await series("respiration_rate", 15.8, 12.6, 15.8));
+		expect(tone()).toBe("ghs-dot-warn");
+		await render(BREATHING_CARD, await series("respiration_rate", 15.4, 12.6, 15.8));
+		expect(tone()).toBe("ghs-dot-ok");
+	});
+
+	it("formats numbers in the plugin language", async () => {
+		await render(BREATHING_CARD, await series("respiration_rate", 14.5, 13, 15.4), "de");
+		expect(text(".ghs-card-value")).toBe("14,5 /min");
+		expect(text(".ghs-status")).toBe(de.panelInRange);
+	});
+
+	it("is locked with a hint while there is too little history, in the plugin language", async () => {
+		await render(SPO2_CARD, await series("spo2", 96, 96, 97).then(() => indexOf((ago) => (ago < 3 ? { spo2: 96 } : null), 3)), "de");
+		expect(text(".ghs-card-note")).toBe("Wird nach 5 Tagen Daten freigeschaltet · bisher 2");
+	});
+
+	it("shows its own explanation", async () => {
+		await render(SPO2_CARD, await series("spo2", 96, 96, 97), "en", true);
+		expect(text(".ghs-explain")).toBe(en.panelSpo2Explain);
+	});
+});
+
+describe("sleep stages card", () => {
+	/** `today` minutes per stage for the shown day, `usual` for the 30 before it (14 of them have data when `nights` is 14). */
+	const stages = (today: [number, number, number, number], usual: [number, number, number, number], nights = 30) =>
+		indexOf((ago) => {
+			const m = ago === 0 ? today : ago <= nights ? usual : null;
+			return m === null ? null : { sleep_deep: `0h ${m[0]}min`, sleep_rem: `0h ${m[1]}min`, sleep_light: `0h ${m[2]}min`, sleep_awake: `0h ${m[3]}min` };
+		});
+
+	it("draws the composition and one row per stage with the usual amount as a tick", async () => {
+		const model = computeStages(await stages([60, 90, 200, 20], [60, 90, 200, 20]), END);
+		renderStages(root, model, "en", false, noop);
+		expect(root.querySelectorAll(".ghs-stack-part")).toHaveLength(4);
+		expect((root.querySelector(".ghs-stack-part") as HTMLElement).style.getPropertyValue("--ghs-w")).toBe(`${(60 / 370) * 100}%`);
+		expect(Array.from(root.querySelectorAll(".ghs-stage-label")).map((e) => e.textContent)).toEqual(["Deep", "REM", "Light", "Awake"]);
+		expect(Array.from(root.querySelectorAll(".ghs-stage-value")).map((e) => e.textContent)).toEqual(["1 h", "1 h 30 min", "3 h 20 min", "20 min"]);
+		expect(root.querySelectorAll(".ghs-stage-mean")).toHaveLength(4);
+		expect(root.querySelector(".ghs-foot")).toBeNull();
+		expect(root.querySelector(".ghs-chip-delta")).toBeNull();
+	});
+
+	it("flags low deep sleep with the deviation in minutes and a tip", async () => {
+		// usual deep 60 min with a floor sd of 8; tonight 40 min -> z -2.5
+		const model = computeStages(await stages([40, 90, 200, 20], [60, 90, 200, 20]), END);
+		expect(model.flagged?.spec.id).toBe("deep");
+		renderStages(root, model, "en", false, noop);
+		expect(root.querySelector(".ghs-chip-delta")?.textContent).toBe(" · −20");
+		expect(text(".ghs-foot-value")).toBe(en.panelStagesDeepLow);
+		expect(text(".ghs-foot-label")).toBe(en.panelTonight);
+	});
+
+	it("flags high awake time and low REM, and picks the most deviant", async () => {
+		expect(computeStages(await stages([60, 90, 200, 40], [60, 90, 200, 20]), END).flagged?.spec.id).toBe("awake");
+		expect(computeStages(await stages([60, 60, 200, 20], [60, 90, 200, 20]), END).flagged?.spec.id).toBe("rem");
+		// deep -1.5 sd, awake +2.5 sd -> awake
+		expect(computeStages(await stages([48, 90, 200, 40], [60, 90, 200, 20]), END).flagged?.spec.id).toBe("awake");
+		// REM -2.5 sd beats deep -1.5 sd
+		expect(computeStages(await stages([48, 70, 200, 20], [60, 90, 200, 20]), END).flagged?.spec.id).toBe("rem");
+	});
+
+	it("shows a plus sign for more than usual", async () => {
+		renderStages(root, computeStages(await stages([60, 90, 200, 40], [60, 90, 200, 20]), END), "en", false, noop);
+		expect(root.querySelector(".ghs-chip-delta")?.textContent).toBe(" · +20");
+		expect(text(".ghs-foot-value")).toBe(en.panelStagesAwakeHigh);
+	});
+
+	it("does not flag the other directions or the light stage", async () => {
+		expect(computeStages(await stages([80, 110, 260, 10], [60, 90, 200, 20]), END).flagged).toBeNull();
+	});
+
+	it("shows the amounts without ticks while the history is too short", async () => {
+		const model = computeStages(await stages([60, 90, 200, 20], [60, 90, 200, 20], 5), END);
+		expect(model.flagged).toBeNull();
+		renderStages(root, model, "en", false, noop);
+		expect(root.querySelector(".ghs-stage-mean")).toBeNull();
+		expect(root.querySelectorAll(".ghs-stage-row")).toHaveLength(4);
+	});
+
+	it("says there is no reading when a stage is missing", async () => {
+		const index = await indexOf((ago) => (ago === 0 ? { sleep_deep: "1h 0min", sleep_rem: "1h 0min", sleep_light: "3h 0min" } : null));
+		renderStages(root, computeStages(index, END), "en", false, noop);
+		expect(text(".ghs-card-value")).toBe(en.panelNoReading);
+		expect(root.querySelector(".ghs-stack")).toBeNull();
+	});
+
+	it("speaks the plugin language and shows the explanation", async () => {
+		renderStages(root, computeStages(await stages([60, 90, 200, 20], [60, 90, 200, 20]), END), "de", true, noop);
+		expect(text(".ghs-stage-label")).toBe(de.panelStageDeep);
+		expect(text(".ghs-explain")).toBe(de.panelStagesExplain);
+	});
+});
+
+describe("body battery card", () => {
+	const battery = (today: Record<string, number>, usual: Record<string, number>, nights = 30) => indexOf((ago) => (ago === 0 ? today : ago <= nights ? usual : null));
+
+	it("draws the day's range against its usual peak and the overnight charge against the usual", async () => {
+		const model = computeBattery(await battery({ body_battery_max: 83, body_battery_min: 18, body_battery: 65 }, { body_battery_max: 78, body_battery: 56 }), END);
+		expect(model.usualPeak).toBe(78);
+		renderBattery(root, model, "en", false, noop);
+		expect(text(".ghs-card-value")).toBe("83 Peak");
+		const fill = root.querySelector(".ghs-battery-fill") as HTMLElement;
+		expect(fill.style.getPropertyValue("--ghs-x")).toBe("18%");
+		expect(fill.style.getPropertyValue("--ghs-w")).toBe("65%");
+		expect((root.querySelector(".ghs-tick") as HTMLElement).style.getPropertyValue("--ghs-x")).toBe("78%");
+		expect(Array.from(root.querySelectorAll(".ghs-tick-label")).map((e) => e.textContent)).toEqual(["18 low", "Usual"]);
+		expect(text(".ghs-foot-value")).toBe("+65 · usual +56");
+		expect(root.querySelector(".ghs-card-warning")).toBeNull();
+	});
+
+	it("works with only the peak: no minimum label, no charge row", async () => {
+		renderBattery(root, computeBattery(await battery({ body_battery_max: 90 }, {}, 0), END), "en", false, noop);
+		expect(root.querySelector(".ghs-battery-fill")).not.toBeNull();
+		expect(root.querySelector(".ghs-tick-label")).toBeNull();
+		expect(root.querySelector(".ghs-tick")).toBeNull();
+		expect(root.querySelector(".ghs-foot")).toBeNull();
+	});
+
+	it("shows the charge without a usual when there is no history for it, and keeps values inside the track", async () => {
+		const model = computeBattery(await battery({ body_battery_max: 140, body_battery_min: -5, body_battery: 65 }, {}, 0), END);
+		renderBattery(root, model, "en", false, noop);
+		expect(text(".ghs-foot-value")).toBe("+65");
+		const fill = root.querySelector(".ghs-battery-fill") as HTMLElement;
+		expect(fill.style.getPropertyValue("--ghs-x")).toBe("0%");
+		expect(fill.style.getPropertyValue("--ghs-w")).toBe("100%");
+	});
+
+	it("warns that the usual peak is an early estimate until 14 days", async () => {
+		renderBattery(root, computeBattery(await battery({ body_battery_max: 80 }, { body_battery_max: 78 }, 8), END), "en", false, noop);
+		expect(text(".ghs-card-warning")).toBe("Early estimate from 8 days, likely inaccurate until 14 days.");
+	});
+
+	it("says there is no reading without a peak", async () => {
+		renderBattery(root, computeBattery(await battery({}, {}, 0), END), "en", false, noop);
+		expect(text(".ghs-card-value")).toBe(en.panelNoReading);
+		expect(root.querySelector(".ghs-battery-fill")).toBeNull();
+	});
+
+	it("speaks the plugin language and shows the explanation", async () => {
+		renderBattery(root, computeBattery(await battery({ body_battery_max: 83, body_battery: 65 }, { body_battery_max: 78, body_battery: 56 }), END), "de", true, noop);
+		expect(text(".ghs-foot-label")).toBe(de.panelRecharged);
+		expect(text(".ghs-explain")).toBe(de.panelBatteryExplain);
+	});
+});
+
+describe("stress card", () => {
+	const stress = (today: number | null, week: number | null, nights = 7) => indexOf((ago) => (ago === 0 ? (today === null ? null : { stress: today }) : ago <= nights && week !== null ? { stress: week } : null), 8);
+
+	it.each([
+		[0, "Calm"],
+		[25, "Calm"],
+		[26, "Low"],
+		[50, "Low"],
+		[51, "Medium"],
+		[75, "Medium"],
+		[76, "High"],
+		[100, "High"],
+		[130, "High"],
+	])("names level %s: %s", async (level, band) => {
+		renderStress(root, computeStress(await stress(level, null), END), "en", false, noop);
+		expect(text(".ghs-unit")).toBe(` ${band}`);
+	});
+
+	it("places the dot and the 7-day marker on the 0 to 100 bar", async () => {
+		renderStress(root, computeStress(await stress(31, 38), END), "en", false, noop);
+		expect(text(".ghs-card-value")).toBe("31 Low");
+		expect((root.querySelector(".ghs-dot") as HTMLElement).style.getPropertyValue("--ghs-x")).toBe("31%");
+		expect((root.querySelector(".ghs-tick") as HTMLElement).style.getPropertyValue("--ghs-x")).toBe("38%");
+		expect(text(".ghs-card-note")).toBe("7-day average 38");
+	});
+
+	it("clamps a level above the scale to the end of the bar", async () => {
+		renderStress(root, computeStress(await stress(130, null), END), "en", false, noop);
+		expect((root.querySelector(".ghs-dot") as HTMLElement).style.getPropertyValue("--ghs-x")).toBe("100%");
+	});
+
+	it("shows the level without a marker while there are fewer than 5 days before", async () => {
+		renderStress(root, computeStress(await stress(31, 38, 3), END), "en", false, noop);
+		expect(root.querySelector(".ghs-tick")).toBeNull();
+		expect(root.querySelector(".ghs-card-note")).toBeNull();
+	});
+
+	it("says there is no reading without a level", async () => {
+		renderStress(root, computeStress(await stress(null, 38), END), "en", false, noop);
+		expect(text(".ghs-card-value")).toBe(en.panelNoReading);
+		expect(root.querySelector(".ghs-dot")).toBeNull();
+	});
+
+	it("speaks the plugin language and shows the explanation", async () => {
+		renderStress(root, computeStress(await stress(31, 38), END), "de", true, noop);
+		expect(text(".ghs-card-note")).toBe("7-Tage-Schnitt 38");
+		expect(text(".ghs-explain")).toBe(de.panelStressExplain);
+	});
+});

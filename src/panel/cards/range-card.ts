@@ -22,7 +22,11 @@ export interface RangeCardSpec {
 	title: TranslationKeys;
 	explain: TranslationKeys;
 	unit: string;
-	sided: "both" | "high";
+	sided: "both" | "high" | "low";
+	/** Shown at half width next to its partner: a compact bar and a status word instead of the tick numbers. */
+	half?: boolean;
+	/** Decimals of the value. */
+	digits: number;
 	/** Smallest standard deviation used, so a very stable user does not get a razor-thin band. */
 	sdFloor: number;
 	tone: (value: number, b: Baseline) => Tone;
@@ -40,8 +44,25 @@ function highIsBad(value: number, b: Baseline): Tone {
 	return z > 2 || delta >= 5 ? "bad" : z > 1 || delta >= 3 ? "warn" : "ok";
 }
 
-export const HRV_CARD: RangeCardSpec = { id: "hrv", key: "hrv", title: "panelHrvTitle", explain: "panelHrvExplain", unit: "ms", sided: "both", sdFloor: 2, tone: twoSided };
-export const RESTING_HR_CARD: RangeCardSpec = { id: "resting_hr", key: "resting_hr", title: "panelRestingHrTitle", explain: "panelRestingHrExplain", unit: "bpm", sided: "high", sdFloor: 1.5, tone: highIsBad };
+export const HRV_CARD: RangeCardSpec = { id: "hrv", key: "hrv", title: "panelHrvTitle", explain: "panelHrvExplain", unit: "ms", sided: "both", digits: 0, sdFloor: 2, tone: twoSided };
+export const RESTING_HR_CARD: RangeCardSpec = { id: "resting_hr", key: "resting_hr", title: "panelRestingHrTitle", explain: "panelRestingHrExplain", unit: "bpm", sided: "high", digits: 0, sdFloor: 1.5, tone: highIsBad };
+
+/** Below the personal range is a warning; below 90 percent is one regardless of history. */
+function spo2Tone(value: number, b: Baseline): Tone {
+	if (value < 90) return "bad";
+	if (value < 94) return "warn";
+	const z = zScore(value, b);
+	return z < -2 ? "bad" : z < -1 ? "warn" : "ok";
+}
+
+/** About 1.5 breaths a minute above the usual is an early sign worth noticing. */
+function breathingTone(value: number, b: Baseline): Tone {
+	const z = zScore(value, b);
+	return z > 2 || z < -2 ? "bad" : Math.abs(z) > 1 || value - b.mean >= 1.5 ? "warn" : "ok";
+}
+
+export const SPO2_CARD: RangeCardSpec = { id: "spo2", key: "spo2", title: "panelSpo2Title", explain: "panelSpo2Explain", unit: "%", sided: "low", half: true, digits: 0, sdFloor: 0.7, tone: spo2Tone };
+export const BREATHING_CARD: RangeCardSpec = { id: "respiration_rate", key: "respiration_rate", title: "panelBreathingTitle", explain: "panelBreathingExplain", unit: "/min", sided: "both", half: true, digits: 1, sdFloor: 0.4, tone: breathingTone };
 
 export interface RangeModel {
 	value: number | null;
@@ -63,7 +84,7 @@ export function computeRange(spec: RangeCardSpec, index: DayIndex, date: string)
 
 /** A range card: the day's value against the personal range, with the explanation behind an (i) button. */
 export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: RangeModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
-	const value = model.value === null ? null : formatNumber(model.value, lang);
+	const value = model.value === null ? null : formatNumber(model.value, lang, spec.digits);
 	renderCard(parent, { title: t(spec.title, lang), value, unit: spec.unit, explain: t(spec.explain, lang), explainOpen, onToggleExplain, lang }, (card) => {
 		const b = model.baseline;
 		if (!b) {
@@ -74,11 +95,16 @@ export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: Ran
 			return;
 		}
 		const label = t("panelUsualRange", lang)
-			.replace("{low}", formatNumber(b.mean - b.sd, lang))
-			.replace("{high}", formatNumber(b.mean + b.sd, lang))
+			.replace("{low}", formatNumber(b.mean - b.sd, lang, spec.digits))
+			.replace("{high}", formatNumber(b.mean + b.sd, lang, spec.digits))
 			.replace("{unit}", spec.unit);
 		if (model.value !== null) {
-			rangeBar(card, { value: model.value, mean: b.mean, sd: b.sd, sided: spec.sided, tone: spec.tone(model.value, b), label, lang });
+			const tone = spec.tone(model.value, b);
+			rangeBar(card, { value: model.value, mean: b.mean, sd: b.sd, sided: spec.sided, tone, label, lang, labels: !spec.half });
+			if (spec.half) {
+				const word = tone === "ok" ? "panelInRange" : model.value > b.mean ? "panelHigh" : "panelLow";
+				card.createDiv({ cls: `ghs-status ghs-status-${tone}`, text: t(word, lang) });
+			}
 		} else {
 			card.createDiv({ cls: "ghs-card-note", text: label });
 		}
