@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.2
+
+### Internal
+
+- Dev tooling updated (obsidian 1.14.4 with its exact `@codemirror` peers, TypeScript 5.9, typescript-eslint 8.71, happy-dom 20.14.6 security fix, knip, jiti, tslib, globals 17) and GitHub Actions moved to checkout 7, setup-node 7, upload-artifact 7.0.2. The built `main.js` is byte-identical.
+
 ## 0.11.1
 
 ### Fixed
