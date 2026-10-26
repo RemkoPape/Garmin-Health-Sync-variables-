@@ -1,9 +1,9 @@
-import { setIcon } from "obsidian";
 import type { TranslationKeys } from "../../i18n/en";
 import { t } from "../../i18n/t";
 import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
 import { rangeBar } from "../svg";
+import { renderCard } from "./shell";
 import { baseline, windowValues, zScore, type Baseline } from "../stats";
 
 /** Window and days needed for a reliable personal range (spec: about 21 of the last 30). */
@@ -62,26 +62,16 @@ export function computeRange(spec: RangeCardSpec, index: DayIndex, date: string)
 
 /** A range card: the day's value against the personal range, with the explanation behind an (i) button. */
 export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: RangeModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
-	const card = parent.createDiv({ cls: "ghs-card" });
-	const head = card.createDiv({ cls: "ghs-card-head" });
-	head.createSpan({ cls: "ghs-card-title", text: t(spec.title, lang) });
-	if (model.value === null) {
-		card.addClass("ghs-card-empty");
-		head.createSpan({ cls: "ghs-card-value", text: t("panelNoReading", lang) });
-	} else {
-		head.createSpan({ cls: "ghs-card-value", text: `${formatNumber(model.value, lang)} ${spec.unit}` });
-	}
-	const info = head.createEl("button", { cls: "clickable-icon ghs-info", attr: { "aria-label": t("panelInfo", lang), "aria-expanded": String(explainOpen) } });
-	setIcon(info, "info");
-	info.addEventListener("click", onToggleExplain);
-
-	const b = model.baseline;
-	if (!b) {
-		card.createDiv({
-			cls: "ghs-card-note",
-			text: t("panelLocked", lang).replace("{need}", String(RANGE_EARLY_MIN_DAYS)).replace("{have}", String(model.have)),
-		});
-	} else {
+	const value = model.value === null ? null : `${formatNumber(model.value, lang)} ${spec.unit}`;
+	renderCard(parent, { title: t(spec.title, lang), value, explain: t(spec.explain, lang), explainOpen, onToggleExplain, lang }, (card) => {
+		const b = model.baseline;
+		if (!b) {
+			card.createDiv({
+				cls: "ghs-card-note",
+				text: t("panelLocked", lang).replace("{need}", String(RANGE_EARLY_MIN_DAYS)).replace("{have}", String(model.have)),
+			});
+			return;
+		}
 		if (model.value !== null && model.z !== null) rangeBar(card, model.value, b.mean, b.sd, spec.tone(model.value, b));
 		card.createDiv({
 			cls: "ghs-card-note",
@@ -96,7 +86,5 @@ export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: Ran
 				text: t("panelEarly", lang).replace("{have}", String(model.have)).replace("{need}", String(RANGE_MIN_DAYS)),
 			});
 		}
-	}
-
-	if (explainOpen) card.createDiv({ cls: "ghs-explain", text: t(spec.explain, lang) });
+	});
 }
