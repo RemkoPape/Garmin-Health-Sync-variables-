@@ -207,6 +207,29 @@ describe("intensity minutes card", () => {
 		expect(text(".ghs-foot-value")).toBe(en.panelGoalReached);
 	});
 
+	it("starts at 420 minutes (60 a day) for someone under 18, and moves up from there", async () => {
+		const index = await indexOf(() => ({ intensity_min: 10 }), 35);
+		const teen = computeIntensity(index, END, 2026 - 15);
+		expect(teen.youth).toBe(true);
+		expect(teen.goal).toBe(420);
+		expect(teen.goalWeeks).toBe(0);
+		renderIntensity(root, teen, "en", true, noop);
+		expect(text(".ghs-card-value")).toBe("40 / 420 wk");
+		expect(text(".ghs-explain")).toBe(en.panelIntensityExplainYouth);
+		expect(computeIntensity(index, END, 2026 - 18).youth).toBe(false);
+		expect(computeIntensity(index, END, 2026 - 18).goal).toBe(150);
+		expect(computeIntensity(index, END, null).youth).toBe(false);
+	});
+
+	it("personalises a young person's goal against 420, not 150", async () => {
+		const index = await indexOf(() => ({ intensity_min: 80 }), 35); // 560 a week
+		const teen = computeIntensity(index, END, 2026 - 15);
+		expect(teen.goal).toBe(620);
+		root.empty();
+		renderIntensity(root, teen, "en", false, noop);
+		expect(text(".ghs-card-note")).toBe(en.panelIntensityGoalPersonalYouth.replace("{n}", "4"));
+	});
+
 	it("speaks the plugin language and shows the explanation", async () => {
 		renderIntensity(root, computeIntensity(await week([20, 30, 40, 28]), END), "de", true, noop);
 		expect(text(".ghs-foot-value")).toBe("32 Min. · 11/Tag");

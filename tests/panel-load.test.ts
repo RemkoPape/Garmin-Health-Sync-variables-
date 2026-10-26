@@ -49,6 +49,36 @@ describe("intensityStep", () => {
 	});
 });
 
+describe("intensity from heart rate zones", () => {
+	// maximum 180 bpm: zones start at 90, 108, 126, 144 and 162
+	it.each([
+		[80, 0],
+		[100, 0],
+		[115, 1],
+		[130, 2],
+		[150, 3],
+		[170, 4],
+	])("puts %s bpm at step %s", (hr, step) => {
+		expect(intensityStep(session({ avgHr: hr }), [], 180)).toBe(step);
+	});
+
+	it("works from the first session, without a history", () => {
+		expect(intensityStep(session({ avgHr: 150 }), [], 180)).toBe(3);
+		expect(intensityStep(session({ avgHr: 150 }), [], null)).toBeNull();
+	});
+
+	it("has no step for recovery sessions or without a heart rate", () => {
+		expect(intensityStep(session({ type: "breathwork", category: "other", avgHr: 60 }), [], 180)).toBeNull();
+		expect(intensityStep(session({ avgHr: null }), [], 180)).toBeNull();
+	});
+
+	it("weights the load by the zone", () => {
+		expect(sessionLoad(session({ avgHr: 150 }), [], 180)).toBeCloseTo(36);
+		expect(sessionLoad(session({ avgHr: 80 }), [], 180)).toBeCloseTo(18);
+		expect(sessionLoad(session({ avgHr: 150 }), [], null)).toBe(30);
+	});
+});
+
 describe("sessionLoad", () => {
 	const history = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190];
 	it("weights minutes by the step: 0.6, 0.8, 1.0, 1.2, 1.4", () => {

@@ -4,6 +4,7 @@ import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
 import { CHRONIC_WEEKS, DISTANCE_CATEGORIES, heartRateHistory, intensityStep, kmBetween, minutesBetween, previousWeeks, previousWeeksKm, type DistanceCategory, type Step } from "../load";
 import { isRecovery } from "../sessions";
+import { maxHrAt } from "../zones";
 import { renderCard } from "./shell";
 
 /** Training may grow by at most this much over the average of the previous weeks. */
@@ -23,6 +24,8 @@ export interface WeeklyDistance {
 }
 
 export interface WeeklyModel {
+	/** Segment colours come from heart rate zones (a birth year is set). */
+	zones: boolean;
 	/** Running and cycling distance, for the sports that have any this week or in the previous weeks. */
 	distances: WeeklyDistance[];
 	/** Minutes so far this week, up to and including the shown day. */
@@ -35,12 +38,13 @@ export interface WeeklyModel {
 	cap: number | null;
 }
 
-export function computeWeekly(index: DayIndex, date: string): WeeklyModel {
+export function computeWeekly(index: DayIndex, date: string, birthYear: number | null = null): WeeklyModel {
+	const maxHr = maxHrAt(birthYear, date);
 	const start = weekStart(date);
 	const history = heartRateHistory(index, date);
 	const segments: WeekSegment[] = [];
 	for (let day = start; day <= date; day = shiftDate(day, 1)) {
-		for (const s of index.sessions(day)) if (!isRecovery(s)) segments.push({ minutes: s.minutes, step: intensityStep(s, history) });
+		for (const s of index.sessions(day)) if (!isRecovery(s)) segments.push({ minutes: s.minutes, step: intensityStep(s, history, maxHr) });
 	}
 	const previous = previousWeeks(index, date);
 	const average = previous.length === 0 ? null : previous.reduce((a, b) => a + b, 0) / previous.length;
@@ -51,13 +55,13 @@ export function computeWeekly(index: DayIndex, date: string): WeeklyModel {
 		const average = before.length === 0 ? 0 : before.reduce((a, b) => a + b, 0) / before.length;
 		if (km > 0 || average > 0) distances.push({ category, km, average, cap: average * CAP_FACTOR });
 	}
-	return { distances, minutes: minutesBetween(index, start, date), segments, weeks: previous.length, average, cap: average === null ? null : average * CAP_FACTOR };
+	return { zones: maxHr !== null, distances, minutes: minutesBetween(index, start, date), segments, weeks: previous.length, average, cap: average === null ? null : average * CAP_FACTOR };
 }
 
 const KM_PER_MILE = 1.609344;
 
 export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: string, imperial: boolean, explainOpen: boolean, onToggleExplain: () => void): void {
-	renderCard(parent, { title: t("panelWeeklyTitle", lang), value: formatNumber(model.minutes, lang, 0), unit: "min", explain: t("panelWeeklyExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelWeeklyTitle", lang), value: formatNumber(model.minutes, lang, 0), unit: "min", explain: model.zones ? `${t("panelWeeklyExplain", lang)} ${t("panelHardnessZones", lang)}` : t("panelWeeklyExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
 		if (model.average === null || model.cap === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLoadLocked", lang) });
 			return;

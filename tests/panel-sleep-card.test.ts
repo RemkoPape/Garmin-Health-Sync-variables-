@@ -140,7 +140,7 @@ describe("renderSleep", () => {
 	it("speaks the plugin language and shows the explanation when open", async () => {
 		render(computeSleep(await indexOf([480, 450, 420, 500, 430, 440, 460]), END), "de", true);
 		expect(notes()).toEqual([de.panelSleepNoDebt]);
-		expect(root.querySelector(".ghs-explain")?.textContent).toBe(de.panelSleepExplain);
+		expect(root.querySelector(".ghs-explain")?.textContent).toBe(de.panelSleepExplain.replace(/\{need\}/g, "7"));
 	});
 });
 
@@ -237,9 +237,51 @@ describe("sleep timeline (nights with bedtime and wake-up time)", () => {
 
 	it("explains the timeline only when it is shown, in the plugin language", async () => {
 		render(computeSleep(await timed(() => 420), END), "de", true);
-		expect(text(".ghs-explain")).toBe(`${de.panelSleepExplain} ${de.panelSleepExplainTimes}`);
+		expect(text(".ghs-explain")).toBe(`${de.panelSleepExplain} ${de.panelSleepExplainTimes}`.replace(/\{need\}/g, "7"));
 		root.empty();
 		render(computeSleep(await indexOf([420, 420, 420, 420, 420, 420, 420]), END), "en", true);
-		expect(text(".ghs-explain")).toBe(en.panelSleepExplain);
+		expect(text(".ghs-explain")).toBe(en.panelSleepExplain.replace(/\{need\}/g, "7"));
+	});
+});
+
+describe("sleep need by age", () => {
+	let root: HTMLElement;
+	beforeEach(() => {
+		root = document.createElement("div");
+	});
+	const nights = (m: number) => indexOf([m, m, m, m, m, m, m]);
+
+	it.each([
+		[2026 - 45, 420], // adult: 7 h
+		[2026 - 18, 420],
+		[2026 - 17, 480], // teenager: 8 h
+		[2026 - 14, 480],
+		[2026 - 13, 540], // school child: 9 h
+		[2026 - 10, 540],
+	])("born %s: %s minutes", async (born, need) => {
+		expect(computeSleep(await nights(450), END, born).need).toBe(need);
+	});
+
+	it("keeps 7 hours without a birth year", async () => {
+		expect(computeSleep(await nights(450), END).need).toBe(420);
+		expect(computeSleep(await nights(450), END, null).need).toBe(420);
+	});
+
+	it("counts the debt, the tip and the chart against the age's need", async () => {
+		const model = computeSleep(await nights(450), END, 2026 - 15); // 8 h: 30 min short every night
+		expect(model.debt).toBe(210);
+		expect(model.target).toBe(Math.floor((480 + 52.5) / 15) * 15);
+		renderSleep(root, model, "en", true, () => undefined);
+		expect(root.querySelector(".ghs-nights-need-label")?.textContent).toBe("8 h");
+		expect(root.querySelector(".ghs-explain")?.textContent).toContain("fell short of 8 hours");
+	});
+
+	it("uses the need for the timeline's dashed box too", async () => {
+		const app = new App();
+		await seedHistory(app, { end: END, days: 7, frontmatter: () => ({ sleep_duration: dur(450), sleep_start: "23:00", sleep_end: "07:00" }) });
+		const model = computeSleep(new DayIndex(app as never, () => settings), END, 2026 - 15);
+		renderSleep(root, model, "en", true, () => undefined);
+		expect((root.querySelector(".ghs-night-need") as HTMLElement).style.getPropertyValue("--ghs-h")).not.toBe("");
+		expect(root.querySelector(".ghs-explain")?.textContent).toContain("dashed box is 8 hours from bedtime");
 	});
 });

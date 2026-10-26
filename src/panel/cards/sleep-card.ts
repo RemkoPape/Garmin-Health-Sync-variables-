@@ -3,13 +3,24 @@ import { shiftDate } from "../../dates";
 import { weekdayInitial } from "../format";
 import type { DayIndex } from "../index";
 import { computeTrend, type Trend } from "../trend";
+import { ageAt } from "../zones";
 import { renderCard } from "./shell";
 
 const NIGHTS = 7;
 /** Fewest nights with data before the debt is shown at all. */
 export const SLEEP_MIN_NIGHTS = 5;
-/** Sleep need until it can be learned from the user's own history (7 h). */
-const NEED_MIN = 420;
+/** Sleep need of an adult until it can be learned from the user's own history (7 h). */
+const ADULT_NEED_MIN = 420;
+/** With a birth year: the lower end of the recommended sleep for school children (9 h) and teenagers (8 h). */
+const CHILD_NEED_MIN = 540;
+const TEEN_NEED_MIN = 480;
+
+/** Minutes of sleep to aim for: 7 hours, more for a child or teenager when the birth year says so. */
+function sleepNeed(date: string, birthYear: number | null): number {
+	if (birthYear === null) return ADULT_NEED_MIN;
+	const age = ageAt(date, birthYear);
+	return age < 14 ? CHILD_NEED_MIN : age < 18 ? TEEN_NEED_MIN : ADULT_NEED_MIN;
+}
 const MAX_CATCH_UP_MIN = 60;
 const TARGET_STEP_MIN = 15;
 
@@ -37,6 +48,8 @@ export const SLEEP_MIN_TIMED_NIGHTS = 3;
 const DAY = 1440;
 
 export interface SleepModel {
+	/** Minutes of sleep to aim for. */
+	need: number;
 	trend: Trend | null;
 	/** Null while fewer than SLEEP_MIN_TIMED_NIGHTS nights have a bedtime and wake-up time. */
 	schedule: SleepSchedule | null;
@@ -53,7 +66,8 @@ export interface SleepModel {
 	target: number | null;
 }
 
-export function computeSleep(index: DayIndex, date: string): SleepModel {
+export function computeSleep(index: DayIndex, date: string, birthYear: number | null = null): SleepModel {
+	const need = sleepNeed(date, birthYear);
 	let have = 0;
 	let debt = 0;
 	const nights: SleepNight[] = [];
@@ -67,11 +81,11 @@ export function computeSleep(index: DayIndex, date: string): SleepModel {
 		nights.push({ date: day, minutes: m, bed: timed ? (start < DAY / 2 ? start + DAY : start) : null, span: timed ? (end - start + DAY) % DAY : null });
 		if (m === null) continue;
 		have++;
-		debt += Math.max(0, NEED_MIN - m);
+		debt += Math.max(0, need - m);
 	}
 	const ready = have >= SLEEP_MIN_NIGHTS;
-	const target = ready ? Math.floor((NEED_MIN + Math.min(debt / 4, MAX_CATCH_UP_MIN)) / TARGET_STEP_MIN) * TARGET_STEP_MIN : null;
-	return { schedule: scheduleOf(nights), trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target };
+	const target = ready ? Math.floor((need + Math.min(debt / 4, MAX_CATCH_UP_MIN)) / TARGET_STEP_MIN) * TARGET_STEP_MIN : null;
+	return { need, schedule: scheduleOf(nights), trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target };
 }
 
 function meanAndSd(values: number[]): { mean: number; sd: number } {
@@ -101,11 +115,11 @@ export function formatMinutes(total: number): string {
 }
 
 /** Seven bars, one per night, against a dashed line at the need; the shown night is the light one. */
-function durationChart(parent: HTMLElement, nights: SleepNight[], lang: string): void {
-	const top = Math.max(NEED_MIN * 1.2, ...nights.map((n) => n.minutes ?? 0));
+function durationChart(parent: HTMLElement, nights: SleepNight[], need: number, lang: string): void {
+	const top = Math.max(need * 1.2, ...nights.map((n) => n.minutes ?? 0));
 	const chart = parent.createDiv({ cls: "ghs-nights" });
-	chart.createDiv({ cls: "ghs-nights-need" }).setCssProps({ "--ghs-y": `${(NEED_MIN / top) * 100}%` });
-	chart.createSpan({ cls: "ghs-nights-need-label", text: `${NEED_MIN / 60} h` }).setCssProps({ "--ghs-y": `${(NEED_MIN / top) * 100}%` });
+	chart.createDiv({ cls: "ghs-nights-need" }).setCssProps({ "--ghs-y": `${(need / top) * 100}%` });
+	chart.createSpan({ cls: "ghs-nights-need-label", text: `${need / 60} h` }).setCssProps({ "--ghs-y": `${(need / top) * 100}%` });
 	nights.forEach((n, i) => {
 		const col = chart.createDiv({ cls: "ghs-night" });
 		const bar = col.createDiv({ cls: `ghs-night-bar${i === nights.length - 1 ? " ghs-night-bar-last" : ""}${n.minutes === null ? " ghs-night-bar-missing" : ""}` });
@@ -119,10 +133,10 @@ function durationChart(parent: HTMLElement, nights: SleepNight[], lang: string):
  * the time asleep and a dashed box that is the need long from bedtime. A solid bar that stops above the end
  * of the box is a night with too little sleep; where the bars start and end shows how regular the nights are.
  */
-function timelineChart(parent: HTMLElement, nights: SleepNight[], lang: string): void {
+function timelineChart(parent: HTMLElement, nights: SleepNight[], need: number, lang: string): void {
 	const timed = nights.filter((n) => n.bed !== null && n.span !== null);
 	const first = Math.min(...timed.map((n) => n.bed as number)) - 30;
-	const last = Math.max(...timed.map((n) => Math.max((n.bed as number) + (n.span as number), (n.bed as number) + NEED_MIN))) + 30;
+	const last = Math.max(...timed.map((n) => Math.max((n.bed as number) + (n.span as number), (n.bed as number) + need))) + 30;
 	const top = Math.floor(first / 60) * 60;
 	const range = Math.ceil(last / 60) * 60 - top;
 	const chart = parent.createDiv({ cls: "ghs-nights ghs-nights-timeline" });
@@ -133,7 +147,7 @@ function timelineChart(parent: HTMLElement, nights: SleepNight[], lang: string):
 		if (n.bed !== null && n.span !== null) {
 			const y = `${((n.bed - top) / range) * 100}%`;
 			const place = (el: HTMLElement, minutes: number): void => el.setCssProps({ "--ghs-y": y, "--ghs-h": `${(minutes / range) * 100}%` });
-			place(col.createDiv({ cls: "ghs-night-need" }), NEED_MIN);
+			place(col.createDiv({ cls: "ghs-night-need" }), need);
 			place(col.createDiv({ cls: "ghs-night-window" }), n.span);
 			place(col.createDiv({ cls: `ghs-night-asleep${i === nights.length - 1 ? " ghs-night-asleep-last" : ""}` }), n.minutes ?? n.span);
 		}
@@ -144,7 +158,7 @@ function timelineChart(parent: HTMLElement, nights: SleepNight[], lang: string):
 export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.minutes === null ? null : formatMinutes(model.minutes);
 	const unit = model.minutes !== null && model.score !== null ? `· ${Math.round(model.score)}` : undefined;
-	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: model.schedule ? `${t("panelSleepExplain", lang)} ${t("panelSleepExplainTimes", lang)}` : t("panelSleepExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
+	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: (model.schedule ? `${t("panelSleepExplain", lang)} ${t("panelSleepExplainTimes", lang)}` : t("panelSleepExplain", lang)).replace(/\{need\}/g, String(model.need / 60)), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
 		if (model.debt === null || model.target === null) {
 			card.createDiv({
 				cls: "ghs-card-note",
@@ -152,8 +166,8 @@ export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string
 			});
 			return;
 		}
-		if (model.schedule) timelineChart(card, model.nights, lang);
-		else durationChart(card, model.nights, lang);
+		if (model.schedule) timelineChart(card, model.nights, model.need, lang);
+		else durationChart(card, model.nights, model.need, lang);
 		card.createDiv({
 			cls: "ghs-card-note",
 			text: model.debt === 0 ? t("panelSleepNoDebt", lang) : t("panelSleepDebt", lang).replace("{debt}", formatMinutes(model.debt)),
