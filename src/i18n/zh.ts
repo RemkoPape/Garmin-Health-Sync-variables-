@@ -149,6 +149,15 @@ export const zh: Record<TranslationKeys, string> = {
 
 	// What's new
 	commandWhatsNew: "显示更新内容",
+	commandOpenPanel: "打开健康面板",
+	settingsPanel: "侧边面板",
+	settingsPanelShow: "显示健康面板",
+	settingsPanelShowDesc: "在右侧边栏添加健康面板。它只读取你的每日笔记，不会修改。",
+	noticePanelDisabled: "请先在插件设置中启用健康面板。",
+	panelTitle: "健康",
+	panelPrevDay: "前一天",
+	panelNextDay: "后一天",
+	panelEmpty: "每日笔记积累数据后，健康卡片会显示在这里。",
 	whatsNewTitle: "Garmin Health Sync 更新内容",
 	whatsNewCatchUp: "你错过了 {count} 个更新。",
 	whatsNewGotIt: "知道了",

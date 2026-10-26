@@ -149,6 +149,15 @@ export const ja: Record<TranslationKeys, string> = {
 
 	// What's new
 	commandWhatsNew: "新機能を表示",
+	commandOpenPanel: "ヘルスパネルを開く",
+	settingsPanel: "サイドパネル",
+	settingsPanelShow: "ヘルスパネルを表示",
+	settingsPanelShowDesc: "右サイドバーにヘルスパネルを追加します。デイリーノートを読み取るだけで、変更はしません。",
+	noticePanelDisabled: "先にプラグイン設定でヘルスパネルを有効にしてください。",
+	panelTitle: "ヘルス",
+	panelPrevDay: "前の日",
+	panelNextDay: "次の日",
+	panelEmpty: "デイリーノートにデータがたまると、ここにヘルスカードが表示されます。",
 	whatsNewTitle: "Garmin Health Sync の新機能",
 	whatsNewCatchUp: "{count} 件のアップデートをまとめて表示しています。",
 	whatsNewGotIt: "了解",

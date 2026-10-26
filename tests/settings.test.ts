@@ -26,6 +26,8 @@ function make(patch: Partial<HealthSyncSettings> = {}, session = false) {
 		isSessionValid: () => session,
 		saveSettings: vi.fn().mockResolvedValue(undefined),
 		applyServerRegion: vi.fn(),
+		applyPanelEnabled: vi.fn().mockResolvedValue(undefined),
+		refreshPanels: vi.fn(),
 		logout: vi.fn().mockResolvedValue(undefined),
 		loginViaBrowser: vi.fn().mockImplementation((done?: () => void) => {
 			done?.();
@@ -54,6 +56,7 @@ describe("the settings layout", () => {
 			["language", "dropdown"],
 			["serverRegion", "dropdown"],
 			["unitSystem", "dropdown"],
+			["panelEnabled", "toggle"],
 			["autoSync", "toggle"],
 			["createDailyNoteIfMissing", "toggle"],
 			["dailyNotePath", "text"],
@@ -77,9 +80,14 @@ describe("the settings layout", () => {
 		const group = defs.find((i) => i.type === "group")!;
 		expect(group.heading).toBe(en.settingsMetricsStandard);
 		expect(group.items!.map((i) => i.control!.key)).toEqual(METRICS.filter((m) => m.category === "standard").map((m) => `metric:${m.key}`));
-		const page = defs.find((i) => i.type === "page")!;
-		expect(page.name).toBe(en.settingsMetricsExtendedDesc);
+		const page = defs.find((i) => i.type === "page" && i.name === en.settingsMetricsExtendedDesc)!;
 		expect(page.items![0]!.items!.map((i) => i.control!.key)).toEqual(METRICS.filter((m) => m.category === "extended").map((m) => `metric:${m.key}`));
+	});
+
+	it("puts the side panel switch on its own page", () => {
+		const page = make().defs().find((i) => i.name === en.settingsPanel)!;
+		expect(page.type).toBe("page");
+		expect(page.items!.map((i) => i.control!.key)).toEqual(["panelEnabled"]);
 	});
 
 	it("labels every metric in the user's language", () => {
@@ -156,6 +164,19 @@ describe("reading and writing values", () => {
 		const { tab } = make();
 		await tab.setControlValue(key, key === "language" ? "de" : "imperial");
 		expect((tab as unknown as { updates: number }).updates).toBe(1);
+	});
+
+	it("re-renders open panels after a language change", async () => {
+		const { tab, plugin } = make();
+		await tab.setControlValue("language", "de");
+		expect(plugin.refreshPanels).toHaveBeenCalledOnce();
+	});
+
+	it("opens or closes the panel when its switch changes", async () => {
+		const { tab, plugin } = make();
+		await tab.setControlValue("panelEnabled", true);
+		expect(plugin.settings.panelEnabled).toBe(true);
+		expect(plugin.applyPanelEnabled).toHaveBeenCalledOnce();
 	});
 });
 

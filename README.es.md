@@ -18,6 +18,7 @@ Sincroniza automáticamente pasos, sueño, frecuencia cardíaca, estrés, activi
 - **Soporte de subdirectorios** — encuentra Daily Notes existentes en carpetas anidadas (p. ej., `Journal/2024-07/`) y crea subcarpetas por fecha cuando el formato del nombre de archivo contiene `/` (p. ej., `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Detección automática del idioma** — el idioma de la interfaz se configura según el idioma de tu Obsidian (EN, DE, ZH, JA, ES, FR)
 - **Datos estructurados opcionales** — campo `trainings` legible por máquina para consultas avanzadas con Dataview
+- **Panel de salud (beta)** — panel opcional en la barra lateral derecha que solo lee tus notas diarias y nunca las modifica; actívalo en **Ajustes → Garmin Health Sync → Panel lateral**
 
 ## Salida de Frontmatter
 

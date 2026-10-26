@@ -24,6 +24,8 @@ export { moment };
 const PLATFORM_DEFAULTS = {
 	isMobile: false,
 	isMobileApp: false,
+	isPhone: false,
+	isTablet: false,
 	isDesktop: true,
 	isDesktopApp: true,
 	isIosApp: false,
@@ -272,8 +274,73 @@ export class SecretStorageFake {
 
 type WorkspaceListener = (...args: unknown[]) => void;
 
+export class WorkspaceLeaf {
+	view: ItemView | null = null;
+	viewType = "";
+	constructor(private readonly app: App) {}
+	setViewState(state: { type: string }): Promise<void> {
+		this.viewType = state.type;
+		const factory = this.app.workspace.viewFactories.get(state.type);
+		this.view = factory ? factory(this) : null;
+		this.app.workspace.leaves.push(this);
+		return Promise.resolve();
+	}
+	detach(): void {
+		const i = this.app.workspace.leaves.indexOf(this);
+		if (i >= 0) this.app.workspace.leaves.splice(i, 1);
+		this.view?.onClose();
+	}
+}
+
+export abstract class ItemView {
+	app: App;
+	contentEl: HTMLElement = document.createElement("div");
+	containerEl: HTMLElement = document.createElement("div");
+	events: { name: string }[] = [];
+	constructor(public leaf: WorkspaceLeaf) {
+		this.app = (leaf as unknown as { app: App }).app;
+	}
+	abstract getViewType(): string;
+	abstract getDisplayText(): string;
+	getIcon(): string {
+		return "";
+	}
+	registerEvent(ref: { name: string }): void {
+		this.events.push(ref);
+	}
+	onOpen(): Promise<void> {
+		return Promise.resolve();
+	}
+	onClose(): Promise<void> {
+		return Promise.resolve();
+	}
+}
+
+export function setIcon(el: HTMLElement, icon: string): void {
+	el.setAttribute("data-icon", icon);
+}
+
 export class Workspace {
 	activeFile: TFile | null = null;
+	leaves: WorkspaceLeaf[] = [];
+	viewFactories = new Map<string, (leaf: WorkspaceLeaf) => ItemView>();
+	/** What getRightLeaf returns; tests set it to null to model a layout with no right sidebar. */
+	rightLeafAvailable = true;
+	revealed: WorkspaceLeaf[] = [];
+	getRightLeaf(): WorkspaceLeaf | null {
+		return this.rightLeafAvailable ? new WorkspaceLeaf(this.app) : null;
+	}
+	getLeavesOfType(type: string): WorkspaceLeaf[] {
+		return this.leaves.filter((l) => l.viewType === type);
+	}
+	detachLeavesOfType(type: string): void {
+		for (const leaf of this.getLeavesOfType(type)) leaf.detach();
+	}
+	revealLeaf(leaf: WorkspaceLeaf): Promise<void> {
+		this.revealed.push(leaf);
+		return Promise.resolve();
+	}
+	constructor(public app: App) {}
 	private readyCallbacks: (() => void)[] = [];
 	private listeners: Record<string, WorkspaceListener[]> = {};
 	onLayoutReady(cb: () => void): void {
@@ -298,7 +365,7 @@ export class Workspace {
 
 export class App {
 	vault = new Vault();
-	workspace = new Workspace();
+	workspace = new Workspace(this);
 	secretStorage: SecretStorageFake | undefined = new SecretStorageFake();
 	local = new Map<string, unknown>();
 	/** Set by tests to exercise the Periodic Notes / Daily Notes auto-detection. */
@@ -348,6 +415,13 @@ export class Plugin {
 	}
 	registerEvent(ref: unknown): void {
 		this.events.push(ref);
+	}
+	registerView(type: string, factory: (leaf: WorkspaceLeaf) => ItemView): void {
+		this.app.workspace.viewFactories.set(type, factory);
+	}
+	ribbonIcons: { icon: string; title: string; callback: () => void }[] = [];
+	addRibbonIcon(icon: string, title: string, callback: () => void): void {
+		this.ribbonIcons.push({ icon, title, callback });
 	}
 }
 
