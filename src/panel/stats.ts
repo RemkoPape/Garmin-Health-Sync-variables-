@@ -36,3 +36,8 @@ export function average(index: DayIndex, key: string, date: string, days: number
 	const values = windowValues(index, key, date, days);
 	return values.length < min ? null : values.reduce((a, b) => a + b, 0) / values.length;
 }
+
+/** Share of `values` that are at or below `x` (0 to 1). */
+export function percentileRank(x: number, values: number[]): number {
+	return values.filter((v) => v <= x).length / values.length;
+}

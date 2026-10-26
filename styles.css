@@ -588,3 +588,158 @@
 	font-size: var(--font-ui-small);
 	font-weight: var(--font-normal);
 }
+
+/* Training: intensity steps from easy to hard */
+.ghs-step-0 {
+	background: var(--color-blue);
+}
+
+.ghs-step-1 {
+	background: var(--color-cyan);
+}
+
+.ghs-step-2 {
+	background: var(--color-yellow);
+}
+
+.ghs-step-3 {
+	background: var(--color-orange);
+}
+
+.ghs-step-4 {
+	background: var(--color-red);
+}
+
+.ghs-step-none {
+	background: var(--text-faint);
+}
+
+/* Load balance: five zones on a ratio from 0.5 to 1.8 */
+.ghs-range-track-load {
+	background: linear-gradient(to right, var(--color-blue) 0%, var(--color-blue) 23.1%, var(--color-cyan) 23.1%, var(--color-cyan) 38.5%, var(--color-green) 38.5%, var(--color-green) 61.5%, var(--color-yellow) 61.5%, var(--color-yellow) 76.9%, var(--color-red) 76.9%, var(--color-red) 100%);
+}
+
+.ghs-zones {
+	display: grid;
+	grid-template-columns: 23.1fr 15.4fr 23.1fr 15.4fr 23.1fr;
+	text-align: center;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-zone-name-current {
+	color: var(--text-normal);
+	font-weight: var(--font-semibold);
+}
+
+/* Weekly load: this week's sessions against the average and the cap */
+.ghs-weekly {
+	height: 14px;
+}
+
+.ghs-weekly-track {
+	display: flex;
+	height: 12px;
+	overflow: hidden;
+	border-radius: var(--radius-s);
+	background: var(--background-modifier-border);
+}
+
+.ghs-weekly-seg {
+	width: var(--ghs-w, 0%);
+	border-right: 1px solid var(--background-secondary);
+}
+
+.ghs-weekly-over {
+	position: absolute;
+	top: 0;
+	left: var(--ghs-x, 100%);
+	right: 0;
+	height: 12px;
+	border-radius: 0 var(--radius-s) var(--radius-s) 0;
+	background: repeating-linear-gradient(45deg, transparent 0 3px, var(--color-red) 3px 4px);
+	opacity: 0.35;
+	pointer-events: none;
+}
+
+.ghs-tick-cap {
+	border-left-color: var(--color-red);
+}
+
+.ghs-foot-over {
+	color: var(--color-orange);
+}
+
+/* Sessions */
+.ghs-session {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+	padding: var(--size-2-3) var(--size-4-2);
+	border: 2px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+}
+
+.ghs-session-recovery {
+	border-style: dashed;
+	border-color: var(--color-purple);
+}
+
+.ghs-session-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+}
+
+.ghs-session-type {
+	font-weight: var(--font-semibold);
+}
+
+.ghs-session-tag {
+	color: var(--color-purple);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-session-facts {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+/* after .ghs-session, whose border shorthand would otherwise reset the colour */
+.ghs-step-border-0 {
+	border-color: var(--color-blue);
+}
+
+.ghs-step-border-1 {
+	border-color: var(--color-cyan);
+}
+
+.ghs-step-border-2 {
+	border-color: var(--color-yellow);
+}
+
+.ghs-step-border-3 {
+	border-color: var(--color-orange);
+}
+
+.ghs-step-border-4 {
+	border-color: var(--color-red);
+}
+
+.ghs-step-border-none {
+	border-color: var(--background-modifier-border);
+}
+
+.ghs-load-bar {
+	margin-bottom: var(--size-4-2);
+}
+
+.ghs-weekly .ghs-tick-label:first-of-type {
+	transform: translateX(-100%);
+}
+
+.ghs-weekly .ghs-tick-label:last-of-type {
+	transform: none;
+}

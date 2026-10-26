@@ -237,7 +237,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			const metric = (key: string): boolean => enabled[key] ?? METRICS.find((m) => m.key === key)!.defaultEnabled;
 			return {
 				name: t(card.title, lang),
-				desc: card.metrics.some(metric) ? "" : t("settingsPanelCardNotSynced", lang),
+				desc: card.metrics.length === 0 || card.metrics.some(metric) ? "" : t("settingsPanelCardNotSynced", lang),
 				control: { type: "toggle", key: `${PANEL_CARD_KEY_PREFIX}${card.id}` },
 			};
 		});
