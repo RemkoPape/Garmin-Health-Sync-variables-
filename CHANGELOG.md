@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.53
+
+### Changed
+
+- **Hide the Garmin properties** now hides every property the sync wrote into the daily note, as long as the side panel is on: all Garmin values, every activity (also types the plugin does not know, such as "mobility"), the training list and the workout place. It no longer depends on which cards are switched on. What counts is read from the note itself, and is worked out again when a sync changes the note.
+
 ## 0.12.0-beta.52
 
 ### Fixed

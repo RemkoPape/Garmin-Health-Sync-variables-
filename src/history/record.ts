@@ -16,6 +16,13 @@ export function recordFromData(data: HealthData, requested: string[]): DayRecord
 	return record;
 }
 
+/** The keys (without prefix) of a daily note's frontmatter that the sync wrote: the Garmin values, the activities, the training list and the workout place. */
+export function garminKeys(frontmatter: Record<string, unknown>): Set<string> {
+	const keys = new Set(Object.keys(recordFromNote(frontmatter) ?? {}));
+	for (const key of Object.keys(frontmatter)) if ((key === "workout_location" || key === `${PREFIX}workout_location`) && typeof frontmatter[key] === "string") keys.add("workout_location");
+	return keys;
+}
+
 /** The part of a daily note's frontmatter that is Garmin data (metrics, activities, training list), or null when there is none. Has no list of requested metrics: it is not known what the note was fetched with. */
 export function recordFromNote(frontmatter: Record<string, unknown>): DayRecord | null {
 	const record: DayRecord = {};

@@ -331,7 +331,6 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			this.plugin.settings.panelCards[key.slice(PANEL_CARD_KEY_PREFIX.length)] = Boolean(value);
 			await this.plugin.saveSettings();
 			this.plugin.refreshPanels();
-			this.plugin.noteProperties.modeChanged();
 			return;
 		}
 		if (key.startsWith(METRIC_KEY_PREFIX)) {

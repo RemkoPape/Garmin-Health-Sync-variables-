@@ -161,7 +161,7 @@ describe("the settings layout", () => {
 		expect(tab.getControlValue("panel:hrv")).toBe(false);
 		expect(plugin.saveSettings).toHaveBeenCalledOnce();
 		expect(plugin.refreshPanels).toHaveBeenCalledOnce();
-		expect(plugin.noteProperties.modeChanged).toHaveBeenCalledOnce(); // what the panel shows decides what can be hidden
+		expect(plugin.noteProperties.modeChanged).not.toHaveBeenCalled(); // every Garmin property is hidden, whatever cards are on
 	});
 
 	it("restarts the handling of the properties when their setting changes", async () => {

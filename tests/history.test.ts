@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { mergeRecord, parseMonth, sameRecord, serializeMonth } from "../src/history/format";
-import { recordFromData, recordFromNote } from "../src/history/record";
+import { garminKeys, recordFromData, recordFromNote } from "../src/history/record";
 import { HistoryStore } from "../src/history/store";
 import { importFromNotes } from "../src/history/import";
 
@@ -68,6 +68,18 @@ describe("records", () => {
 	it("gives nothing for a note without Garmin values, or with values of the wrong kind", () => {
 		expect(recordFromNote({ tags: ["x"] })).toBeNull();
 		expect(recordFromNote({ hrv: [1], trainings: "none", distance_mi: {} })).toBeNull();
+	});
+});
+
+describe("garminKeys", () => {
+	it("names what the sync wrote into a note, without the prefix, and not the user's own properties", () => {
+		const keys = garminKeys({ title: "x", mood: "good", hrv: 40, ohs_steps: 9000, mobility: "2x · 27min · Ø74 bpm", trainings: [{ type: "running" }], ohs_workout_location: "Park", coffee: 0 });
+		expect([...keys].sort()).toEqual(["hrv", "mobility", "steps", "trainings", "workout_location"]);
+	});
+
+	it("counts the workout place only when it is text, and gives nothing for a note without Garmin values", () => {
+		expect([...garminKeys({ workout_location: 5 })]).toEqual([]);
+		expect(garminKeys({ tags: ["x"] }).size).toBe(0);
 	});
 });
 

@@ -19,7 +19,7 @@ import { isLoginRequiredError } from "./errors";
 import { parseBirthYear } from "./panel/zones";
 import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "./panel/view";
 import { NoteProperties } from "./note-properties";
-import { visualisedKeys } from "./panel/visualised";
+import { garminKeys } from "./history/record";
 import { showWhatsNewIfDue, showWhatsNewNotes } from "./whats-new";
 
 const AUTO_SYNC_TRIGGER_DEBOUNCE_MS = 30 * 1000;
@@ -164,11 +164,12 @@ export default class HealthSyncPlugin extends Plugin {
 		this.noteProperties = new NoteProperties(this.app, {
 			mode: () => this.settings.propertiesMode,
 			isDaily: (file) => dateFromDailyNote(file, this.settings) !== null,
-			hidden: () => visualisedKeys(this.settings),
+			hidden: (file) => (this.settings.panelEnabled ? garminKeys(this.app.metadataCache.getFileCache(file)?.frontmatter ?? {}) : new Set()),
 		});
 		this.app.workspace.onLayoutReady(() => {
 			this.registerEvent(this.app.workspace.on("file-open", (file) => this.noteProperties.fileOpened(file)));
 			this.registerEvent(this.app.workspace.on("layout-change", () => this.noteProperties.layoutChanged()));
+			this.registerEvent(this.app.metadataCache.on("changed", (file) => this.noteProperties.noteChanged(file)));
 			this.noteProperties.layoutChanged();
 		});
 		this.register(() => this.noteProperties.cancel());
