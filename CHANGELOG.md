@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.44
+
+### Changed
+
+- If you change your daily notes folder (for example to a new year's subfolder), the history notes that stayed in the old place are moved into the `Garmin history` folder of the new daily notes folder before anything is fetched: when Obsidian has loaded, before a backfill or a history build, and before every write. The days in them count as fetched, so nothing is retrieved from Garmin a second time. A note whose place is already taken stays where it is and is merged when read; a `Garmin history` folder that is left empty is removed. No new setting.
+
 ## 0.12.0-beta.43
 
 ### Changed

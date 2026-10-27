@@ -218,3 +218,85 @@ describe("importing the daily notes", () => {
 		expect(app.vault.log.length).toBe(before);
 	});
 });
+
+describe("history notes that lie elsewhere", () => {
+	const OLD = "Journal/2026/Garmin history/Garmin history 2026-10.md";
+	const NEW = "Journal/2027/Garmin history/Garmin history 2026-10.md";
+	const month = (...days: [string, Record<string, unknown>][]): string => serializeMonth("2026-10", new Map(days));
+
+	it("are moved into the history folder of the current daily notes folder, content and all, and the emptied folder goes", async () => {
+		const app = new App();
+		app.vault.seed(OLD, month(["2026-10-01", { a: 1 }]));
+		app.vault.seed("Journal/2026/Garmin history/Garmin history 2026-09.md", serializeMonth("2026-09", new Map([["2026-09-30", { a: 2 }]])));
+		app.vault.seed("Journal/2027/2027-01-01.md", "note");
+		const s = store(app, "Journal/2027");
+		expect(await s.relocate()).toBe(2);
+		expect(app.vault.paths()).toEqual(["Journal/2027/2027-01-01.md", "Journal/2027/Garmin history/Garmin history 2026-09.md", NEW]);
+		expect(app.vault.text(NEW)).toContain('2026-10-01 {"a":1}');
+		expect(app.vault.getAbstractFileByPath("Journal/2026/Garmin history")).toBeNull();
+		expect(app.vault.getAbstractFileByPath("Journal/2026")).not.toBeNull();
+		expect(await s.relocate()).toBe(0);
+	});
+
+	it("leave a folder that was not made for them where it is, and come from the root when there is no daily notes folder", async () => {
+		const app = new App();
+		app.vault.seed("Archive/Garmin history 2026-10.md", month(["2026-10-01", { a: 1 }]));
+		const s = store(app, "");
+		expect(await s.relocate()).toBe(1);
+		expect(app.vault.paths()).toEqual(["Garmin history/Garmin history 2026-10.md"]);
+		expect(app.vault.getAbstractFileByPath("Archive")).not.toBeNull();
+	});
+
+	it("stay when their place is taken, and the one that is in place gets the next write", async () => {
+		const app = new App();
+		app.vault.seed(OLD, month(["2026-10-01", { a: 1 }]));
+		app.vault.seed(NEW, month(["2026-10-02", { a: 2 }]));
+		app.vault.seed("Other/Garmin history/Garmin history 2026-10.md", month(["2026-10-03", { a: 3 }]));
+		const s = store(app, "Journal/2027");
+		expect(await s.relocate()).toBe(0);
+		await s.put("2026-10-04", { a: 4 });
+		expect(lineOf(app, NEW)).toEqual(['2026-10-02 {"a":2}', '2026-10-04 {"a":4}']);
+		expect(lineOf(app, OLD)).toEqual(['2026-10-01 {"a":1}']);
+		await s.warm("2026-10-01", "2026-10-31");
+		expect([1, 2, 3, 4].map((d) => s.has(`2026-10-0${d}`))).toEqual([true, true, true, true]);
+	});
+
+	it("moves only one of two notes with the same name and keeps the other", async () => {
+		const app = new App();
+		app.vault.seed("A/Garmin history/Garmin history 2026-10.md", month(["2026-10-01", { a: 1 }]));
+		app.vault.seed("B/Garmin history/Garmin history 2026-10.md", month(["2026-10-02", { a: 2 }]));
+		expect(await store(app, "C").relocate()).toBe(1);
+		expect(app.vault.paths().filter((p) => p.startsWith("C/"))).toHaveLength(1);
+		expect(app.vault.paths()).toHaveLength(2);
+	});
+
+	it("are merged into by the next write instead of a second note being started", async () => {
+		const app = new App();
+		app.vault.seed(OLD, month(["2026-10-01", { a: 1 }]));
+		await store(app, "Journal/2027").put("2026-10-02", { a: 2 });
+		expect(app.vault.paths()).toEqual([NEW]);
+		expect(lineOf(app, NEW)).toEqual(['2026-10-01 {"a":1}', '2026-10-02 {"a":2}']);
+	});
+
+	it("do not stop later writes when a move fails", async () => {
+		const app = new App();
+		app.vault.seed(OLD, month(["2026-10-01", { a: 1 }]));
+		const s = store(app, "Journal/2027");
+		app.vault.failOn = (op) => (op === "rename" ? new Error("locked") : null);
+		await expect(s.relocate()).rejects.toThrow("locked");
+		app.vault.failOn = null;
+		await s.put("2026-10-02", { a: 2 });
+		expect(lineOf(app, NEW)).toEqual(['2026-10-01 {"a":1}', '2026-10-02 {"a":2}']);
+	});
+
+	it("also move when the notes are read after a move, because what was read before is dropped", async () => {
+		const app = new App();
+		app.vault.seed(OLD, month(["2026-10-01", { a: 1 }]));
+		const s = store(app, "Journal/2027");
+		await s.warm("2026-10-01", "2026-10-31");
+		await s.relocate();
+		expect(s.covers("2026-10-01", "2026-10-31")).toBe(false);
+		await s.warm("2026-10-01", "2026-10-31");
+		expect(s.get("2026-10-01")).toEqual({ a: 1 });
+	});
+});

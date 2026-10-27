@@ -173,6 +173,7 @@ export class SyncManager {
 
 			// "Skip": no request at all for a day without a note. A day that an earlier run fetched with all the
 			// metrics wanted now is not fetched again; the last days may still change, so they always are.
+			await this.history.relocate();
 			await this.history.warm(fromDate, toDate);
 			const recentLimit = shiftDate(localDateString(new Date()), -RECENT_DAYS);
 			const candidates = this.dateRange(fromDate, toDate).filter((date) => settings.missingNoteBehaviour !== "skip" || dailyNoteExists(this.app, date, {

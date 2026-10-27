@@ -78,7 +78,7 @@ type VaultListener = (file: TAbstractFile) => void;
 
 export class Vault {
 	/** Every write, in order, for assertions: "create" | "modify" | "createFolder". */
-	readonly log: { op: "create" | "modify" | "createFolder"; path: string }[] = [];
+	readonly log: { op: "create" | "modify" | "createFolder" | "rename" | "delete"; path: string }[] = [];
 	private readonly files = new Map<string, TFile>();
 	private readonly contents = new Map<string, string>();
 	private readonly folders = new Map<string, TFolder>();
@@ -157,6 +157,34 @@ export class Vault {
 		this.log.push({ op: "create", path });
 		this.emit("create", file);
 		return file;
+	}
+
+	/** Moves a file or folder's file to a new path; the content and the stat go with it, the parent folder must exist. */
+	async rename(file: TAbstractFile, newPath: string): Promise<void> {
+		this.check("rename", file.path);
+		if (this.files.has(newPath) || this.folders.has(newPath)) throw new Error("Destination file already exists!");
+		const old = file.path;
+		const parent = file.parent;
+		if (parent) parent.children.splice(parent.children.indexOf(file), 1);
+		this.files.delete(old);
+		const content = this.contents.get(old) ?? "";
+		this.contents.delete(old);
+		this.attach(file, newPath);
+		this.files.set(newPath, file as TFile);
+		this.contents.set(newPath, content);
+		this.log.push({ op: "rename", path: `${old} -> ${newPath}` });
+		this.emit("rename", file);
+	}
+
+	/** Removes a file, or an empty folder, from the vault. */
+	async delete(item: TAbstractFile): Promise<void> {
+		this.check("delete", item.path);
+		item.parent?.children.splice(item.parent.children.indexOf(item), 1);
+		this.files.delete(item.path);
+		this.folders.delete(item.path);
+		this.contents.delete(item.path);
+		this.log.push({ op: "delete", path: item.path });
+		this.emit("delete", item);
 	}
 
 	async read(file: TFile): Promise<string> {
@@ -399,6 +427,11 @@ export class App {
 	workspace = new Workspace(this);
 	secretStorage: SecretStorageFake | undefined = new SecretStorageFake();
 	local = new Map<string, unknown>();
+	/** The file manager calls the plugin uses to move and remove files (links are not modelled). */
+	fileManager = {
+		renameFile: (file: TAbstractFile, newPath: string): Promise<void> => this.vault.rename(file, newPath),
+		trashFile: (file: TAbstractFile): Promise<void> => this.vault.delete(file),
+	};
 	/** Obsidian's command registry (not in the typings): records what was executed. */
 	commands = {
 		executed: [] as string[],
