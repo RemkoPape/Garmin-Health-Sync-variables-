@@ -20,7 +20,9 @@ Sync steps, sleep, heart rate, stress, activities and more from Garmin Connect i
 - **Language auto-detection** — UI language is set from your Obsidian language (EN, DE, ZH, JA, ES, FR)
 - **Optional structured data** — machine-readable `trainings` field for advanced Dataview queries
 - **Property prefix** — optionally adds an `ohs_` prefix to all frontmatter properties to avoid naming conflicts with other plugins
-- **Health panel (beta)** — optional right sidebar panel that reads your daily notes and never changes them; turn it on under **Settings → Garmin Health Sync → Side panel**
+- **Health side panel** — optional right sidebar with cards for recovery, sleep, energy, movement, fitness and training, set against your own usual range; tap the light bulb on a card for what your data suggests and how it is worked out; turn it on under **Settings → Garmin Health Sync → Side panel**
+- **History notes** — optionally keep every fetched day in small monthly markdown notes, so the panel also works for days without a daily note and the data syncs with your vault
+- **Properties of daily notes** — fold the properties block when a note opens, or hide the Garmin properties the panel already shows
 
 ## Frontmatter Output
 
@@ -123,7 +125,7 @@ Missing subfolders are created automatically.
 
 On every Obsidian startup, the plugin checks the last 7 days and fills in any missing health data automatically. No action needed. By default it creates a daily note when one is missing.
 
-If another tool owns your daily notes (Templater, the Calendar plugin, an external sync), turn off **Create daily note when missing** in the settings. Auto-sync then waits until a real (non-empty) daily note exists and syncs the moment it appears — empty 0-byte placeholders are ignored. Manual sync and backfill always create missing notes regardless of this setting.
+If another tool owns your daily notes (Templater, the Calendar plugin, an external sync), set **Days without a daily note** in the settings to **Skip the day**. Auto-sync then waits until a real (non-empty) daily note exists and syncs the moment it appears — empty 0-byte placeholders are ignored. With **Keep in history files** the plugin creates no note for a day without one and stores the day in the history notes instead (see below). A manual sync always writes to the note you have open.
 
 ### Manual sync
 
@@ -136,7 +138,21 @@ Have years of Garmin data? You can bulk-sync any date range:
 1. Open the Command Palette (Cmd/Ctrl+P)
 2. Search for **"Backfill health data"**
 3. Pick a start and end date
-4. The plugin fetches all data for that range with rate-limiting to avoid API throttling
+4. The plugin fetches all data for that range with rate-limiting to avoid API throttling, and shows the day it is at and the time left
+
+A day that an earlier backfill already fetched (with all your enabled metrics) is skipped, except the last 3 days, which may still change. **Backfill health data again (ignore what is already fetched)** fetches every day again and overwrites the values. What happens with a day that has no daily note follows **Days without a daily note**.
+
+### Health side panel
+
+Turn on **Side panel** in the plugin settings, then open it from the ribbon icon or the command **Open health panel**. The cards compare today with your own usual range (the last 30 days) and never change your notes. Tap the date to pick a day, use the arrows to move by a day, and the pencil button to arrange the cards by dragging. Every card has a switch in the settings that also says which metrics to enable for it. Tap the light bulb on a card for **What your data suggests** (reasons and what helps, taken from your own data) and **How to read this**. The panel is not medical advice. Adding your birth year (only the year) in the settings gives heart rate zones and age-based goals.
+
+### History notes and Build Garmin history
+
+With **Days without a daily note** set to **Keep in history files**, every fetched day is also stored in small monthly notes (`Garmin history/Garmin history 2026-10.md`, one line per day) in your daily notes folder. They are plain markdown, so they sync with your vault, and the panel reads them for days that have no note. The command **Import history from daily notes** copies the Garmin values of your existing notes into them. **Build Garmin history** fetches the days back to a date you choose (default five years), newest first: it shows the time it will take, can be stopped and continues where it stopped, waits and retries if Garmin does not answer, and skips days it already has. If you change your daily notes folder, the history notes move along with it.
+
+### Properties of daily notes
+
+The setting **Properties of daily notes** can fold the properties block of a daily note when it opens, hide the properties the plugin wrote (the panel shows them), or both. Nothing is deleted from a note.
 
 ## Activity Key Normalization
 
@@ -179,6 +195,8 @@ This plugin makes network requests to two external services:
 - **Nominatim (OpenStreetMap)** — if the "Workout location" feature is enabled, the GPS coordinates of your first activity are sent to `nominatim.openstreetmap.org` for reverse geocoding. You can disable this in settings under *Workout location*.
 
 No data is sent to any other server.
+
+**History notes:** the optional history notes contain your health values and live in your vault like your daily notes. The plugin makes no extra network requests for them.
 
 **Clipboard:** The plugin only uses the clipboard when you click a button, never in the background. **Use browser login** reads it once, when you click **Sign in from clipboard**, to pick up the one-time login ticket you copied from your browser. It writes to it when you click to copy the sign-in link, or **Copy diagnostics** (in the settings and in the sign-in window). Diagnostics contain no password, tokens, account data or health values, only technical details of the last sign-in or sync: data type names, HTTP status codes, response sizes and timings.
 

@@ -18,7 +18,9 @@ Synchronisez automatiquement les pas, le sommeil, la fréquence cardiaque, le st
 - **Support des sous-dossiers** — trouve les Daily Notes existantes dans les dossiers imbriqués (par ex. `Journal/2024-07/`) et crée des sous-dossiers par date lorsque le format du nom de fichier contient `/` (par ex. `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Détection automatique de la langue** — la langue de l'interface est définie selon la langue de votre Obsidian (EN, DE, ZH, JA, ES, FR)
 - **Données structurées optionnelles** — champ `trainings` lisible par machine pour des requêtes Dataview avancées
-- **Panneau santé (bêta)** — panneau optionnel dans la barre latérale droite qui lit vos notes quotidiennes sans jamais les modifier ; à activer dans **Réglages → Garmin Health Sync → Panneau latéral**
+- **Panneau latéral santé** — barre latérale droite optionnelle avec des cartes pour la récupération, le sommeil, l’énergie, le mouvement, la forme et l’entraînement, comparées à votre propre plage habituelle ; touchez l’ampoule d’une carte pour voir ce que suggèrent vos données et comment c’est calculé ; à activer dans **Réglages → Garmin Health Sync → Panneau latéral**
+- **Notes d’historique** — conservez en option chaque jour récupéré dans de petites notes mensuelles en markdown, pour que le panneau fonctionne aussi les jours sans note quotidienne et que les données se synchronisent avec votre coffre
+- **Propriétés des notes quotidiennes** — repliez le bloc de propriétés à l’ouverture d’une note ou masquez les propriétés Garmin que le panneau affiche déjà
 
 ## Sortie Frontmatter
 
@@ -121,7 +123,7 @@ Les sous-dossiers manquants sont créés automatiquement.
 
 À chaque démarrage d'Obsidian, le plugin vérifie les 7 derniers jours et complète automatiquement les données de santé manquantes. Aucune action requise. Par défaut, il crée la note quotidienne lorsqu'elle est absente.
 
-Si un autre outil gère vos notes quotidiennes (Templater, le plugin Calendar, une synchronisation externe), désactivez **Créer la note quotidienne si absente** dans les paramètres. La synchronisation automatique attend alors qu'une vraie note quotidienne (non vide) existe et se déclenche dès qu'elle apparaît ; les notes placeholder vides de 0 octet sont ignorées. La synchronisation manuelle et le backfill créent toujours les notes manquantes, quel que soit ce paramètre.
+Si un autre outil gère vos notes quotidiennes (Templater, le plugin Calendar, une synchronisation externe), réglez **Jours sans note quotidienne** dans les paramètres sur **Ignorer le jour**. La synchronisation automatique attend alors qu’une vraie note quotidienne (non vide) existe et se synchronise dès qu’elle apparaît ; les marqueurs vides de 0 octet sont ignorés. Avec **Garder dans les fichiers d’historique**, le plugin ne crée pas de note pour un jour sans note et enregistre le jour dans les notes d’historique (voir plus bas). Une synchronisation manuelle écrit toujours dans la note ouverte.
 
 ### Synchronisation manuelle
 
@@ -134,7 +136,21 @@ Vous avez des années de données Garmin ? Vous pouvez synchroniser en masse n'i
 1. Ouvrez la palette de commandes (Cmd/Ctrl+P)
 2. Recherchez **« Remplir les données de santé »** (Backfill health data)
 3. Choisissez une date de début et une date de fin
-4. Le plugin récupère toutes les données de cette période avec une limitation de débit pour éviter le blocage de l'API
+4. Le plugin récupère toutes les données de cette période avec une limitation de débit pour éviter le blocage de l'API, et affiche le jour en cours et le temps restant
+
+Un jour qu’un remplissage précédent a déjà récupéré avec toutes vos métriques activées est ignoré, sauf les 3 derniers jours, qui peuvent encore changer. **Remplir de nouveau les données de santé (ignorer ce qui est déjà récupéré)** récupère chaque jour de nouveau et écrase les valeurs. Ce qui arrive à un jour sans note quotidienne dépend de **Jours sans note quotidienne**.
+
+### Panneau latéral santé
+
+Activez **Panneau latéral** dans les paramètres du plugin, puis ouvrez-le avec l’icône du ruban ou la commande **Ouvrir le panneau santé**. Les cartes comparent aujourd’hui à votre propre plage habituelle (les 30 derniers jours) et ne modifient jamais vos notes. Touchez la date pour choisir un jour, utilisez les flèches pour avancer d’un jour et le bouton crayon pour réorganiser les cartes en les faisant glisser. Chaque carte a un interrupteur dans les paramètres qui indique aussi quelles métriques activer pour elle. Touchez l’ampoule d’une carte pour **Ce que suggèrent vos données** (raisons et ce qui aide, tirés de vos propres données) et **Comment lire ceci**. Le panneau n’est pas un avis médical. En ajoutant votre année de naissance (seulement l’année) dans les paramètres, vous obtenez des zones de fréquence cardiaque et des objectifs adaptés à l’âge.
+
+### Notes d’historique et Construire l’historique Garmin
+
+Avec **Jours sans note quotidienne** sur **Garder dans les fichiers d’historique**, chaque jour récupéré est aussi enregistré dans de petites notes mensuelles (`Garmin history/Garmin history 2026-10.md`, une ligne par jour) dans votre dossier de notes quotidiennes. Ce sont de simples fichiers markdown, donc ils se synchronisent avec votre coffre, et le panneau les lit pour les jours sans note. La commande **Importer l’historique depuis les notes quotidiennes** y copie les valeurs Garmin de vos notes existantes. **Construire l’historique Garmin** récupère les jours jusqu’à une date de votre choix (cinq ans par défaut), les plus récents d’abord : elle indique le temps nécessaire, peut être arrêtée et reprend là où elle s’est arrêtée, attend et réessaie si Garmin ne répond pas, et ignore les jours déjà présents. Si vous changez de dossier de notes quotidiennes, les notes d’historique suivent.
+
+### Propriétés des notes quotidiennes
+
+Le réglage **Propriétés des notes quotidiennes** peut replier le bloc de propriétés d’une note quotidienne à l’ouverture, masquer les propriétés écrites par le plugin (le panneau les affiche) ou les deux. Rien n’est supprimé d’une note.
 
 ## Normalisation des clés d'activité
 
@@ -177,6 +193,8 @@ Ce plugin effectue des requêtes réseau vers deux services externes :
 - **Nominatim (OpenStreetMap)** — si la fonction **Lieu d'entraînement** est activée, les coordonnées GPS de votre première activité sont envoyées à `nominatim.openstreetmap.org` pour la géocodification inverse. Vous pouvez désactiver cette option dans les paramètres sous **Lieu d'entraînement**.
 
 Aucune donnée n'est envoyée à un autre serveur.
+
+**Notes d’historique :** les notes d’historique optionnelles contiennent vos valeurs de santé et se trouvent dans votre coffre comme vos notes quotidiennes. Le plugin n’effectue aucune requête réseau supplémentaire pour elles.
 
 **Presse-papiers :** Le plugin n’utilise le presse-papiers que lorsque vous touchez un bouton, jamais en arrière-plan. **Utiliser la connexion par navigateur** le lit une fois, lorsque vous touchez **Se connecter depuis le presse-papiers**, pour récupérer le ticket de connexion à usage unique copié depuis votre navigateur. Il y écrit lorsque vous touchez pour copier le lien de connexion ou **Copier le diagnostic** (dans les paramètres et dans la fenêtre de connexion). Le diagnostic ne contient ni mot de passe, ni jetons, ni données de compte, ni valeurs de santé, uniquement des détails techniques de la dernière connexion ou synchronisation : noms des types de données, codes d’état HTTP, tailles de réponse et durées.
 

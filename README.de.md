@@ -19,7 +19,9 @@ Synchronisiere Schritte, Schlaf, Herzfrequenz, Stress, Aktivitäten und mehr aut
 - **Unterordner-Unterstützung** — findet bestehende Daily Notes in verschachtelten Ordnern (z.B. `Journal/2024-07/`) und legt datumsbasierte Unterordner an, wenn das Dateinamen-Format ein `/` enthält (z.B. `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Automatische Spracherkennung** — die UI-Sprache wird aus deiner Obsidian-Sprache übernommen (EN, DE, ZH, JA, ES, FR)
 - **Optionale strukturierte Daten** — maschinenlesbares `trainings`-Feld für erweiterte Dataview-Abfragen
-- **Gesundheitspanel (Beta)** — optionales Panel in der rechten Seitenleiste, das deine Tagesnotizen nur liest und nie ändert; einschalten unter **Einstellungen → Garmin Health Sync → Seitenpanel**
+- **Gesundheits-Seitenpanel** — optionale rechte Seitenleiste mit Karten für Erholung, Schlaf, Energie, Bewegung, Fitness und Training im Vergleich zu deinem eigenen üblichen Bereich; tippe auf die Glühbirne einer Karte, um zu sehen, was deine Daten nahelegen und wie sie berechnet ist; einschalten unter **Einstellungen → Garmin Health Sync → Seitenpanel**
+- **Verlaufsnotizen** — optional jeden geholten Tag in kleinen Monatsnotizen in Markdown speichern, damit das Panel auch für Tage ohne Daily Note funktioniert und die Daten mit deinem Vault synchronisiert werden
+- **Eigenschaften der Daily Notes** — den Eigenschaftenblock beim Öffnen einklappen oder die Garmin-Eigenschaften ausblenden, die das Panel schon zeigt
 
 ## Frontmatter-Ausgabe
 
@@ -122,7 +124,7 @@ Fehlende Unterordner werden automatisch angelegt.
 
 Bei jedem Obsidian-Start prüft das Plugin die letzten 7 Tage und ergänzt fehlende Gesundheitsdaten automatisch. Kein manuelles Zutun nötig. Standardmäßig legt es eine fehlende Daily Note selbst an.
 
-Wenn ein anderes Tool deine Daily Notes verwaltet (Templater, das Calendar-Plugin, ein externer Sync), deaktiviere **Daily Note bei Bedarf anlegen** in den Einstellungen. Der Auto-Sync wartet dann, bis eine echte (nicht-leere) Daily Note existiert, und synchronisiert, sobald sie auftaucht — leere 0-Byte-Platzhalter werden ignoriert. Manueller Sync und Backfill legen fehlende Notes unabhängig von dieser Einstellung immer an.
+Wenn ein anderes Tool deine Daily Notes verwaltet (Templater, das Calendar-Plugin, ein externer Sync), stelle **Tage ohne Daily Note** in den Einstellungen auf **Tag überspringen**. Der Auto-Sync wartet dann, bis eine echte (nicht-leere) Daily Note existiert, und synchronisiert, sobald sie erscheint — leere 0-Byte-Platzhalter werden ignoriert. Mit **In Verlaufsdateien speichern** legt das Plugin für einen Tag ohne Note keine Note an und speichert den Tag stattdessen in den Verlaufsnotizen (siehe unten). Ein manueller Sync schreibt immer in die geöffnete Note.
 
 ### Manueller Sync
 
@@ -135,7 +137,21 @@ Du hast jahrelange Garmin-Daten? Du kannst einen beliebigen Zeitraum auf einmal 
 1. Öffne die Befehlspalette (Cmd/Ctrl+P)
 2. Suche nach **„Gesundheitsdaten nachträglich auffüllen"**
 3. Wähle ein Start- und Enddatum
-4. Das Plugin holt alle Daten für diesen Zeitraum mit Rate-Limiting, um API-Drosselung zu vermeiden
+4. Das Plugin holt alle Daten für diesen Zeitraum mit Rate-Limiting, um API-Drosselung zu vermeiden, und zeigt den aktuellen Tag und die Restzeit an
+
+Ein Tag, den ein früherer Backfill schon mit allen aktivierten Metriken geholt hat, wird übersprungen, außer den letzten 3 Tagen, die sich noch ändern können. **Gesundheitsdaten erneut nachträglich auffüllen (Vorhandenes ignorieren)** holt jeden Tag erneut und überschreibt die Werte. Was mit einem Tag ohne Daily Note geschieht, richtet sich nach **Tage ohne Daily Note**.
+
+### Gesundheits-Seitenpanel
+
+Schalte **Seitenpanel** in den Plugin-Einstellungen ein und öffne es über das Ribbon-Symbol oder den Befehl **Gesundheitspanel öffnen**. Die Karten vergleichen heute mit deinem eigenen üblichen Bereich (die letzten 30 Tage) und ändern deine Notizen nie. Tippe auf das Datum, um einen Tag zu wählen, wechsle mit den Pfeilen um einen Tag und ordne die Karten mit dem Stift-Knopf per Ziehen an. Jede Karte hat in den Einstellungen einen Schalter, der auch sagt, welche Metriken dafür aktiviert sein sollten. Tippe auf die Glühbirne einer Karte für **Was deine Daten andeuten** (Gründe und was hilft, aus deinen eigenen Daten) und **So liest du das**. Das Panel ist keine medizinische Beratung. Mit deinem Geburtsjahr (nur das Jahr) in den Einstellungen bekommst du Herzfrequenzzonen und altersabhängige Ziele.
+
+### Verlaufsnotizen und Garmin-Verlauf aufbauen
+
+Wenn **Tage ohne Daily Note** auf **In Verlaufsdateien speichern** steht, wird jeder geholte Tag zusätzlich in kleinen Monatsnotizen (`Garmin history/Garmin history 2026-10.md`, eine Zeile pro Tag) in deinem Daily-Notes-Ordner gespeichert. Sie bestehen aus reinem Markdown, werden also mit deinem Vault synchronisiert, und das Panel liest sie für Tage ohne Note. Der Befehl **Verlauf aus Daily Notes importieren** kopiert die Garmin-Werte deiner vorhandenen Notizen hinein. **Garmin-Verlauf aufbauen** holt die Tage bis zu einem gewählten Datum zurück (Standard fünf Jahre), die neuesten zuerst: Es zeigt, wie lange es dauert, lässt sich stoppen und macht dort weiter, wo es aufgehört hat, wartet und wiederholt, wenn Garmin nicht antwortet, und überspringt Tage, die es schon hat. Wenn du deinen Daily-Notes-Ordner änderst, ziehen die Verlaufsnotizen mit um.
+
+### Eigenschaften der Daily Notes
+
+Die Einstellung **Eigenschaften der Daily Notes** kann den Eigenschaftenblock einer Daily Note beim Öffnen einklappen, die vom Plugin geschriebenen Eigenschaften ausblenden (das Panel zeigt sie) oder beides. Aus einer Notiz wird nichts gelöscht.
 
 ## Normalisierung der Aktivitäts-Keys
 
@@ -178,6 +194,8 @@ Dieses Plugin stellt Netzwerkverbindungen zu zwei externen Diensten her:
 - **Nominatim (OpenStreetMap)** — wenn **Workout-Ort** aktiviert ist, werden die GPS-Koordinaten deiner ersten Aktivität zur Rückwärts-Geokodierung an `nominatim.openstreetmap.org` gesendet. Du kannst dies in den Einstellungen unter **Workout-Ort** deaktivieren.
 
 Es werden keine Daten an andere Server gesendet.
+
+**Verlaufsnotizen:** Die optionalen Verlaufsnotizen enthalten deine Gesundheitswerte und liegen wie deine Daily Notes in deinem Vault. Das Plugin stellt dafür keine zusätzlichen Netzwerkanfragen.
 
 **Zwischenablage:** Das Plugin nutzt die Zwischenablage nur, wenn du auf eine Schaltfläche klickst, nie im Hintergrund. **Browser-Anmeldung verwenden** liest sie einmal, wenn du auf **Aus Zwischenablage anmelden** klickst, um das einmalige Anmelde-Ticket zu übernehmen, das du aus dem Browser kopiert hast. Geschrieben wird, wenn du den Anmeldelink kopierst oder **Diagnose kopieren** wählst (in den Einstellungen und im Anmeldefenster). Die Diagnose enthält kein Passwort, keine Tokens, keine Kontodaten und keine Gesundheitswerte, nur technische Angaben zur letzten Anmeldung oder Synchronisierung: Namen der Datentypen, HTTP-Statuscodes, Antwortgrößen und Laufzeiten.
 
