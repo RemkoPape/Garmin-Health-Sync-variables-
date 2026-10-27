@@ -104,6 +104,7 @@ export const de: Record<TranslationKeys, string> = {
 	noticeMigrationReloginRequired: "Garmin Health Sync: Die Verbindung wurde aktualisiert. Bitte melde dich erneut bei Garmin an, um die Synchronisierung fortzusetzen.",
 	noticeAutoSyncDone: "Gesundheitsdaten synchronisiert — {count} Tage aktualisiert",
 	noticeBackfillStart: "Starte Nachsynchronisierung...",
+	noticeBackfillProgress: "Nachsynchronisierung läuft: Tag {n} von {total} ({date})",
 	noticeBackfillDone: "Nachsynchronisierung abgeschlossen: {count} Tage aktualisiert",
 	noticeBackfillDoneWithErrors: "Nachsynchronisierung abgeschlossen: {count} Tage aktualisiert, {failed} fehlgeschlagen (siehe Konsole)",
 	noticeHistoryImported: "{count} Tage aus deinen Daily Notes in den Verlauf kopiert",

@@ -104,6 +104,7 @@ export const es: Record<TranslationKeys, string> = {
 	noticeMigrationReloginRequired: "Garmin Health Sync: la conexión ha sido actualizada. Por favor, inicia sesión en Garmin de nuevo para reanudar la sincronización.",
 	noticeAutoSyncDone: "Datos de salud sincronizados — {count} días actualizados",
 	noticeBackfillStart: "Iniciando relleno de datos...",
+	noticeBackfillProgress: "Relleno en curso: día {n} de {total} ({date})",
 	noticeBackfillDone: "Relleno completado: {count} días actualizados",
 	noticeBackfillDoneWithErrors: "Relleno completado: {count} días actualizados, {failed} con error (ver consola)",
 	noticeHistoryImported: "Se copiaron {count} días de tus notas diarias al historial",

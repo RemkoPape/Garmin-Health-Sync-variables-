@@ -104,6 +104,7 @@ export const zh: Record<TranslationKeys, string> = {
 	noticeMigrationReloginRequired: "Garmin Health Sync：连接方式已升级。请重新登录 Garmin 以恢复同步。",
 	noticeAutoSyncDone: "健康数据同步完成 — 已更新 {count} 天",
 	noticeBackfillStart: "开始回填数据...",
+	noticeBackfillProgress: "回填进行中：第 {n} 天，共 {total} 天（{date}）",
 	noticeBackfillDone: "回填完成：已更新 {count} 天",
 	noticeBackfillDoneWithErrors: "回填完成：已更新 {count} 天，{failed} 天失败（见控制台）",
 	noticeHistoryImported: "已将 {count} 天的数据从每日笔记复制到历史",

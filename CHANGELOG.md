@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.41
+
+### Changed
+
+- Backfill health data: the notice that stays on screen during the run now says where it is ("Backfill running: day 2 of 8 (2026-10-23)") instead of only "Starting backfill...". (Build Garmin history already had its own progress notice.)
+
 ## 0.12.0-beta.40
 
 ### Changed
