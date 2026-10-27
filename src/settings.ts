@@ -55,6 +55,7 @@ export interface HealthSyncSettings {
 	foldProperties: boolean; // Fold the properties of a daily note when it opens
 	panelEnabled: boolean; // Side panel with health cards
 	panelCards: Record<string, boolean>; // Cards switched off in the panel (missing = on)
+	panelOrder: string[]; // Card ids in the order the user arranged them (empty = default order)
 	birthYear: number | null; // Only the year: estimates max heart rate for the heart rate zones in the panel
 }
 
@@ -80,6 +81,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	foldProperties: false,
 	panelEnabled: false,
 	panelCards: {},
+	panelOrder: [],
 	birthYear: null,
 };
 

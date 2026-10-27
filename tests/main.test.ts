@@ -179,6 +179,15 @@ describe("force backfill command", () => {
 	});
 });
 
+describe("the card order", () => {
+	it("keeps the saved order, drops anything that is not an id, and does not share it with the defaults", async () => {
+		const { plugin } = await load({ panelOrder: ["steps", 5 as never, "hrv"] });
+		expect(plugin.settings.panelOrder).toEqual(["steps", "hrv"]);
+		plugin.settings.panelOrder.push("sleep");
+		expect((await load(null)).plugin.settings.panelOrder).toEqual([]);
+	});
+});
+
 describe("the backfill log", () => {
 	it("keeps what the backfill remembered across restarts, without sharing it with the defaults", async () => {
 		const { plugin } = await load({ fetchLog: { "2026-10-01": 0 }, fetchSets: [["hrv", "steps"]] });

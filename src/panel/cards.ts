@@ -53,6 +53,21 @@ export interface PanelCard {
 	render: (ctx: CardContext) => void;
 }
 
+/**
+ * The cards in the order the user arranged them. Cards the saved order does not know (added since) go after the card
+ * that precedes them in the default order, and unknown or repeated ids are dropped.
+ */
+export function orderedCards(saved: string[]): PanelCard[] {
+	const byId = new Map(PANEL_CARDS.map((card) => [card.id, card]));
+	const order = saved.filter((id, i) => byId.has(id) && saved.indexOf(id) === i);
+	PANEL_CARDS.forEach((card, i) => {
+		if (order.includes(card.id)) return;
+		const before = PANEL_CARDS[i - 1];
+		order.splice(before ? order.indexOf(before.id) + 1 : 0, 0, card.id);
+	});
+	return order.map((id) => byId.get(id)!);
+}
+
 /** The interpretations of a card for the shown day. */
 const signals = (c: CardContext): Signals => new Signals(c.index, c.date, c.birthYear);
 

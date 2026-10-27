@@ -3,7 +3,8 @@ import type HealthSyncPlugin from "../main";
 import { dateFromDailyNote } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
-import { PANEL_CARDS, SECTION_TITLES, type SectionId } from "./cards";
+import { SECTION_TITLES, orderedCards, type SectionId } from "./cards";
+import { makeSortable } from "./sortable";
 import { HistoryStore } from "../history/store";
 import { formatPanelDate } from "./format";
 import { DayIndex } from "./index";
@@ -23,6 +24,8 @@ export class HealthPanelView extends ItemView {
 	private renderTimer = 0;
 	/** Card whose explanation is open; only one at a time. */
 	private explain: string | null = null;
+	/** The cards are shown as a list that can be rearranged instead of as cards. */
+	private editing = false;
 
 	constructor(leaf: WorkspaceLeaf, private readonly plugin: HealthSyncPlugin) {
 		super(leaf);
@@ -106,13 +109,34 @@ export class HealthPanelView extends ItemView {
 		root.empty();
 		root.addClass("ghs-panel");
 
+		const today = localDateString(new Date());
 		const nav = root.createDiv({ cls: "ghs-daynav" });
 		this.navButton(nav, "chevron-left", t("panelPrevDay", lang), () => this.move(-1), false);
-		nav.createSpan({ cls: "ghs-daynav-date", text: formatPanelDate(this.date, lang) });
-		const isToday = this.date >= localDateString(new Date());
-		this.navButton(nav, "chevron-right", t("panelNextDay", lang), () => this.move(1), isToday);
+		// the date is also a day picker: a date field of the system lies invisibly over it, so a tap opens the calendar
+		const pick = nav.createDiv({ cls: "ghs-daynav-pick" });
+		pick.createSpan({ cls: "ghs-daynav-date", text: formatPanelDate(this.date, lang) });
+		const input = pick.createEl("input", { cls: "ghs-daynav-input", attr: { type: "date", max: today, "aria-label": t("panelPickDay", lang) } });
+		input.value = this.date;
+		input.addEventListener("click", () => {
+			try {
+				input.showPicker?.();
+			} catch {
+				// the browser did not allow it here; the field itself still takes a date
+			}
+		});
+		input.addEventListener("change", () => {
+			if (input.value === "" || input.value > today) return;
+			this.date = input.value;
+			this.render();
+		});
+		this.navButton(nav, "chevron-right", t("panelNextDay", lang), () => this.move(1), this.date >= today);
+		this.navButton(nav, this.editing ? "check" : "pencil", t(this.editing ? "panelEditDone" : "panelEdit", lang), () => {
+			this.editing = !this.editing;
+			this.render();
+		}, false);
 
-		this.renderCards(root, lang);
+		if (this.editing) this.renderEditor(root, lang);
+		else this.renderCards(root, lang);
 	}
 
 	/** Reads the history notes the shown day needs; a note that was read changes the cards, so they are drawn again. */
@@ -128,7 +152,7 @@ export class HealthPanelView extends ItemView {
 	private renderCards(root: HTMLElement, lang: string): void {
 		let section: SectionId | null = null;
 		let pair: HTMLElement | null = null;
-		for (const card of PANEL_CARDS) {
+		for (const card of orderedCards(this.plugin.settings.panelOrder)) {
 			if (this.plugin.settings.panelCards[card.id] === false) continue;
 			if (card.section !== section) {
 				section = card.section;
@@ -151,6 +175,28 @@ export class HealthPanelView extends ItemView {
 				},
 			});
 		}
+	}
+
+	/** The cards as a list of titles with a handle each; dragging a handle, or the arrow keys on it, changes the order. */
+	private renderEditor(root: HTMLElement, lang: string): void {
+		root.createDiv({ cls: "ghs-edit-hint", text: t("panelEditHint", lang) });
+		const list = root.createDiv({ cls: "ghs-sort" });
+		for (const card of orderedCards(this.plugin.settings.panelOrder)) {
+			if (this.plugin.settings.panelCards[card.id] === false) continue;
+			const row = list.createDiv({ cls: "ghs-sort-row", attr: { "data-id": card.id } });
+			const handle = row.createEl("button", { cls: "clickable-icon ghs-sort-handle", attr: { "aria-label": t("panelDragHandle", lang).replace("{card}", t(card.title, lang)) } });
+			setIcon(handle, "grip-vertical");
+			row.createSpan({ cls: "ghs-sort-title", text: t(card.title, lang) });
+			row.createSpan({ cls: "ghs-sort-section", text: t(SECTION_TITLES[card.section], lang) });
+		}
+		makeSortable(list, (ids) => void this.saveOrder(ids));
+		root.createEl("button", { cls: "ghs-edit-reset", text: t("panelEditReset", lang) }).addEventListener("click", () => void this.saveOrder([]));
+	}
+
+	private async saveOrder(ids: string[]): Promise<void> {
+		this.plugin.settings.panelOrder = ids;
+		await this.plugin.saveSettings();
+		this.render();
 	}
 
 	private navButton(parent: HTMLElement, icon: string, label: string, onClick: () => void, disabled: boolean): void {

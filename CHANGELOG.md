@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0-beta.48
+
+### Added
+
+- **Day picker**: tap the date at the top of the panel to choose any past day in a calendar (the date field of your system, like the one in the backfill dialog). The arrows stay.
+- **Arrange the cards**: a pencil button next to the arrows turns the cards into a list; drag a card by its handle (mouse or finger), or use the arrow keys on the handle, to move it. The button becomes a check mark to go back; **Reset order** restores the default. The order is saved in the plugin settings. A section header appears wherever the section changes, so a card moved away from its section gets the header of where it lands.
+
 ## 0.12.0-beta.47
 
 ### Fixed
