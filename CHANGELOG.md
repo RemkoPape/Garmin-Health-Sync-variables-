@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.15
+
+### Fixed
+
+- The health panel now shows data that arrived while it was hidden as soon as it is visible again. Before, a sync that wrote today's note while the panel was hidden (for example a closed drawer on a phone) was only shown after switching to another sidebar tab and back; now opening the sidebar, resizing it or any layout change renders it.
+
 ## 0.12.0-beta.14
 
 ### Added

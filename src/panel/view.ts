@@ -43,9 +43,10 @@ export class HealthPanelView extends ItemView {
 			this.followActiveNote();
 			this.render();
 		}));
-		this.registerEvent(this.app.workspace.on("active-leaf-change", () => {
-			if (this.dirty) this.render();
-		}));
+		// A render skipped while the panel was hidden (for instance a closed drawer on a phone while a sync wrote the
+		// note) is done as soon as the panel is shown again: switching tabs, opening the sidebar or resizing.
+		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.renderIfDirty()));
+		this.registerEvent(this.app.workspace.on("layout-change", () => this.renderIfDirty()));
 		// The sync writes notes in bursts: rebuild the index lazily and render once after the burst.
 		const changed = (): void => {
 			this.index.invalidate();
@@ -57,6 +58,15 @@ export class HealthPanelView extends ItemView {
 		this.registerEvent(this.app.vault.on("rename", changed));
 		this.render();
 		return Promise.resolve();
+	}
+
+	/** Obsidian calls this when the panel changes size, which includes a sidebar or drawer opening. */
+	onResize(): void {
+		this.renderIfDirty();
+	}
+
+	private renderIfDirty(): void {
+		if (this.dirty) this.render();
 	}
 
 	onClose(): Promise<void> {
