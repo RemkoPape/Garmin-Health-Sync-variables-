@@ -202,9 +202,10 @@ describe("renderSleep", () => {
 			"Against your usual 6 h: 7 h",
 			"Nights before Friday: you usually sleep 5 h",
 		]);
+		expect(root.querySelectorAll(".ghs-insight .ghs-fact")).toHaveLength(3); // inside the "what your data suggests" box, which shows without interpretations
 		root.replaceChildren();
 		render(computeSleep(await indexOf([360, 360]), END), "en", true);
-		expect(root.querySelector(".ghs-facts")).toBeNull();
+		expect(root.querySelector(".ghs-fact")).toBeNull();
 	});
 
 	it("explains how the aim and the debt are worked out when they rest on the person's own nights", async () => {
