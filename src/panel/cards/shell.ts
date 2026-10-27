@@ -10,6 +10,8 @@ export interface CardShell {
 	/** Small muted text after the value ("ms", "· 78"). */
 	unit?: string;
 	explain: string;
+	/** The card's own numbers that are too much for the card, listed under the light bulb after the interpretation. */
+	facts?: string[];
 	explainOpen: boolean;
 	onToggleExplain: () => void;
 	lang: string;
@@ -42,6 +44,10 @@ export function renderCard(parent: HTMLElement, shell: CardShell, details: (card
 			box.createDiv({ cls: "ghs-insight-title", text: t("panelInsightTitle", shell.lang) });
 			for (const insight of shell.insights) box.createDiv({ cls: `ghs-insight-item ghs-insight-${INSIGHTS[insight.id].kind}`, text: insightText(insight, shell.lang) });
 			box.createDiv({ cls: "ghs-insight-note", text: t("panelInsightNote", shell.lang) });
+		}
+		if (shell.facts && shell.facts.length > 0) {
+			const facts = card.createDiv({ cls: "ghs-facts" });
+			for (const fact of shell.facts) facts.createDiv({ cls: "ghs-fact", text: fact });
 		}
 		card.createDiv({ cls: "ghs-explain", text: shell.explain });
 	}

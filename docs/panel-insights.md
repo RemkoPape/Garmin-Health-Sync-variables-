@@ -329,7 +329,7 @@ Only sources that were looked up when this file was written are listed. Where a 
 
 - **Card:** sleep
 - **Trigger:** The sleep debt of the last 7 nights is at least 3 hours.
-- **Text (English):** A debt of {debt} takes several nights to pay back. Adding 30 to 60 minutes each night works better than one very long sleep.
+- **Text (English):** Against the general need your sleep debt is {debt}. It takes several nights to pay back; adding 30 to 60 minutes each night works better than one very long sleep.
 - **Basis:** Debt is recovered over several nights; in a laboratory study 1 hour of debt took about 4 days to recover. Chronic restriction accumulates deficits that people often do not notice.
 - **References:** [kitamura](https://doi.org/10.1038/srep35812); [vandongen](https://pubmed.ncbi.nlm.nih.gov/12683469/)
 

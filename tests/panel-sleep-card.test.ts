@@ -185,14 +185,26 @@ describe("renderSleep", () => {
 
 	it("names the weekday pattern and the usual sleep the debt is counted against", async () => {
 		render(computeSleep(await indexOf(series(360, 360)), END));
-		expect(notes()).toEqual(["No sleep debt against your usual 6 h", "Nights before Friday: you usually sleep 6 h"]);
+		expect(notes()).toEqual(["No sleep debt against your usual 6 h"]);
 		expect(root.querySelector(".ghs-foot-value")?.textContent).toBe("Aim for 6 h");
 		root.replaceChildren();
 		render(computeSleep(await indexOf(series(300, 300)), END));
 		expect(notes()[0]).toBe("Sleep debt, last 7 nights: 7 h, against your usual 6 h");
 		root.replaceChildren();
-		render(computeSleep(await indexOf(series(420, 420)), END), "de");
-		expect(notes()[1]).toBe("Nächte vor Freitag: du schläfst meist 7 h");
+		render(computeSleep(await indexOf(series(420, 420)), END), "de", true);
+		expect(Array.from(root.querySelectorAll(".ghs-fact")).map((e) => e.textContent)).toEqual(["Gegenüber dem allgemeinen Bedarf von 7 h: 0 min", "Nächte vor Freitag: du schläfst meist 7 h"]);
+	});
+
+	it("lists both debts and the weekday pattern under the light bulb, and nothing while the card is locked", async () => {
+		render(computeSleep(await indexOf(series(300, 300)), END), "en", true);
+		expect(Array.from(root.querySelectorAll(".ghs-fact")).map((e) => e.textContent)).toEqual([
+			"Against the general need of 7 h: 14 h",
+			"Against your usual 6 h: 7 h",
+			"Nights before Friday: you usually sleep 5 h",
+		]);
+		root.replaceChildren();
+		render(computeSleep(await indexOf([360, 360]), END), "en", true);
+		expect(root.querySelector(".ghs-facts")).toBeNull();
 	});
 
 	it("explains how the aim and the debt are worked out when they rest on the person's own nights", async () => {
@@ -277,7 +289,7 @@ describe("sleep timeline (nights with bedtime and wake-up time)", () => {
 		render(model);
 		// bedtime 23:00 = 1380, up at 06:30: 450 min in bed; axis from 22:00 to 07:00 (540 min)
 		expect(text(".ghs-axis-top")).toBe("22:00");
-		expect(text(".ghs-axis-bottom")).toBe("07:00");
+		expect(root.querySelector(".ghs-axis-bottom")).toBeNull(); // 07:00 would sit on the 06:30 line
 		const css = (el: Element | null, prop: string): string => (el as HTMLElement).style.getPropertyValue(prop);
 		const last = root.querySelectorAll(".ghs-night")[6]!;
 		expect(css(last.querySelector(".ghs-night-window"), "--ghs-y")).toBe(`${(60 / 540) * 100}%`);
@@ -289,6 +301,24 @@ describe("sleep timeline (nights with bedtime and wake-up time)", () => {
 		expect(root.querySelectorAll(".ghs-night-asleep-last")).toHaveLength(1);
 		const first = root.querySelectorAll(".ghs-night")[0]!;
 		expect(css(first.querySelector(".ghs-night-asleep"), "--ghs-h")).toBe(`${(450 / 540) * 100}%`);
+	});
+
+	it("draws dotted lines at the usual bedtime and wake-up, labelled with their times", async () => {
+		render(computeSleep(await timed(() => 450), END));
+		expect(Array.from(root.querySelectorAll(".ghs-axis-line")).map((e) => e.textContent)).toEqual(["23:00", "06:30"]);
+		const ys = Array.from(root.querySelectorAll<HTMLElement>(".ghs-night-line")).map((e) => e.style.getPropertyValue("--ghs-y"));
+		expect(ys).toEqual([`${(60 / 540) * 100}%`, `${(510 / 540) * 100}%`]);
+	});
+
+	it("keeps an axis label that is an hour or more from a usual time and drops one that is closer", async () => {
+		// bed 23:00, up 06:00: axis 22:00 to 07:00, both labels at least an hour from a line
+		render(computeSleep(await timed(() => 420, () => ({ start: "23:00", end: "06:00" })), END));
+		expect(text(".ghs-axis-top")).toBe("22:00");
+		expect(text(".ghs-axis-bottom")).toBe("07:00");
+		root.empty();
+		// bed 22:30: the axis starts at 22:00, half an hour above the line
+		render(computeSleep(await timed(() => 420, () => ({ start: "22:30", end: "06:00" })), END));
+		expect(root.querySelector(".ghs-axis-top")).toBeNull();
 	});
 
 	it("draws a night without times as an empty column and a night without duration as time in bed", async () => {
@@ -306,16 +336,19 @@ describe("sleep timeline (nights with bedtime and wake-up time)", () => {
 		expect(model.nights.find((n) => n.bed === 1470)).toBeDefined();
 		render(model);
 		// 4 nights at 23:00 and 3 at 00:30 -> 23:39; read as 00:30 = 06:30 earlier it would be 20:00-ish
-		expect(Array.from(root.querySelectorAll(".ghs-card-note")).map((e) => e.textContent).join("|")).toContain("Bedtime 23:39 ±");
+		render(model, "en", true);
+		expect(Array.from(root.querySelectorAll(".ghs-fact")).map((e) => e.textContent).join("|")).toContain("Bedtime 23:39 ±");
 	});
 
 	it("shows the average bedtime and wake-up time with how much they vary", async () => {
-		render(computeSleep(await timed(() => 420), END));
-		expect(Array.from(root.querySelectorAll(".ghs-card-note")).map((e) => e.textContent)).toContain("Bedtime 23:00 ±0 min · wake-up 06:30 ±0 min");
+		const facts = (): string[] => Array.from(root.querySelectorAll(".ghs-fact")).map((e) => e.textContent ?? "");
+		render(computeSleep(await timed(() => 420), END), "en", true);
+		expect(facts()).toContain("Bedtime 23:00 ±0 min · wake-up 06:30 ±0 min");
+		expect(Array.from(root.querySelectorAll(".ghs-card-note")).map((e) => e.textContent).join("|")).not.toContain("Bedtime");
 		root.empty();
 		// 4 nights at 23:00 and 3 at 23:30 -> mean 23:13, sd 15
-		render(computeSleep(await timed(() => 420, (ago) => ({ start: ago % 2 ? "23:30" : "23:00", end: "07:00" })), END));
-		expect(Array.from(root.querySelectorAll(".ghs-card-note")).map((e) => e.textContent).join("|")).toContain("Bedtime 23:13 ±15 min");
+		render(computeSleep(await timed(() => 420, (ago) => ({ start: ago % 2 ? "23:30" : "23:00", end: "07:00" })), END), "en", true);
+		expect(facts().join("|")).toContain("Bedtime 23:13 ±15 min");
 	});
 
 	it("explains the timeline only when it is shown, in the plugin language", async () => {
