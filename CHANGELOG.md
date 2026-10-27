@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.46
+
+### Changed
+
+- Backfill health data re-fetches the last **three** days again, as before beta.45 (beta.45 had raised it to seven by mistake). Older days that were already fetched are still skipped, and the force command is unchanged.
+
 ## 0.12.0-beta.45
 
 ### Added

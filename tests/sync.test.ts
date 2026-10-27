@@ -343,14 +343,14 @@ describe("backfill", () => {
 			expect(provider.fetchCalls).toEqual([]);
 		});
 
-		it("include days without data, but not failed days or the last week", async () => {
-			provider.byDate.set("2026-10-14", { metrics: {}, activities: {} });
-			provider.byDate.set("2026-10-15", new Error("down"));
+		it("include days without data, but not failed days or the last three days", async () => {
+			provider.byDate.set("2026-10-20", { metrics: {}, activities: {} });
+			provider.byDate.set("2026-10-21", new Error("down"));
 			const s = settings();
-			await run("2026-10-14", "2026-10-21", s); // now is 2026-10-25: days before the 18th are final
+			await run("2026-10-20", "2026-10-25", s); // now is 2026-10-25: days before the 22nd are final
 			provider.fetchCalls = [];
-			await run("2026-10-14", "2026-10-21", s);
-			expect(fetchedDates()).toEqual(["2026-10-15", "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21"]);
+			await run("2026-10-20", "2026-10-25", s);
+			expect(fetchedDates()).toEqual(["2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"]);
 		});
 
 		it("are fetched again, and overwritten, when the backfill is forced", async () => {
