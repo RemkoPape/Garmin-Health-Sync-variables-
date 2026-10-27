@@ -10,6 +10,14 @@ export function formatDuration(ms: number): string {
 	return h === 0 ? `${m} min` : `${h} h ${String(m).padStart(2, "0")} min`;
 }
 
+/** What a day takes besides the delay between days: the requests themselves. */
+const REQUEST_TIME_MS = 1500;
+
+/** How long `days` days take when the provider asks for `delayMs` between them. */
+export function estimateMs(days: number, delayMs: number): number {
+	return days * (delayMs + REQUEST_TIME_MS);
+}
+
 const UPDATE_EVERY_MS = 1000;
 
 /**

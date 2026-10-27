@@ -3,6 +3,7 @@ import { shiftDate } from "../../dates";
 import { weekdayInitial, weekdayName } from "../format";
 import type { DayIndex } from "../index";
 import { computeTrend, type Trend } from "../trend";
+import { longFacts, longView, type LongView } from "../longview";
 import { ageAt } from "../zones";
 import { renderCard } from "./shell";
 import type { Insight } from "../insights/registry";
@@ -89,6 +90,8 @@ export interface SleepModel {
 	personalDebt: number | null;
 	/** How long the nights before the coming weekday usually are (upper end of the last 8), or null with fewer than 3 such nights. */
 	weekday: { date: string; typical: number } | null;
+	/** The last year of nights, null with fewer than 60 nights. */
+	long: LongView | null;
 }
 
 /** Value at the upper quarter of the list: what the person manages when the night allows it. */
@@ -145,7 +148,7 @@ export function computeSleep(index: DayIndex, date: string, birthYear: number | 
 	} else if (ready) {
 		target = Math.floor((need + Math.min(debt / 4, MAX_CATCH_UP_MIN)) / TARGET_STEP_MIN) * TARGET_STEP_MIN;
 	}
-	return { insights: [], need, schedule: scheduleOf(nights), trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target, floor, reference, personalDebt: ready ? personalDebt : null, weekday };
+	return { insights: [], need, schedule: scheduleOf(nights), trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target, floor, reference, personalDebt: ready ? personalDebt : null, weekday, long: longView((d) => index.minutes("sleep_duration", d), date) };
 }
 
 function meanAndSd(values: number[]): { mean: number; sd: number } {
@@ -228,6 +231,7 @@ function sleepFacts(model: SleepModel, lang: string): string[] {
 	if (model.weekday) facts.push(t("panelSleepWeekday", lang).replace("{day}", weekdayName(model.weekday.date, lang)).replace("{typical}", formatMinutes(model.weekday.typical)));
 	const sc = model.schedule;
 	if (sc) facts.push(t("panelSleepSchedule", lang).replace("{bed}", formatClock(sc.bed)).replace("{bedSd}", String(Math.round(sc.bedSd))).replace("{wake}", formatClock(sc.wake)).replace("{wakeSd}", String(Math.round(sc.wakeSd))));
+	facts.push(...longFacts(model.long, formatMinutes, lang));
 	return facts;
 }
 

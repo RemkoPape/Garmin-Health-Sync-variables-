@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.42
+
+### Added
+
+- **Long view**: the HRV, resting heart rate, SpO2, breathing, sleep, steps and VO2 max cards show the last year under the light bulb (days with data, average, lowest, highest) and how the last 90 days compare with the 90 before, once there are 60 days of values. It uses the history notes, so it reaches back as far as your history does. The panel now reads the history notes of the last 400 days. The usual range of a card stays on the last 30 days, because a new watch measures differently from an old one.
+
+### Changed
+
+- Backfill health data: the notice also shows the time left ("Backfill running: day 2 of 8 (2026-10-23) · about 1 min left"), worked out from the wait Garmin needs between days.
+
 ## 0.12.0-beta.41
 
 ### Changed
