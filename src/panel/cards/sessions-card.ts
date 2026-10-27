@@ -6,10 +6,13 @@ import { isRecovery, type Session } from "../sessions";
 import { maxHeartRate, zoneOf, type Zone } from "../zones";
 import { formatMinutes } from "./sleep-card";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 const KM_PER_MILE = 1.609344;
 
 export interface SessionsModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	/** Estimated maximum heart rate from the birth year, null when it is not set. */
 	maxHr: number | null;
 	/** Whether a note exists for the day; without one there is nothing to say. */
@@ -22,6 +25,7 @@ export function computeSessions(index: DayIndex, date: string, birthYear: number
 	const history = heartRateHistory(index, date);
 	const maxHr = birthYear === null ? null : maxHeartRate(Number(date.slice(0, 4)) - birthYear);
 	return {
+		insights: [],
 		maxHr,
 		hasNote: index.hasNote(date),
 		sessions: index.sessions(date).map((s) => ({ ...s, step: intensityStep(s, history), recovery: isRecovery(s), zone: maxHr === null || s.avgHr === null ? null : zoneOf(s.avgHr, maxHr) })),
@@ -38,7 +42,7 @@ function label(type: string): string {
 export function renderSessions(parent: HTMLElement, model: SessionsModel, lang: string, imperial: boolean, explainOpen: boolean, onToggleExplain: () => void): void {
 	const total = model.sessions.reduce((a, s) => a + s.minutes, 0);
 	const value = model.hasNote ? formatNumber(total, lang, 0) : null;
-	renderCard(parent, { title: t("panelSessionsTitle", lang), value, unit: "min", explain: model.maxHr === null ? t("panelSessionsExplain", lang) : `${t("panelSessionsExplain", lang)} ${t("panelSessionsExplainZones", lang)}`, explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelSessionsTitle", lang), value, unit: "min", explain: model.maxHr === null ? t("panelSessionsExplain", lang) : `${t("panelSessionsExplain", lang)} ${t("panelSessionsExplainZones", lang)}`, explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
 		if (!model.hasNote) return;
 		if (model.sessions.length === 0) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelNoSession", lang) });

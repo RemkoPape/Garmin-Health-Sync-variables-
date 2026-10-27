@@ -5,6 +5,7 @@ import type { DayIndex } from "../index";
 import { average } from "../stats";
 import { computeTrend, type Trend } from "../trend";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 /** Days that must have steps among the 7 before the shown day. */
 export const STEPS_MIN_DAYS = 5;
@@ -15,6 +16,8 @@ const DOMAIN_FACTOR = 1.6;
 const STEPS_PER_MINUTE = 100;
 
 export interface StepsModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	trend: Trend | null;
 	steps: number | null;
 	have: number;
@@ -36,6 +39,7 @@ export function computeSteps(index: DayIndex, date: string): StepsModel {
 	const distanceValue = km ?? mi;
 	const active = index.value("calories_active", date);
 	return {
+		insights: [],
 		trend: computeTrend((d) => index.value("steps", d), date),
 		steps: index.value("steps", date),
 		have,
@@ -64,7 +68,7 @@ function chip(parent: HTMLElement, label: string, value: string, delta: number |
 
 export function renderSteps(parent: HTMLElement, model: StepsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.steps === null ? null : formatNumber(model.steps, lang, 0);
-	renderCard(parent, { title: t("panelStepsTitle", lang), value, explain: t("panelStepsExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 0) } }, (card) => {
+	renderCard(parent, { title: t("panelStepsTitle", lang), value, explain: t("panelStepsExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 0) } }, (card) => {
 		if (model.base === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLocked", lang).replace("{need}", String(STEPS_MIN_DAYS)).replace("{have}", String(model.have)) });
 			return;

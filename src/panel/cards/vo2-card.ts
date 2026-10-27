@@ -4,6 +4,7 @@ import { formatNumber, formatSigned } from "../format";
 import type { DayIndex } from "../index";
 import { slope } from "../stats";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 const WEEKS = 12;
 /** Weeks with a value needed before a trend is drawn. */
@@ -14,6 +15,8 @@ const MAX_AGE_DAYS = 28;
 const STEADY_CHANGE = 0.3;
 
 export interface Vo2Model {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	/** The latest value of each of the last 12 weeks, oldest first; null = none that week. */
 	weeks: (number | null)[];
 	points: number;
@@ -49,6 +52,7 @@ export function computeVo2(index: DayIndex, date: string): Vo2Model {
 	const fresh = newest !== null && daysBetween(newest.day, date) <= MAX_AGE_DAYS;
 	const change = points.length >= VO2_MIN_WEEKS ? slope(points) * WEEKS : null;
 	return {
+		insights: [],
 		weeks,
 		points: points.length,
 		latest: fresh && newest ? newest.value : null,
@@ -61,7 +65,7 @@ const ARROWS = { up: "↑", down: "↓", steady: "→" } as const;
 
 export function renderVo2(parent: HTMLElement, model: Vo2Model, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.latest === null ? null : formatNumber(model.latest, lang, 0);
-	renderCard(parent, { title: t("panelVo2Title", lang), value, unit: "ml/kg/min", explain: t("panelVo2Explain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelVo2Title", lang), value, unit: "ml/kg/min", explain: t("panelVo2Explain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
 		if (model.latest === null) return;
 		if (model.direction === null || model.change === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLockedWeeks", lang).replace("{need}", String(VO2_MIN_WEEKS)).replace("{have}", String(model.points)) });

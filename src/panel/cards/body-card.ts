@@ -4,6 +4,7 @@ import { formatNumber, formatSigned } from "../format";
 import type { DayIndex } from "../index";
 import { slope } from "../stats";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 /** Days with a weight needed in the last 14 days. */
 export const BODY_MIN_ENTRIES = 3;
@@ -14,6 +15,8 @@ const TREND_DAYS = 28;
 const FAST_SHARE = 0.01;
 
 export interface BodyModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	unit: "kg" | "lbs";
 	/** Mean of the weights of the last 7 days (the shown day included), null without any. */
 	weight: number | null;
@@ -55,12 +58,12 @@ export function computeBody(index: DayIndex, date: string): BodyModel {
 	const mean = (v: number[]): number | null => (v.length === 0 ? null : v.reduce((a, b) => a + b, 0) / v.length);
 	const weight = mean(recent);
 	const perWeek = points.length >= 2 ? slope(points) * 7 : null;
-	return { unit, weight, fat: mean(fats), entries, points, perWeek, fast: perWeek !== null && weight !== null && Math.abs(perWeek) > weight * FAST_SHARE };
+	return { insights: [], unit, weight, fat: mean(fats), entries, points, perWeek, fast: perWeek !== null && weight !== null && Math.abs(perWeek) > weight * FAST_SHARE };
 }
 
 export function renderBody(parent: HTMLElement, model: BodyModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.weight === null ? null : formatNumber(model.weight, lang, 1);
-	renderCard(parent, { title: t("panelBodyTitle", lang), value, unit: model.unit, explain: t("panelBodyExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelBodyTitle", lang), value, unit: model.unit, explain: t("panelBodyExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
 		if (model.weight === null) return;
 		if (model.entries < BODY_MIN_ENTRIES || model.perWeek === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLocked", lang).replace("{need}", String(BODY_MIN_ENTRIES)).replace("{have}", String(model.entries)) });

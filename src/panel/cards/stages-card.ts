@@ -4,6 +4,7 @@ import { formatMinutes } from "./sleep-card";
 import type { DayIndex } from "../index";
 import { baseline, windowValues, zScore, type Baseline } from "../stats";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 export const STAGES_MIN_NIGHTS = 14;
 const WINDOW_DAYS = 30;
@@ -36,6 +37,8 @@ export interface StageModel {
 }
 
 export interface StagesModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	/** Null when the night has no stage data. */
 	stages: StageModel[] | null;
 	/** The stage whose deviation to the usual is worth an action, if any. */
@@ -54,11 +57,11 @@ export function computeStages(index: DayIndex, date: string): StagesModel {
 	const badness = (s: StageModel): number => (s.deviation === null || s.spec.flag === null ? 0 : s.spec.flag === "low" ? -s.deviation.z : s.deviation.z);
 	let flagged: StageModel | null = null;
 	for (const s of stages) if (badness(s) > 1 && (flagged === null || badness(s) > badness(flagged))) flagged = s;
-	return { stages: stages.length === STAGES.length ? stages : null, flagged };
+	return { insights: [], stages: stages.length === STAGES.length ? stages : null, flagged };
 }
 
 export function renderStages(parent: HTMLElement, model: StagesModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
-	renderCard(parent, { title: t("panelStagesTitle", lang), value: model.stages === null ? null : undefined, explain: t("panelStagesExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelStagesTitle", lang), value: model.stages === null ? null : undefined, explain: t("panelStagesExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
 		if (model.stages === null) return;
 		const total = model.stages.reduce((a, s) => a + s.minutes, 0);
 		const stack = card.createDiv({ cls: "ghs-stack", attr: { role: "img" } });

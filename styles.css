@@ -886,3 +886,43 @@
 .ghs-zone-tag {
 	color: var(--text-muted);
 }
+
+/* Interpretation under (i): what the data suggests, set apart from the general explanation */
+.ghs-insight {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3);
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+}
+
+.ghs-insight-title {
+	color: var(--text-accent);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.ghs-insight-item {
+	padding-left: var(--size-4-2);
+	border-left: 3px solid var(--text-muted);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+}
+
+.ghs-insight-watch {
+	border-left-color: var(--color-orange);
+}
+
+.ghs-insight-good {
+	border-left-color: var(--color-green);
+}
+
+.ghs-insight-note {
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+}

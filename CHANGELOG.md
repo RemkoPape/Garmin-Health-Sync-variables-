@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0-beta.14
+
+### Added
+
+- **What your data suggests**, under the (i) of every card that can say something (HRV, resting heart rate, SpO₂, breathing, sleep, sleep stages, body battery, stress, steps, intensity minutes, cardio fitness, body, load balance, weekly load and sessions). It opens first, in a framed box with an accent headline, above the general explanation (which stays plain text). It says why the value is where it is and, if it is off, what the data points to as the lever, or, if it is good and the data allows a guess, what probably made it good. Examples: a short night with a bedtime 1 h 17 min later than usual ("your usual bedtime would have given you about 1 h 17 min more"), little REM after an earlier alarm than usual (REM concentrates in the last hours of the night), little deep sleep after a day with fewer steps than usual, a low HRV after a spike in training load, sleep debt, stress or together with a raised resting heart rate, a falling cardio fitness after fewer training minutes.
+- Each line has a coloured edge (orange: something to look at, green: going well), at most 3 lines per card, and the box ends with a note that this is not a diagnosis. When no rule finds a cause the text says nothing else in your data explains it instead of inventing one.
+- No generic advice: nothing like "no alcohol before bed" or "drink more water". A tip only appears when your own numbers point to it.
+- Every interpretation is documented in `docs/panel-insights.md`: when exactly it fires, what it rests on and a link to the study it is based on (or why there is none). A test fails when a text is added without its documentation or translation.
+
 ## 0.12.0-beta.13
 
 ### Changed

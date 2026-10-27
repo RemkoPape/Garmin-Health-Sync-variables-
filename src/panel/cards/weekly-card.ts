@@ -6,6 +6,7 @@ import { CHRONIC_WEEKS, DISTANCE_CATEGORIES, heartRateHistory, intensityStep, km
 import { isRecovery } from "../sessions";
 import { maxHrAt } from "../zones";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 /** Training may grow by at most this much over the average of the previous weeks. */
 const CAP_FACTOR = 1.1;
@@ -24,6 +25,8 @@ export interface WeeklyDistance {
 }
 
 export interface WeeklyModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	/** Segment colours come from heart rate zones (a birth year is set). */
 	zones: boolean;
 	/** Running and cycling distance, for the sports that have any this week or in the previous weeks. */
@@ -55,13 +58,13 @@ export function computeWeekly(index: DayIndex, date: string, birthYear: number |
 		const average = before.length === 0 ? 0 : before.reduce((a, b) => a + b, 0) / before.length;
 		if (km > 0 || average > 0) distances.push({ category, km, average, cap: average * CAP_FACTOR });
 	}
-	return { zones: maxHr !== null, distances, minutes: minutesBetween(index, start, date), segments, weeks: previous.length, average, cap: average === null ? null : average * CAP_FACTOR };
+	return { insights: [], zones: maxHr !== null, distances, minutes: minutesBetween(index, start, date), segments, weeks: previous.length, average, cap: average === null ? null : average * CAP_FACTOR };
 }
 
 const KM_PER_MILE = 1.609344;
 
 export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: string, imperial: boolean, explainOpen: boolean, onToggleExplain: () => void): void {
-	renderCard(parent, { title: t("panelWeeklyTitle", lang), value: formatNumber(model.minutes, lang, 0), unit: "min", explain: model.zones ? `${t("panelWeeklyExplain", lang)} ${t("panelHardnessZones", lang)}` : t("panelWeeklyExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelWeeklyTitle", lang), value: formatNumber(model.minutes, lang, 0), unit: "min", explain: model.zones ? `${t("panelWeeklyExplain", lang)} ${t("panelHardnessZones", lang)}` : t("panelWeeklyExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
 		if (model.average === null || model.cap === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLoadLocked", lang) });
 			return;

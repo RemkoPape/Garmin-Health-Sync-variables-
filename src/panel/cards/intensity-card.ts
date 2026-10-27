@@ -5,6 +5,7 @@ import type { DayIndex } from "../index";
 import { previousWeekSums } from "../load";
 import { ageAt } from "../zones";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 /** The common health guideline: 150 minutes of moderate activity a week. It is the lowest goal, never the highest. */
 export const WEEKLY_GOAL_MIN = 150;
@@ -23,6 +24,8 @@ export interface IntensityDay {
 }
 
 export interface IntensityModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	/** The shown day. */
 	date: string;
 	/** The birth year makes the person under 18, so the goal starts at 60 minutes a day. */
@@ -62,13 +65,13 @@ export function computeIntensity(index: DayIndex, date: string, birthYear: numbe
 	const goal = Math.max(floor, Math.ceil((average * GOAL_STRETCH) / GOAL_STEP_MIN) * GOAL_STEP_MIN);
 	const remaining = Math.max(0, goal - total);
 	const daysLeft = days.filter((d) => d.future).length;
-	return { date, youth, goal, goalWeeks: goal > floor ? before.length : 0, days, total: any ? total : null, remaining, perDay: daysLeft === 0 ? null : Math.ceil(remaining / daysLeft) };
+	return { insights: [], date, youth, goal, goalWeeks: goal > floor ? before.length : 0, days, total: any ? total : null, remaining, perDay: daysLeft === 0 ? null : Math.ceil(remaining / daysLeft) };
 }
 
 export function renderIntensity(parent: HTMLElement, model: IntensityModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.total === null ? null : formatNumber(model.total, lang, 0);
 	const unit = t("panelIntensityUnit", lang).replace("{goal}", String(model.goal));
-	renderCard(parent, { title: t("panelIntensityTitle", lang), value, unit, explain: t(model.youth ? "panelIntensityExplainYouth" : "panelIntensityExplain", lang), explainOpen, onToggleExplain, lang }, (card) => {
+	renderCard(parent, { title: t("panelIntensityTitle", lang), value, unit, explain: t(model.youth ? "panelIntensityExplainYouth" : "panelIntensityExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
 		const top = Math.max(model.goal / 7, ...model.days.map((d) => d.minutes ?? 0));
 		const perDayHeight = model.perDay === null ? 0 : Math.min(100, (model.perDay / top) * 100);
 		const chart = card.createDiv({ cls: "ghs-nights ghs-week" });
