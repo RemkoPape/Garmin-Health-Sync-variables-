@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0-beta.29
+
+### Changed
+
+- Sleep card is smaller: the weekday pattern ("Nights before Friday: ..."), the bedtime and wake-up averages and both sleep debts moved under the light bulb, in a short list between the interpretation and the general explanation. The card keeps the chart, one debt line, tonight's aim and the trend.
+- The two sleep debts are told apart: under the light bulb, "Against the general need of 7 h: ..." (what the interpretations use) and "Against your usual 6 h: ..." (what the card line shows once your own history is long enough). The interpretation of a high debt now says it counts against the general need.
+- Sleep timeline: two thin dotted lines through the bars mark your usual bedtime and wake-up time, with their times at the left edge. An end label of the axis that would sit on a line is left out, so the chart stays as clear as before.
+
 ## 0.12.0-beta.28
 
 ### Changed

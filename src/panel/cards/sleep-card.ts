@@ -59,6 +59,8 @@ export interface SleepSchedule {
 /** From this many nights with times the chart shows when you slept instead of only how long. */
 export const SLEEP_MIN_TIMED_NIGHTS = 3;
 const DAY = 1440;
+/** An end label of the timeline that is closer than this to a usual time is dropped: both would be unreadable. */
+const AXIS_CLEARANCE_MIN = 60;
 
 export interface SleepModel {
 	/** What the data suggests, filled in by the panel (see insights/). */
@@ -191,15 +193,23 @@ function durationChart(parent: HTMLElement, nights: SleepNight[], need: number, 
  * the time asleep and a dashed box that is the need long from bedtime. A solid bar that stops above the end
  * of the box is a night with too little sleep; where the bars start and end shows how regular the nights are.
  */
-function timelineChart(parent: HTMLElement, nights: SleepNight[], need: number, lang: string): void {
+function timelineChart(parent: HTMLElement, nights: SleepNight[], need: number, schedule: SleepSchedule, lang: string): void {
 	const timed = nights.filter((n) => n.bed !== null && n.span !== null);
 	const first = Math.min(...timed.map((n) => n.bed as number)) - 30;
 	const last = Math.max(...timed.map((n) => Math.max((n.bed as number) + (n.span as number), (n.bed as number) + need))) + 30;
 	const top = Math.floor(first / 60) * 60;
 	const range = Math.ceil(last / 60) * 60 - top;
 	const chart = parent.createDiv({ cls: "ghs-nights ghs-nights-timeline" });
-	chart.createSpan({ cls: "ghs-axis-label ghs-axis-top", text: formatClock(top) });
-	chart.createSpan({ cls: "ghs-axis-label ghs-axis-bottom", text: formatClock(top + range) });
+	// dotted lines at the usual bedtime and wake-up, labelled with their times; an end label that would sit on one is left out
+	const usual = [schedule.bedAbs, schedule.wakeAbs];
+	const clear = (minutes: number): boolean => usual.every((u) => Math.abs(u - minutes) >= AXIS_CLEARANCE_MIN);
+	if (clear(top)) chart.createSpan({ cls: "ghs-axis-label ghs-axis-top", text: formatClock(top) });
+	if (clear(top + range)) chart.createSpan({ cls: "ghs-axis-label ghs-axis-bottom", text: formatClock(top + range) });
+	for (const minutes of usual) {
+		const y = `${((minutes - top) / range) * 100}%`;
+		chart.createDiv({ cls: "ghs-night-line" }).setCssProps({ "--ghs-y": y });
+		chart.createSpan({ cls: "ghs-axis-label ghs-axis-line", text: formatClock(minutes) }).setCssProps({ "--ghs-y": y });
+	}
 	nights.forEach((n, i) => {
 		const col = chart.createDiv({ cls: "ghs-night" });
 		if (n.bed !== null && n.span !== null) {
@@ -213,10 +223,21 @@ function timelineChart(parent: HTMLElement, nights: SleepNight[], need: number, 
 	});
 }
 
+/** What the card leaves out to stay small: both debts, the weekday pattern and the bedtime and wake-up times. */
+function sleepFacts(model: SleepModel, lang: string): string[] {
+	if (model.debt === null || model.personalDebt === null) return [];
+	const facts = [t("panelSleepFactGeneral", lang).replace("{need}", String(model.need / 60)).replace("{debt}", formatMinutes(model.debt))];
+	if (model.reference < model.need) facts.push(t("panelSleepFactUsual", lang).replace("{usual}", formatMinutes(model.reference)).replace("{debt}", formatMinutes(model.personalDebt)));
+	if (model.weekday) facts.push(t("panelSleepWeekday", lang).replace("{day}", weekdayName(model.weekday.date, lang)).replace("{typical}", formatMinutes(model.weekday.typical)));
+	const sc = model.schedule;
+	if (sc) facts.push(t("panelSleepSchedule", lang).replace("{bed}", formatClock(sc.bed)).replace("{bedSd}", String(Math.round(sc.bedSd))).replace("{wake}", formatClock(sc.wake)).replace("{wakeSd}", String(Math.round(sc.wakeSd))));
+	return facts;
+}
+
 export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.minutes === null ? null : formatMinutes(model.minutes);
 	const unit = model.minutes !== null && model.score !== null ? `· ${Math.round(model.score)}` : undefined;
-	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: [t("panelSleepExplain", lang), ...(model.schedule ? [t("panelSleepExplainTimes", lang)] : []), ...(model.weekday || model.reference < model.need ? [t("panelSleepExplainPersonal", lang)] : [])].join(" ").replace(/\{need\}/g, String(model.need / 60)).replace(/\{floor\}/g, String(model.floor / 60)), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
+	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, facts: sleepFacts(model, lang), explain: [t("panelSleepExplain", lang), ...(model.schedule ? [t("panelSleepExplainTimes", lang)] : []), ...(model.weekday || model.reference < model.need ? [t("panelSleepExplainPersonal", lang)] : [])].join(" ").replace(/\{need\}/g, String(model.need / 60)).replace(/\{floor\}/g, String(model.floor / 60)), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
 		if (model.debt === null || model.target === null) {
 			card.createDiv({
 				cls: "ghs-card-note",
@@ -224,7 +245,7 @@ export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string
 			});
 			return;
 		}
-		if (model.schedule) timelineChart(card, model.nights, model.need, lang);
+		if (model.schedule) timelineChart(card, model.nights, model.need, model.schedule, lang);
 		else durationChart(card, model.nights, model.need, lang);
 		const personal = model.reference < model.need;
 		const owed = model.personalDebt!;
@@ -232,20 +253,6 @@ export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string
 			cls: "ghs-card-note",
 			text: (owed === 0 ? t(personal ? "panelSleepNoDebtPersonal" : "panelSleepNoDebt", lang) : t(personal ? "panelSleepDebtPersonal" : "panelSleepDebt", lang).replace("{debt}", formatMinutes(owed))).replace("{usual}", formatMinutes(model.reference)),
 		});
-		if (model.weekday) {
-			card.createDiv({ cls: "ghs-card-note", text: t("panelSleepWeekday", lang).replace("{day}", weekdayName(model.weekday.date, lang)).replace("{typical}", formatMinutes(model.weekday.typical)) });
-		}
-		if (model.schedule) {
-			const sc = model.schedule;
-			card.createDiv({
-				cls: "ghs-card-note",
-				text: t("panelSleepSchedule", lang)
-					.replace("{bed}", formatClock(sc.bed))
-					.replace("{bedSd}", String(Math.round(sc.bedSd)))
-					.replace("{wake}", formatClock(sc.wake))
-					.replace("{wakeSd}", String(Math.round(sc.wakeSd))),
-			});
-		}
 		const foot = card.createDiv({ cls: "ghs-foot" });
 		foot.createSpan({ cls: "ghs-foot-label", text: t("panelTonight", lang) });
 		foot.createSpan({ cls: "ghs-foot-value", text: t("panelSleepTonight", lang).replace("{target}", formatMinutes(model.target)) });

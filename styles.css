@@ -825,6 +825,23 @@
 	font-size: var(--font-ui-smaller);
 }
 
+.ghs-axis-line {
+	top: var(--ghs-y, 50%);
+	transform: translateY(-50%);
+	color: var(--text-muted);
+}
+
+/* The usual bedtime and wake-up as thin dotted lines through the bars */
+.ghs-night-line {
+	position: absolute;
+	left: 2.8em;
+	right: 0;
+	top: var(--ghs-y, 50%);
+	z-index: 1;
+	border-top: 1px dotted color-mix(in srgb, var(--text-normal) 60%, transparent);
+	pointer-events: none;
+}
+
 .ghs-axis-top {
 	top: 0;
 }
@@ -919,6 +936,15 @@
 
 .ghs-zone-tag {
 	color: var(--text-normal);
+}
+
+/* The card's own numbers under the light bulb, between the interpretation and the general explanation */
+.ghs-facts {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
 }
 
 /* Interpretation under (i): what the data suggests, set apart from the general explanation */
