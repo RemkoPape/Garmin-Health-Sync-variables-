@@ -4,6 +4,7 @@ import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
 import { average } from "../stats";
 import { computeTrend, type Trend } from "../trend";
+import { longFacts, longView, type LongView } from "../longview";
 import { renderCard } from "./shell";
 import type { Insight } from "../insights/registry";
 
@@ -26,6 +27,8 @@ export interface StepsModel {
 	distance: { value: number; unit: "km" | "mi" } | null;
 	active: { value: number; avg: number | null } | null;
 	total: number | null;
+	/** The last year of daily steps, null with fewer than 60 days of values. */
+	long: LongView | null;
 	/** Steps of the day before, to set an unfinished day against a whole one. */
 	dayBefore: number | null;
 	/** The shown day is today, so the day is not over. */
@@ -50,6 +53,7 @@ export function computeSteps(index: DayIndex, date: string): StepsModel {
 		active: active === null ? null : { value: active, avg: average(index, "calories_active", date, WINDOW_DAYS, STEPS_MIN_DAYS) },
 		total: index.value("calories_total", date),
 		dayBefore: index.value("steps", shiftDate(date, -1)),
+		long: longView((d) => index.value("steps", d), date),
 		today: date === localDateString(new Date()),
 	};
 }
@@ -71,7 +75,7 @@ function chip(parent: HTMLElement, label: string, value: string, delta: number |
 
 export function renderSteps(parent: HTMLElement, model: StepsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.steps === null ? null : formatNumber(model.steps, lang, 0);
-	renderCard(parent, { title: t("panelStepsTitle", lang), value, explain: t("panelStepsExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 0) } }, (card) => {
+	renderCard(parent, { title: t("panelStepsTitle", lang), value, explain: t("panelStepsExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights, facts: longFacts(model.long, (n) => formatNumber(n, lang, 0), lang), trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 0) } }, (card) => {
 		if (model.base === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLocked", lang).replace("{need}", String(STEPS_MIN_DAYS)).replace("{have}", String(model.have)) });
 			return;

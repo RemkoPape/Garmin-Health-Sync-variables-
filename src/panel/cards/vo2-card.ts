@@ -3,6 +3,7 @@ import { t } from "../../i18n/t";
 import { formatNumber, formatSigned } from "../format";
 import type { DayIndex } from "../index";
 import { slope } from "../stats";
+import { longFacts, longView, type LongView } from "../longview";
 import { renderCard } from "./shell";
 import type { Insight } from "../insights/registry";
 
@@ -25,6 +26,8 @@ export interface Vo2Model {
 	/** Change over 12 weeks from the slope, null without enough weeks. */
 	change: number | null;
 	direction: "up" | "down" | "steady" | null;
+	/** The last year of values, null with fewer than 60 days of values. */
+	long: LongView | null;
 }
 
 export function computeVo2(index: DayIndex, date: string): Vo2Model {
@@ -58,6 +61,7 @@ export function computeVo2(index: DayIndex, date: string): Vo2Model {
 		latest: fresh && newest ? newest.value : null,
 		change,
 		direction: change === null ? null : change > STEADY_CHANGE ? "up" : change < -STEADY_CHANGE ? "down" : "steady",
+		long: longView((d) => index.value("vo2_max", d), date),
 	};
 }
 
@@ -65,7 +69,7 @@ const ARROWS = { up: "↑", down: "↓", steady: "→" } as const;
 
 export function renderVo2(parent: HTMLElement, model: Vo2Model, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.latest === null ? null : formatNumber(model.latest, lang, 0);
-	renderCard(parent, { title: t("panelVo2Title", lang), value, unit: "ml/kg/min", explain: t("panelVo2Explain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
+	renderCard(parent, { title: t("panelVo2Title", lang), value, unit: "ml/kg/min", explain: t("panelVo2Explain", lang), explainOpen, onToggleExplain, lang, insights: model.insights, facts: longFacts(model.long, (n) => `${formatNumber(n, lang, 1)} ml/kg/min`, lang) }, (card) => {
 		if (model.latest === null) return;
 		if (model.direction === null || model.change === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLockedWeeks", lang).replace("{need}", String(VO2_MIN_WEEKS)).replace("{have}", String(model.points)) });

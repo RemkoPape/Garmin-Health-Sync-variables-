@@ -3,6 +3,7 @@ import type { HealthData, HealthProvider } from "./providers/provider";
 import { writeToDailyNote, dailyNoteExists } from "./daily-note";
 import type { HistoryStore } from "./history/store";
 import { recordFromData } from "./history/record";
+import { estimateMs, formatDuration } from "./history/progress";
 import type { HealthSyncSettings } from "./settings";
 import { t } from "./i18n/t";
 import { convertToImperial } from "./units";
@@ -171,7 +172,7 @@ export class SyncManager {
 			for (let i = 0; i < dates.length; i++) {
 				const date = dates[i]!;
 				// the notice stays on screen for the whole run, so say where it is
-				startNotice.setMessage(t("noticeBackfillProgress", settings.language).replace("{n}", String(i + 1)).replace("{total}", String(dates.length)).replace("{date}", date));
+				startNotice.setMessage(t("noticeBackfillProgress", settings.language).replace("{n}", String(i + 1)).replace("{total}", String(dates.length)).replace("{date}", date).replace("{eta}", formatDuration(estimateMs(dates.length - i, batchDelay))));
 				try {
 					const data = await this.provider.fetchData(date, enabledMetrics);
 					const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;

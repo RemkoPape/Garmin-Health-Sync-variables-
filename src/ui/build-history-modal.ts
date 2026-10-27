@@ -1,10 +1,7 @@
 import { App, Modal, Setting } from "obsidian";
 import { daysBetween, localDateString, shiftDate } from "../dates";
-import { formatDuration } from "../history/progress";
+import { estimateMs, formatDuration } from "../history/progress";
 import { t } from "../i18n/t";
-
-/** What the time estimate adds to the delay between days: the requests of a day take a moment themselves. */
-const REQUEST_TIME_MS = 1500;
 
 /** Asks how far back to build the history and what that costs in time. */
 export class BuildHistoryModal extends Modal {
@@ -29,7 +26,7 @@ export class BuildHistoryModal extends Modal {
 		const estimate = contentEl.createEl("p", { cls: "ghs-history-estimate" });
 		const showEstimate = (): void => {
 			const days = Math.max(0, daysBetween(from, this.newest) + 1);
-			estimate.setText(t("modalHistoryEstimate", this.lang).replace("{time}", formatDuration(days * (this.delayMs + REQUEST_TIME_MS))).replace("{days}", String(days)).replace("{metrics}", String(this.metricCount)));
+			estimate.setText(t("modalHistoryEstimate", this.lang).replace("{time}", formatDuration(estimateMs(days, this.delayMs))).replace("{days}", String(days)).replace("{metrics}", String(this.metricCount)));
 		};
 		showEstimate();
 

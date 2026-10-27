@@ -193,7 +193,7 @@ describe("renderSleep", () => {
 		expect(notes()[0]).toBe("Sleep debt, last 7 nights: 7 h, against your usual 6 h");
 		root.replaceChildren();
 		render(computeSleep(await indexOf(series(420, 420)), END), "de", true);
-		expect(Array.from(root.querySelectorAll(".ghs-fact")).map((e) => e.textContent)).toEqual(["Gegenüber dem allgemeinen Bedarf von 7 h: 0 min", "Nächte vor Freitag: du schläfst meist 7 h"]);
+		expect(Array.from(root.querySelectorAll(".ghs-fact")).map((e) => e.textContent)).toEqual(["Gegenüber dem allgemeinen Bedarf von 7 h: 0 min", "Nächte vor Freitag: du schläfst meist 7 h", "Letztes Jahr (60 Tage mit Daten): Durchschnitt 7 h, niedrigster Wert 7 h, höchster 7 h"]);
 	});
 
 	it("lists both debts and the weekday pattern under the light bulb, and nothing while the card is locked", async () => {
@@ -202,8 +202,9 @@ describe("renderSleep", () => {
 			"Against the general need of 7 h: 14 h",
 			"Against your usual 6 h: 7 h",
 			"Nights before Friday: you usually sleep 5 h",
+			"Last year (60 days with data): average 5 h, lowest 5 h, highest 5 h",
 		]);
-		expect(root.querySelectorAll(".ghs-insight .ghs-fact")).toHaveLength(3); // inside the "what your data suggests" box, which shows without interpretations
+		expect(root.querySelectorAll(".ghs-insight .ghs-fact")).toHaveLength(4); // inside the "what your data suggests" box, which shows without interpretations
 		root.replaceChildren();
 		render(computeSleep(await indexOf([360, 360]), END), "en", true);
 		expect(root.querySelector(".ghs-fact")).toBeNull();

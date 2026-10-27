@@ -10,8 +10,8 @@ import { DayIndex } from "./index";
 
 export const VIEW_TYPE_HEALTH_PANEL = "garmin-health-panel";
 const RENDER_DEBOUNCE_MS = 300;
-/** How far back the history notes are read for the shown day: the longest window of a card is 90 days. */
-const HISTORY_DAYS = 120;
+/** How far back the history notes are read for the shown day: the long view of a card looks at a year, and compares the last 90 days with the 90 before. */
+const HISTORY_DAYS = 400;
 
 /** Read-only side panel. Cards are computed from the daily notes' frontmatter; nothing is written or fetched. */
 export class HealthPanelView extends ItemView {
