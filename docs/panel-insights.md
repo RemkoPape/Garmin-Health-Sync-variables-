@@ -371,6 +371,14 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Basis:** Garmin states that sleep charges the body battery.
 - **References:** [garmin](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
 
+### stress_more_stressed
+
+- **Card:** stress
+- **Trigger:** Both the stress minutes (`stress_high`, medium and high stress) and the recovery minutes (`recovery_high`, rest) of the day are synced and the stress minutes are higher.
+- **Text (English):** More of the day was spent stressed ({stressed}) than recovering ({recovering}). A few minutes of slow breathing, about 6 breaths a minute, lower arousal in the short term.
+- **Basis:** Slow breathing around 6 breaths a minute raises HRV and eases arousal in the short term.
+- **References:** [zaccaro](https://doi.org/10.3389/fnhum.2018.00353)
+
 ### stress_high_sleep
 
 - **Card:** stress

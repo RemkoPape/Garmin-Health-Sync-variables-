@@ -237,17 +237,17 @@ describe("C1: values that are not numbers never reach the note", () => {
 	});
 });
 
-describe("F8: metric keys that no longer exist", () => {
-	it("a leftover stress_high or recovery_high in the settings adds no request and no value", async () => {
-		route();
+describe("the stress and recovery minutes (issue 31)", () => {
+	it("are requested from the daily summary and written in minutes", async () => {
+		route({ dailySummary: { body: { mediumStressDuration: 3600, highStressDuration: 1800, restStressDuration: 19800 } } });
 		const data = await provider.fetchData(DATE, ["stress_high", "recovery_high"]);
-		expect(endpointsCalled()).toEqual(["activitylist-service"]);
-		expect(data.metrics).toEqual({});
+		expect(endpointsCalled()).toContain("usersummary-service");
+		expect(data.metrics).toEqual({ stress_high: 90, recovery_high: 330 });
 	});
 
 	it("every metric the settings offer is requested from an endpoint and written by a mapper (no dead toggle)", async () => {
 		route({
-			dailySummary: { body: { totalSteps: 1, restingHeartRate: 50, averageStressLevel: 30, totalKilocalories: 2000, activeKilocalories: 500, totalDistanceMeters: 5000, floorsAscended: 4, moderateIntensityMinutes: 5, vigorousIntensityMinutes: 5 } },
+			dailySummary: { body: { totalSteps: 1, restingHeartRate: 50, averageStressLevel: 30, mediumStressDuration: 600, highStressDuration: 600, restStressDuration: 1200, totalKilocalories: 2000, activeKilocalories: 500, totalDistanceMeters: 5000, floorsAscended: 4, moderateIntensityMinutes: 5, vigorousIntensityMinutes: 5 } },
 			sleep: { body: { dailySleepDTO: { sleepTimeSeconds: 27000, sleepScores: { overall: { value: 80 } }, deepSleepSeconds: 1, lightSleepSeconds: 60, remSleepSeconds: 60, awakeSleepSeconds: 60, sleepStartTimestampLocal: Date.UTC(2026, 9, 21, 23, 0), sleepEndTimestampLocal: Date.UTC(2026, 9, 22, 6, 30) } } },
 			bodyBattery: { body: [{ charged: 60, bodyBatteryValuesArray: [[1, 20], [2, 90]] }] },
 			weight: { body: { dailyWeightSummaries: [{ weight: 80000, bodyFat: 20 }] } },

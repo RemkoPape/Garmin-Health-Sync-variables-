@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.18
+
+### Added
+
+- **Stress and recovery minutes** are back as two optional metrics, **Stress duration (min)** (`stress_high`, time in medium and high stress) and **Recovery duration (min)** (`recovery_high`, time at rest), read from the daily summary (issue #31). They are extended metrics, off by default. With both on, the Stress card shows a split bar of stressed against recovering time with both amounts, and when more of the day was stressed the light bulb suggests slow breathing. The field names (`mediumStressDuration`, `highStressDuration`, `restStressDuration`, in seconds) follow Garmin's daily summary but could not be checked against a real response here: after a sync, check that the values look plausible, otherwise send the output of **Copy sync diagnostics**.
+
+### Changed
+
+- The light bulb button is smaller, also on a phone (the touch target stays 44 px).
+
 ## 0.12.0-beta.17
 
 ### Changed
