@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.52
+
+### Fixed
+
+- In a narrow side panel the edit button was pushed out of view and the date wrapped onto three lines. The cause was the invisible date field taking part in the layout of the row, because Obsidian styles every input; it is now taken out of it. The date also shortens (nowrap, ellipsis), the calendar icon goes in a narrow sidebar, and the arrows and the edit button always keep their place.
+
 ## 0.12.0-beta.51
 
 ### Changed
