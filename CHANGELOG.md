@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.23
+
+### Changed
+
+- More space between the cards (24 px instead of 16 px, also between SpO₂ and Breathing); a section header now has 16 px to the cards under it and 32 px above, so each group still reads as a block.
+
 ## 0.12.0-beta.22
 
 ### Changed

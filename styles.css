@@ -69,7 +69,7 @@
 .ghs-panel {
 	display: flex;
 	flex-direction: column;
-	gap: var(--size-4-4);
+	gap: var(--size-4-6);
 }
 
 .ghs-daynav {
@@ -143,8 +143,8 @@
 
 .ghs-section {
 	/* more room above than below, so a header belongs to the cards under it */
-	margin-top: var(--size-2-3);
-	margin-bottom: calc(-1 * var(--size-2-2));
+	margin-top: var(--size-4-2);
+	margin-bottom: calc(-1 * var(--size-4-2));
 	color: var(--text-muted);
 	font-size: var(--font-ui-smaller);
 	font-weight: var(--font-semibold);
@@ -432,7 +432,7 @@
 .ghs-pair {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-	gap: var(--size-4-4);
+	gap: var(--size-4-6);
 }
 
 .ghs-range-compact {
