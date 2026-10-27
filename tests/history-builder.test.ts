@@ -98,6 +98,19 @@ describe("the order and the pace", () => {
 	});
 });
 
+describe("history notes in an earlier folder", () => {
+	it("are moved first, and their days are then not fetched again", async () => {
+		const month = serializeMonth("2026-10", new Map([["2026-10-24", { steps: 1, _m: ["hrv", "steps"] }]]));
+		app.vault.seed("Old year/Garmin history/Garmin history 2026-10.md", month);
+		store = new HistoryStore(app as never, { dailyNotePath: "New year" });
+		make();
+		const result = await run("2026-10-24", "2026-10-24");
+		expect(app.vault.paths()).toEqual(["New year/Garmin history/Garmin history 2026-10.md"]);
+		expect(fetchedDates()).toEqual([]);
+		expect(result).toMatchObject({ skipped: 1, fetched: 0 });
+	});
+});
+
 describe("days that are already there", () => {
 	it("skips a day that has the metrics, one that came from notes and one remembered as empty, without a request or a wait", async () => {
 		app.vault.seed(FILE, record({ "2026-10-24": { steps: 1, _m: ["hrv", "steps"] }, "2026-10-23": { steps: 2 }, "2026-10-22": { _m: ["hrv", "steps"] } }));

@@ -151,6 +151,8 @@ export default class HealthSyncPlugin extends Plugin {
 
 		// On startup: auto-sync only — BrowserWindow opens on demand
 		this.app.workspace.onLayoutReady(() => {
+			// history notes left in an earlier daily notes folder come along before anything is fetched
+			this.background(this.history.relocate(), "move history notes");
 			this.background(this.tryAutoSync(), "auto-sync");
 			this.background(
 				Promise.resolve().then(() => showWhatsNewIfDue(this.app, this.settings.language, this.manifest.version, this.freshInstall, performance.now())),

@@ -140,6 +140,15 @@ describe("F8: switches that never did anything are gone, old files still load", 
 	});
 });
 
+describe("history notes of an earlier folder", () => {
+	it("move into the history folder of the daily notes folder when Obsidian has loaded", async () => {
+		const loaded = await load({ dailyNotePath: "Journal/2027" }, (app) => void app.vault.seed("Journal/2026/Garmin history/Garmin history 2026-10.md", "2026-10-01 {\"a\":1}"));
+		loaded.app.workspace.layoutReady();
+		await settle();
+		expect(loaded.app.vault.paths().filter((p) => p.includes("Garmin history"))).toEqual(["Journal/2027/Garmin history/Garmin history 2026-10.md"]);
+	});
+});
+
 describe("the backfill log", () => {
 	it("keeps what the backfill remembered across restarts, without sharing it with the defaults", async () => {
 		const { plugin } = await load({ fetchLog: { "2026-10-01": 0 }, fetchSets: [["hrv", "steps"]] });

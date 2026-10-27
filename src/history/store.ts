@@ -1,4 +1,4 @@
-import { normalizePath, type App, type TAbstractFile, type TFile } from "obsidian";
+import { normalizePath, type App, type TAbstractFile, type TFile, type TFolder } from "obsidian";
 import { ensureFolderExists } from "../daily-note";
 import { mergeRecord, parseMonth, sameRecord, serializeMonth, type DayRecord } from "./format";
 
@@ -89,6 +89,7 @@ export class HistoryStore {
 			byMonth.get(month)!.set(date, record);
 		}
 		const run = async (): Promise<void> => {
+			await this.move();
 			for (const [month, days] of byMonth) {
 				await this.write(month, days);
 				this.cache.delete(month);
@@ -101,8 +102,43 @@ export class HistoryStore {
 
 	/** The notes of a month, the one in the history folder first. */
 	private filesOf(month: string): TFile[] {
+		const home = `${this.folder()}/`;
 		const files = this.app.vault.getMarkdownFiles().filter((file) => monthOfName(file.name) === month);
-		return files.sort((a, b) => a.path.length - b.path.length);
+		return files.sort((a, b) => Number(b.path.startsWith(home)) - Number(a.path.startsWith(home)) || a.path.length - b.path.length);
+	}
+
+	/**
+	 * Brings history notes that lie anywhere else in the vault into the history folder of the daily notes folder, so a
+	 * changed daily notes folder (a new year's subfolder, say) does not strand them: they are moved, never fetched again.
+	 * A note whose place is taken stays where it is (it is merged when read). Returns how many were moved.
+	 */
+	relocate(): Promise<number> {
+		const result = this.queue.then(() => this.move());
+		this.queue = result.catch(() => undefined);
+		return result;
+	}
+
+	private async move(): Promise<number> {
+		const home = this.folder();
+		const strays = this.app.vault.getMarkdownFiles().filter((file) => monthOfName(file.name) !== null && file.parent?.path !== home);
+		if (strays.length === 0) return 0;
+		await ensureFolderExists(this.app, home);
+		const left = new Set<TFolder>();
+		let moved = 0;
+		for (const file of strays) {
+			const target = `${home}/${file.name}`;
+			if (this.app.vault.getAbstractFileByPath(target)) continue; // that place is taken: both are read and merged
+			left.add(file.parent!);
+			await this.app.fileManager.renameFile(file, target);
+			moved++;
+		}
+		if (moved === 0) return 0;
+		this.cache.clear();
+		// a folder the notes left empty goes too, but only one that was made for them
+		for (const folder of left) {
+			if (folder.name === HISTORY_FOLDER && folder.children.length === 0) await this.app.fileManager.trashFile(folder);
+		}
+		return moved;
 	}
 
 	private folder(): string {

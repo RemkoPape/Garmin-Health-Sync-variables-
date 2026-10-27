@@ -359,6 +359,13 @@ describe("backfill", () => {
 			expect(fetchedDates()).toEqual(["2026-10-12"]);
 		});
 
+		it("move the history notes of an earlier folder first and are then skipped from there", async () => {
+			app.vault.seed("Old/Garmin history/Garmin history 2026-10.md", serializeMonth("2026-10", new Map([["2026-10-10", { steps: 1, _m: ["sleep_score", "steps"] }]])));
+			await run("2026-10-10", "2026-10-10", settings());
+			expect(provider.fetchCalls).toEqual([]);
+			expect(app.vault.paths()).toEqual(["Daily/Garmin history/Garmin history 2026-10.md"]);
+		});
+
 		it("keeps asking for days without a note in the skip setting only when they have one", async () => {
 			const s = settings({ missingNoteBehaviour: "skip" });
 			await run("2026-10-10", "2026-10-12", s);

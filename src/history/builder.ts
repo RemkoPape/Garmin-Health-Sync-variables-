@@ -128,6 +128,7 @@ export class HistoryBuilder {
 			pending.set(day, record);
 		};
 
+		await store.relocate();
 		await store.warm(from, to);
 		try {
 			for (date = to; date >= from; date = shiftDate(date, -1)) {

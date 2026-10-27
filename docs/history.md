@@ -4,7 +4,7 @@ The side panel reads the daily notes. A day without a note (or a note without a 
 
 ## Where and what
 
-- Folder `Garmin history` inside the daily notes folder (at the vault root when no daily notes folder is set). There is no path setting. The notes are found by name (`Garmin history YYYY-MM.md`) anywhere in the vault, so moving the folder breaks nothing.
+- Folder `Garmin history` inside the daily notes folder (at the vault root when no daily notes folder is set). There is no path setting. The notes are found by name (`Garmin history YYYY-MM.md`) anywhere in the vault, so moving the folder breaks nothing. When the daily notes folder changes (a new year's subfolder, say), history notes that lie anywhere else are moved into the `Garmin history` folder of the current daily notes folder before anything is fetched, on startup, before a backfill or history build and before every write. A note whose place is already taken stays where it is and is merged when read. A `Garmin history` folder that is left empty is removed.
 - Why markdown and not one JSON file: every sync tool carries markdown (Obsidian Sync does not sync `.json` unless "Sync all other types" is on), and one note per month keeps two devices from rewriting one big file.
 - One line per day inside a fenced block: `2026-10-27 {"hrv":42,"sleep_duration":"6h 24min","steps":9100,"trainings":[...],"_m":["hrv","steps"]}`.
   - The values are the keys the sync writes into a daily note, without the `ohs_` prefix and always in metric units.
