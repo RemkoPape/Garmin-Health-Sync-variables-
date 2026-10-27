@@ -41,6 +41,8 @@ export const ja: Record<TranslationKeys, string> = {
 	settingsMetricsExtendedDesc: "追加メトリクス（クリックで展開）",
 	settingsUnitSystem: "単位系",
 	settingsUnitSystemDesc: "距離と体重の表示単位を選択",
+	settingsFoldProperties: "プロパティを既定で折りたたむ",
+	settingsFoldPropertiesDesc: "デイリーノートを開くときにプロパティを折りたたみ、同期した指標で本文が画面の外に押し出されないようにします。プロパティの横の矢印で再び開けます。",
 	unitMetric: "メートル法（km、kg）",
 	unitImperial: "ヤード・ポンド法（mi、lbs）",
 	settingsLanguage: "言語",

@@ -41,6 +41,8 @@ export const fr: Record<TranslationKeys, string> = {
 	settingsMetricsExtendedDesc: "Métriques supplémentaires (cliquer pour développer)",
 	settingsUnitSystem: "Système d'unités",
 	settingsUnitSystemDesc: "Choisir l'affichage de la distance et du poids",
+	settingsFoldProperties: "Replier les propriétés par défaut",
+	settingsFoldPropertiesDesc: "Replie les propriétés d’une note quotidienne à son ouverture, pour que les mesures synchronisées ne repoussent pas le texte hors de l’écran. Dépliez-les avec la flèche à côté de Propriétés.",
 	unitMetric: "Métrique (km, kg)",
 	unitImperial: "Impérial (mi, lbs)",
 	settingsLanguage: "Langue",

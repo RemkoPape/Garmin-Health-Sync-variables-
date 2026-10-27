@@ -39,6 +39,8 @@ export const en = {
 	settingsMetricsExtendedDesc: "Additional metrics (click to expand)",
 	settingsUnitSystem: "Unit system",
 	settingsUnitSystemDesc: "Choose how distance and weight are displayed",
+	settingsFoldProperties: "Fold properties by default",
+	settingsFoldPropertiesDesc: "Fold the properties of a daily note when you open it, so the synced metrics do not push the text off the screen. Open them again with the arrow next to the properties heading.",
 	unitMetric: "Metric (km, kg)",
 	unitImperial: "Imperial (mi, lbs)",
 	settingsLanguage: "Language",

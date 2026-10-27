@@ -67,6 +67,7 @@ describe("the settings layout", () => {
 			["usePrefix", "toggle"],
 			["writeWorkoutLocation", "toggle"],
 			["writeTrainings", "toggle"],
+			["foldProperties", "toggle"],
 		]);
 	});
 

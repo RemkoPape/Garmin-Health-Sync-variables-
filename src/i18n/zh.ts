@@ -41,6 +41,8 @@ export const zh: Record<TranslationKeys, string> = {
 	settingsMetricsExtendedDesc: "更多指标（点击展开）",
 	settingsUnitSystem: "单位制",
 	settingsUnitSystemDesc: "选择距离和体重的显示单位",
+	settingsFoldProperties: "默认折叠属性",
+	settingsFoldPropertiesDesc: "打开每日笔记时折叠其属性，避免同步的指标把正文挤出屏幕。可通过“属性”旁的箭头重新展开。",
 	unitMetric: "公制（km、kg）",
 	unitImperial: "英制（mi、lbs）",
 	settingsLanguage: "语言",

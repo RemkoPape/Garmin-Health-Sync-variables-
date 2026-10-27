@@ -310,8 +310,7 @@
 
 /* Steps, intensity minutes and floors */
 .ghs-range-track-steps {
-	background: linear-gradient(to right, var(--color-yellow) 0%, var(--color-yellow) 45%, var(--color-green) 62.5%, var(--color-cyan) 100%);
-	opacity: 0.85;
+	background: linear-gradient(to right, color-mix(in srgb, var(--ghs-data) 30%, var(--background-secondary)), var(--ghs-data));
 }
 
 .ghs-zone {
@@ -321,7 +320,7 @@
 	width: 6.25%;
 	height: 12px;
 	box-sizing: border-box;
-	border: 2px solid var(--color-green);
+	border: 2px solid var(--text-normal);
 	border-radius: var(--radius-s);
 	background: var(--background-secondary);
 	opacity: 0.35;
@@ -414,7 +413,7 @@
 .ghs-block-zone {
 	box-sizing: border-box;
 	background: transparent;
-	border: 1px solid var(--color-green);
+	border: 1px solid var(--ghs-data);
 }
 
 /* The two zone labels sit 6 % apart: the first ends at its tick, the second starts at its tick */
@@ -662,7 +661,7 @@
 
 /* Load balance: five zones on a ratio from 0.5 to 1.8 */
 .ghs-range-track-load {
-	background: linear-gradient(to right, var(--color-blue) 0%, var(--color-blue) 23.1%, var(--color-cyan) 23.1%, var(--color-cyan) 38.5%, var(--color-green) 38.5%, var(--color-green) 61.5%, var(--color-yellow) 61.5%, var(--color-yellow) 76.9%, var(--color-red) 76.9%, var(--color-red) 100%);
+	background: linear-gradient(to right, var(--text-faint) 0%, var(--text-faint) 23.1%, color-mix(in srgb, var(--color-green) 45%, var(--background-secondary)) 23.1%, color-mix(in srgb, var(--color-green) 45%, var(--background-secondary)) 38.5%, var(--color-green) 38.5%, var(--color-green) 61.5%, var(--color-orange) 61.5%, var(--color-orange) 76.9%, var(--color-red) 76.9%, var(--color-red) 100%);
 }
 
 .ghs-zones {

@@ -41,6 +41,8 @@ export const de: Record<TranslationKeys, string> = {
 	settingsMetricsExtendedDesc: "Zusätzliche Metriken (klicken zum Aufklappen)",
 	settingsUnitSystem: "Einheitensystem",
 	settingsUnitSystemDesc: "Darstellung von Distanz und Gewicht",
+	settingsFoldProperties: "Eigenschaften standardmäßig einklappen",
+	settingsFoldPropertiesDesc: "Klappt die Eigenschaften einer Tagesnotiz beim Öffnen ein, damit die synchronisierten Werte den Text nicht vom Bildschirm schieben. Mit dem Pfeil neben „Eigenschaften“ wieder aufklappen.",
 	unitMetric: "Metrisch (km, kg)",
 	unitImperial: "Imperial (mi, lbs)",
 	settingsLanguage: "Sprache",

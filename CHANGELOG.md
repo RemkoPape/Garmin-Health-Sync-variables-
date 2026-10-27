@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.25
+
+### Added
+
+- New setting **Fold properties by default** (off by default): a daily note opens with its properties folded, so many synced metrics no longer push the text off the screen. Open them again with the arrow next to Properties; they stay open until you open the note again. It works like the plugin "Fold properties by default" (MIT, Tommy Bergeron) and only touches daily notes.
+
+### Changed
+
+- Steps, intensity minutes and floors use the accent colour like the other charts without a good or bad side.
+- Load balance zones: Detrain is grey, Maintain light green, Build green, Strain orange, Overreach red.
+
 ## 0.12.0-beta.24
 
 ### Added
