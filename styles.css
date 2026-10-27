@@ -109,8 +109,39 @@
 	justify-content: space-between;
 }
 
+/* The date is a button with a calendar icon: it fills the space between the arrows, so it is centred and obviously tappable */
 .ghs-daynav-pick {
 	position: relative;
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--size-4-2);
+	min-height: 36px;
+	margin: 0 var(--size-4-2);
+	padding: 0 var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--ghs-card);
+	cursor: pointer;
+}
+
+.ghs-daynav-pick:hover {
+	background: var(--background-modifier-hover);
+}
+
+.is-mobile .ghs-daynav-pick {
+	min-height: 44px;
+}
+
+.ghs-daynav-icon {
+	display: inline-flex;
+	color: var(--text-muted);
+}
+
+.ghs-daynav-icon svg {
+	width: 16px;
+	height: 16px;
 }
 
 /* The system's date field lies invisibly over the date, so a tap or a click opens the calendar */

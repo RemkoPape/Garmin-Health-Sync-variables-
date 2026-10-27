@@ -138,6 +138,7 @@ describe("the panel: day picker and arranging the cards", () => {
 		expect(input(view).value).toBe("2026-10-22");
 		expect(input(view).getAttribute("max")).toBe("2026-10-22");
 		expect(input(view).getAttribute("aria-label")).toBe(en.panelPickDay);
+		expect(view.contentEl.querySelector(".ghs-daynav-pick .ghs-daynav-icon")).not.toBeNull(); // a calendar icon says the date can be tapped
 	});
 
 	it("goes to the day that was picked and not to an empty or future one", async () => {
