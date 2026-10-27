@@ -135,9 +135,6 @@ export function normalizeActivityKey(providerKey: string): string {
 	return KEY_CLEANUP[raw] ?? raw;
 }
 
-/** Every activity key the sync knows a category for; a daily note holds one property per type under these names. */
-export const ACTIVITY_KEYS: string[] = Object.keys(CATEGORY_MAP);
-
 /**
  * Returns the category for an already-normalized activity key.
  * Falls back to "other".

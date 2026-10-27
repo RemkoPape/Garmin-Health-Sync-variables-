@@ -184,7 +184,23 @@ describe("hiding what the panel shows", () => {
 		expect(rowsHidden()).toEqual(["hrv"]);
 	});
 
-	it("reads what to hide each time, so a card switched off shows its rows again", async () => {
+	it("works out the rows to hide again when the note was changed, as a sync may have added keys", async () => {
+		showProperties(["hrv", "mood"]);
+		properties.fileOpened(DAILY as never);
+		await vi.advanceTimersByTimeAsync(300);
+		hidden = new Set(["hrv", "mood"]);
+		properties.noteChanged(DAILY as never);
+		expect(rowsHidden()).toEqual(["hrv", "mood"]);
+		hidden = new Set(["mood"]);
+		properties.noteChanged(OTHER as never); // another note: nothing happens
+		expect(rowsHidden()).toEqual(["hrv", "mood"]);
+		host.innerHTML = "";
+		properties.noteChanged(DAILY as never); // no properties block on screen
+		properties.cancel();
+		properties.noteChanged(DAILY as never); // nothing is hidden any more
+	});
+
+	it("reads what to hide each time, so a key that is no longer in the note shows its row again", async () => {
 		showProperties(["hrv", "steps"]);
 		properties.fileOpened(DAILY as never);
 		await vi.advanceTimersByTimeAsync(300);

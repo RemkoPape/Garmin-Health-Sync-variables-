@@ -1,8 +1,8 @@
-import type { App, TFile } from "obsidian";
+import type { App, TAbstractFile, TFile } from "obsidian";
 
 /**
  * What a daily note does with its properties block (the "Properties of daily notes" setting): nothing, fold it when
- * the note opens, or hide the rows the side panel already shows so only the user's own properties stay in view.
+ * the note opens, or hide the rows the sync wrote (the side panel shows them) so only the user's own properties stay in view.
  *
  * Folding works like the plugin "Fold properties by default" (MIT, Tommy Bergeron): Obsidian builds the properties
  * block a moment after the note opens, so look for it a few times, then run Obsidian's own "Toggle fold
@@ -27,8 +27,8 @@ interface NotePropertiesOptions {
 	mode: () => PropertiesMode;
 	/** Whether the note is a daily note: nothing else is touched. */
 	isDaily: (file: TFile) => boolean;
-	/** The keys (without prefix) the panel shows. */
-	hidden: () => Set<string>;
+	/** The keys (without prefix) of the note that the sync wrote, which are hidden. */
+	hidden: (file: TFile) => Set<string>;
 }
 
 export class NoteProperties {
@@ -36,6 +36,8 @@ export class NoteProperties {
 	/** The note that was folded last, so a layout change does not fold again what the user opened on purpose. */
 	private folded: string | null = null;
 	private observer: MutationObserver | null = null;
+	/** The note whose rows are hidden. */
+	private hiding: TFile | null = null;
 
 	constructor(
 		private readonly app: App,
@@ -61,9 +63,16 @@ export class NoteProperties {
 		this.layoutChanged();
 	}
 
+	/** A note was changed (a sync wrote it): its hidden rows are worked out again, as its keys may have changed. */
+	noteChanged(file: TAbstractFile): void {
+		const block = activeDocument.querySelector(".workspace-leaf.mod-active .metadata-container");
+		if (file === this.hiding && block) this.hide(block, this.hiding);
+	}
+
 	cancel(): void {
 		this.observer?.disconnect();
 		this.observer = null;
+		this.hiding = null;
 		if (this.timer === null) return;
 		window.clearTimeout(this.timer);
 		this.timer = null;
@@ -74,8 +83,8 @@ export class NoteProperties {
 		for (const row of Array.from(activeDocument.querySelectorAll(`.${HIDDEN_CLASS}`))) row.removeClass(HIDDEN_CLASS);
 	}
 
-	private hide(block: Element): void {
-		const keys = this.options.hidden();
+	private hide(block: Element, file: TFile): void {
+		const keys = this.options.hidden(file);
 		for (const row of Array.from(block.querySelectorAll(".metadata-property"))) {
 			const key = (row.getAttribute("data-property-key") ?? "").replace(PREFIX, "");
 			row.toggleClass(HIDDEN_CLASS, keys.has(key));
@@ -92,8 +101,9 @@ export class NoteProperties {
 				return;
 			}
 			if (this.options.mode() === "hide") {
-				this.hide(block);
-				this.observer = new MutationObserver(() => this.hide(block));
+				this.hiding = file;
+				this.hide(block, file);
+				this.observer = new MutationObserver(() => this.hide(block, file));
 				this.observer.observe(block, { childList: true, subtree: true });
 				return;
 			}

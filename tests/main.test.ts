@@ -435,22 +435,42 @@ describe("properties of daily notes", () => {
 		expect(on.app.commands.executed).toEqual([]);
 	});
 
-	it("hides the rows of the cards that are on when the panel is on, and nothing while it is off", async () => {
-		const off = await load({ propertiesMode: "hide", panelEnabled: false });
+	it("hides every property the sync wrote, also an activity the plugin does not know, and keeps the user's own, while the panel is on", async () => {
+		const fm = { title: "x", mood: "good", hrv: 40, ohs_steps: 9000, mobility: "2x · 27min · Ø74 bpm · 54 kcal", workout_location: "Park", coffee: 0 };
+		const rows = (): void => {
+			document.body.innerHTML = `<div class="workspace-leaf mod-active"><div class="metadata-container">${["title", "mood", "hrv", "ohs_steps", "mobility", "workout_location", "coffee"].map((k) => `<div class="metadata-property" data-property-key="${k}"></div>`).join("")}</div></div>`;
+		};
+		const seed = (a: App): void => {
+			const file = a.vault.seed(`${dayString(0)}.md`, "---\n---\n");
+			a.metadataCache.frontmatter.set(file.path, fm);
+		};
+		const off = await load({ propertiesMode: "hide", panelEnabled: false }, seed);
 		off.app.workspace.layoutReady();
-		showProperties();
-		await openNote(off.app, dailyNote());
+		rows();
+		await openNote(off.app, off.app.vault.getMarkdownFiles()[0]!);
 		expect(hiddenRows()).toEqual([]);
 
-		const on = await load({ propertiesMode: "hide", panelEnabled: true, panelCards: { hrv: false, today: false, sleep: false } });
+		const on = await load({ propertiesMode: "hide", panelEnabled: true }, seed);
 		on.app.workspace.layoutReady();
-		showProperties();
-		await openNote(on.app, dailyNote());
-		expect(hiddenRows()).toEqual([]); // hrv is on no card that is left
-		on.plugin.settings.panelCards = {};
+		rows();
+		const file = on.app.vault.getMarkdownFiles()[0]!;
+		await openNote(on.app, file);
+		expect(hiddenRows()).toEqual(["hrv", "ohs_steps", "mobility", "workout_location"]);
+		// a sync adds a value: the row is hidden when the metadata cache has caught up
+		on.app.metadataCache.frontmatter.set(file.path, { ...fm, spo2: 96 });
+		document.querySelector(".metadata-container")!.insertAdjacentHTML("beforeend", '<div class="metadata-property" data-property-key="spo2"></div>');
+		on.app.metadataCache.fireChanged(file);
+		expect(hiddenRows()).toContain("spo2");
+		on.plugin.settings.propertiesMode = "off";
 		on.plugin.noteProperties.modeChanged();
-		await vi.advanceTimersByTimeAsync(300);
-		expect(hiddenRows()).toEqual(["hrv"]);
+		expect(hiddenRows()).toEqual([]);
+
+		// a note the metadata cache knows nothing about (yet) has nothing to hide
+		const bare = await load({ propertiesMode: "hide", panelEnabled: true }, (a) => void a.vault.seed(`${dayString(0)}.md`, ""));
+		bare.app.workspace.layoutReady();
+		rows();
+		await openNote(bare.app, bare.app.vault.getMarkdownFiles()[0]!);
+		expect(hiddenRows()).toEqual([]);
 	});
 
 	it("turns the old fold switch into the new choice once, and forgets the old key", async () => {
