@@ -123,7 +123,7 @@ export class HistoryStore {
 		const strays = this.app.vault.getMarkdownFiles().filter((file) => monthOfName(file.name) !== null && file.parent?.path !== home);
 		if (strays.length === 0) return 0;
 		await ensureFolderExists(this.app, home);
-		const left = new Set<TAbstractFile>();
+		const left = new Set<TFolder>();
 		let moved = 0;
 		for (const file of strays) {
 			const target = `${home}/${file.name}`;
@@ -136,7 +136,7 @@ export class HistoryStore {
 		this.cache.clear();
 		// a folder the notes left empty goes too, but only one that was made for them
 		for (const folder of left) {
-			if (folder.name === HISTORY_FOLDER && (folder as TFolder).children.length === 0) await this.app.fileManager.trashFile(folder);
+			if (folder.name === HISTORY_FOLDER && folder.children.length === 0) await this.app.fileManager.trashFile(folder);
 		}
 		return moved;
 	}
