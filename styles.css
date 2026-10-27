@@ -104,11 +104,15 @@
 	padding: var(--size-4-2) var(--size-4-3);
 	background: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
+	/* A quiet edge in the user's own accent colour tells the cards apart without adding colours; only the Today
+	   verdict (below) and the dashed "No reading" card change it */
+	border-left: 4px solid var(--interactive-accent);
 	border-radius: var(--radius-m);
 }
 
 .ghs-card-empty {
 	border-style: dashed;
+	border-left-style: solid;
 }
 
 .ghs-card-head {

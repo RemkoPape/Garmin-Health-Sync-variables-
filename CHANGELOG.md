@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.22
+
+### Changed
+
+- Every card has a 4 px edge on its left in your Obsidian accent colour, so the cards are easier to tell apart without adding colours. The Today card keeps its verdict colour (green, yellow, orange, red) on that edge.
+
 ## 0.12.0-beta.21
 
 ### Added
