@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.55
+
+### Changed
+
+- **Readiness (Today card) is gentler with a young range and fairer to short sleepers.** While your usual range rests on fewer than 21 days of HRV and resting heart rate, those two terms of the score are scaled by days / 21, so a far-out value moves the score less (it said "poor" for a first-weeks reading while Garmin said 74), and a low band alone no longer says "day off": it says go easy until the range is reliable (raised breathing with a high resting heart rate, or three flags, still mean rest). The sleep debt in the score and the sleep flag is now counted against the sleep you usually get, not against the general 7 hours, so a short sleeper does not lose points every day. The formula is described in `docs/panel-insights.md`.
+
 ## 0.12.0-beta.54
 
 ### Added

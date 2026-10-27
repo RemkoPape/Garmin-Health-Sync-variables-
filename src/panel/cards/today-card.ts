@@ -53,15 +53,20 @@ export interface TodayModel {
 
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
-/** Own readiness: 50 + 12 z(HRV) - 10 z(resting heart rate) - 6 h sleep debt (at most 4 h) + 0.25 (battery peak - usual), 0 to 100. */
-function scoreOf(hrvZ: number, rhrZ: number, debtMin: number, peakGap: number | null): number {
-	const raw = 50 + 12 * clamp(hrvZ, -2.5, 2.5) - 10 * clamp(rhrZ, -2.5, 2.5) - 6 * Math.min(debtMin / 60, 4) + (peakGap === null ? 0 : 0.25 * peakGap);
+/**
+ * Own readiness: 50 + 12 z(HRV) - 10 z(resting heart rate) - 6 h sleep debt (at most 4 h) + 0.25 (battery peak - usual), 0 to 100.
+ * The two z terms are scaled by `trust`, which is below 1 while the usual range rests on fewer than 21 days: a young
+ * range is noisy, so a far-out value should not push the score as hard.
+ */
+function scoreOf(hrvZ: number, rhrZ: number, debtMin: number, peakGap: number | null, trust: number): number {
+	const raw = 50 + trust * (12 * clamp(hrvZ, -2.5, 2.5) - 10 * clamp(rhrZ, -2.5, 2.5)) - 6 * Math.min(debtMin / 60, 4) + (peakGap === null ? 0 : 0.25 * peakGap);
 	return Math.round(clamp(raw, 0, 100));
 }
 
-/** The verdict follows the band and the number of flags; a pair of raised breathing and resting heart rate means rest. */
-function verdictOf(band: Band, flags: FlagId[]): Verdict {
-	if (band <= 1 || flags.length >= 3 || (flags.includes("breathing") && flags.includes("rhr"))) return "rest";
+/** The verdict follows the band and the number of flags; a pair of raised breathing and resting heart rate means rest. A low band alone means rest only once the usual range is reliable. */
+function verdictOf(band: Band, flags: FlagId[], early: boolean): Verdict {
+	if (flags.length >= 3 || (flags.includes("breathing") && flags.includes("rhr"))) return "rest";
+	if (band <= 1) return early ? "easy" : "rest";
 	if (band >= 3) return flags.length === 0 ? "hard" : flags.length === 1 ? "planned" : "easy";
 	return flags.length === 0 ? "planned" : "easy";
 }
@@ -76,12 +81,14 @@ export function computeToday(index: DayIndex, date: string, birthYear: number | 
 	const baselineDays = Math.min(windowValues(index, "hrv", date, 30).length, windowValues(index, "resting_hr", date, 30).length);
 	const loadRatio = s.load().ratio;
 	const batteryGap = battery.max !== null && battery.usualPeak !== null ? battery.usualPeak - battery.max : null;
-	const facts: TodayFacts = { debt: sleep.debt, batteryGap, loadRatio };
+	// the debt is counted against the usual sleep of the person, not against the general need, which a person who never reaches it would owe every day
+	const debt = sleep.personalDebt;
+	const facts: TodayFacts = { debt, batteryGap, loadRatio };
 
 	const flags: FlagId[] = [];
 	if (hrvZ !== null && hrvZ < -1) flags.push("hrv");
 	if (rhrZ !== null && rhrZ > 1) flags.push("rhr");
-	if (sleep.debt !== null && sleep.debt > 120) flags.push("sleep");
+	if (debt !== null && debt > 120) flags.push("sleep");
 	if (batteryGap !== null && batteryGap > 15) flags.push("battery");
 	if (stress.level !== null && stress.week !== null && stress.level > stress.week + 10) flags.push("stress");
 	if ((s.z("respiration_rate") ?? 0) > 1.5) flags.push("breathing");
@@ -90,10 +97,11 @@ export function computeToday(index: DayIndex, date: string, birthYear: number | 
 	if (loadRatio !== null && loadRatio > 1.5) flags.push("load");
 
 	const garmin = index.value("training_readiness", date);
-	const debt = sleep.debt;
-	const score = hrvZ !== null && rhrZ !== null && debt !== null ? scoreOf(hrvZ, rhrZ, debt, battery.usualPeak !== null && battery.max !== null ? battery.max - battery.usualPeak : null) : null;
+	const early = baselineDays < TODAY_RELIABLE_DAYS;
+	const trust = Math.min(1, baselineDays / TODAY_RELIABLE_DAYS);
+	const score = hrvZ !== null && rhrZ !== null && debt !== null ? scoreOf(hrvZ, rhrZ, debt, battery.usualPeak !== null && battery.max !== null ? battery.max - battery.usualPeak : null, trust) : null;
 	const band = score === null ? null : ((BANDS.findIndex((b) => score < b.upTo) as Band));
-	return { insights: [], score, band, verdict: band === null ? null : verdictOf(band, flags), flags, facts, garmin, have: Math.min(baselineDays, sleep.have), baselineDays, early: baselineDays < TODAY_RELIABLE_DAYS };
+	return { insights: [], score, band, verdict: band === null ? null : verdictOf(band, flags, early), flags, facts, garmin, have: Math.min(baselineDays, sleep.have), baselineDays, early };
 }
 
 const VERDICT_TEXT: Record<Verdict, TranslationKeys> = { hard: "panelVerdictHard", planned: "panelVerdictPlanned", easy: "panelVerdictEasy", rest: "panelVerdictRest" };

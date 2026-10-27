@@ -21,10 +21,10 @@ The interpretation is deliberately kept under the light bulb so the cards stay u
 
 The Today card is a rule of thumb taken from the original concept, **not a validated score**. It is not calibrated against Garmin's readiness (which is shown next to it when the watch provides it).
 
-- **Score (0 to 100):** 50 + 12 x z(HRV) - 10 x z(resting heart rate) - 6 x sleep debt in hours (at most 4) + 0.25 x (body battery peak - usual peak). The z values are clamped to plus or minus 2.5 and use the user's own 30 day range; a missing body battery leaves its term out. Without HRV, resting heart rate or the sleep debt there is no own score.
+- **Score (0 to 100):** 50 + t x (12 x z(HRV) - 10 x z(resting heart rate)) - 6 x sleep debt in hours (at most 4) + 0.25 x (body battery peak - usual peak). The z values are clamped to plus or minus 2.5 and use the user's own 30 day range; a missing body battery leaves its term out. `t` is the trust in that range: the days with both HRV and resting heart rate divided by 21, at most 1, so a young range moves the score less. The sleep debt is counted against the sleep the person usually gets (the median of the last 28 nights, kept between an hour under the need and the need; see the Sleep card), not against the general need, which would charge a short sleeper the same debt every day. Without HRV, resting heart rate or the sleep debt there is no own score.
 - **Bands:** 0-24 poor, 25-49 low, 50-74 moderate, 75-94 high, 95-100 prime.
-- **Flags:** HRV low, resting heart rate high, sleep debt above 2 hours, body battery peak more than 15 below usual, stress more than 10 above the 7 day average, breathing more than 1.5 standard deviations up, SpO2 below 94 percent, load ratio above 1.5.
-- **Verdict:** rest (day off, walk and mobility) for band poor or low, 3 or more flags, or raised breathing together with a high resting heart rate; train hard for band high or better with no flag; train as planned for band high or better with one flag or band moderate with none; go easy (zone 2) otherwise.
+- **Flags:** HRV low, resting heart rate high, sleep debt (against the usual sleep) above 2 hours, body battery peak more than 15 below usual, stress more than 10 above the 7 day average, breathing more than 1.5 standard deviations up, SpO2 below 94 percent, load ratio above 1.5.
+- **Verdict:** rest (day off, walk and mobility) for 3 or more flags, raised breathing together with a high resting heart rate, or band poor or low once the range rests on 21 days (before that a low band alone gives "go easy"); train hard for band high or better with no flag; train as planned for band high or better with one flag or band moderate with none; go easy (zone 2) otherwise.
 
 ## How to add or change an interpretation
 
