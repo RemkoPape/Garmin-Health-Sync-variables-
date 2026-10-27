@@ -669,6 +669,7 @@ export default class HealthSyncPlugin extends Plugin {
 		this.settings.fetchLog = { ...(saved?.fetchLog ?? {}) };
 		this.settings.fetchSets = (saved?.fetchSets ?? []).map((set) => [...set]);
 		this.settings.panelCards = { ...(saved?.panelCards ?? {}) };
+		this.settings.panelOrder = (saved?.panelOrder ?? []).filter((id) => typeof id === "string");
 		this.settings.birthYear = parseBirthYear(saved?.birthYear, new Date().getFullYear());
 		// "Create daily note when missing" became a three-way choice: off meant waiting for the note, which is "skip".
 		const legacy = (saved ?? {}) as { createDailyNoteIfMissing?: boolean; missingNoteBehaviour?: string };

@@ -109,6 +109,20 @@
 	justify-content: space-between;
 }
 
+.ghs-daynav-pick {
+	position: relative;
+}
+
+/* The system's date field lies invisibly over the date, so a tap or a click opens the calendar */
+.ghs-daynav-input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	cursor: pointer;
+}
+
 .ghs-daynav-date {
 	font-size: var(--font-ui-medium);
 	font-weight: var(--font-semibold);
@@ -1132,4 +1146,51 @@
 
 .ghs-history-estimate {
 	color: var(--text-muted);
+}
+
+/* Arranging the cards: a list of titles with a handle each */
+.ghs-edit-hint {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ghs-sort {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.ghs-sort-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-2-3) var(--size-4-2);
+	background: var(--ghs-card);
+	border: 1px solid var(--background-modifier-border);
+	border-left: 4px solid var(--ghs-edge);
+	border-radius: var(--radius-m);
+}
+
+.ghs-sort-dragging {
+	box-shadow: var(--shadow-s);
+	border-color: var(--interactive-accent);
+}
+
+.ghs-sort-handle {
+	cursor: grab;
+	touch-action: none;
+}
+
+.ghs-sort-title {
+	flex: 1;
+	font-weight: var(--font-semibold);
+}
+
+.ghs-sort-section {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-edit-reset {
+	align-self: flex-start;
 }

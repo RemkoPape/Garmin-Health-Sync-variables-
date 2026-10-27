@@ -13,6 +13,7 @@ const NOT_IN_SETTINGS_TAB: Record<string, string> = {
 	garminSession: "legacy cookie session, only cleared on login; not a preference",
 	garminOAuth1: "token written by the login flow (moved to secret storage when available)",
 	garminOAuth2: "token written by the login flow (moved to secret storage when available)",
+	panelOrder: "edited by dragging the cards in the panel (the edit button), never in the settings tab",
 	panelCards: "edited through the per-card toggles (keys prefixed 'panel:'), checked separately below",
 	enabledMetrics: "edited through the per-metric toggles (keys prefixed 'metric:'), checked separately below",
 };
