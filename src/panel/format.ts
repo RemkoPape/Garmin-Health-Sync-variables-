@@ -20,3 +20,9 @@ export function formatSigned(value: number, lang: string, digits = 1): string {
 	const abs = formatNumber(Math.abs(value), lang, digits);
 	return `${value < 0 && Number(abs.replace(/\D/g, "")) !== 0 ? "−" : "+"}${abs}`;
 }
+
+/** "Friday" of a YYYY-MM-DD date in the plugin language. */
+export function weekdayName(date: string, lang: string): string {
+	const [y, m, d] = date.split("-").map(Number) as [number, number, number];
+	return new Intl.DateTimeFormat(lang, { weekday: "long" }).format(new Date(y, m - 1, d, 12));
+}

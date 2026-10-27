@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0-beta.28
+
+### Changed
+
+- Sleep card, tonight's aim: when your life does not allow 7 hours, the card no longer asks for it every night. With at least 3 earlier nights before the coming weekday, the aim follows what that weekday usually brings (the upper end of up to the last 8 such nights) plus a quarter of the debt, at most half an hour. It never goes below an hour under the general need (6 h for an adult), so a very short night is not presented as a goal.
+- Sleep card, debt: the debt is counted against what you usually sleep (the middle of your last 28 nights, kept between the floor and the need) when you have 10 nights of history, and the note says so ("against your usual 6 h"). A new line shows "Nights before Friday: you usually sleep ...". The light bulb explains the arithmetic. The interpretations still compare with the general need.
+
 ## 0.12.0-beta.27
 
 ### Changed
