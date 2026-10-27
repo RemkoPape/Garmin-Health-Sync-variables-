@@ -1,6 +1,6 @@
 import { t } from "../../i18n/t";
 import { shiftDate } from "../../dates";
-import { weekdayInitial } from "../format";
+import { weekdayInitial, weekdayName } from "../format";
 import type { DayIndex } from "../index";
 import { computeTrend, type Trend } from "../trend";
 import { ageAt } from "../zones";
@@ -24,6 +24,15 @@ function sleepNeed(date: string, birthYear: number | null): number {
 }
 const MAX_CATCH_UP_MIN = 60;
 const TARGET_STEP_MIN = 15;
+/** However short a person's nights usually are, tonight's aim stays within an hour of the need: 5 h is not a goal. */
+const FLOOR_BELOW_NEED_MIN = 60;
+/** The extra sleep asked for on top of what the weekday usually brings, at most half an hour. */
+const WEEKDAY_CATCH_UP_MIN = 30;
+const WEEKDAY_NIGHTS = 8;
+const MIN_WEEKDAY_NIGHTS = 3;
+/** Nights that say what the person usually sleeps, and how many are needed before that replaces the general need. */
+const USUAL_DAYS = 28;
+const MIN_USUAL_NIGHTS = 10;
 
 export interface SleepNight {
 	date: string;
@@ -68,14 +77,49 @@ export interface SleepModel {
 	have: number;
 	/** Minutes slept short of the need over those nights, or null while too few nights exist. */
 	debt: number | null;
-	/** Suggested sleep tonight in minutes: the need plus a quarter of the debt, at most one hour extra. */
+	/** Suggested sleep tonight in minutes. Without a weekday pattern: the need plus a quarter of the debt, at most one hour extra. With one: what that weekday usually brings, held between the floor and the need, plus a quarter of the debt (at most half an hour). */
 	target: number | null;
+	/** The lowest sleep the card ever asks for: an hour under the need. */
+	floor: number;
+	/** What the person usually sleeps (median of the last 28 nights), held between the floor and the need; the need itself with too little history. */
+	reference: number;
+	/** Minutes slept short of the reference over the last 7 nights (the same as debt while the reference is the need). */
+	personalDebt: number | null;
+	/** How long the nights before the coming weekday usually are (upper end of the last 8), or null with fewer than 3 such nights. */
+	weekday: { date: string; typical: number } | null;
+}
+
+/** Value at the upper quarter of the list: what the person manages when the night allows it. */
+function upperQuarter(values: number[]): number {
+	const sorted = [...values].sort((a, b) => a - b);
+	return sorted[Math.ceil(0.75 * sorted.length) - 1]!;
+}
+
+function median(values: number[]): number {
+	const sorted = [...values].sort((a, b) => a - b);
+	const mid = Math.floor(sorted.length / 2);
+	return sorted.length % 2 === 1 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 }
 
 export function computeSleep(index: DayIndex, date: string, birthYear: number | null = null): SleepModel {
 	const need = sleepNeed(date, birthYear);
+	const floor = need - FLOOR_BELOW_NEED_MIN;
+	const usual: number[] = [];
+	for (let i = 0; i < USUAL_DAYS; i++) {
+		const m = index.minutes("sleep_duration", shiftDate(date, -i));
+		if (m !== null) usual.push(m);
+	}
+	const reference = usual.length < MIN_USUAL_NIGHTS ? need : Math.min(need, Math.max(floor, median(usual)));
+	// the night that is coming ends on the next date: its weekday's earlier nights are 7, 14, ... days before that
+	const tonight = shiftDate(date, 1);
+	const sameWeekday: number[] = [];
+	for (let k = 1; k <= WEEKDAY_NIGHTS; k++) {
+		const m = index.minutes("sleep_duration", shiftDate(tonight, -7 * k));
+		if (m !== null) sameWeekday.push(m);
+	}
 	let have = 0;
 	let debt = 0;
+	let personalDebt = 0;
 	const nights: SleepNight[] = [];
 	for (let i = NIGHTS - 1; i >= 0; i--) {
 		const day = shiftDate(date, -i);
@@ -88,10 +132,18 @@ export function computeSleep(index: DayIndex, date: string, birthYear: number | 
 		if (m === null) continue;
 		have++;
 		debt += Math.max(0, need - m);
+		personalDebt += Math.max(0, reference - m);
 	}
 	const ready = have >= SLEEP_MIN_NIGHTS;
-	const target = ready ? Math.floor((need + Math.min(debt / 4, MAX_CATCH_UP_MIN)) / TARGET_STEP_MIN) * TARGET_STEP_MIN : null;
-	return { insights: [], need, schedule: scheduleOf(nights), trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target };
+	const weekday = sameWeekday.length < MIN_WEEKDAY_NIGHTS ? null : { date: tonight, typical: upperQuarter(sameWeekday) };
+	let target: number | null = null;
+	if (ready && weekday) {
+		const base = Math.min(need, Math.max(floor, weekday.typical));
+		target = Math.ceil((base + Math.min(personalDebt / 4, WEEKDAY_CATCH_UP_MIN)) / TARGET_STEP_MIN) * TARGET_STEP_MIN;
+	} else if (ready) {
+		target = Math.floor((need + Math.min(debt / 4, MAX_CATCH_UP_MIN)) / TARGET_STEP_MIN) * TARGET_STEP_MIN;
+	}
+	return { insights: [], need, schedule: scheduleOf(nights), trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target, floor, reference, personalDebt: ready ? personalDebt : null, weekday };
 }
 
 function meanAndSd(values: number[]): { mean: number; sd: number } {
@@ -164,7 +216,7 @@ function timelineChart(parent: HTMLElement, nights: SleepNight[], need: number, 
 export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.minutes === null ? null : formatMinutes(model.minutes);
 	const unit = model.minutes !== null && model.score !== null ? `· ${Math.round(model.score)}` : undefined;
-	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: (model.schedule ? `${t("panelSleepExplain", lang)} ${t("panelSleepExplainTimes", lang)}` : t("panelSleepExplain", lang)).replace(/\{need\}/g, String(model.need / 60)), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
+	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: [t("panelSleepExplain", lang), ...(model.schedule ? [t("panelSleepExplainTimes", lang)] : []), ...(model.weekday || model.reference < model.need ? [t("panelSleepExplainPersonal", lang)] : [])].join(" ").replace(/\{need\}/g, String(model.need / 60)).replace(/\{floor\}/g, String(model.floor / 60)), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
 		if (model.debt === null || model.target === null) {
 			card.createDiv({
 				cls: "ghs-card-note",
@@ -174,10 +226,15 @@ export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string
 		}
 		if (model.schedule) timelineChart(card, model.nights, model.need, lang);
 		else durationChart(card, model.nights, model.need, lang);
+		const personal = model.reference < model.need;
+		const owed = model.personalDebt!;
 		card.createDiv({
 			cls: "ghs-card-note",
-			text: model.debt === 0 ? t("panelSleepNoDebt", lang) : t("panelSleepDebt", lang).replace("{debt}", formatMinutes(model.debt)),
+			text: (owed === 0 ? t(personal ? "panelSleepNoDebtPersonal" : "panelSleepNoDebt", lang) : t(personal ? "panelSleepDebtPersonal" : "panelSleepDebt", lang).replace("{debt}", formatMinutes(owed))).replace("{usual}", formatMinutes(model.reference)),
 		});
+		if (model.weekday) {
+			card.createDiv({ cls: "ghs-card-note", text: t("panelSleepWeekday", lang).replace("{day}", weekdayName(model.weekday.date, lang)).replace("{typical}", formatMinutes(model.weekday.typical)) });
+		}
 		if (model.schedule) {
 			const sc = model.schedule;
 			card.createDiv({

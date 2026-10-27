@@ -23,6 +23,9 @@ async function indexOf(nights: (number | null)[], score?: number): Promise<DayIn
 	return new DayIndex(app as never, () => settings);
 }
 
+/** `len` nights of `other` minutes, except the nights that fall on the weekday of tonight (a Friday), which get `friday`. */
+const series = (other: number, friday: number, len = 60): number[] => Array.from({ length: len }, (_, ago) => (ago % 7 === 6 ? friday : other));
+
 describe("computeSleep", () => {
 	it("sums the shortfall against 7 hours over the last 7 nights", async () => {
 		// 6h, 6h30, 7h, 8h, 5h, 7h30, 6h45  ->  60 + 30 + 0 + 0 + 120 + 0 + 15
@@ -45,6 +48,64 @@ describe("computeSleep", () => {
 		const m = computeSleep(await indexOf([480, 450, 420, 500, 430, 440, 460]), END);
 		expect(m.debt).toBe(0);
 		expect(m.target).toBe(420);
+	});
+
+	it("aims at what the coming weekday usually brings when that is less than the need, with a quarter of the debt on top", async () => {
+		// Friday nights 5 h 30: held at the 6 h floor; the last Friday is 90 min short -> 6 h + 22.5 min -> 6 h 30
+		const m = computeSleep(await indexOf(series(420, 330)), END);
+		expect(m.weekday).toEqual({ date: "2026-10-23", typical: 330 });
+		expect(m.floor).toBe(360);
+		expect(m.target).toBe(390);
+	});
+
+	it("never aims below an hour under the need, however short the weekday nights are", async () => {
+		const m = computeSleep(await indexOf(series(420, 270)), END);
+		expect(m.weekday!.typical).toBe(270);
+		expect(m.target).toBe(390);
+		expect(computeSleep(await indexOf(series(300, 240)), END).target!).toBeGreaterThanOrEqual(360);
+	});
+
+	it("follows a weekday that lies between the floor and the need", async () => {
+		expect(computeSleep(await indexOf(series(420, 400)), END).target).toBe(405);
+	});
+
+	it("never asks for more than the need on top of the catch-up when the weekday usually brings more", async () => {
+		expect(computeSleep(await indexOf(series(420, 500)), END).target).toBe(420);
+	});
+
+	it("uses the upper quarter of the weekday's last 8 nights, so one bad Friday does not set the aim", async () => {
+		const nights = series(420, 420);
+		for (const ago of [6, 13, 20]) nights[ago] = 300;
+		expect(computeSleep(await indexOf(nights), END).weekday!.typical).toBe(420);
+	});
+
+	it("falls back to the need plus a quarter of the debt with fewer than 3 nights of that weekday", async () => {
+		const m = computeSleep(await indexOf(series(420, 330, 20)), END); // Fridays at ago 6 and 13 only
+		expect(m.weekday).toBeNull();
+		expect(m.target).toBe(420 + Math.floor((90 / 4) / 15) * 15);
+	});
+
+	it("counts the debt against what the person usually sleeps, kept at the floor or above", async () => {
+		const steady = computeSleep(await indexOf(series(360, 360)), END);
+		expect(steady.reference).toBe(360);
+		expect(steady.debt).toBe(420); // against the general need of 7 h
+		expect(steady.personalDebt).toBe(0);
+		expect(steady.target).toBe(360);
+		const short = computeSleep(await indexOf(series(300, 300)), END);
+		expect(short.reference).toBe(360); // 5 h is not a reference
+		expect(short.personalDebt).toBe(420);
+		expect(short.target).toBe(390);
+	});
+
+	it("keeps the general need as the reference with fewer than 10 nights of history", async () => {
+		const m = computeSleep(await indexOf([360, 360, 360, 360, 360, 360, 360, 360, 360]), END);
+		expect(m.reference).toBe(420);
+		expect(m.personalDebt).toBe(m.debt);
+	});
+
+	it("takes the middle of an even number of nights as the usual sleep", async () => {
+		const nights = Array.from({ length: 12 }, (_, i) => (i % 2 === 0 ? 380 : 400));
+		expect(computeSleep(await indexOf(nights), END).reference).toBe(390);
 	});
 
 	it("counts nights without data as unknown, not as zero", async () => {
@@ -120,6 +181,26 @@ describe("renderSleep", () => {
 	it("says so when there is no debt", async () => {
 		render(computeSleep(await indexOf([480, 450, 420, 500, 430, 440, 460]), END));
 		expect(notes()).toEqual([en.panelSleepNoDebt]);
+	});
+
+	it("names the weekday pattern and the usual sleep the debt is counted against", async () => {
+		render(computeSleep(await indexOf(series(360, 360)), END));
+		expect(notes()).toEqual(["No sleep debt against your usual 6 h", "Nights before Friday: you usually sleep 6 h"]);
+		expect(root.querySelector(".ghs-foot-value")?.textContent).toBe("Aim for 6 h");
+		root.replaceChildren();
+		render(computeSleep(await indexOf(series(300, 300)), END));
+		expect(notes()[0]).toBe("Sleep debt, last 7 nights: 7 h, against your usual 6 h");
+		root.replaceChildren();
+		render(computeSleep(await indexOf(series(420, 420)), END), "de");
+		expect(notes()[1]).toBe("Nächte vor Freitag: du schläfst meist 7 h");
+	});
+
+	it("explains how the aim and the debt are worked out when they rest on the person's own nights", async () => {
+		render(computeSleep(await indexOf(series(360, 360)), END), "en", true);
+		expect(root.querySelector(".ghs-explain")?.textContent).toContain("It never drops below 6 hours");
+		root.replaceChildren();
+		render(computeSleep(await indexOf([420, 420, 420, 420, 420, 420, 420]), END), "en", true);
+		expect(root.querySelector(".ghs-explain")?.textContent).not.toContain("never drops below");
 	});
 
 	it("warns that the debt rests on fewer than seven nights", async () => {
