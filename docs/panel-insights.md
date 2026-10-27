@@ -1,17 +1,17 @@
-# Health panel: interpretations under (i)
+# Health panel: interpretations under the light bulb
 
-Every card of the health panel has an (i) button. It opens two blocks:
+Every card of the health panel has a light bulb button. It opens two blocks:
 
 1. **What your data suggests** (framed box, headline in the accent colour): why the value is where it is and what can move it, or, when the value is good and the data allows a guess, what probably made it good. Each line has a coloured edge: orange for something to look at, green for something that is going well.
 2. **The general explanation** (plain, muted text below the box): what the card shows and how it is calculated.
 
-The interpretation is deliberately kept under (i) so the cards stay uncluttered.
+The interpretation is deliberately kept under the light bulb so the cards stay uncluttered.
 
 ## Principles
 
 - **Rule based and local.** Every text comes from a fixed rule over the daily notes in the vault. Nothing is sent anywhere and nothing is generated.
 - **Data first.** A rule fires on the person's own numbers: their 30 day range, last night's sleep, the load of the last week, yesterday's steps. The text names those numbers where it helps ("you went to bed 1 h 10 min later than usual").
-- **Numbers on the card, advice under (i).** A card shows what was measured and the numbers to hit (steps to the zone, minutes a day, tonight's sleep target) in one row style: a muted label and a value on the right, neutral in colour, green only when something is reached (zone done, goal reached) and amber for a warning. Recommendations and explanations ("ease off", "take the stairs") never sit on the card; they live in this file and under (i). Trend lines stay on the card.
+- **Numbers on the card, advice under the light bulb.** A card shows what was measured and the numbers to hit (steps to the zone, minutes a day, tonight's sleep target) in one row style: a muted label and a value on the right, neutral in colour, green only when something is reached (zone done, goal reached) and amber for a warning. Recommendations and explanations ("ease off", "take the stairs") never sit on the card; they live in this file and under the light bulb. Trend lines stay on the card.
 - **No generic tips.** There is no "avoid alcohol before bed" or "drink more water". A tip only appears when the data points to it, and it is the lever that the data points to (an earlier bedtime when the hours were lost at the start of the night, sleeping to the usual time when the alarm was early, and so on).
 - **Honest about what is not explained.** When no rule finds a cause, the text says so (`unexplained`) and points to the trend instead of inventing one.
 - **Never a diagnosis.** Wrist data are estimates and the studies describe groups of people. Every interpretation box ends with a note saying so, and illness-related texts say "worth watching" and "if you feel unwell", not more.

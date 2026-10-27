@@ -15,11 +15,11 @@ export interface CardShell {
 	lang: string;
 	/** Small trend line at the bottom of the card. */
 	trend?: TrendView;
-	/** What the data suggests (why a value is off and what helps, or why it is good), shown under (i) before the general explanation. */
+	/** What the data suggests (why a value is off and what helps, or why it is good), shown under the light bulb before the general explanation. */
 	insights?: Insight[];
 }
 
-/** The frame every card shares: title, headline value, (i) button, the details and, when open, the explanation. */
+/** The frame every card shares: title, headline value, light bulb button, the details and, when open, the explanation. */
 export function renderCard(parent: HTMLElement, shell: CardShell, details: (card: HTMLElement) => void): void {
 	const card = parent.createDiv({ cls: "ghs-card" });
 	const head = card.createDiv({ cls: "ghs-card-head" });
@@ -32,7 +32,7 @@ export function renderCard(parent: HTMLElement, shell: CardShell, details: (card
 		head.createSpan({ cls: "ghs-card-value" });
 	}
 	const info = head.createEl("button", { cls: "clickable-icon ghs-info", attr: { "aria-label": t("panelInfo", shell.lang), "aria-expanded": String(shell.explainOpen) } });
-	setIcon(info, "info");
+	setIcon(info, "lightbulb");
 	info.addEventListener("click", shell.onToggleExplain);
 	details(card);
 	if (shell.trend) renderTrend(card, shell.trend, shell.lang);

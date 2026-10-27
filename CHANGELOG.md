@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.17
+
+### Changed
+
+- The button that opens the interpretation and the explanation on each card is now a light bulb instead of an (i).
+
 ## 0.12.0-beta.16
 
 ### Changed

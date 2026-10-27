@@ -130,7 +130,12 @@ describe("renderHrv", () => {
 		expect(root.querySelector("button")?.getAttribute("aria-label")).toBe(de.panelInfo);
 	});
 
-	it("toggles the explanation behind the (i) button", async () => {
+	it("shows the explanation button as a light bulb", async () => {
+		render(computeHrv(await indexWith(61), END));
+		expect(root.querySelector(".ghs-info")?.getAttribute("data-icon")).toBe("lightbulb");
+	});
+
+	it("toggles the explanation behind the light bulb button", async () => {
 		let toggled = 0;
 		const model = computeHrv(await indexWith(61), END);
 		render(model, "en", false, () => void toggled++);
