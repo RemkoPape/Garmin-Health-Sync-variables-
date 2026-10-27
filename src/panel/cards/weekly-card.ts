@@ -70,7 +70,7 @@ export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: stri
 			return;
 		}
 		const domain = Math.max(model.cap * 1.25, model.minutes * 1.05, 1);
-		const bar = card.createDiv({ cls: "ghs-range ghs-weekly", attr: { role: "img", "aria-label": formatNumber(model.minutes, lang, 0) } });
+		const bar = card.createDiv({ cls: "ghs-range ghs-range-labelled ghs-weekly", attr: { role: "img", "aria-label": formatNumber(model.minutes, lang, 0) } });
 		const track = bar.createDiv({ cls: "ghs-weekly-track" });
 		for (const s of model.segments) {
 			track.createDiv({ cls: `ghs-weekly-seg ghs-step-${s.step ?? "none"}` }).setCssProps({ "--ghs-w": `${(s.minutes / domain) * 100}%` });

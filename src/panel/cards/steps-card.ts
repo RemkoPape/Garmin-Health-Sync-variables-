@@ -76,7 +76,7 @@ export function renderSteps(parent: HTMLElement, model: StepsModel, lang: string
 		const zoneTop = model.base * ZONE_FACTOR;
 		const domain = model.base * DOMAIN_FACTOR;
 		if (model.steps !== null) {
-			const bar = card.createDiv({ cls: "ghs-range ghs-steps-bar", attr: { role: "img", "aria-label": `${thousands(model.base, lang)}–${thousands(zoneTop, lang)}` } });
+			const bar = card.createDiv({ cls: "ghs-range ghs-range-labelled ghs-steps-bar", attr: { role: "img", "aria-label": `${thousands(model.base, lang)}–${thousands(zoneTop, lang)}` } });
 			bar.createDiv({ cls: "ghs-range-track ghs-range-track-steps" });
 			bar.createDiv({ cls: "ghs-zone" });
 			const labels = bar.createDiv({ cls: "ghs-range-labels" });
