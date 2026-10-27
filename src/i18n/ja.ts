@@ -161,6 +161,7 @@ export const ja: Record<TranslationKeys, string> = {
 	settingsPanelShowDesc: "右サイドバーにヘルスパネルを追加します。デイリーノートを読み取るだけで、変更はしません。",
 	panelInsightTitle: "データから分かること",
 	panelInsightNote: "あなた自身のデータと、人々の集団を対象とした研究に基づいています。診断や医療上のアドバイスではありません。",
+	panelAboutTitle: "見方",
 	insight_unexplained: "ほかのデータにはこの理由が見当たりません。1日だけの値は変動するため、何かを変える前に数日間の推移を見てください。",
 	insight_hrv_low_load: "直近7日間のトレーニングは、普段の負荷より{pct}パーセント多くなっています。負荷が急に増えるとHRVは下がりやすく、軽めの日が数日続くと戻ります。次の数日は軽めにしましょう。",
 	insight_hrv_low_sleep: "直近7夜で、必要な{need}時間より{debt}少なく眠っています。睡眠不足が最も直接的に直せる点です。数夜は必要な睡眠時間を目指しましょう。",

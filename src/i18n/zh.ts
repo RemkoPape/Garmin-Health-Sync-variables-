@@ -161,6 +161,7 @@ export const zh: Record<TranslationKeys, string> = {
 	settingsPanelShowDesc: "在右侧边栏添加健康面板。它只读取你的每日笔记，不会修改。",
 	panelInsightTitle: "你的数据说明了什么",
 	panelInsightNote: "基于你自己的数据和针对人群的研究。不是诊断，也不是医疗建议。",
+	panelAboutTitle: "如何解读",
 	insight_unexplained: "你的其他数据无法解释这一点。单日数据会有波动，在改变任何做法之前，先看几天的趋势。",
 	insight_hrv_low_load: "你最近 7 天的训练比日常负荷高 {pct}%。负荷骤增后 HRV 常会下降，几天较轻的日子后会恢复，所以接下来几天保持轻松。",
 	insight_hrv_low_sleep: "最近 7 晚你比所需的 {need} 小时少睡了 {debt}。睡眠不足是最直接可以改善的一点：接下来几晚重新睡够所需时长。",

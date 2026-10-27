@@ -162,6 +162,7 @@ export const de: Record<TranslationKeys, string> = {
 	settingsPanelShowDesc: "Fügt der rechten Seitenleiste ein Gesundheitspanel hinzu. Es liest deine Tagesnotizen und ändert sie nie.",
 	panelInsightTitle: "Was deine Daten andeuten",
 	panelInsightNote: "Basiert auf deinen eigenen Daten und auf Studien mit Personengruppen. Keine Diagnose und keine medizinische Beratung.",
+	panelAboutTitle: "So liest du das",
 	insight_unexplained: "In deinen übrigen Daten gibt es keine Erklärung dafür. Einzelne Tage schwanken, schau dir daher den Verlauf über mehrere Tage an, bevor du etwas änderst.",
 	insight_hrv_low_load: "Dein Training der letzten 7 Tage liegt {pct} Prozent über deiner üblichen Belastung. Die HRV sinkt oft nach einem Belastungssprung und erholt sich nach ein paar leichteren Tagen, halte die nächsten Tage also locker.",
 	insight_hrv_low_sleep: "Du hast in den letzten 7 Nächten {debt} weniger geschlafen als dein Bedarf von {need} Stunden. Das Schlafdefizit ist der direkteste Hebel: peile ein paar Nächte lang wieder deinen Bedarf an.",
