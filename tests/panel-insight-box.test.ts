@@ -30,14 +30,28 @@ describe("the interpretation box", () => {
 		renderRange(root, HRV_CARD, await model([{ id: "hrv_low_load", params: { pct: "70" } }, { id: "hrv_in_range" }]), "en", true, () => undefined);
 		const children = Array.from(root.querySelector(".ghs-card")!.children).map((c) => c.className);
 		expect(children.indexOf("ghs-insight")).toBeGreaterThan(-1);
-		expect(children.indexOf("ghs-insight")).toBeLessThan(children.indexOf("ghs-explain"));
+		expect(children.indexOf("ghs-insight")).toBeLessThan(children.indexOf("ghs-about"));
 		expect(root.querySelector(".ghs-insight-title")?.textContent).toBe(en.panelInsightTitle);
 		const items = Array.from(root.querySelectorAll(".ghs-insight-item"));
 		expect(items.map((i) => i.textContent)).toEqual([en.insight_hrv_low_load.replace("{pct}", "70"), en.insight_hrv_in_range]);
 		expect(items.map((i) => i.classList.contains("ghs-insight-watch"))).toEqual([true, false]);
 		expect(items.map((i) => i.classList.contains("ghs-insight-good"))).toEqual([false, true]);
-		expect(root.querySelector(".ghs-insight-note")?.textContent).toBe(en.panelInsightNote);
+		expect(root.querySelector(".ghs-insight .ghs-insight-note")).toBeNull();
 		expect(root.querySelector(".ghs-explain")?.textContent).toBe(en.panelHrvExplain);
+	});
+
+	it("keeps the general explanation and the disclaimer in their own container, folded by default", async () => {
+		renderRange(root, HRV_CARD, await model([{ id: "hrv_in_range" }]), "en", true, () => undefined);
+		const about = root.querySelector("details.ghs-about") as HTMLDetailsElement;
+		expect(about.open).toBe(false);
+		expect(about.querySelector("summary")?.textContent).toBe(en.panelAboutTitle);
+		expect(about.querySelector(".ghs-explain")?.textContent).toBe(en.panelHrvExplain);
+		expect(about.querySelector(".ghs-insight-note")?.textContent).toBe(en.panelInsightNote);
+		root.replaceChildren();
+		renderRange(root, HRV_CARD, await model([]), "de", true, () => undefined);
+		expect(root.querySelector(".ghs-about summary")?.textContent).toBe(de.panelAboutTitle);
+		expect(root.querySelector(".ghs-insight")).toBeNull();
+		expect(root.querySelector(".ghs-about .ghs-insight-note")?.textContent).toBe(de.panelInsightNote);
 	});
 
 	it("is written in the plugin language", async () => {
@@ -49,7 +63,7 @@ describe("the interpretation box", () => {
 	it("stays hidden while (i) is closed", async () => {
 		renderRange(root, HRV_CARD, await model([{ id: "hrv_in_range" }]), "en", false, () => undefined);
 		expect(root.querySelector(".ghs-insight")).toBeNull();
-		expect(root.querySelector(".ghs-explain")).toBeNull();
+		expect(root.querySelector(".ghs-about")).toBeNull();
 	});
 
 	it("is left out when there is nothing to say, leaving only the general explanation", async () => {

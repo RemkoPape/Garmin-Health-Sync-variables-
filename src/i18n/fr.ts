@@ -161,6 +161,7 @@ export const fr: Record<TranslationKeys, string> = {
 	settingsPanelShowDesc: "Ajoute un panneau santé à la barre latérale droite. Il lit vos notes quotidiennes et ne les modifie jamais.",
 	panelInsightTitle: "Ce que suggèrent vos données",
 	panelInsightNote: "Basé sur vos propres données et sur des études de groupes de personnes. Ni un diagnostic ni un avis médical.",
+	panelAboutTitle: "Comment lire ceci",
 	insight_unexplained: "Rien d’autre dans vos données ne l’explique. Les jours isolés varient, regardez donc la tendance sur plusieurs jours avant de changer quoi que ce soit.",
 	insight_hrv_low_load: "Votre entraînement des 7 derniers jours dépasse de {pct} pour cent votre charge habituelle. La VFC baisse souvent après un pic de charge et remonte en quelques jours plus légers, gardez donc les prochains jours légers.",
 	insight_hrv_low_sleep: "Vous avez dormi {debt} de moins que votre besoin de {need} heures sur les 7 dernières nuits. Le manque de sommeil est le levier le plus direct : visez de nouveau votre besoin pendant quelques nuits.",

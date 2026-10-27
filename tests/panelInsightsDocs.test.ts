@@ -65,6 +65,7 @@ describe("interpretation texts", () => {
 		for (const lang of Object.values(languages)) {
 			expect(lang["panelInsightTitle"]).toBeTruthy();
 			expect(lang["panelInsightNote"]).toBeTruthy();
+			expect(lang["panelAboutTitle"]).toBeTruthy();
 		}
 	});
 

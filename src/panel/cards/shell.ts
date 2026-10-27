@@ -46,8 +46,11 @@ export function renderCard(parent: HTMLElement, shell: CardShell, details: (card
 			box.createDiv({ cls: "ghs-insight-title", text: t("panelInsightTitle", shell.lang) });
 			for (const insight of insights) box.createDiv({ cls: `ghs-insight-item ghs-insight-${INSIGHTS[insight.id].kind}`, text: insightText(insight, shell.lang) });
 			for (const fact of facts) box.createDiv({ cls: "ghs-insight-item ghs-fact", text: fact });
-			box.createDiv({ cls: "ghs-insight-note", text: t("panelInsightNote", shell.lang) });
 		}
-		card.createDiv({ cls: "ghs-explain", text: shell.explain });
+		// what the card shows and how it is worked out, with the disclaimer, folded until asked for
+		const about = card.createEl("details", { cls: "ghs-about" });
+		about.createEl("summary", { cls: "ghs-insight-title", text: t("panelAboutTitle", shell.lang) });
+		about.createDiv({ cls: "ghs-explain", text: shell.explain });
+		about.createDiv({ cls: "ghs-insight-note", text: t("panelInsightNote", shell.lang) });
 	}
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.36
+
+### Changed
+
+- Under the light bulb of every card, the general explanation (what the metric is and how it is worked out) now has its own container, "How to read this", like "What your data suggests". It is folded by default (tap the title to open it) and holds the disclaimer that used to sit under the other container.
+
 ## 0.12.0-beta.35
 
 ### Changed

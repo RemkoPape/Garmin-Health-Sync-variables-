@@ -181,11 +181,6 @@
 	font-size: var(--font-ui-smaller);
 }
 
-.ghs-explain {
-	padding-top: var(--size-4-2);
-	border-top: 1px solid var(--background-modifier-border);
-}
-
 /* Range bar: colour scale from the usual range outwards */
 .ghs-range {
 	position: relative;
@@ -925,7 +920,8 @@
 }
 
 /* Interpretation under (i): what the data suggests, set apart from the general explanation */
-.ghs-insight {
+.ghs-insight,
+.ghs-about {
 	display: flex;
 	flex-direction: column;
 	gap: var(--size-4-2);
@@ -957,6 +953,39 @@
 
 .ghs-insight-good {
 	border-left-color: var(--color-green);
+}
+
+/* How to read this: folded by default, the title is the button; a block, because a folded flex container keeps the gap of its hidden content */
+.ghs-about {
+	display: block;
+}
+
+.ghs-about .ghs-insight-note {
+	margin-top: var(--size-4-2);
+}
+
+.ghs-about > summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+	list-style: none;
+}
+
+.ghs-about > summary::-webkit-details-marker {
+	display: none;
+}
+
+.ghs-about > summary::after {
+	content: "▾";
+}
+
+.ghs-about:not([open]) > summary::after {
+	content: "▸";
+}
+
+.ghs-about[open] > summary {
+	margin-bottom: var(--size-4-2);
 }
 
 .ghs-insight-note {

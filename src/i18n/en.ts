@@ -160,6 +160,7 @@ export const en = {
 	settingsPanelShowDesc: "Adds a health panel to the right sidebar. It reads your daily notes and never changes them.",
 	panelInsightTitle: "What your data suggests",
 	panelInsightNote: "Based on your own data and on studies of groups of people. Not a diagnosis or medical advice.",
+	panelAboutTitle: "How to read this",
 	insight_unexplained: "Nothing else in your data explains it. Single days vary, so look at the trend over several days before changing anything.",
 	insight_hrv_low_load: "Your training of the last 7 days is {pct} percent above your usual load. HRV commonly dips after a spike in load and returns within a few easier days, so keep the next days light.",
 	insight_hrv_low_sleep: "You slept {debt} less than your need of {need} hours over the last 7 nights. The sleep shortfall is the most direct thing to fix: aim for your need again for a few nights.",
