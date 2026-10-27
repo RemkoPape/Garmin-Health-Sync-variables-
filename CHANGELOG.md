@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.39
+
+### Added
+
+- Command **Build Garmin history**: fetches your days from Garmin, newest first, back to a date you choose (default five years) into the history notes. The dialog shows how long it will take with your enabled metrics. Days that are already in the history are skipped, so a stopped or failed build continues where it left off; days without data are remembered, and the build ends where your data starts (120 days in a row without any).
+- While it runs, a notice at the top shows the day, the days done and the time left, with a **Stop** button, and on a desktop the status bar shows the percentage. Failed days are retried; if Garmin keeps failing the build pauses (5, 10, 20, 30 minutes) and finally stops, keeping everything fetched. The auto-sync waits during a build, and requests to Garmin never overlap.
+
+### Changed
+
+- In a light theme the cards take a smaller hint of your accent colour, so they read greyer.
+
 ## 0.12.0-beta.38
 
 ### Added

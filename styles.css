@@ -70,7 +70,7 @@
 	/* One data colour for everything that has no good or bad side: the accent of the theme with its lightness held between 0.5 and 0.72, so a very bright or very dark accent still stands out on a light and on a dark card. The shades fade it towards the card, strongest first. */
 	--ghs-data: var(--interactive-accent);
 	/* The card colour: the theme's secondary background with a hint of the accent, so the cards sit in the theme instead of beside it */
-	--ghs-card: color-mix(in oklab, var(--background-secondary), var(--interactive-accent) 5%);
+	--ghs-card: color-mix(in oklab, var(--background-secondary), var(--interactive-accent) 2%);
 	--ghs-edge: var(--interactive-accent);
 	--ghs-shade-1: var(--ghs-data);
 	--ghs-shade-2: color-mix(in oklab, var(--ghs-data) 70%, var(--ghs-card));
@@ -1110,4 +1110,19 @@
 .ghs-card-alert {
 	color: var(--color-orange);
 	font-weight: var(--font-semibold);
+}
+
+/* The notice of a running history build: the text and a Stop button */
+.ghs-history-notice {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+}
+
+.ghs-history-text {
+	flex: 1;
+}
+
+.ghs-history-estimate {
+	color: var(--text-muted);
 }

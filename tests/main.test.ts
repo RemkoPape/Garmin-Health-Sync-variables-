@@ -23,7 +23,7 @@ const TOKEN2 = { access_token: "at", refresh_token: "rt", expires_in: 3600, expi
 
 interface Loaded {
 	app: App;
-	plugin: HealthSyncPlugin & { data: unknown; commands: Map<string, { name: string; callback?: () => void }>; settingTabs: unknown[]; saves: number };
+	plugin: HealthSyncPlugin & { data: unknown; commands: Map<string, { name: string; callback?: () => void }>; settingTabs: unknown[]; saves: number; statusBarItems: HTMLElement[] };
 	provider: FakeGarminProvider;
 }
 
@@ -180,6 +180,134 @@ describe("import history from daily notes", () => {
 	});
 });
 
+describe("build history command", () => {
+	const historyPaths = (app: App): string[] => app.vault.paths().filter((path) => path.includes("Garmin history"));
+
+	/** Opens the dialog, picks the start date (days ago) and starts. */
+	function start(loaded: Awaited<ReturnType<typeof load>>, daysAgo = 3): Modal {
+		loaded.plugin.commands.get("build-history")!.callback!();
+		const modal = Modal.opened.at(-1)!;
+		const input = modal.contentEl.querySelector("input") as HTMLInputElement;
+		input.value = dayString(daysAgo);
+		input.dispatchEvent(new window.Event("input"));
+		(modal.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
+		return modal;
+	}
+
+	it("is a command of its own with a stable id", async () => {
+		const { plugin } = await load(signedIn({ language: "de" }));
+		expect(plugin.commands.get("build-history")?.name).toBe(de.commandBuildHistory);
+	});
+
+	it("asks to sign in first when there is no session", async () => {
+		const loaded = await load(signedIn());
+		loaded.provider.configured = false;
+		const before = Modal.opened.length;
+		loaded.plugin.commands.get("build-history")!.callback!();
+		expect(Modal.opened.length).toBe(before);
+		expect(Notice.recorded.at(-1)?.message).toBe(en.noticeLoginRequired);
+	});
+
+	it("fetches the days newest first into the history notes, shows progress and a status bar item, and ends with a summary", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		const modal = start(loaded);
+		await settle();
+		expect(modal.isOpen).toBe(false);
+		expect(loaded.plugin.statusBarItems).toHaveLength(1);
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toEqual([dayString(1), dayString(2), dayString(3)]);
+		const lines = historyPaths(loaded.app).flatMap((path) => loaded.app.vault.text(path).split("\n").filter((l) => /^\d{4}-/.test(l)));
+		expect(lines).toHaveLength(3);
+		expect(loaded.plugin.statusBarItems[0]!.isConnected).toBe(false);
+		expect(Notice.recorded.at(-1)?.message).toBe("Garmin history ready: 3 days fetched, 0 were already there");
+		expect(loaded.plugin.saves).toBeGreaterThan(0);
+	});
+
+	it("continues where it stopped: days that are in the history are not fetched again", async () => {
+		const loaded = await load(signedIn());
+		start(loaded);
+		await vi.runAllTimersAsync();
+		loaded.provider.fetchCalls = [];
+		start(loaded, 4);
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toEqual([dayString(4)]);
+	});
+
+	it("runs one build at a time and leaves the recent days to the auto-sync afterwards", async () => {
+		const loaded = await load(signedIn(), (app) => void app.vault.seed(`${dayString(0)}.md`, "---\n---\ntext"));
+		let release: () => void = () => undefined;
+		loaded.provider.gate = new Promise<void>((resolve) => (release = resolve));
+		start(loaded);
+		await settle();
+		const dialogs = Modal.opened.length;
+		loaded.plugin.commands.get("build-history")!.callback!();
+		expect(Modal.opened.length).toBe(dialogs);
+		const note = loaded.app.vault.getMarkdownFiles()[0]!;
+		loaded.app.workspace.fire("file-open", note);
+		await settle();
+		expect(loaded.provider.fetchCalls).toHaveLength(1);
+		release();
+		await vi.runAllTimersAsync();
+	});
+
+	it("stops from the button of the notice and says where it stopped", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		start(loaded, 10);
+		await settle();
+		const notice = Notice.recorded.find((n) => n.fragment?.querySelector("button"))!;
+		(notice.fragment!.querySelector("button") as HTMLButtonElement).click();
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.at(-1)?.message).toBe(`Garmin history stopped at ${dayString(2)}. Run the command again to continue.`);
+		expect(fetched(loaded.provider)).toEqual([dayString(1)]);
+	});
+
+	it("signs in first when the session has to be renewed, and says so when that fails", async () => {
+		const loaded = await load(signedIn());
+		loaded.provider.oauth1 = null;
+		loaded.provider.authResult = { ok: false, cancelled: false };
+		start(loaded);
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.authCalls).toBe(1);
+		expect(fetched(loaded.provider)).toEqual([]);
+		expect(Notice.recorded.at(-1)?.message).toBe(en.noticeLoginRequired);
+		expect(loaded.plugin.statusBarItems[0]!.isConnected).toBe(false);
+	});
+
+	it("goes on after a successful sign-in", async () => {
+		const loaded = await load(signedIn());
+		loaded.provider.oauth1 = null;
+		start(loaded, 2);
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.authCalls).toBe(1);
+		expect(fetched(loaded.provider)).toHaveLength(2);
+	});
+
+	it("reports an unexpected failure and frees the command again", async () => {
+		const loaded = await load(signedIn());
+		loaded.app.vault.failOn = (op) => (op === "create" ? new Error("disk full") : null);
+		start(loaded, 2);
+		await vi.runAllTimersAsync();
+		expect(Notice.recorded.at(-1)?.message).toBe(en.noticeSyncError);
+		expect(loaded.plugin.statusBarItems[0]!.isConnected).toBe(false);
+		loaded.app.vault.failOn = null;
+		const dialogs = Modal.opened.length;
+		loaded.plugin.commands.get("build-history")!.callback!();
+		expect(Modal.opened.length).toBe(dialogs + 1);
+	});
+
+	it("shows no status bar item on a phone", async () => {
+		const loaded = await load(signedIn());
+		Platform.isDesktop = false;
+		try {
+			start(loaded, 2);
+			await vi.runAllTimersAsync();
+		} finally {
+			Platform.isDesktop = true;
+		}
+		expect(loaded.plugin.statusBarItems).toHaveLength(0);
+	});
+});
+
 describe("fold properties by default", () => {
 	const dailyNote = (): TFile => Object.assign(new TFile(), { path: `${dayString(0)}.md`, basename: dayString(0) });
 	const openNote = async (app: App, file: TFile): Promise<void> => {
@@ -240,9 +368,9 @@ describe("fold properties by default", () => {
 });
 
 describe("startup", () => {
-	it("registers the six commands under their stable ids, named in the user's language", async () => {
+	it("registers the seven commands under their stable ids, named in the user's language", async () => {
 		const { plugin } = await load({ language: "de" });
-		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "import-history-from-notes", "login-with-ticket", "open-health-panel", "show-whats-new", "sync-health-data"]);
+		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "build-history", "import-history-from-notes", "login-with-ticket", "open-health-panel", "show-whats-new", "sync-health-data"]);
 		expect(plugin.commands.get("show-whats-new")?.name).toBe(de.commandWhatsNew);
 		expect(plugin.commands.get("sync-health-data")?.name).toBe(de.commandSync);
 		expect(plugin.commands.get("backfill-health-data")?.name).toBe(de.commandBackfill);

@@ -114,7 +114,16 @@ export class GarminProvider implements HealthProvider {
 		return calculateBatchDelay(endpoints.length);
 	}
 
-	async fetchData(date: string, enabledMetrics: string[]): Promise<HealthData> {
+	/** The API keeps one day's data in a cache, so two fetches must never overlap (an auto-sync during a long history build). */
+	private fetching: Promise<unknown> = Promise.resolve();
+
+	fetchData(date: string, enabledMetrics: string[]): Promise<HealthData> {
+		const run = this.fetching.then(() => this.fetchDataNow(date, enabledMetrics));
+		this.fetching = run.catch(() => undefined);
+		return run;
+	}
+
+	private async fetchDataNow(date: string, enabledMetrics: string[]): Promise<HealthData> {
 		// OAuth: no BrowserWindow needed for data fetching. If the long-lived
 		// OAuth1 token is missing, an interactive login is required. The OAuth2 refresh
 		// happens silently in fetchDataForDate (Phase 7).

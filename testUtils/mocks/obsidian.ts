@@ -445,6 +445,13 @@ export class Plugin {
 		this.commands.set(command.id, command);
 		return command;
 	}
+	/** The status bar items added so far (a desktop-only element). */
+	statusBarItems: HTMLElement[] = [];
+	addStatusBarItem(): HTMLElement {
+		const item = document.createElement("div");
+		this.statusBarItems.push(item);
+		return item;
+	}
 	addSettingTab(tab: unknown): void {
 		this.settingTabs.push(tab);
 	}
