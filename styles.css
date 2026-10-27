@@ -870,10 +870,6 @@
 	opacity: 1;
 }
 
-.ghs-distance-fill {
-	background: var(--ghs-data);
-}
-
 /* VO2 max: twelve weekly values */
 .ghs-vo2-bars {
 	height: 32px;

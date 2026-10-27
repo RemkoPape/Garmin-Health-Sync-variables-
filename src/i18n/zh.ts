@@ -376,7 +376,6 @@ export const zh: Record<TranslationKeys, string> = {
 	panelWeeklyOver: "已超过上限",
 	panelCategoryRunning: "跑步",
 	panelCategoryCycling: "骑行",
-	panelDistanceBasis: "通常 {avg} · 上限 {cap}",
 	panelDistanceLeft: "本周还剩 {km}",
 	panelSectionFitness: "体能与身体",
 	panelVo2Title: "最大摄氧量",

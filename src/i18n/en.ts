@@ -375,7 +375,6 @@ export const en = {
 	panelWeeklyOver: "Over the limit",
 	panelCategoryRunning: "Running",
 	panelCategoryCycling: "Cycling",
-	panelDistanceBasis: "Usual {avg} · limit {cap}",
 	panelDistanceLeft: "{km} left",
 	panelSectionFitness: "Fitness and body",
 	panelVo2Title: "Cardio fitness",

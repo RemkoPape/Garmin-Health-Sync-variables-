@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.33
+
+### Changed
+
+- Weekly load, running and cycling rows: the bar is the same as the minutes bar above it, with the usual week and the limit labelled under their ticks ("usual 6.9", "limit 7.6") and the foot reading "Until the limit / 2.6 km left". The separate "Usual … · limit …" line is gone. A sport that was only started this week has no usual week yet, so it shows no ticks.
+
 ## 0.12.0-beta.32
 
 ### Fixed

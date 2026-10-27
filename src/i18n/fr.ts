@@ -376,7 +376,6 @@ export const fr: Record<TranslationKeys, string> = {
 	panelWeeklyOver: "Au-dessus de la limite",
 	panelCategoryRunning: "Course",
 	panelCategoryCycling: "Vélo",
-	panelDistanceBasis: "Habituel {avg} · limite {cap}",
 	panelDistanceLeft: "Encore {km}",
 	panelSectionFitness: "Forme et corps",
 	panelVo2Title: "VO₂ max",
