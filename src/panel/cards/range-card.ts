@@ -87,7 +87,7 @@ export function computeRange(spec: RangeCardSpec, index: DayIndex, date: string)
 	return { insights: [], value, have: values.length, baseline: b, early: values.length < RANGE_MIN_DAYS, z: value !== null && b ? zScore(value, b) : null, trend: computeTrend((d) => index.value(spec.key, d), date) };
 }
 
-/** A range card: the day's value against the personal range, with the explanation behind an (i) button. */
+/** A range card: the day's value against the personal range, with the explanation behind a light bulb button. */
 export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: RangeModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.value === null ? null : formatNumber(model.value, lang, spec.digits);
 	renderCard(parent, { title: t(spec.title, lang), value, unit: spec.unit, explain: t(spec.explain, lang), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => `${formatNumber(n, lang, spec.digits)} ${spec.unit}` } }, (card) => {

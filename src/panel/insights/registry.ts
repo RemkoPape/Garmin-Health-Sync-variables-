@@ -5,7 +5,7 @@ import { t } from "../../i18n/t";
 export type InsightKind = "watch" | "good";
 
 /**
- * Every interpretation the panel can show under a card's (i) button. Each id has a text `insight_<id>` in the six
+ * Every interpretation the panel can show under a card's light bulb button. Each id has a text `insight_<id>` in the six
  * languages and a section in docs/panel-insights.md that says how it is triggered and what it rests on
  * (tests/panelInsightsDocs.test.ts enforces both).
  */
@@ -102,5 +102,5 @@ export function insightText(insight: Insight, lang: string): string {
 	return text;
 }
 
-/** At most this many interpretations per card, so the (i) section stays short. */
+/** At most this many interpretations per card, so the light bulb section stays short. */
 export const MAX_INSIGHTS = 3;
