@@ -244,15 +244,19 @@ export class Vault {
 // ---------------------------------------------------------------------------
 
 export class Notice {
-	static recorded: { message: string; duration?: number; hidden: boolean; fragment?: DocumentFragment }[] = [];
-	private entry: { message: string; duration?: number; hidden: boolean; fragment?: DocumentFragment };
+	static recorded: { message: string; duration?: number; hidden: boolean; fragment?: DocumentFragment; updates: string[] }[] = [];
+	private entry: { message: string; duration?: number; hidden: boolean; fragment?: DocumentFragment; updates: string[] };
 	constructor(message: string | DocumentFragment, duration?: number) {
 		const isText = typeof message === "string";
-		this.entry = { message: isText ? message : (message.textContent ?? ""), duration, hidden: false, ...(isText ? {} : { fragment: message }) };
+		this.entry = { message: isText ? message : (message.textContent ?? ""), duration, hidden: false, updates: [], ...(isText ? {} : { fragment: message }) };
 		Notice.recorded.push(this.entry);
 	}
 	hide(): void {
 		this.entry.hidden = true;
+	}
+	/** Replaces the text of a notice that stays on screen; `message` keeps what it was created with, `updates` the later texts. */
+	setMessage(message: string): void {
+		this.entry.updates.push(message);
 	}
 	/** Messages shown so far (test helper). */
 	static messages(): string[] {

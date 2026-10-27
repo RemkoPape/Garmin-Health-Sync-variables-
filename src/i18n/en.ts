@@ -102,6 +102,7 @@ export const en = {
 	noticeMigrationReloginRequired: "Garmin Health Sync: the connection was upgraded. Please sign in to Garmin again to resume syncing.",
 	noticeAutoSyncDone: "Health data synced — {count} days updated",
 	noticeBackfillStart: "Starting backfill...",
+	noticeBackfillProgress: "Backfill running: day {n} of {total} ({date})",
 	noticeBackfillDone: "Backfill complete: {count} days updated",
 	noticeBackfillDoneWithErrors: "Backfill complete: {count} days updated, {failed} failed (see console)",
 	noticeHistoryImported: "Copied {count} days from your daily notes into the history",

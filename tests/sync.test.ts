@@ -284,6 +284,17 @@ describe("backfill", () => {
 		expect(Notice.recorded.at(-1)?.duration).toBe(10000);
 	});
 
+	it("updates the notice that stays on screen with the day it is at, so a long run shows progress", async () => {
+		await run("2026-10-22", "2026-10-24");
+		expect(Notice.recorded[0]!.updates).toEqual([
+			"Backfill running: day 1 of 3 (2026-10-22)",
+			"Backfill running: day 2 of 3 (2026-10-23)",
+			"Backfill running: day 3 of 3 (2026-10-24)",
+		]);
+		await run("2026-10-24", "2026-10-24", settings({ language: "de" }));
+		expect(Notice.recorded.find((n) => n.updates[0]?.startsWith("Nachsynchronisierung läuft"))?.updates).toEqual(["Nachsynchronisierung läuft: Tag 1 von 1 (2026-10-24)"]);
+	});
+
 	it("shows a start notice that stays until the end and is hidden afterwards", async () => {
 		await run("2026-10-24", "2026-10-24");
 		expect(Notice.recorded[0]).toMatchObject({ message: en.noticeBackfillStart, duration: 0, hidden: true });
