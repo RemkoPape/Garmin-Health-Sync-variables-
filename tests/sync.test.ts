@@ -4,6 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App, Notice, network as net } from "../testUtils/mocks/obsidian";
 import { SyncManager } from "../src/sync";
+import { HistoryStore } from "../src/history/store";
 import { DEFAULT_SETTINGS, type HealthSyncSettings } from "../src/settings";
 import { LoginRequiredError } from "../src/errors";
 import { FakeProvider, NoDelayProvider } from "../testUtils/fakeProvider";
@@ -35,7 +36,29 @@ beforeEach(() => {
 	vi.setSystemTime(new Date("2026-10-25T10:00:00"));
 	app = new App();
 	provider = new FakeProvider();
-	sync = new SyncManager(app as never, provider);
+	sync = new SyncManager(app as never, provider, new HistoryStore(app as never, { dailyNotePath: "Daily" }));
+});
+
+describe("syncDate with the history setting", () => {
+	it("stores the day in the history and creates no note", async () => {
+		const outcome = await sync.syncDate(DATE, settings({ missingNoteBehaviour: "history" }));
+		expect(outcome).toBe("synced");
+		expect(app.vault.paths()).toEqual(["Daily/Garmin history/Garmin history 2026-10.md"]);
+		expect(app.vault.text("Daily/Garmin history/Garmin history 2026-10.md")).toContain(`${DATE} {"_m":["sleep_score","steps"],"steps":8000}`);
+	});
+
+	it("keeps the history in metric units whatever the notes use", async () => {
+		provider.defaultData = { metrics: { distance_km: 10 }, activities: {}, trainings: [{ type: "running", category: "running", distance_km: 10, duration_min: 60 }] };
+		await sync.syncDate(DATE, settings({ missingNoteBehaviour: "history", unitSystem: "imperial" }));
+		const text = app.vault.text("Daily/Garmin history/Garmin history 2026-10.md");
+		expect(text).toContain('"distance_km":10');
+		expect(text).toContain('"trainings":[{"category":"running","distance_km":10,"duration_min":60,"type":"running"}]');
+	});
+
+	it("writes nothing to the history in the other modes", async () => {
+		await sync.syncDate(DATE, settings({ missingNoteBehaviour: "create" }));
+		expect(app.vault.paths()).toEqual([NOTE]);
+	});
 });
 
 describe("syncDate", () => {
@@ -253,9 +276,32 @@ describe("backfill", () => {
 		expect(Notice.recorded[0]).toMatchObject({ message: en.noticeBackfillStart, duration: 0, hidden: true });
 	});
 
-	it("always creates missing notes, regardless of the auto-sync setting", async () => {
-		await run("2026-10-24", "2026-10-24", settings({ createDailyNoteIfMissing: false }));
+	it("creates missing notes when the setting says create", async () => {
+		await run("2026-10-24", "2026-10-24", settings({ missingNoteBehaviour: "create" }));
 		expect(app.vault.paths()).toEqual([NOTE]);
+	});
+
+	it("asks Garmin only for days that already have a note when the setting says skip", async () => {
+		app.vault.seed("Daily/2026-10-23.md", "---\ntags: x\n---\nbody");
+		const count = await run("2026-10-22", "2026-10-24", settings({ missingNoteBehaviour: "skip" }));
+		expect(provider.fetchCalls.map((c) => c.date)).toEqual(["2026-10-23"]);
+		expect(count).toBe(1);
+		expect(app.vault.paths()).toEqual(["Daily/2026-10-23.md"]);
+	});
+
+	it("keeps every day in the history notes and creates no daily notes when the setting says history", async () => {
+		await run("2026-10-22", "2026-10-24", settings({ missingNoteBehaviour: "history" }));
+		expect(app.vault.paths()).toEqual(["Daily/Garmin history/Garmin history 2026-10.md"]);
+		const text = app.vault.text("Daily/Garmin history/Garmin history 2026-10.md");
+		expect(text).toContain('2026-10-22 {"_m":["sleep_score","steps"],"steps":8000}');
+		expect(text).toContain('2026-10-24 {"_m":["sleep_score","steps"],"steps":8000}');
+	});
+
+	it("also updates a note that exists, besides the history, when the setting says history", async () => {
+		app.vault.seed("Daily/2026-10-24.md", "---\ntags: x\n---\nbody");
+		await run("2026-10-23", "2026-10-24", settings({ missingNoteBehaviour: "history" }));
+		expect(app.vault.text("Daily/2026-10-24.md")).toContain("steps: 8000");
+		expect(app.vault.paths()).toEqual(["Daily/2026-10-24.md", "Daily/Garmin history/Garmin history 2026-10.md"]);
 	});
 
 	it("passes the enabled metrics and uses the provider's recommended delay", async () => {
@@ -338,7 +384,7 @@ describe("backfill", () => {
 
 		it("falls back to 2 seconds when the provider has no recommendation", async () => {
 			provider = new NoDelayProvider();
-			sync = new SyncManager(app as never, provider);
+			sync = new SyncManager(app as never, provider, new HistoryStore(app as never, { dailyNotePath: "Daily" }));
 			const times = await fetchTimes("2026-10-22", "2026-10-23");
 			expect(times["2026-10-23"]).toBe(2000);
 		});

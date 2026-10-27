@@ -2,6 +2,7 @@ export const en = {
 	// Commands
 	commandSync: "Sync current note",
 	commandBackfill: "Backfill health data",
+	commandImportHistory: "Import history from daily notes",
 	commandManualLogin: "Log in with service ticket",
 
 	// Settings
@@ -21,8 +22,11 @@ export const en = {
 	settingsAutoSync: "Auto-sync health data",
 	settingsAutoSyncDesc: "Automatically sync the last 7 days when Obsidian starts",
 	settingsAutoSyncPaused: "Paused due to auth error — re-enable after logging in",
-	settingsCreateDailyNote: "Create daily note when missing",
-	settingsCreateDailyNoteDesc: "When off, auto-sync waits until a real daily note exists instead of creating one (empty placeholder notes don't count). Manual sync and backfill still create notes. Helps avoid conflicts with tools that own the note.",
+	settingsMissingNote: "Days without a daily note",
+	settingsMissingNoteDesc: "What the plugin does with a day that has no daily note, in auto-sync and backfill. Create the note: as before. Keep in history files: the day is stored in small monthly notes in a Garmin history folder next to your daily notes, which the panel reads, and no note is created; days that have a note are saved to the note and to the history. Skip the day: only days that already have a note are fetched.",
+	missingNoteCreate: "Create the note",
+	missingNoteHistory: "Keep in history files",
+	missingNoteSkip: "Skip the day",
 	settingsPrefix: "Property prefix",
 	settingsPrefixDesc: "Add 'ohs_' prefix to all properties",
 	settingsDailyNotePath: "Daily notes path",
@@ -100,6 +104,8 @@ export const en = {
 	noticeBackfillStart: "Starting backfill...",
 	noticeBackfillDone: "Backfill complete: {count} days updated",
 	noticeBackfillDoneWithErrors: "Backfill complete: {count} days updated, {failed} failed (see console)",
+	noticeHistoryImported: "Copied {count} days from your daily notes into the history",
+	noticeHistoryImportEmpty: "No Garmin data found in your daily notes",
 
 	noticeManualLoginFailed: "Manual login failed — no valid ticket found or the ticket expired. Tickets are single-use and expire quickly; please sign in again and paste the new one right away.",
 

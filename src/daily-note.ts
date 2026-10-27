@@ -197,7 +197,7 @@ export function matchDailyNoteDate(
 }
 
 /** Creates a folder including all parent directories */
-async function ensureFolderExists(app: App, folderPath: string): Promise<void> {
+export async function ensureFolderExists(app: App, folderPath: string): Promise<void> {
 	const normalized = normalizePath(folderPath);
 	if (app.vault.getAbstractFileByPath(normalized)) return;
 	const parts = normalized.split("/");

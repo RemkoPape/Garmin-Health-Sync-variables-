@@ -4,6 +4,7 @@ export const fr: Record<TranslationKeys, string> = {
 	// Commands
 	commandSync: "Synchroniser la note active",
 	commandBackfill: "Remplir les données de santé",
+	commandImportHistory: "Importer l’historique depuis les notes quotidiennes",
 	commandManualLogin: "Se connecter avec un ticket de service",
 
 	// Settings
@@ -23,8 +24,11 @@ export const fr: Record<TranslationKeys, string> = {
 	settingsAutoSync: "Synchroniser la note quotidienne automatiquement",
 	settingsAutoSyncDesc: "Synchroniser les données de santé une fois au démarrage d'Obsidian",
 	settingsAutoSyncPaused: "En pause suite à une erreur d'authentification — réactiver après reconnexion",
-	settingsCreateDailyNote: "Créer la note quotidienne si absente",
-	settingsCreateDailyNoteDesc: "Si désactivé, la synchronisation automatique attend qu'une vraie note quotidienne existe au lieu d'en créer une (les notes placeholder vides ne comptent pas). La synchronisation manuelle et le backfill créent toujours les notes. Aide à éviter les conflits avec les outils qui gèrent la note.",
+	settingsMissingNote: "Jours sans note quotidienne",
+	settingsMissingNoteDesc: "Ce que le plugin fait d’un jour sans note quotidienne, en synchronisation automatique et en rattrapage. Créer la note : comme avant. Garder dans les fichiers d’historique : le jour est enregistré dans de petites notes mensuelles, dans un dossier Garmin history à côté de vos notes quotidiennes, que le panneau lit, et aucune note n’est créée ; les jours qui ont une note sont enregistrés dans la note et dans l’historique. Ignorer le jour : seuls les jours qui ont déjà une note sont récupérés.",
+	missingNoteCreate: "Créer la note",
+	missingNoteHistory: "Garder dans les fichiers d’historique",
+	missingNoteSkip: "Ignorer le jour",
 	settingsPrefix: "Préfixe des propriétés",
 	settingsPrefixDesc: "Ajouter le préfixe 'ohs_' à toutes les propriétés",
 	settingsDailyNotePath: "Chemin des notes quotidiennes",
@@ -102,6 +106,8 @@ export const fr: Record<TranslationKeys, string> = {
 	noticeBackfillStart: "Début du remplissage...",
 	noticeBackfillDone: "Remplissage terminé : {count} jours mis à jour",
 	noticeBackfillDoneWithErrors: "Remplissage terminé : {count} jours mis à jour, {failed} en échec (voir la console)",
+	noticeHistoryImported: "{count} jours copiés de vos notes quotidiennes vers l’historique",
+	noticeHistoryImportEmpty: "Aucune donnée Garmin trouvée dans vos notes quotidiennes",
 	noticeManualLoginFailed: "Échec de la connexion manuelle — aucun ticket valide trouvé ou ticket expiré. Les tickets sont à usage unique et expirent vite ; reconnectez-vous et collez le nouveau immédiatement.",
 
 	// Backfill Modal

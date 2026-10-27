@@ -140,6 +140,46 @@ describe("F8: switches that never did anything are gone, old files still load", 
 	});
 });
 
+describe("days without a daily note", () => {
+	it("starts on creating the note, as before", async () => {
+		expect((await load(null)).plugin.settings.missingNoteBehaviour).toBe("create");
+	});
+
+	it("turns the old switch into the new choice once, and forgets the old key", async () => {
+		const off = await load({ createDailyNoteIfMissing: false } as never);
+		expect(off.plugin.settings.missingNoteBehaviour).toBe("skip");
+		expect("createDailyNoteIfMissing" in off.plugin.settings).toBe(false);
+		await off.plugin.saveSettings();
+		expect(off.plugin.data).not.toHaveProperty("createDailyNoteIfMissing");
+		expect((await load({ createDailyNoteIfMissing: true } as never)).plugin.settings.missingNoteBehaviour).toBe("create");
+	});
+
+	it("keeps a choice that was made and replaces one that is not valid", async () => {
+		expect((await load({ missingNoteBehaviour: "history", createDailyNoteIfMissing: false } as never)).plugin.settings.missingNoteBehaviour).toBe("history");
+		expect((await load({ missingNoteBehaviour: "nonsense" } as never)).plugin.settings.missingNoteBehaviour).toBe("create");
+	});
+});
+
+describe("import history from daily notes", () => {
+	it("copies the Garmin values of the daily notes into the history and says how many days", async () => {
+		const { app, plugin } = await load({ dailyNotePath: "" }, (a) => {
+			const file = a.vault.seed("2026-10-21.md", "---\nhrv: 40\n---\n");
+			a.metadataCache.frontmatter.set(file.path, { hrv: 40, tags: ["x"] });
+		});
+		plugin.commands.get("import-history-from-notes")!.callback!();
+		await settle();
+		expect(app.vault.text("Garmin history/Garmin history 2026-10.md")).toContain('2026-10-21 {"hrv":40}');
+		expect(Notice.recorded.at(-1)?.message).toBe(en.noticeHistoryImported.replace("{count}", "1"));
+	});
+
+	it("says so when the notes hold no Garmin data", async () => {
+		const { plugin } = await load({ dailyNotePath: "" });
+		plugin.commands.get("import-history-from-notes")!.callback!();
+		await settle();
+		expect(Notice.recorded.at(-1)?.message).toBe(en.noticeHistoryImportEmpty);
+	});
+});
+
 describe("fold properties by default", () => {
 	const dailyNote = (): TFile => Object.assign(new TFile(), { path: `${dayString(0)}.md`, basename: dayString(0) });
 	const openNote = async (app: App, file: TFile): Promise<void> => {
@@ -200,9 +240,9 @@ describe("fold properties by default", () => {
 });
 
 describe("startup", () => {
-	it("registers the five commands under their stable ids, named in the user's language", async () => {
+	it("registers the six commands under their stable ids, named in the user's language", async () => {
 		const { plugin } = await load({ language: "de" });
-		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "login-with-ticket", "open-health-panel", "show-whats-new", "sync-health-data"]);
+		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "import-history-from-notes", "login-with-ticket", "open-health-panel", "show-whats-new", "sync-health-data"]);
 		expect(plugin.commands.get("show-whats-new")?.name).toBe(de.commandWhatsNew);
 		expect(plugin.commands.get("sync-health-data")?.name).toBe(de.commandSync);
 		expect(plugin.commands.get("backfill-health-data")?.name).toBe(de.commandBackfill);
@@ -628,7 +668,7 @@ describe("auto-sync triggers", () => {
 });
 
 describe("waiting for the daily note (create-when-missing off)", () => {
-	const waiting = { createDailyNoteIfMissing: false } as const;
+	const waiting = { missingNoteBehaviour: "skip" } as const;
 	const noteOf = (n: number): string => `${dayString(n)}.md`;
 
 	async function ready(data: Partial<HealthSyncSettings> = {}) {
@@ -693,7 +733,7 @@ describe("waiting for the daily note (create-when-missing off)", () => {
 		await off.app.vault.create(noteOf(2), "text");
 		await vi.runAllTimersAsync();
 		expect(off.provider.fetchCalls).toEqual([]);
-		const creating = await load(signedIn({ createDailyNoteIfMissing: true }));
+		const creating = await load(signedIn({ missingNoteBehaviour: "create" }));
 		creating.app.workspace.layoutReady();
 		await vi.runAllTimersAsync();
 		creating.provider.fetchCalls = [];
@@ -706,6 +746,7 @@ describe("waiting for the daily note (create-when-missing off)", () => {
 		const { provider, app, plugin } = await ready();
 		let release: () => void = () => undefined;
 		provider.gate = new Promise<void>((resolve) => (release = resolve));
+		app.vault.seed(noteOf(5), "text"); // "skip" visits only days that have a note, so the backfill has a day to hold on
 		plugin.commands.get("backfill-health-data")!.callback!();
 		(Modal.opened[0]!.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
 		await settle();
@@ -1333,7 +1374,7 @@ describe("triggers while busy or too soon", () => {
 	});
 
 	it("ignores create/modify events for folders", async () => {
-		const loaded = await load(signedIn({ createDailyNoteIfMissing: false }));
+		const loaded = await load(signedIn({ missingNoteBehaviour: "skip" }));
 		loaded.app.workspace.layoutReady();
 		await vi.runAllTimersAsync();
 		loaded.app.vault.fire("create", loaded.app.vault.root);
@@ -1542,7 +1583,7 @@ describe("background work that fails", () => {
 	});
 
 	it("a note appearing while saves fail does not raise one either", async () => {
-		const loaded = await load(signedIn({ createDailyNoteIfMissing: false }));
+		const loaded = await load(signedIn({ missingNoteBehaviour: "skip" }));
 		loaded.app.workspace.layoutReady();
 		await vi.runAllTimersAsync();
 		failSaves(loaded);

@@ -4,6 +4,8 @@ import { ManualLoginModal } from "./ui/manual-login-modal";
 import { CredentialLoginModal } from "./ui/credential-login-modal";
 import { LoginCooldown } from "./login-cooldown";
 import { SyncManager } from "./sync";
+import { HistoryStore } from "./history/store";
+import { importFromNotes } from "./history/import";
 import { dateFromDailyNote, matchDailyNoteDate } from "./daily-note";
 import { localDateString } from "./dates";
 import { GarminProvider } from "./providers/garmin/garmin-provider";
@@ -27,6 +29,8 @@ const LOGIN_NOTICE_THROTTLE_MS = 10 * 60 * 1000; // 10min: re-show login notice 
 export default class HealthSyncPlugin extends Plugin {
 	settings: HealthSyncSettings;
 	private syncManager: SyncManager;
+	/** The history notes (writes only; the panel reads through its own store). */
+	private history: HistoryStore;
 	private garminProvider: GarminProvider;
 	private autoSyncRunning = false;
 	private autoSyncResyncQueued = false;
@@ -64,7 +68,8 @@ export default class HealthSyncPlugin extends Plugin {
 		await this.restoreTokens();
 		await this.migrateLegacySession();
 
-		this.syncManager = new SyncManager(this.app, this.garminProvider);
+		this.history = new HistoryStore(this.app, this.settings);
+		this.syncManager = new SyncManager(this.app, this.garminProvider, this.history);
 
 		// Command: Sync Health Data
 		this.addCommand({
@@ -97,6 +102,13 @@ export default class HealthSyncPlugin extends Plugin {
 					})(), "backfill");
 				}).open();
 			},
+		});
+
+		// Command: copy the Garmin values of the daily notes into the history notes (no Garmin requests)
+		this.addCommand({
+			id: "import-history-from-notes",
+			name: t("commandImportHistory", this.settings.language),
+			callback: () => this.background(this.importHistory(), "import history"),
 		});
 
 		// Command: Manual-ticket login fallback (issue #6)
@@ -162,6 +174,12 @@ export default class HealthSyncPlugin extends Plugin {
 				}
 			})
 		);
+	}
+
+	private async importHistory(): Promise<void> {
+		const lang = this.settings.language;
+		const count = await importFromNotes(this.app, this.history, this.settings);
+		new Notice(t(count === 0 ? "noticeHistoryImportEmpty" : "noticeHistoryImported", lang).replace("{count}", String(count)));
 	}
 
 	/** Reveals the health panel in the right sidebar, creating it on first use. */
@@ -302,7 +320,7 @@ export default class HealthSyncPlugin extends Plugin {
 	 * off another pass — which is what makes it safe to hang this off "modify".
 	 */
 	private onDailyNoteMaybeReady(file: TAbstractFile): void {
-		if (!this.settings.autoSync || this.settings.createDailyNoteIfMissing) return;
+		if (!this.settings.autoSync || this.settings.missingNoteBehaviour !== "skip") return;
 		// Don't react to notes that backfill is writing right now.
 		if (this.backfillRunning) return;
 		if (!(file instanceof TFile)) return;
@@ -339,7 +357,7 @@ export default class HealthSyncPlugin extends Plugin {
 				// Wait-for-note applies to the background auto-sync only. Manual sync
 				// and backfill never pass this and always create the note.
 				const outcome = await this.syncManager.syncDate(date, this.settings, true, {
-					waitForNote: !this.settings.createDailyNoteIfMissing,
+					waitForNote: this.settings.missingNoteBehaviour === "skip",
 				});
 
 				if (outcome === "skipped-missing-note") {
@@ -578,6 +596,10 @@ export default class HealthSyncPlugin extends Plugin {
 		this.settings.lastSyncTimes = { ...(saved?.lastSyncTimes ?? {}) };
 		this.settings.panelCards = { ...(saved?.panelCards ?? {}) };
 		this.settings.birthYear = parseBirthYear(saved?.birthYear, new Date().getFullYear());
+		// "Create daily note when missing" became a three-way choice: off meant waiting for the note, which is "skip".
+		const legacy = (saved ?? {}) as { createDailyNoteIfMissing?: boolean; missingNoteBehaviour?: string };
+		if (!["create", "history", "skip"].includes(legacy.missingNoteBehaviour ?? "")) this.settings.missingNoteBehaviour = legacy.createDailyNoteIfMissing === false ? "skip" : "create";
+		delete (this.settings as unknown as { createDailyNoteIfMissing?: boolean }).createDailyNoteIfMissing;
 		for (const key of Object.keys(defaults)) {
 			if (this.settings.enabledMetrics[key] === undefined) {
 				this.settings.enabledMetrics[key] = defaults[key]!;

@@ -1,6 +1,8 @@
 import { App, Notice } from "obsidian";
-import type { HealthProvider } from "./providers/provider";
+import type { HealthData, HealthProvider } from "./providers/provider";
 import { writeToDailyNote, dailyNoteExists } from "./daily-note";
+import type { HistoryStore } from "./history/store";
+import { recordFromData } from "./history/record";
 import type { HealthSyncSettings } from "./settings";
 import { t } from "./i18n/t";
 import { convertToImperial } from "./units";
@@ -19,10 +21,19 @@ export type SyncOutcome = "synced" | "no-data" | "skipped-missing-note" | "error
 export class SyncManager {
 	private provider: HealthProvider;
 	private app: App;
+	private history: HistoryStore;
 
-	constructor(app: App, provider: HealthProvider) {
+	constructor(app: App, provider: HealthProvider, history: HistoryStore) {
 		this.app = app;
 		this.provider = provider;
+		this.history = history;
+	}
+
+	/** Keeps a fetched day in the history notes when the setting says so; returns whether a missing note may be created. */
+	private async keepDay(date: string, data: HealthData, enabledMetrics: string[], settings: HealthSyncSettings): Promise<boolean> {
+		if (settings.missingNoteBehaviour !== "history") return true;
+		await this.history.put(date, recordFromData(data, enabledMetrics));
+		return false;
 	}
 
 	/** Sync for a specific date.
@@ -86,7 +97,8 @@ export class SyncManager {
 			// Convert to imperial if configured
 			const outputData = settings.unitSystem === "imperial" ? convertToImperial(data) : data;
 
-			// Write to daily note
+			// With "keep in history files" the day goes to the history, and a note is only updated, never created
+			const mayCreate = await this.keepDay(date, data, enabledMetrics, settings);
 			await writeToDailyNote(this.app, date, outputData, {
 				dailyNotePath: settings.dailyNotePath,
 				dailyNoteFormat: settings.dailyNoteFormat,
@@ -97,7 +109,7 @@ export class SyncManager {
 				// In wait mode the gate above already confirmed the note exists;
 				// keep createIfMissing false as a safety net should it vanish
 				// mid-sync. Otherwise (manual/auto-with-creation) create as before.
-				createIfMissing: !waitForNote,
+				createIfMissing: mayCreate && !waitForNote,
 				language: settings.language,
 			});
 
@@ -138,7 +150,11 @@ export class SyncManager {
 				.filter(([, enabled]) => enabled)
 				.map(([key]) => key);
 
-			const dates = this.dateRange(fromDate, toDate);
+			// "Skip": no request at all for a day without a note
+			const dates = this.dateRange(fromDate, toDate).filter((date) => settings.missingNoteBehaviour !== "skip" || dailyNoteExists(this.app, date, {
+				dailyNotePath: settings.dailyNotePath,
+				dailyNoteFormat: settings.dailyNoteFormat,
+			}));
 
 			// Calculate delay based on number of endpoints (50 req/min budget)
 			const batchDelay = this.provider.getRecommendedBatchDelay?.(enabledMetrics) ?? 2000;
@@ -151,10 +167,8 @@ export class SyncManager {
 					const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
 
 					if (hasData) {
+						const mayCreate = await this.keepDay(date, data, enabledMetrics, settings);
 						const outputData = settings.unitSystem === "imperial" ? convertToImperial(data) : data;
-						// Backfill is an explicit user action over a date range — it
-						// always creates missing notes, regardless of the auto-sync
-						// "create daily note when missing" setting.
 						await writeToDailyNote(this.app, date, outputData, {
 							dailyNotePath: settings.dailyNotePath,
 							dailyNoteFormat: settings.dailyNoteFormat,
@@ -162,7 +176,7 @@ export class SyncManager {
 							template: settings.dailyNoteTemplate,
 							writeTrainings: settings.writeTrainings,
 							writeWorkoutLocation: settings.writeWorkoutLocation,
-							createIfMissing: true,
+							createIfMissing: mayCreate,
 							language: settings.language,
 						});
 						count++;

@@ -1,6 +1,7 @@
 import type { App } from "obsidian";
 import { dateFromDailyNote } from "../daily-note";
 import { parseClock, parseDuration } from "./parse";
+import type { HistoryStore } from "../history/store";
 import { parseSessions, type Session } from "./sessions";
 
 /** Frontmatter prefix the sync adds when "use prefix" is on. Notes of both kinds can sit in one vault. */
@@ -12,14 +13,15 @@ export interface IndexSettings {
 }
 
 /**
- * Daily-note frontmatter by date, read from Obsidian's metadata cache only (no file reads, no Garmin calls).
+ * Daily-note frontmatter by date, read from Obsidian's metadata cache only (no Garmin calls), with the history
+ * notes as a second source for a day without a note or a value the note lacks (the note wins per value).
  * Built lazily on first use and rebuilt after `invalidate()`; one pass over the vault is a few milliseconds.
  */
 export class DayIndex {
 	private days = new Map<string, Record<string, unknown>>();
 	private built = false;
 
-	constructor(private readonly app: App, private readonly settings: () => IndexSettings) {}
+	constructor(private readonly app: App, private readonly settings: () => IndexSettings, private readonly history: HistoryStore | null = null) {}
 
 	invalidate(): void {
 		this.built = false;
@@ -42,11 +44,15 @@ export class DayIndex {
 		return this.days.has(date);
 	}
 
-	/** The day's sessions; empty for a day without note or sessions. */
+	/** Whether the day has a note or a history record. */
+	hasDay(date: string): boolean {
+		return this.hasNote(date) || (this.history?.has(date) ?? false);
+	}
+
+	/** The day's sessions; empty for a day without sessions. A note's own entries win over the history's. */
 	sessions(date: string): Session[] {
 		this.build();
-		const fm = this.days.get(date);
-		return fm ? parseSessions(fm) : [];
+		return parseSessions({ ...this.history?.get(date), ...this.days.get(date) });
 	}
 
 	/** A text metric of the day, or null. */
@@ -69,7 +75,7 @@ export class DayIndex {
 	private raw(key: string, date: string): unknown {
 		this.build();
 		const fm = this.days.get(date);
-		return fm?.[key] ?? fm?.[PREFIX + key];
+		return fm?.[key] ?? fm?.[PREFIX + key] ?? this.history?.get(date)?.[key];
 	}
 
 	private build(): void {
@@ -78,6 +84,7 @@ export class DayIndex {
 		this.days = new Map();
 		const settings = this.settings();
 		for (const file of this.app.vault.getMarkdownFiles()) {
+			if (this.history?.isHistoryFile(file)) continue;
 			const date = dateFromDailyNote(file, settings);
 			const fm = date ? this.app.metadataCache.getFileCache(file)?.frontmatter : undefined;
 			if (date && fm) this.days.set(date, fm);
