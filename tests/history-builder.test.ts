@@ -132,9 +132,9 @@ describe("days without data", () => {
 		provider.defaultData = { metrics: {}, activities: {} };
 	});
 
-	it("remembers an old empty day so it is not asked for again, but not one from the last week that may still fill in", async () => {
-		await run("2026-10-16", "2026-10-24"); // now is 2026-10-25: days before the 18th are final
-		expect(lines()).toEqual(['2026-10-16 {"_m":["hrv","steps"]}', '2026-10-17 {"_m":["hrv","steps"]}']);
+	it("remembers an old empty day so it is not asked for again, but not one from the last three days that may still fill in", async () => {
+		await run("2026-10-20", "2026-10-24"); // now is 2026-10-25: days before the 22nd are final
+		expect(lines()).toEqual(['2026-10-20 {"_m":["hrv","steps"]}', '2026-10-21 {"_m":["hrv","steps"]}']);
 		expect(notes).toEqual([]);
 	});
 
