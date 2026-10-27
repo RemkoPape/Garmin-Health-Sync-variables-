@@ -140,6 +140,18 @@ describe("F8: switches that never did anything are gone, old files still load", 
 	});
 });
 
+describe("the backfill log", () => {
+	it("keeps what the backfill remembered across restarts, without sharing it with the defaults", async () => {
+		const { plugin } = await load({ fetchLog: { "2026-10-01": 0 }, fetchSets: [["hrv", "steps"]] });
+		expect(plugin.settings.fetchLog).toEqual({ "2026-10-01": 0 });
+		expect(plugin.settings.fetchSets).toEqual([["hrv", "steps"]]);
+		plugin.settings.fetchSets[0]!.push("spo2");
+		plugin.settings.fetchLog["2026-10-02"] = 0;
+		expect((await load(null)).plugin.settings.fetchSets).toEqual([]);
+		expect((await load(null)).plugin.settings.fetchLog).toEqual({});
+	});
+});
+
 describe("days without a daily note", () => {
 	it("starts on creating the note, as before", async () => {
 		expect((await load(null)).plugin.settings.missingNoteBehaviour).toBe("create");

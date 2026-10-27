@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App, Notice, network as net } from "../testUtils/mocks/obsidian";
 import { SyncManager } from "../src/sync";
 import { HistoryStore } from "../src/history/store";
+import { serializeMonth } from "../src/history/format";
 import { DEFAULT_SETTINGS, type HealthSyncSettings } from "../src/settings";
 import { LoginRequiredError } from "../src/errors";
 import { FakeProvider, NoDelayProvider } from "../testUtils/fakeProvider";
@@ -21,11 +22,14 @@ let sync: SyncManager;
 function settings(patch: Partial<HealthSyncSettings> = {}): HealthSyncSettings {
 	return {
 		...DEFAULT_SETTINGS,
+		fetchLog: {},
+		fetchSets: [],
 		enabledMetrics: { steps: true, hrv: false, sleep_score: true },
 		dailyNotePath: "Daily",
 		...patch,
 	};
 }
+const fetchedDates = (): string[] => provider.fetchCalls.map((c) => c.date);
 const msgs = (): string[] => Notice.recorded.map((n) => n.message);
 function frontmatter(path: string): string {
 	return app.vault.text(path);
@@ -302,6 +306,64 @@ describe("backfill", () => {
 	it("shows a start notice that stays until the end and is hidden afterwards", async () => {
 		await run("2026-10-24", "2026-10-24");
 		expect(Notice.recorded[0]).toMatchObject({ message: en.noticeBackfillStart, duration: 0, hidden: true });
+	});
+
+	describe("days that an earlier run fetched", () => {
+		it("are not fetched again, so a second run over the same range costs nothing", async () => {
+			const s = settings();
+			await run("2026-10-10", "2026-10-14", s);
+			expect(provider.fetchCalls).toHaveLength(5);
+			provider.fetchCalls = [];
+			expect(await run("2026-10-10", "2026-10-14", s)).toBe(0);
+			expect(provider.fetchCalls).toEqual([]);
+			expect(msgs().at(-1)).toBe(en.noticeBackfillNothing);
+			expect(Notice.recorded.at(-1)?.duration).toBe(10000);
+		});
+
+		it("are skipped inside a longer range: only the new days are asked for, and the progress counts those", async () => {
+			const s = settings();
+			await run("2026-10-10", "2026-10-12", s);
+			provider.fetchCalls = [];
+			await run("2026-10-08", "2026-10-14", s);
+			expect(fetchedDates()).toEqual(["2026-10-08", "2026-10-09", "2026-10-13", "2026-10-14"]);
+			const progress = Notice.recorded.find((n) => n.updates.length === 4)!;
+			expect(progress.updates[0]).toContain("day 1 of 4");
+		});
+
+		it("are fetched again when more metrics are wanted now", async () => {
+			const s = settings();
+			await run("2026-10-10", "2026-10-11", s);
+			provider.fetchCalls = [];
+			const more = { ...s, enabledMetrics: { steps: true, hrv: true, sleep_score: true } };
+			await run("2026-10-10", "2026-10-11", more);
+			expect(fetchedDates()).toEqual(["2026-10-10", "2026-10-11"]);
+			expect(provider.fetchCalls[0]!.enabledMetrics).toEqual(["steps", "hrv", "sleep_score"]);
+			provider.fetchCalls = [];
+			await run("2026-10-10", "2026-10-11", s);
+			expect(provider.fetchCalls).toEqual([]);
+		});
+
+		it("include days without data, but not failed days or the last three days", async () => {
+			provider.byDate.set("2026-10-20", { metrics: {}, activities: {} });
+			provider.byDate.set("2026-10-21", new Error("down"));
+			const s = settings();
+			await run("2026-10-20", "2026-10-25", s);
+			provider.fetchCalls = [];
+			await run("2026-10-20", "2026-10-25", s);
+			expect(fetchedDates()).toEqual(["2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"]);
+		});
+
+		it("are also skipped when the history notes already hold them with the metrics wanted", async () => {
+			app.vault.seed("Daily/Garmin history/Garmin history 2026-10.md", serializeMonth("2026-10", new Map([["2026-10-10", { steps: 1, _m: ["sleep_score", "steps"] }], ["2026-10-11", { steps: 2 }], ["2026-10-12", { steps: 3, _m: ["steps"] }]])));
+			await run("2026-10-10", "2026-10-12", settings());
+			expect(fetchedDates()).toEqual(["2026-10-12"]);
+		});
+
+		it("keeps asking for days without a note in the skip setting only when they have one", async () => {
+			const s = settings({ missingNoteBehaviour: "skip" });
+			await run("2026-10-10", "2026-10-12", s);
+			expect(msgs().at(-1)).toBe(en.noticeBackfillDone.replace("{count}", "0"));
+		});
 	});
 
 	it("creates missing notes when the setting says create", async () => {

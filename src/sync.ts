@@ -4,6 +4,9 @@ import { writeToDailyNote, dailyNoteExists } from "./daily-note";
 import type { HistoryStore } from "./history/store";
 import { recordFromData } from "./history/record";
 import { estimateMs, formatDuration } from "./history/progress";
+import { isComplete } from "./history/builder";
+import { isFetched, markFetched } from "./fetch-log";
+import { localDateString, shiftDate } from "./dates";
 import type { HealthSyncSettings } from "./settings";
 import { t } from "./i18n/t";
 import { convertToImperial } from "./units";
@@ -17,6 +20,9 @@ import { isLoginRequiredError } from "./errors";
  *    no API call was made, so the caller should retry later without a cooldown
  *  - "error": configuration/auth/transient failure
  */
+/** A day this recent may still change on Garmin's side, so a backfill fetches it again. */
+const RECENT_DAYS = 3;
+
 export type SyncOutcome = "synced" | "no-data" | "skipped-missing-note" | "error";
 
 export class SyncManager {
@@ -28,6 +34,12 @@ export class SyncManager {
 		this.app = app;
 		this.provider = provider;
 		this.history = history;
+	}
+
+	/** Whether the history notes already hold the day with every metric that is wanted. */
+	private isInHistory(date: string, wanted: string[]): boolean {
+		const record = this.history.get(date);
+		return record !== null && isComplete(record, wanted);
 	}
 
 	/** What writeToDailyNote needs from the settings. */
@@ -159,11 +171,19 @@ export class SyncManager {
 				.filter(([, enabled]) => enabled)
 				.map(([key]) => key);
 
-			// "Skip": no request at all for a day without a note
-			const dates = this.dateRange(fromDate, toDate).filter((date) => settings.missingNoteBehaviour !== "skip" || dailyNoteExists(this.app, date, {
+			// "Skip": no request at all for a day without a note. A day that an earlier run fetched with all the
+			// metrics wanted now is not fetched again; the last days may still change, so they always are.
+			await this.history.warm(fromDate, toDate);
+			const recentLimit = shiftDate(localDateString(new Date()), -RECENT_DAYS);
+			const candidates = this.dateRange(fromDate, toDate).filter((date) => settings.missingNoteBehaviour !== "skip" || dailyNoteExists(this.app, date, {
 				dailyNotePath: settings.dailyNotePath,
 				dailyNoteFormat: settings.dailyNoteFormat,
 			}));
+			const dates = candidates.filter((date) => !(date < recentLimit && (isFetched(settings, date, enabledMetrics) || this.isInHistory(date, enabledMetrics))));
+			if (candidates.length > 0 && dates.length === 0) {
+				new Notice(t("noticeBackfillNothing", settings.language), 10000);
+				return 0;
+			}
 
 			// Calculate delay based on number of endpoints (50 req/min budget)
 			const batchDelay = this.provider.getRecommendedBatchDelay?.(enabledMetrics) ?? 2000;
@@ -176,6 +196,7 @@ export class SyncManager {
 				try {
 					const data = await this.provider.fetchData(date, enabledMetrics);
 					const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
+					if (date < recentLimit) markFetched(settings, date, enabledMetrics);
 
 					if (hasData) {
 						const mayCreate = await this.keepDay(date, data, enabledMetrics, settings);

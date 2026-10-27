@@ -105,6 +105,7 @@ export const fr: Record<TranslationKeys, string> = {
 	noticeAutoSyncDone: "Données de santé synchronisées — {count} jours mis à jour",
 	noticeBackfillStart: "Début du remplissage...",
 	noticeBackfillProgress: "Remplissage en cours : jour {n} sur {total} ({date}) · encore environ {eta}",
+	noticeBackfillNothing: "Remplissage : tous les jours de cette période sont déjà là",
 	noticeBackfillDone: "Remplissage terminé : {count} jours mis à jour",
 	noticeBackfillDoneWithErrors: "Remplissage terminé : {count} jours mis à jour, {failed} en échec (voir la console)",
 	noticeHistoryImported: "{count} jours copiés de vos notes quotidiennes vers l’historique",

@@ -654,6 +654,8 @@ export default class HealthSyncPlugin extends Plugin {
 		const defaults = DEFAULT_SETTINGS.enabledMetrics;
 		this.settings.enabledMetrics = { ...(saved?.enabledMetrics ?? defaults) };
 		this.settings.lastSyncTimes = { ...(saved?.lastSyncTimes ?? {}) };
+		this.settings.fetchLog = { ...(saved?.fetchLog ?? {}) };
+		this.settings.fetchSets = (saved?.fetchSets ?? []).map((set) => [...set]);
 		this.settings.panelCards = { ...(saved?.panelCards ?? {}) };
 		this.settings.birthYear = parseBirthYear(saved?.birthYear, new Date().getFullYear());
 		// "Create daily note when missing" became a three-way choice: off meant waiting for the note, which is "skip".

@@ -105,6 +105,7 @@ export const ja: Record<TranslationKeys, string> = {
 	noticeAutoSyncDone: "ヘルスデータを同期しました — {count} 日分を更新",
 	noticeBackfillStart: "バックフィルを開始...",
 	noticeBackfillProgress: "バックフィル実行中：{n}/{total}日目（{date}）· 残り約{eta}",
+	noticeBackfillNothing: "バックフィル：この期間の日はすべて取得済みです",
 	noticeBackfillDone: "バックフィル完了：{count} 日分を更新",
 	noticeBackfillDoneWithErrors: "バックフィル完了：{count} 日分を更新、{failed} 日分は失敗（コンソール参照）",
 	noticeHistoryImported: "デイリーノートから{count}日分を履歴にコピーしました",

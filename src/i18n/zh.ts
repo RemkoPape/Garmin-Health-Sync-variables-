@@ -105,6 +105,7 @@ export const zh: Record<TranslationKeys, string> = {
 	noticeAutoSyncDone: "健康数据同步完成 — 已更新 {count} 天",
 	noticeBackfillStart: "开始回填数据...",
 	noticeBackfillProgress: "回填进行中：第 {n} 天，共 {total} 天（{date}）· 还需约 {eta}",
+	noticeBackfillNothing: "回填：此范围内的所有日期都已存在",
 	noticeBackfillDone: "回填完成：已更新 {count} 天",
 	noticeBackfillDoneWithErrors: "回填完成：已更新 {count} 天，{failed} 天失败（见控制台）",
 	noticeHistoryImported: "已将 {count} 天的数据从每日笔记复制到历史",

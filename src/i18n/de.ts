@@ -105,6 +105,7 @@ export const de: Record<TranslationKeys, string> = {
 	noticeAutoSyncDone: "Gesundheitsdaten synchronisiert — {count} Tage aktualisiert",
 	noticeBackfillStart: "Starte Nachsynchronisierung...",
 	noticeBackfillProgress: "Nachsynchronisierung läuft: Tag {n} von {total} ({date}) · noch etwa {eta}",
+	noticeBackfillNothing: "Nachsynchronisierung: Alle Tage in diesem Zeitraum sind bereits vorhanden",
 	noticeBackfillDone: "Nachsynchronisierung abgeschlossen: {count} Tage aktualisiert",
 	noticeBackfillDoneWithErrors: "Nachsynchronisierung abgeschlossen: {count} Tage aktualisiert, {failed} fehlgeschlagen (siehe Konsole)",
 	noticeHistoryImported: "{count} Tage aus deinen Daily Notes in den Verlauf kopiert",

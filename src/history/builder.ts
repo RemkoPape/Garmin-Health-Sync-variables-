@@ -57,7 +57,7 @@ interface BuilderOptions {
 }
 
 /** A record is complete when it came from notes (no list of requested metrics) or asked for every metric that is wanted now. */
-function isComplete(record: DayRecord, requested: string[]): boolean {
+export function isComplete(record: DayRecord, requested: string[]): boolean {
 	const asked = record[FETCHED_KEY];
 	return !Array.isArray(asked) || requested.every((metric) => (asked as string[]).includes(metric));
 }
