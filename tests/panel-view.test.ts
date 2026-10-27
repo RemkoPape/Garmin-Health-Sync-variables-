@@ -172,6 +172,33 @@ describe("health panel view", () => {
 		expect(dateText(view)).toBe(formatPanelDate("2026-10-10", "en"));
 	});
 
+	it("renders what a sync wrote while the panel was hidden as soon as it is shown again, however it becomes visible", async () => {
+		for (const reveal of ["active-leaf-change", "layout-change", "resize"]) {
+			const app = new App();
+			const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS } } as never);
+			await view.onOpen();
+			expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
+			// the drawer is closed, then a sync writes today's note
+			view.containerEl.isShown = () => false;
+			await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 64 }) });
+			app.metadataCache.fireChanged(app.vault.getMarkdownFiles()[0]!);
+			await vi.advanceTimersByTimeAsync(300);
+			expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
+			// opening the drawer is what shows it again; no tab switch is needed
+			view.containerEl.isShown = () => true;
+			if (reveal === "resize") view.onResize();
+			else app.workspace.fire(reveal);
+			expect(view.contentEl.querySelector(".ghs-card-value")?.textContent, reveal).toBe("64 ms");
+		}
+	});
+
+	it("does nothing on a resize while it is up to date", async () => {
+		const { view } = await open();
+		const before = view.contentEl.firstElementChild;
+		view.onResize();
+		expect(view.contentEl.firstElementChild).toBe(before);
+	});
+
 	it("does nothing on a leaf change while it is up to date", async () => {
 		const { app, view } = await open();
 		const before = view.contentEl.firstElementChild;
