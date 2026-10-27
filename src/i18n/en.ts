@@ -286,7 +286,7 @@ export const en = {
 	panelSleepTitle: "Sleep",
 	panelSleepExplain: "Sleep debt adds up how far you fell short of {need} hours on each of the last 7 nights. The tip for tonight is {need} hours plus a quarter of the debt, at most one extra hour, rounded down to 15 minutes. Needs differ between people, so treat it as a rough guide. This is not medical advice.",
 	panelSleepSchedule: "Bedtime {bed} ±{bedSd} min · wake-up {wake} ±{wakeSd} min",
-	panelSleepExplainTimes: "Each column runs from bedtime to getting up: the faint bar is the time in bed, the solid bar the time asleep and the dashed box is {need} hours from bedtime. A solid bar that ends above the box means too little sleep that night. The ± figures show how much your times vary.",
+	panelSleepExplainTimes: "Each column is one night: the bar starts at bedtime and lasts as long as you slept, and the dotted lines mark your usual bedtime and wake-up. A bar that starts below the first line is a late night, one that ends above the second a short one.",
 	panelSleepDebt: "Sleep debt, last 7 nights: {debt}",
 	panelSleepNoDebt: "No sleep debt in the last 7 nights",
 	panelSleepDebtPersonal: "Sleep debt, last 7 nights: {debt}, against your usual {usual}",

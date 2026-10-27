@@ -189,19 +189,19 @@ function durationChart(parent: HTMLElement, nights: SleepNight[], need: number, 
 }
 
 /**
- * One column per night on a clock that runs downwards: a faint bar from bedtime to getting up, a solid bar for
- * the time asleep and a dashed box that is the need long from bedtime. A solid bar that stops above the end
- * of the box is a night with too little sleep; where the bars start and end shows how regular the nights are.
+ * One bar per night on a clock that runs downwards: it starts at bedtime and is as long as the night's sleep.
+ * Two dotted lines mark the usual bedtime and wake-up, so a bar that starts below the first line is a late
+ * night and one that ends above the second a short one.
  */
-function timelineChart(parent: HTMLElement, nights: SleepNight[], need: number, schedule: SleepSchedule, lang: string): void {
+function timelineChart(parent: HTMLElement, nights: SleepNight[], schedule: SleepSchedule, lang: string): void {
 	const timed = nights.filter((n) => n.bed !== null && n.span !== null);
-	const first = Math.min(...timed.map((n) => n.bed as number)) - 30;
-	const last = Math.max(...timed.map((n) => Math.max((n.bed as number) + (n.span as number), (n.bed as number) + need))) + 30;
+	const usual = [schedule.bedAbs, schedule.wakeAbs];
+	const first = Math.min(schedule.bedAbs, ...timed.map((n) => n.bed as number)) - 30;
+	const last = Math.max(schedule.wakeAbs, ...timed.map((n) => (n.bed as number) + (n.minutes ?? (n.span as number)))) + 30;
 	const top = Math.floor(first / 60) * 60;
 	const range = Math.ceil(last / 60) * 60 - top;
 	const chart = parent.createDiv({ cls: "ghs-nights ghs-nights-timeline" });
 	// dotted lines at the usual bedtime and wake-up, labelled with their times; an end label that would sit on one is left out
-	const usual = [schedule.bedAbs, schedule.wakeAbs];
 	const clear = (minutes: number): boolean => usual.every((u) => Math.abs(u - minutes) >= AXIS_CLEARANCE_MIN);
 	if (clear(top)) chart.createSpan({ cls: "ghs-axis-label ghs-axis-top", text: formatClock(top) });
 	if (clear(top + range)) chart.createSpan({ cls: "ghs-axis-label ghs-axis-bottom", text: formatClock(top + range) });
@@ -213,11 +213,8 @@ function timelineChart(parent: HTMLElement, nights: SleepNight[], need: number, 
 	nights.forEach((n, i) => {
 		const col = chart.createDiv({ cls: "ghs-night" });
 		if (n.bed !== null && n.span !== null) {
-			const y = `${((n.bed - top) / range) * 100}%`;
-			const place = (el: HTMLElement, minutes: number): void => el.setCssProps({ "--ghs-y": y, "--ghs-h": `${(minutes / range) * 100}%` });
-			place(col.createDiv({ cls: "ghs-night-need" }), need);
-			place(col.createDiv({ cls: "ghs-night-window" }), n.span);
-			place(col.createDiv({ cls: `ghs-night-asleep${i === nights.length - 1 ? " ghs-night-asleep-last" : ""}` }), n.minutes ?? n.span);
+			const bar = col.createDiv({ cls: `ghs-night-asleep${i === nights.length - 1 ? " ghs-night-asleep-last" : ""}` });
+			bar.setCssProps({ "--ghs-y": `${((n.bed - top) / range) * 100}%`, "--ghs-h": `${((n.minutes ?? n.span) / range) * 100}%` });
 		}
 		col.createSpan({ cls: "ghs-night-day", text: weekdayInitial(n.date, lang) });
 	});
@@ -245,7 +242,7 @@ export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string
 			});
 			return;
 		}
-		if (model.schedule) timelineChart(card, model.nights, model.need, model.schedule, lang);
+		if (model.schedule) timelineChart(card, model.nights, model.schedule, lang);
 		else durationChart(card, model.nights, model.need, lang);
 		const personal = model.reference < model.need;
 		const owed = model.personalDebt!;

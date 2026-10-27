@@ -287,7 +287,7 @@ export const ja: Record<TranslationKeys, string> = {
 	panelSleepTitle: "睡眠",
 	panelSleepExplain: "睡眠負債は、直近7夜それぞれで{need}時間にどれだけ足りなかったかの合計です。今夜の目安は、{need}時間に負債の4分の1（最大1時間）を加え、15分単位に切り捨てた時間です。必要な睡眠時間には個人差があるため、おおよその目安として使ってください。医療上のアドバイスではありません。",
 	panelSleepSchedule: "就寝 {bed} ±{bedSd}分 · 起床 {wake} ±{wakeSd}分",
-	panelSleepExplainTimes: "各列は就寝から起床までです。淡いバーは床にいた時間、濃いバーは眠っていた時間、点線の枠は就寝から{need}時間です。濃いバーが枠の手前で終わる夜は睡眠不足です。±の数値は時刻のばらつきを示します。",
+	panelSleepExplainTimes: "各列は1夜です。バーは就寝時刻から始まり、眠った時間の長さで伸びます。点線は普段の就寝時刻と起床時刻です。最初の線より下から始まるバーは遅い夜、2本目の線より上で終わるバーは短い夜です。",
 	panelSleepDebt: "睡眠負債（直近7夜）：{debt}",
 	panelSleepNoDebt: "直近7夜に睡眠負債はありません",
 	panelSleepDebtPersonal: "睡眠負債（直近7夜）：{debt}（普段の{usual}との差）",

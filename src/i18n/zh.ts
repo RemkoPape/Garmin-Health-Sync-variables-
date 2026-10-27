@@ -287,7 +287,7 @@ export const zh: Record<TranslationKeys, string> = {
 	panelSleepTitle: "睡眠",
 	panelSleepExplain: "睡眠债是最近 7 晚每晚不足 {need} 小时的时长之和。今晚的建议是 {need} 小时加上睡眠债的四分之一（最多多睡 1 小时），向下取整到 15 分钟。每个人的需求不同，请仅作粗略参考。这不是医疗建议。",
 	panelSleepSchedule: "入睡 {bed} ±{bedSd} 分钟 · 起床 {wake} ±{wakeSd} 分钟",
-	panelSleepExplainTimes: "每一列从入睡到起床：浅色条是在床上的时间，实心条是睡着的时间，虚线框是从入睡起的 {need} 小时。实心条在框之前结束，说明那晚睡眠不足。± 数值表示你的时间波动有多大。",
+	panelSleepExplainTimes: "每一列是一晚：条从入睡时间开始，长度是你睡着的时间，虚线标出你通常的入睡和起床时间。从第一条线下方开始的条是晚睡的夜晚，在第二条线上方结束的条是睡得短的夜晚。",
 	panelSleepDebt: "睡眠债（最近 7 晚）：{debt}",
 	panelSleepNoDebt: "最近 7 晚没有睡眠债",
 	panelSleepDebtPersonal: "睡眠债，最近 7 晚：{debt}，相对于你通常的 {usual}",

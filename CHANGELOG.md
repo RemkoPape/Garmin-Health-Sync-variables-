@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.30
+
+### Changed
+
+- Sleep timeline simplified: one bar per night, starting at bedtime and as long as the sleep. The faint "time in bed" part and the dashed box are gone. The two dotted lines at your usual bedtime and wake-up stay, so a bar that starts below the first line is a late night and one that ends above the second a short one. The light bulb explanation describes the chart this way.
+
 ## 0.12.0-beta.29
 
 ### Changed

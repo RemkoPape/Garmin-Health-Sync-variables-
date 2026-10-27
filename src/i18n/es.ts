@@ -287,7 +287,7 @@ export const es: Record<TranslationKeys, string> = {
 	panelSleepTitle: "Sueño",
 	panelSleepExplain: "La deuda de sueño suma cuánto te quedaste por debajo de {need} horas en cada una de las últimas 7 noches. La sugerencia para esta noche es {need} horas más una cuarta parte de la deuda, como máximo una hora extra, redondeada hacia abajo a 15 minutos. Las necesidades varían, así que tómalo como una guía aproximada. Esto no es un consejo médico.",
 	panelSleepSchedule: "Acostarse {bed} ±{bedSd} min · levantarse {wake} ±{wakeSd} min",
-	panelSleepExplainTimes: "Cada columna va de la hora de acostarte a la de levantarte: la barra tenue es el tiempo en la cama, la barra sólida el tiempo dormido y el recuadro discontinuo son {need} horas desde que te acuestas. Una barra sólida que termina por encima del recuadro significa poco sueño esa noche. Las cifras ± muestran cuánto varían tus horarios.",
+	panelSleepExplainTimes: "Cada columna es una noche: la barra empieza a la hora de acostarte y dura lo que dormiste, y las líneas de puntos marcan tu hora habitual de acostarte y de despertarte. Una barra que empieza por debajo de la primera línea es una noche tardía; una que termina por encima de la segunda, una noche corta.",
 	panelSleepDebt: "Deuda de sueño, últimas 7 noches: {debt}",
 	panelSleepNoDebt: "Sin deuda de sueño en las últimas 7 noches",
 	panelSleepDebtPersonal: "Deuda de sueño, últimas 7 noches: {debt}, frente a lo habitual en ti, {usual}",
