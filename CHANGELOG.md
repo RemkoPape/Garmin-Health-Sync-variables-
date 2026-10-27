@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.47
+
+### Fixed
+
+- Weekly load: walking (and hiking and other outdoor activities) were missing next to running and cycling. Each sport with kilometres now has its own bar, in the order running, cycling, walking, outdoor.
+
 ## 0.12.0-beta.46
 
 ### Changed

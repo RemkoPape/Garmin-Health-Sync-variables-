@@ -406,6 +406,8 @@ export const zh: Record<TranslationKeys, string> = {
 	panelWeeklyOver: "已超过上限",
 	panelCategoryRunning: "跑步",
 	panelCategoryCycling: "骑行",
+	panelCategoryWalking: "步行",
+	panelCategoryOutdoor: "户外",
 	panelDistanceLeft: "本周还剩 {km}",
 	panelSectionFitness: "体能与身体",
 	panelVo2Title: "最大摄氧量",

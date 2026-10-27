@@ -249,6 +249,15 @@ describe("weekly distance of running and cycling", () => {
 		expect([row(0).label, row(1).label]).toEqual([en.panelCategoryRunning, en.panelCategoryCycling]);
 	});
 
+	it("tracks walking and hiking too, drawn like the other sports", async () => {
+		const index = await indexOf(() => ({ walking: "60min · 5 km", hiking: "120min · 9 km", running: "5 km · 30min" }));
+		renderWeekly(root, computeWeekly(index, END), "en", false, false, noop);
+		expect([0, 1, 2].map((i) => row(i).label)).toEqual([en.panelCategoryRunning, en.panelCategoryWalking, en.panelCategoryOutdoor]);
+		expect(row(1).value).toBe("20 km");
+		expect(row(2).value).toBe("36 km");
+		expect(row(1).marks).toEqual(["Usual 35", "Limit 38.5"]);
+	});
+
 	it("leaves a sport out when it has no kilometres this week or before, and uses the written category", async () => {
 		const none = await indexOf(() => ({ yoga: "30min" }));
 		expect(computeWeekly(none, END).distances).toEqual([]);
