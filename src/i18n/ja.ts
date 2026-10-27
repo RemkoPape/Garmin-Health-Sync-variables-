@@ -406,6 +406,8 @@ export const ja: Record<TranslationKeys, string> = {
 	panelWeeklyOver: "上限を超えています",
 	panelCategoryRunning: "ランニング",
 	panelCategoryCycling: "サイクリング",
+	panelCategoryWalking: "ウォーキング",
+	panelCategoryOutdoor: "アウトドア",
 	panelDistanceLeft: "今週あと{km}",
 	panelSectionFitness: "体力と体",
 	panelVo2Title: "VO₂ max",

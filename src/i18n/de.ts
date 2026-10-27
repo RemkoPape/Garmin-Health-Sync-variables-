@@ -407,6 +407,8 @@ export const de: Record<TranslationKeys, string> = {
 	panelWeeklyOver: "Über der Grenze",
 	panelCategoryRunning: "Laufen",
 	panelCategoryCycling: "Radfahren",
+	panelCategoryWalking: "Gehen",
+	panelCategoryOutdoor: "Outdoor",
 	panelDistanceLeft: "Noch {km}",
 	panelSectionFitness: "Fitness und Körper",
 	panelVo2Title: "VO₂max",

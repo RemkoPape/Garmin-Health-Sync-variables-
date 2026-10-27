@@ -46,6 +46,8 @@ export function computeWeekly(index: DayIndex, date: string): WeeklyModel {
 
 const KM_PER_MILE = 1.609344;
 
+const CATEGORY_LABELS = { running: "panelCategoryRunning", cycling: "panelCategoryCycling", walking: "panelCategoryWalking", outdoor: "panelCategoryOutdoor" } as const;
+
 export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: string, imperial: boolean, explainOpen: boolean, onToggleExplain: () => void): void {
 	renderCard(parent, { title: t("panelWeeklyTitle", lang), value: formatNumber(model.minutes, lang, 0), unit: "min", explain: t("panelWeeklyExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
 		if (model.average === null || model.cap === null) {
@@ -118,7 +120,7 @@ function distanceRow(card: HTMLElement, d: WeeklyDistance, lang: string, imperia
 	const unit = imperial ? "mi" : "km";
 	const num = (km: number): string => formatNumber(imperial ? km / KM_PER_MILE : km, lang, 1);
 	weekRow(card, {
-		label: t(d.category === "running" ? "panelCategoryRunning" : "panelCategoryCycling", lang),
+		label: t(CATEGORY_LABELS[d.category], lang),
 		shown: `${num(d.km)} ${unit}`,
 		value: d.km,
 		average: d.average,

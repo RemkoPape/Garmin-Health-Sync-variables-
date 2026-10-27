@@ -405,6 +405,8 @@ export const en = {
 	panelWeeklyOver: "Over the limit",
 	panelCategoryRunning: "Running",
 	panelCategoryCycling: "Cycling",
+	panelCategoryWalking: "Walking",
+	panelCategoryOutdoor: "Outdoor",
 	panelDistanceLeft: "{km} left",
 	panelSectionFitness: "Fitness and body",
 	panelVo2Title: "Cardio fitness",

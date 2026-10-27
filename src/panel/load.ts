@@ -76,7 +76,7 @@ export function previousWeeks(index: DayIndex, date: string): number[] {
 }
 
 /** Sports whose weekly distance is tracked next to the minutes. */
-export const DISTANCE_CATEGORIES = ["running", "cycling"] as const;
+export const DISTANCE_CATEGORIES = ["running", "cycling", "walking", "outdoor"] as const;
 export type DistanceCategory = (typeof DISTANCE_CATEGORIES)[number];
 
 /** Kilometres of one category from `from` to `to`, both included. */
