@@ -6,8 +6,11 @@ import { LoginCooldown } from "./login-cooldown";
 import { SyncManager } from "./sync";
 import { HistoryStore } from "./history/store";
 import { importFromNotes } from "./history/import";
+import { HistoryBuilder } from "./history/builder";
+import { BuildProgressUi } from "./history/progress";
+import { BuildHistoryModal } from "./ui/build-history-modal";
 import { dateFromDailyNote, matchDailyNoteDate } from "./daily-note";
-import { localDateString } from "./dates";
+import { localDateString, shiftDate } from "./dates";
 import { GarminProvider } from "./providers/garmin/garmin-provider";
 import type { OAuth1Token, OAuth2Token } from "./providers/garmin/garmin-oauth";
 import { t } from "./i18n/t";
@@ -35,6 +38,8 @@ export default class HealthSyncPlugin extends Plugin {
 	private autoSyncRunning = false;
 	private autoSyncResyncQueued = false;
 	private backfillRunning = false;
+	/** The running history build, if any. */
+	private historyBuilder: HistoryBuilder | null = null;
 	private lastAutoSyncAttempt = 0;
 	private loginRequiredNotice: Notice | null = null;
 	private lastLoginNoticeAt = 0;
@@ -102,6 +107,13 @@ export default class HealthSyncPlugin extends Plugin {
 					})(), "backfill");
 				}).open();
 			},
+		});
+
+		// Command: fetch the days back to the start of the Garmin account into the history notes
+		this.addCommand({
+			id: "build-history",
+			name: t("commandBuildHistory", this.settings.language),
+			callback: () => this.openBuildHistory(),
 		});
 
 		// Command: copy the Garmin values of the daily notes into the history notes (no Garmin requests)
@@ -176,6 +188,52 @@ export default class HealthSyncPlugin extends Plugin {
 		);
 	}
 
+	private enabledMetricKeys(): string[] {
+		return Object.entries(this.settings.enabledMetrics).filter(([, enabled]) => enabled).map(([key]) => key);
+	}
+
+	/** Asks how far back to go, then builds the history in the background with a progress notice. */
+	private openBuildHistory(): void {
+		const lang = this.settings.language;
+		if (this.historyBuilder) return; // one build at a time; its notice is on screen
+		if (!this.garminProvider.isConfigured()) {
+			new Notice(t("noticeLoginRequired", lang));
+			return;
+		}
+		const enabled = this.enabledMetricKeys();
+		const delay = this.garminProvider.getRecommendedBatchDelay(enabled);
+		const newest = shiftDate(localDateString(new Date()), -1);
+		new BuildHistoryModal(this.app, lang, newest, delay, enabled.length, (from) => this.background(this.buildHistory(from, newest, enabled), "build history")).open();
+	}
+
+	private async buildHistory(from: string, newest: string, enabled: string[]): Promise<void> {
+		const lang = this.settings.language;
+		const ui = new BuildProgressUi(lang, () => this.historyBuilder?.stop(), Platform.isDesktop ? this.addStatusBarItem() : null);
+		this.historyBuilder = new HistoryBuilder({
+			provider: this.garminProvider,
+			store: this.history,
+			enabledMetrics: enabled,
+			writeNote: (date, data) => this.syncManager.updateExistingNote(date, data, this.settings),
+			onProgress: (progress) => ui.update(progress),
+		});
+		try {
+			if (!this.garminProvider.isSessionValid() && !(await this.garminProvider.authenticate()).ok) {
+				ui.finish({ status: "login-required", fetched: 0, skipped: 0, failed: 0, date: newest, reachedStart: false });
+				return;
+			}
+			ui.finish(await this.historyBuilder.run(from, newest));
+		} catch (error) {
+			console.error("Garmin Health Sync: history build failed", error);
+			ui.dismiss();
+			new Notice(t("noticeSyncError", lang));
+		} finally {
+			this.historyBuilder = null;
+			// Tokens may have been refreshed or invalidated during the build: persist them.
+			this.saveTokens();
+			await this.saveSettings();
+		}
+	}
+
 	private async importHistory(): Promise<void> {
 		const lang = this.settings.language;
 		const count = await importFromNotes(this.app, this.history, this.settings);
@@ -226,6 +284,8 @@ export default class HealthSyncPlugin extends Plugin {
 	 *        create-note trigger so a freshly created note is picked up at once. */
 	private async tryAutoSync(options: { force?: boolean } = {}): Promise<void> {
 		if (!this.settings.autoSync) return;
+		// A history build uses the Garmin connection at its own pace; the next trigger picks the recent days up.
+		if (this.historyBuilder) return;
 		if (this.autoSyncRunning) {
 			// A pass is already in flight. If this is a forced resume (a note just
 			// appeared), queue exactly one more pass to run when it finishes — the

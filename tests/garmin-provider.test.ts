@@ -80,6 +80,47 @@ describe("identity and passthroughs", () => {
 	});
 });
 
+describe("fetchData one at a time", () => {
+	/** Replaces the work of a fetch with a scripted one that records when it starts and ends. */
+	function script(work: (date: string) => Promise<void>): string[] {
+		const order: string[] = [];
+		(provider as unknown as { fetchDataNow: (date: string) => Promise<unknown> }).fetchDataNow = async (date) => {
+			order.push(`start ${date}`);
+			await work(date);
+			order.push(`end ${date}`);
+			return { metrics: {}, activities: {} };
+		};
+		return order;
+	}
+
+	it("never lets two fetches overlap, because the API caches one day at a time", async () => {
+		let release: () => void = () => undefined;
+		const gate = new Promise<void>((resolve) => (release = resolve));
+		const order = script(async (date) => {
+			if (date === "a") await gate;
+		});
+		const first = provider.fetchData("a", []);
+		const second = provider.fetchData("b", []);
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(order).toEqual(["start a"]);
+		release();
+		await Promise.all([first, second]);
+		expect(order).toEqual(["start a", "end a", "start b", "end b"]);
+	});
+
+	it("goes on with the next fetch after one failed, and still reports the failure to its caller", async () => {
+		const order = script(async (date) => {
+			if (date === "a") throw new Error("down");
+		});
+		const first = provider.fetchData("a", []);
+		const second = provider.fetchData("b", []);
+		await expect(first).rejects.toThrow("down");
+		await second;
+		expect(order).toEqual(["start a", "start b", "end b"]);
+	});
+});
+
 describe("fetchData", () => {
 	it("needs a login when there is no session and calls nothing", async () => {
 		provider.setTokens(null, null);

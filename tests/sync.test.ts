@@ -61,6 +61,19 @@ describe("syncDate with the history setting", () => {
 	});
 });
 
+describe("updateExistingNote", () => {
+	it("updates a note that exists, in the units of the notes, and never creates one", async () => {
+		app.vault.seed(NOTE, "---\ntags: x\n---\nbody");
+		const data = { metrics: { distance_km: 10 }, activities: {} };
+		await sync.updateExistingNote(DATE, data, settings({ unitSystem: "imperial" }));
+		expect(frontmatter(NOTE)).toContain("distance_mi: 6.2");
+		await sync.updateExistingNote("2026-10-20", data, settings());
+		expect(app.vault.paths()).toEqual([NOTE]);
+		await sync.updateExistingNote(DATE, { metrics: { steps: 5 }, activities: {} }, settings());
+		expect(frontmatter(NOTE)).toContain("steps: 5");
+	});
+});
+
 describe("syncDate", () => {
 	it("fetches the enabled metrics, writes the note and reports success", async () => {
 		const outcome = await sync.syncDate(DATE, settings());

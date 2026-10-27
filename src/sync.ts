@@ -29,6 +29,26 @@ export class SyncManager {
 		this.history = history;
 	}
 
+	/** What writeToDailyNote needs from the settings. */
+	private noteOptions(settings: HealthSyncSettings, createIfMissing: boolean) {
+		return {
+			dailyNotePath: settings.dailyNotePath,
+			dailyNoteFormat: settings.dailyNoteFormat,
+			prefix: settings.usePrefix ? "ohs_" : "",
+			template: settings.dailyNoteTemplate,
+			writeTrainings: settings.writeTrainings,
+			writeWorkoutLocation: settings.writeWorkoutLocation,
+			createIfMissing,
+			language: settings.language,
+		};
+	}
+
+	/** Updates the daily note of a day that has one with a fetched day; never creates a note. Used by the history build. */
+	async updateExistingNote(date: string, data: HealthData, settings: HealthSyncSettings): Promise<void> {
+		const outputData = settings.unitSystem === "imperial" ? convertToImperial(data) : data;
+		await writeToDailyNote(this.app, date, outputData, this.noteOptions(settings, false));
+	}
+
 	/** Keeps a fetched day in the history notes when the setting says so; returns whether a missing note may be created. */
 	private async keepDay(date: string, data: HealthData, enabledMetrics: string[], settings: HealthSyncSettings): Promise<boolean> {
 		if (settings.missingNoteBehaviour !== "history") return true;
@@ -99,19 +119,7 @@ export class SyncManager {
 
 			// With "keep in history files" the day goes to the history, and a note is only updated, never created
 			const mayCreate = await this.keepDay(date, data, enabledMetrics, settings);
-			await writeToDailyNote(this.app, date, outputData, {
-				dailyNotePath: settings.dailyNotePath,
-				dailyNoteFormat: settings.dailyNoteFormat,
-				prefix: settings.usePrefix ? "ohs_" : "",
-				template: settings.dailyNoteTemplate,
-				writeTrainings: settings.writeTrainings,
-				writeWorkoutLocation: settings.writeWorkoutLocation,
-				// In wait mode the gate above already confirmed the note exists;
-				// keep createIfMissing false as a safety net should it vanish
-				// mid-sync. Otherwise (manual/auto-with-creation) create as before.
-				createIfMissing: mayCreate && !waitForNote,
-				language: settings.language,
-			});
+			await writeToDailyNote(this.app, date, outputData, this.noteOptions(settings, mayCreate && !waitForNote));
 
 			if (!quiet) new Notice(t("noticeSyncSuccess", settings.language));
 			return "synced";
@@ -169,16 +177,7 @@ export class SyncManager {
 					if (hasData) {
 						const mayCreate = await this.keepDay(date, data, enabledMetrics, settings);
 						const outputData = settings.unitSystem === "imperial" ? convertToImperial(data) : data;
-						await writeToDailyNote(this.app, date, outputData, {
-							dailyNotePath: settings.dailyNotePath,
-							dailyNoteFormat: settings.dailyNoteFormat,
-							prefix: settings.usePrefix ? "ohs_" : "",
-							template: settings.dailyNoteTemplate,
-							writeTrainings: settings.writeTrainings,
-							writeWorkoutLocation: settings.writeWorkoutLocation,
-							createIfMissing: mayCreate,
-							language: settings.language,
-						});
+						await writeToDailyNote(this.app, date, outputData, this.noteOptions(settings, mayCreate));
 						count++;
 					}
 				} catch (error) {
