@@ -112,6 +112,15 @@ describe("renderHrv", () => {
 		expect(root.querySelector(".ghs-dot")).not.toBeNull();
 	});
 
+	it("warns on the HRV card when the low reading has lasted and nothing explains it", async () => {
+		const model = computeHrv(await indexWith(60), END);
+		render({ ...model, insights: [{ id: "hrv_low_streak", params: { n: "3" } }] });
+		expect(text(".ghs-card-alert")).toBe("Below your usual range for 3 nights, nothing in your data explains it");
+		root.replaceChildren();
+		render({ ...model, insights: [] });
+		expect(root.querySelector(".ghs-card-alert")).toBeNull();
+	});
+
 	it("shows no warning once the history is long enough", async () => {
 		render(computeHrv(await indexWith(60), END));
 		expect(root.querySelector(".ghs-card-warning")).toBeNull();

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.24
+
+### Added
+
+- HRV card: when HRV has been below your usual range for two or more nights in a row and your training, sleep and stress do not explain it, the card shows a warning line and the light bulb explains that such a lasting, unexplained drop can come before an infection or mean the body is run down. Low HRV together with faster breathing now also counts as a possible illness pattern, like a raised resting heart rate already did. Not a diagnosis; the sources are listed in `docs/panel-insights.md`.
+
+### Changed
+
+- Fewer colours: charts without a good or bad side (sleep bars, distance, weight dots, weekly bars, intensity minutes, stress recovery split) use your Obsidian accent colour, a little brighter. The sleep stages are shades of the accent colour from deep (darkest) to light. Green, orange and red remain only where they mean something.
+- The sleep timeline is taller (168 px instead of 96 px), so differences in bedtime and wake-up time are easier to see.
+
 ## 0.12.0-beta.23
 
 ### Changed

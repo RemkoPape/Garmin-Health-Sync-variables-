@@ -83,6 +83,24 @@ describe("HRV", () => {
 		expect(ids(hrvInsights(await hrv(54)))).toEqual(["unexplained"]);
 	});
 
+	it("flags low HRV together with faster breathing as a possible illness", async () => {
+		expect(ids(hrvInsights(await hrv(54, (ago) => ({ respiration_rate: ago === 0 ? 17 : alt(ago, 13, 15.4) }))))).toEqual(["hrv_low_illness"]);
+	});
+
+	it("warns when HRV stays under the usual range for several nights with no explanation", async () => {
+		const low = (nights: number) => signals((ago) => ({ hrv: ago < nights ? 54 : alt(ago, 62, 58) }));
+		expect(hrvInsights(await low(2))).toEqual([{ id: "hrv_low_streak", params: { n: "2" } }]);
+		expect(hrvInsights(await low(4))).toEqual([{ id: "hrv_low_streak", params: { n: "4" } }]);
+		expect(ids(hrvInsights(await low(1)))).toEqual(["unexplained"]);
+		expect(hrvInsights(await signals((ago) => ({ hrv: ago < 9 ? 20 - ago : alt(ago, 62, 58) })))).toEqual([{ id: "hrv_low_streak", params: { n: "7" } }]); // counted back a week at most
+		expect(ids(hrvInsights(await signals((ago) => ({ hrv: ago === 0 ? 54 : alt(ago, 62, 58) }), 6)))).toEqual(["unexplained"]); // yesterday has no range of its own yet
+	});
+
+	it("blames the known cause and not the streak when one exists", async () => {
+		const out = hrvInsights(await signals((ago) => ({ hrv: ago < 3 ? 54 : alt(ago, 62, 58), sleep_duration: "5h 0min" })));
+		expect(ids(out)).toEqual(["hrv_low_sleep"]);
+	});
+
 	it("shows at most three reasons", async () => {
 		const out = hrvInsights(await hrv(54, (ago) => ({ ...run(ago, 90, 30), sleep_duration: "5h 0min", stress: ago === 0 ? 55 : alt(ago, 30, 34), resting_hr: ago === 0 ? 60 : alt(ago, 50, 54) })));
 		expect(ids(out)).toEqual(["hrv_low_load", "hrv_low_sleep", "hrv_low_stress"]);

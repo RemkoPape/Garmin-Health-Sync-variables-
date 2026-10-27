@@ -113,6 +113,8 @@ export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: Ran
 		} else {
 			card.createDiv({ cls: "ghs-card-note", text: label });
 		}
+		const streak = model.insights.find((i) => i.id === "hrv_low_streak");
+		if (streak) card.createDiv({ cls: "ghs-card-note ghs-card-alert", text: t("panelHrvStreak", lang).replace("{n}", String(streak.params?.n)) });
 		if (model.early) {
 			card.createDiv({
 				cls: "ghs-card-note ghs-card-warning",

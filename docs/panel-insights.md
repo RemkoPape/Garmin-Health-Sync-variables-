@@ -175,10 +175,18 @@ Only sources that were looked up when this file was written are listed. Where a 
 ### hrv_low_illness
 
 - **Card:** hrv
-- **Trigger:** HRV is more than 1 standard deviation low and resting heart rate is more than 1 standard deviation above its 30 day mean.
+- **Trigger:** HRV is more than 1 standard deviation low and resting heart rate or breathing rate is more than 1 standard deviation above its 30 day mean.
 - **Text (English):** HRV is low while your resting heart rate is up. That pattern often shows when the body is under strain or fighting an infection. If you feel unwell, take a day off and watch the next mornings.
 - **Basis:** Raised resting heart rate with lowered HRV is the pattern wearable studies found around the onset of infection. It is a signal to watch, not a diagnosis.
 - **References:** [mishra](https://doi.org/10.1038/s41551-020-00640-6); [natarajan](https://doi.org/10.1038/s41746-020-00363-7); [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### hrv_low_streak
+
+- **Card:** hrv
+- **Trigger:** HRV is more than 1 standard deviation below its 30 day mean on the shown night and on at least one night right before it (each night against the 30 days before it), and none of the other low-HRV reasons applies: no load spike, no sleep debt of 2 hours or more, no stress above the usual, no raised resting heart rate or breathing. The same sentence also shows as a warning line on the card.
+- **Text (English):** HRV has been below your usual range for {n} nights in a row, and your training, sleep and stress do not explain it. A lasting unexplained drop can come before an infection or mean the body is run down. Watch how you feel over the next days; if you have symptoms, take it easy.
+- **Basis:** A single low night is noise; a drop that lasts several nights below the person's own range, with training, sleep and stress ruled out, is what wearable studies saw before infections, and sustained HRV declines are used in athlete monitoring as a sign of accumulated fatigue. It is a signal to watch, not a diagnosis.
+- **References:** [natarajan](https://doi.org/10.1038/s41746-020-00363-7); [mishra](https://doi.org/10.1038/s41551-020-00640-6); [buchheit](https://doi.org/10.3389/fphys.2014.00073)
 
 ### hrv_high_light_load
 
