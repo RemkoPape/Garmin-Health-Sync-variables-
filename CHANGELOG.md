@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0-beta.27
+
+### Changed
+
+- The five effort levels (heart rate zones of a session, the sessions in the weekly load bar, the borders of the session cards) now use the colours of the load zones: grey, light green, green, orange, red, instead of blue, cyan, yellow, orange, red. One scale, the same everywhere.
+- Steps: the marker is a dark ring instead of orange when you are below your usual, so it fits the accent coloured bar.
+- Smaller colour clean-up: a lower value in the small stat tiles is orange instead of olive yellow, recovery sessions use a neutral dashed border and tag instead of purple, and "awake" in the sleep stages is grey.
+
 ## 0.12.0-beta.26
 
 ### Changed

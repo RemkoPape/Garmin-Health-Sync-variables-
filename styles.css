@@ -73,6 +73,12 @@
 	--ghs-shade-2: color-mix(in oklab, var(--ghs-data) 70%, var(--background-secondary));
 	--ghs-shade-3: color-mix(in oklab, var(--ghs-data) 45%, var(--background-secondary));
 	--ghs-shade-4: color-mix(in oklab, var(--ghs-data) 25%, var(--background-secondary));
+	/* Five effort levels, from easy to hard: the colours of the load zones, so one scale means the same everywhere */
+	--ghs-level-1: var(--text-faint);
+	--ghs-level-2: color-mix(in srgb, var(--color-green) 45%, var(--background-secondary));
+	--ghs-level-3: var(--color-green);
+	--ghs-level-4: var(--color-orange);
+	--ghs-level-5: var(--color-red);
 	display: flex;
 	flex-direction: column;
 	gap: var(--size-4-6);
@@ -244,6 +250,11 @@
 	box-shadow: 0 0 0 1px var(--background-secondary);
 }
 
+/* Steps below the usual are not a warning: a dark ring that shows on the accent coloured bar */
+.ghs-steps-bar .ghs-dot {
+	border-color: var(--text-normal);
+}
+
 .ghs-dot-warn {
 	border-color: var(--color-orange);
 }
@@ -391,7 +402,7 @@
 }
 
 .ghs-chip-delta-down {
-	color: var(--color-yellow);
+	color: var(--color-orange);
 }
 
 .ghs-week-bar {
@@ -505,7 +516,7 @@
 }
 
 .ghs-stage-awake {
-	background: var(--color-yellow);
+	background: var(--text-faint);
 }
 
 .ghs-stage-row {
@@ -646,23 +657,23 @@
 
 /* Training: intensity steps from easy to hard */
 .ghs-step-0 {
-	background: var(--color-blue);
+	background: var(--ghs-level-1);
 }
 
 .ghs-step-1 {
-	background: var(--color-cyan);
+	background: var(--ghs-level-2);
 }
 
 .ghs-step-2 {
-	background: var(--color-yellow);
+	background: var(--ghs-level-3);
 }
 
 .ghs-step-3 {
-	background: var(--color-orange);
+	background: var(--ghs-level-4);
 }
 
 .ghs-step-4 {
-	background: var(--color-red);
+	background: var(--ghs-level-5);
 }
 
 .ghs-step-none {
@@ -671,7 +682,7 @@
 
 /* Load balance: five zones on a ratio from 0.5 to 1.8 */
 .ghs-range-track-load {
-	background: linear-gradient(to right, var(--text-faint) 0%, var(--text-faint) 23.1%, color-mix(in srgb, var(--color-green) 45%, var(--background-secondary)) 23.1%, color-mix(in srgb, var(--color-green) 45%, var(--background-secondary)) 38.5%, var(--color-green) 38.5%, var(--color-green) 61.5%, var(--color-orange) 61.5%, var(--color-orange) 76.9%, var(--color-red) 76.9%, var(--color-red) 100%);
+	background: linear-gradient(to right, var(--ghs-level-1) 0%, var(--ghs-level-1) 23.1%, var(--ghs-level-2) 23.1%, var(--ghs-level-2) 38.5%, var(--ghs-level-3) 38.5%, var(--ghs-level-3) 61.5%, var(--ghs-level-4) 61.5%, var(--ghs-level-4) 76.9%, var(--ghs-level-5) 76.9%, var(--ghs-level-5) 100%);
 }
 
 .ghs-zones {
@@ -739,7 +750,7 @@
 
 .ghs-session-recovery {
 	border-style: dashed;
-	border-color: var(--color-purple);
+	border-color: var(--text-muted);
 }
 
 .ghs-session-head {
@@ -754,7 +765,7 @@
 }
 
 .ghs-session-tag {
-	color: var(--color-purple);
+	color: var(--text-muted);
 	font-size: var(--font-ui-smaller);
 }
 
@@ -765,23 +776,23 @@
 
 /* after .ghs-session, whose border shorthand would otherwise reset the colour */
 .ghs-step-border-0 {
-	border-color: var(--color-blue);
+	border-color: var(--ghs-level-1);
 }
 
 .ghs-step-border-1 {
-	border-color: var(--color-cyan);
+	border-color: var(--ghs-level-2);
 }
 
 .ghs-step-border-2 {
-	border-color: var(--color-yellow);
+	border-color: var(--ghs-level-3);
 }
 
 .ghs-step-border-3 {
-	border-color: var(--color-orange);
+	border-color: var(--ghs-level-4);
 }
 
 .ghs-step-border-4 {
-	border-color: var(--color-red);
+	border-color: var(--ghs-level-5);
 }
 
 .ghs-step-border-none {
