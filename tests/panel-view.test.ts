@@ -22,7 +22,8 @@ function note(path: string, size = 10): TFile {
 
 async function open(settings = {}): Promise<{ app: App; view: HealthPanelView; plugin: { settings: typeof DEFAULT_SETTINGS } }> {
 	const app = new App();
-	const plugin = { settings: { ...DEFAULT_SETTINGS, ...settings } };
+	// the Today card is switched off here so these tests keep looking at the first data card; panel-today.test.ts covers it
+	const plugin = { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false }, ...settings } };
 	const leaf = new WorkspaceLeaf(app);
 	const view = new HealthPanelView(leaf as never, plugin as never);
 	await view.onOpen();
@@ -56,21 +57,21 @@ describe("health panel view", () => {
 	it("shows the HRV of the shown day from the daily notes", async () => {
 		const app = new App();
 		await seedHistory(app, { end: "2026-10-22", days: 31, frontmatter: (ago) => ({ hrv: ago % 2 === 0 ? 62 : 58 }) });
-		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS } } as never);
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
 		await view.onOpen();
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("62 ms");
 		buttons(view)[0]!.click();
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("58 ms");
 	});
 
-	it("shows the cards in order: recovery, sleep, movement", async () => {
-		const { view } = await open();
-		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelHrvTitle, en.panelRestingHrTitle, en.panelSpo2Title, en.panelBreathingTitle, en.panelSleepTitle, en.panelStagesTitle, en.panelBatteryTitle, en.panelStressTitle, en.panelStepsTitle, en.panelIntensityTitle, en.panelFloorsTitle, en.panelVo2Title, en.panelBodyTitle, en.panelLoadTitle, en.panelWeeklyTitle, en.panelSessionsTitle]);
+	it("shows the cards in order: today, recovery, sleep, movement", async () => {
+		const { view } = await open({ panelCards: {} });
+		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelTodayTitle, en.panelHrvTitle, en.panelRestingHrTitle, en.panelSpo2Title, en.panelBreathingTitle, en.panelSleepTitle, en.panelStagesTitle, en.panelBatteryTitle, en.panelStressTitle, en.panelStepsTitle, en.panelIntensityTitle, en.panelFloorsTitle, en.panelVo2Title, en.panelBodyTitle, en.panelLoadTitle, en.panelWeeklyTitle, en.panelSessionsTitle]);
 	});
 
-	it("groups the cards under Recovery, Sleep, Energy, Movement, Fitness and Training headers", async () => {
-		const { view } = await open();
-		expect(Array.from(view.contentEl.querySelectorAll(".ghs-section")).map((e) => e.textContent)).toEqual([en.panelSectionRecovery, en.panelSectionSleep, en.panelSectionEnergy, en.panelSectionMovement, en.panelSectionFitness, en.panelSectionTraining]);
+	it("groups the cards under Today, Recovery, Sleep, Energy, Movement, Fitness and Training headers", async () => {
+		const { view } = await open({ panelCards: {} });
+		expect(Array.from(view.contentEl.querySelectorAll(".ghs-section")).map((e) => e.textContent)).toEqual([en.panelSectionToday, en.panelSectionRecovery, en.panelSectionSleep, en.panelSectionEnergy, en.panelSectionMovement, en.panelSectionFitness, en.panelSectionTraining]);
 	});
 
 	it("puts SpO2 and breathing side by side", async () => {
@@ -98,7 +99,7 @@ describe("health panel view", () => {
 
 	it("re-renders once, 300 ms after a burst of note changes, with fresh data", async () => {
 		const app = new App();
-		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS } } as never);
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
 		await view.onOpen();
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
 		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 64 }) });
@@ -114,7 +115,7 @@ describe("health panel view", () => {
 	it.each(["delete", "rename"] as const)("refreshes when a note is %sd", async (event) => {
 		const app = new App();
 		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 64 }) });
-		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS } } as never);
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
 		await view.onOpen();
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms");
 		app.metadataCache.frontmatter.clear();
@@ -157,8 +158,8 @@ describe("health panel view", () => {
 	});
 
 	it("labels the buttons in the plugin language", async () => {
-		const { view } = await open({ language: "de" });
-		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);
+		const { view } = await open({ language: "de", panelCards: {} });
+		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);
 	});
 
 	it("skips rendering while hidden and renders on the next reveal", async () => {
@@ -175,7 +176,7 @@ describe("health panel view", () => {
 	it("renders what a sync wrote while the panel was hidden as soon as it is shown again, however it becomes visible", async () => {
 		for (const reveal of ["active-leaf-change", "layout-change", "resize"]) {
 			const app = new App();
-			const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS } } as never);
+			const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
 			await view.onOpen();
 			expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
 			// the drawer is closed, then a sync writes today's note
