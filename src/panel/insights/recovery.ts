@@ -9,6 +9,16 @@ const pct = (share: number): string => String(Math.round(Math.abs(share) * 100))
 /** A training load this far above the person's norm counts as a spike (the 'strain' zone starts at 1.3). */
 const SPIKE_RATIO = 1.3;
 const SLEEP_DEBT_MIN = 120;
+/** Nights in a row below the usual HRV range that count as a pattern and not a single bad night. */
+const HRV_STREAK_NIGHTS = 2;
+const HRV_STREAK_LOOKBACK = 7;
+
+/** Nights in a row, counting back from the shown one, with HRV more than one standard deviation below the person's own range. */
+function lowHrvStreak(s: Signals): number {
+	let n = 0;
+	while (n < HRV_STREAK_LOOKBACK && (s.z("hrv", shiftDate(s.date, -n)) ?? 0) < -1) n++;
+	return n;
+}
 
 export function hrvInsights(s: Signals): Insight[] {
 	const z = s.z("hrv");
@@ -20,8 +30,9 @@ export function hrvInsights(s: Signals): Insight[] {
 		if (ratio !== null && ratio > SPIKE_RATIO) out.push({ id: "hrv_low_load", params: { pct: pct(ratio - 1) } });
 		if (debt !== null && debt >= SLEEP_DEBT_MIN) out.push({ id: "hrv_low_sleep", params: { debt: formatMinutes(debt), need: hours(need) } });
 		if ((s.z("stress") ?? 0) > 1) out.push({ id: "hrv_low_stress" });
-		if ((s.z("resting_hr") ?? 0) > 1) out.push({ id: "hrv_low_illness" });
-		if (out.length === 0) out.push({ id: "unexplained" });
+		if ((s.z("resting_hr") ?? 0) > 1 || (s.z("respiration_rate") ?? 0) > 1) out.push({ id: "hrv_low_illness" });
+		const streak = lowHrvStreak(s);
+		if (out.length === 0) out.push(streak >= HRV_STREAK_NIGHTS ? { id: "hrv_low_streak", params: { n: String(streak) } } : { id: "unexplained" });
 	} else if (z > 1) {
 		const { ratio } = s.load();
 		if (ratio !== null && ratio < 1) out.push({ id: "hrv_high_light_load", params: { pct: pct(1 - ratio) } });

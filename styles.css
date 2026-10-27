@@ -67,6 +67,8 @@
 
 /* Health panel (right sidebar) */
 .ghs-panel {
+	/* one data colour for everything that has no good or bad side: the accent of the theme, a little brighter */
+	--ghs-data: color-mix(in srgb, var(--interactive-accent) 80%, white);
 	display: flex;
 	flex-direction: column;
 	gap: var(--size-4-6);
@@ -263,7 +265,7 @@
 	width: 100%;
 	height: var(--ghs-h, 0%);
 	border-radius: var(--radius-s) var(--radius-s) 0 0;
-	background: var(--color-blue);
+	background: var(--ghs-data);
 	opacity: 0.6;
 }
 
@@ -384,7 +386,7 @@
 }
 
 .ghs-week-bar {
-	background: var(--color-green);
+	background: var(--ghs-data);
 }
 
 .ghs-week-bar-future {
@@ -406,7 +408,7 @@
 }
 
 .ghs-block-filled {
-	background: var(--color-yellow);
+	background: var(--ghs-data);
 }
 
 .ghs-block-zone {
@@ -482,15 +484,15 @@
 }
 
 .ghs-stage-deep {
-	background: var(--color-orange);
+	background: var(--interactive-accent);
 }
 
 .ghs-stage-rem {
-	background: var(--color-purple);
+	background: color-mix(in srgb, var(--interactive-accent) 65%, var(--background-secondary));
 }
 
 .ghs-stage-light {
-	background: var(--color-blue);
+	background: color-mix(in srgb, var(--interactive-accent) 35%, var(--background-secondary));
 }
 
 .ghs-stage-awake {
@@ -791,7 +793,7 @@
 
 /* Sleep timeline: when each night happened, not only how long it was */
 .ghs-nights-timeline {
-	height: 96px;
+	height: 168px;
 	padding-left: 2.8em;
 	padding-right: 0;
 }
@@ -824,12 +826,12 @@
 }
 
 .ghs-night-window {
-	background: var(--color-blue);
+	background: var(--ghs-data);
 	opacity: 0.25;
 }
 
 .ghs-night-asleep {
-	background: var(--color-blue);
+	background: var(--ghs-data);
 	opacity: 0.65;
 }
 
@@ -842,7 +844,7 @@
 }
 
 .ghs-distance-fill {
-	background: var(--color-blue);
+	background: var(--ghs-data);
 }
 
 /* VO2 max: twelve weekly values */
@@ -870,7 +872,7 @@
 	width: 6px;
 	height: 6px;
 	border-radius: 50%;
-	background: var(--color-blue);
+	background: var(--ghs-data);
 	opacity: 0.7;
 	transform: translate(-50%, 50%);
 }
@@ -956,7 +958,7 @@
 }
 
 .ghs-split-recovering {
-	background: var(--color-blue);
+	background: var(--ghs-data);
 }
 
 .ghs-split-labels {
@@ -982,7 +984,7 @@
 }
 
 .ghs-split-label-recovering {
-	--ghs-swatch: var(--color-blue);
+	--ghs-swatch: var(--ghs-data);
 }
 
 /* The light bulb: a clear glyph flush with the right edge of the card, in a roomy touch target that reaches into the empty space to its left */
@@ -1031,4 +1033,10 @@
 
 .ghs-range-track-readiness {
 	background: linear-gradient(to right, var(--color-red) 0%, var(--color-red) 25%, var(--color-orange) 25%, var(--color-orange) 50%, var(--color-yellow) 50%, var(--color-yellow) 75%, var(--color-green) 75%, var(--color-green) 95%, var(--color-cyan) 95%, var(--color-cyan) 100%);
+}
+
+/* A warning on the card itself: what is off, in one line */
+.ghs-card-alert {
+	color: var(--color-orange);
+	font-weight: var(--font-semibold);
 }

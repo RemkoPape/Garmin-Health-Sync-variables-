@@ -26,6 +26,7 @@ export const INSIGHTS = {
 	hrv_low_sleep: { card: "hrv", kind: "watch" },
 	hrv_low_stress: { card: "hrv", kind: "watch" },
 	hrv_low_illness: { card: "hrv", kind: "watch" },
+	hrv_low_streak: { card: "hrv", kind: "watch" },
 	hrv_high_light_load: { card: "hrv", kind: "good" },
 	hrv_in_range: { card: "hrv", kind: "good" },
 
