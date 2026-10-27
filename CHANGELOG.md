@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.56
+
+### Added
+
+- The release notes window ("what's new") now has an entry for 0.12.0: the side panel, what your data suggests, the history notes and the properties setting.
+
+### Changed
+
+- The README in all six languages describes the side panel, the history notes, Build Garmin history, the days-without-a-note setting, the new backfill behaviour and the properties setting, and the privacy section mentions the history notes.
+
 ## 0.12.0-beta.55
 
 ### Changed

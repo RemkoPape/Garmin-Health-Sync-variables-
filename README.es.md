@@ -18,7 +18,9 @@ Sincroniza automáticamente pasos, sueño, frecuencia cardíaca, estrés, activi
 - **Soporte de subdirectorios** — encuentra Daily Notes existentes en carpetas anidadas (p. ej., `Journal/2024-07/`) y crea subcarpetas por fecha cuando el formato del nombre de archivo contiene `/` (p. ej., `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Detección automática del idioma** — el idioma de la interfaz se configura según el idioma de tu Obsidian (EN, DE, ZH, JA, ES, FR)
 - **Datos estructurados opcionales** — campo `trainings` legible por máquina para consultas avanzadas con Dataview
-- **Panel de salud (beta)** — panel opcional en la barra lateral derecha que solo lee tus notas diarias y nunca las modifica; actívalo en **Ajustes → Garmin Health Sync → Panel lateral**
+- **Panel lateral de salud** — barra lateral derecha opcional con tarjetas de recuperación, sueño, energía, movimiento, forma física y entrenamiento frente a tu propio rango habitual; toca la bombilla de una tarjeta para ver qué sugieren tus datos y cómo se calcula; actívalo en **Ajustes → Garmin Health Sync → Panel lateral**
+- **Notas de historial** — guarda opcionalmente cada día descargado en pequeñas notas mensuales en markdown, para que el panel también funcione en días sin nota diaria y los datos se sincronicen con tu vault
+- **Propiedades de las notas diarias** — pliega el bloque de propiedades al abrir una nota u oculta las propiedades de Garmin que el panel ya muestra
 
 ## Salida de Frontmatter
 
@@ -121,7 +123,7 @@ Las subcarpetas que falten se crean automáticamente.
 
 Al iniciar Obsidian, el plugin comprueba los últimos 7 días y completa automáticamente los datos de salud faltantes. No requiere acción manual. Por defecto crea una nota diaria cuando falta.
 
-Si otra herramienta gestiona tus notas diarias (Templater, el plugin Calendar, una sincronización externa), desactiva **Crear nota diaria si falta** en los ajustes. La sincronización automática espera entonces hasta que exista una nota diaria real (no vacía) y sincroniza en cuanto aparece; las notas placeholder vacías de 0 bytes se ignoran. La sincronización manual y el backfill siempre crean las notas que falten, independientemente de este ajuste.
+Si otra herramienta gestiona tus notas diarias (Templater, el plugin Calendar, una sincronización externa), pon **Días sin nota diaria** en los ajustes en **Omitir el día**. La sincronización automática espera entonces hasta que exista una nota diaria real (no vacía) y sincroniza en cuanto aparece; los marcadores vacíos de 0 bytes se ignoran. Con **Guardar en archivos de historial** el plugin no crea nota para un día sin ella y guarda el día en las notas de historial (ver abajo). Una sincronización manual siempre escribe en la nota que tienes abierta.
 
 ### Sincronización manual
 
@@ -134,7 +136,21 @@ Abre una Daily Note y ejecuta **Garmin Health Sync: Sync current note** desde la
 1. Abre la paleta de comandos (Cmd/Ctrl+P)
 2. Busca **"Rellenar datos de salud"** (Backfill health data)
 3. Elige una fecha de inicio y una de fin
-4. El plugin obtiene todos los datos de ese rango con limitación de velocidad para evitar la restricción de la API
+4. El plugin obtiene todos los datos de ese rango con limitación de velocidad para evitar la restricción de la API, y muestra el día en curso y el tiempo restante
+
+Un día que un relleno anterior ya obtuvo con todas tus métricas activadas se omite, salvo los últimos 3 días, que aún pueden cambiar. **Rellenar datos de salud de nuevo (ignorar lo ya descargado)** vuelve a obtener cada día y sobrescribe los valores. Lo que pasa con un día sin nota diaria depende de **Días sin nota diaria**.
+
+### Panel lateral de salud
+
+Activa **Panel lateral** en los ajustes del plugin y ábrelo desde el icono de la cinta o con el comando **Abrir el panel de salud**. Las tarjetas comparan hoy con tu propio rango habitual (los últimos 30 días) y nunca modifican tus notas. Toca la fecha para elegir un día, usa las flechas para moverte un día y el botón del lápiz para ordenar las tarjetas arrastrándolas. Cada tarjeta tiene un interruptor en los ajustes que además indica qué métricas activar para ella. Toca la bombilla de una tarjeta para ver **Qué sugieren tus datos** (motivos y qué ayuda, a partir de tus propios datos) y **Cómo leerlo**. El panel no es consejo médico. Si añades tu año de nacimiento (solo el año) en los ajustes, obtienes zonas de frecuencia cardíaca y objetivos según la edad.
+
+### Notas de historial y Crear el historial de Garmin
+
+Con **Días sin nota diaria** en **Guardar en archivos de historial**, cada día descargado se guarda también en pequeñas notas mensuales (`Garmin history/Garmin history 2026-10.md`, una línea por día) en tu carpeta de notas diarias. Son markdown simple, así que se sincronizan con tu vault, y el panel las lee para los días sin nota. El comando **Importar historial desde las notas diarias** copia en ellas los valores de Garmin de tus notas existentes. **Crear el historial de Garmin** descarga los días hasta una fecha que elijas (por defecto cinco años), empezando por los más recientes: muestra cuánto tardará, se puede detener y continúa donde se quedó, espera y reintenta si Garmin no responde, y omite los días que ya tiene. Si cambias tu carpeta de notas diarias, las notas de historial se mueven con ella.
+
+### Propiedades de las notas diarias
+
+El ajuste **Propiedades de las notas diarias** puede plegar el bloque de propiedades de una nota diaria al abrirla, ocultar las propiedades que escribió el plugin (el panel las muestra) o ambas cosas. No se borra nada de una nota.
 
 ## Normalización de claves de actividad
 
@@ -177,6 +193,8 @@ Este plugin realiza solicitudes de red a dos servicios externos:
 - **Nominatim (OpenStreetMap)** — si la función **Ubicación del entrenamiento** está activada, las coordenadas GPS de tu primera actividad se envían a `nominatim.openstreetmap.org` para geocodificación inversa. Puedes desactivarlo en los ajustes, en **Ubicación del entrenamiento**.
 
 No se envían datos a ningún otro servidor.
+
+**Notas de historial:** las notas de historial opcionales contienen tus valores de salud y viven en tu vault como tus notas diarias. El plugin no hace solicitudes de red adicionales para ellas.
 
 **Portapapeles:** El plugin solo usa el portapapeles cuando pulsas un botón, nunca en segundo plano. **Usar inicio de sesión en el navegador** lo lee una vez, cuando pulsas **Iniciar sesión desde el portapapeles**, para recoger el ticket de inicio de sesión de un solo uso que copiaste del navegador. Escribe en él cuando pulsas para copiar el enlace de inicio de sesión o **Copiar diagnóstico** (en los ajustes y en la ventana de inicio de sesión). El diagnóstico no contiene contraseña, tokens, datos de la cuenta ni valores de salud, solo detalles técnicos del último inicio de sesión o sincronización: nombres de tipos de datos, códigos de estado HTTP, tamaños de respuesta y tiempos.
 
