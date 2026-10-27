@@ -636,3 +636,139 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Text (English):** {pct} percent of your sessions this week were easy, with some hard work in between. That mix is close to what endurance athletes typically do.
 - **Basis:** Same review.
 - **References:** [seiler](https://pubmed.ncbi.nlm.nih.gov/20861519/)
+
+### hrv_high_rested
+
+- **Card:** hrv
+- **Trigger:** HRV is more than 1 standard deviation above its 30 day mean and the training load is not below the usual (otherwise `hrv_high_light_load` explains it).
+- **Text (English):** Above your usual range and nothing in your data points to strain: your body looks well recovered today.
+- **Basis:** A high HRV with no sign of strain is the pattern wearable-based training monitoring reads as good recovery; it is a signal about today, not a diagnosis.
+- **References:** [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### hrv_trend_down
+
+- **Card:** hrv
+- **Trigger:** There are 60 days of HRV in the last year, each of the last 90 days and the 90 days before has at least 20 values, and the average of the last 90 days is lower than the earlier one by at least half the standard deviation of the year (at least 1 ms).
+- **Text (English):** Your HRV of the last 90 days averages {recent} ms, {delta} ms below the 90 days before. A lasting shift says more than a single day: compare it with your training and sleep over the same weeks.
+- **Basis:** A lasting change of the average matters more than one day; half a standard deviation is the "smallest worthwhile change" used in HRV monitoring. The text only asks the user to compare with training and sleep.
+- **References:** [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### hrv_trend_up
+
+- **Card:** hrv
+- **Trigger:** The same comparison as `hrv_trend_down`, with the average of the last 90 days higher than the earlier one by at least half the standard deviation of the year.
+- **Text (English):** Your HRV of the last 90 days averages {recent} ms, {delta} ms above the 90 days before: your recovery has improved over months.
+- **Basis:** Same basis as `hrv_trend_down`; a higher HRV average over months goes with better recovery and fitness.
+- **References:** [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### rhr_trend_up
+
+- **Card:** resting_hr
+- **Trigger:** There are 60 days of resting heart rate in the last year, each of the last 90 days and the 90 days before has at least 20 values, and the average of the last 90 days is higher than the earlier one by at least half the standard deviation of the year (at least 0.75 bpm).
+- **Text (English):** Your resting heart rate of the last 90 days averages {recent} bpm, {delta} bpm above the 90 days before. A lasting rise can follow heavy training, less sleep or lost fitness: check what changed in those weeks.
+- **Basis:** Endurance training lowers resting heart rate and a lasting rise follows more load, less recovery or lost fitness; the text only names these and asks what changed.
+- **References:** [reimers](https://doi.org/10.3390/jcm7120503); [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### rhr_trend_down
+
+- **Card:** resting_hr
+- **Trigger:** The same comparison as `rhr_trend_up`, with the average of the last 90 days lower than the earlier one by at least half the standard deviation of the year.
+- **Text (English):** Your resting heart rate of the last 90 days averages {recent} bpm, {delta} bpm below the 90 days before, which usually goes with improving fitness.
+- **Basis:** Exercise training lowers resting heart rate in a meta-analysis of interventional studies.
+- **References:** [reimers](https://doi.org/10.3390/jcm7120503)
+
+### spo2_usual
+
+- **Card:** spo2
+- **Trigger:** A reading of 94 up to but not including 95 percent that is not low against the 30 day range.
+- **Text (English):** Just under 95 percent but within your usual range. Wrist readings vary by a point or two between nights.
+- **Basis:** Wrist pulse oximeters are estimates that vary by a point or two; the text asks for the trend, not a single value.
+- **References:** [fda](https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters)
+
+### breathing_low
+
+- **Card:** respiration_rate
+- **Trigger:** Breathing rate is more than 1 standard deviation below its 30 day mean.
+- **Text (English):** Lower than usual. In studies of illness it is a raised rate that stands out, so a low one is no cause for concern.
+- **Basis:** In the wearable studies of illness the signal is a raised breathing rate, so a lower one is not read as a warning.
+- **References:** [natarajan](https://doi.org/10.1038/s41746-020-00363-7)
+
+### sleep_short_plain
+
+- **Card:** sleep
+- **Trigger:** Last night is more than 30 minutes short of the need and no other sleep interpretation applies.
+- **Text (English):** Last night was {gap} short of your {need} hours. Tonight's aim on the card is a realistic step towards it.
+- **Basis:** Arithmetic on the need; no study is cited. It points to the aim on the card instead of repeating advice.
+- **References:** none (a difference between last night and the sleep need, nothing more)
+
+### battery_usual
+
+- **Card:** battery
+- **Trigger:** The Body Battery peak is within 10 of the usual peak and no other battery interpretation applies.
+- **Text (English):** Your peak of {peak} is in line with your usual ({usual}): the night recharged you as usual.
+- **Basis:** Body Battery follows sleep, stress and activity; a peak in the usual range says the night recharged as usual.
+- **References:** [garmin](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
+
+### stress_usual
+
+- **Card:** stress
+- **Trigger:** The stress level is above 25 up to 50, not more than 10 above the 7 day average, and no other stress interpretation applies.
+- **Text (English):** A level of {level} is in line with your week (average {week}).
+- **Basis:** A comparison of today with the person's own week.
+- **References:** none (a comparison with the user's own average, no health claim)
+
+### steps_in_zone
+
+- **Card:** steps
+- **Trigger:** Steps are at or above the usual daily steps (7 day average) but below 10 percent above it.
+- **Text (English):** At your usual level of about {base} steps a day.
+- **Basis:** A statement of where the day is against the person's own usual; it adds no health claim.
+- **References:** none (a comparison with the user's own usual)
+
+### steps_weekday_low
+
+- **Card:** steps
+- **Trigger:** The day is below the usual steps, there are at least 8 earlier days of this weekday and 60 other days in the last 26 weeks, and this weekday averages 75 percent or less of the other days. The weekday name is written in the language of the plugin.
+- **Text (English):** On {day}s you usually walk {avg} steps, {pct} percent fewer than on your other days. A short walk on these days evens out your week.
+- **Basis:** More daily steps go with lower mortality in a pooled analysis of 15 cohorts; the pattern itself is the user's own data.
+- **References:** [paluch](https://doi.org/10.1016/S2468-2667(21)00302-9)
+
+### floors_zone_good
+
+- **Card:** floors
+- **Trigger:** Floors are at or above the 7 day average and above zero.
+- **Text (English):** At or above your usual number of floors.
+- **Basis:** A statement of where the day is against the person's own usual; it adds no health claim.
+- **References:** none (a comparison with the user's own usual)
+
+### floors_below_streak
+
+- **Card:** floors
+- **Trigger:** At least 3 of the 5 days before the shown day had fewer than 80 percent of the usual floors and the shown day is below the usual.
+- **Text (English):** {n} of the last 5 days were below your usual floors. A flight of stairs instead of the lift brings today's count back into your zone.
+- **Basis:** The data show a quiet stretch; stairs instead of the lift is a small step that matches it and is not a medical claim.
+- **References:** none (the user's own quiet stretch, no study cited)
+
+### vo2_steady
+
+- **Card:** vo2
+- **Trigger:** The VO2 max estimate changed by less than the steady margin over 12 weeks and there are training minutes in the last 28 days; the text gives the weekly average.
+- **Text (English):** Steady over the last 12 weeks, with about {min} training minutes a week: your training holds your fitness where it is.
+- **Basis:** The estimate follows regular training; steady with steady training means the training holds fitness.
+- **References:** [bacon](https://pubmed.ncbi.nlm.nih.gov/24066036/)
+
+### weekly_room
+
+- **Card:** weekly
+- **Trigger:** The shown day is today, the week is under its limit (10 percent above the average of the previous weeks) and days are left; the text gives the minutes left and per day including today.
+- **Text (English):** {left} minutes to your limit this week: about {perDay} minutes on each of the {days} days left, if you want to use the room.
+- **Basis:** Arithmetic on the limit that the card draws; the limit is a common rule of thumb, not a validated threshold.
+- **References:** none (the limit is the card's rule of thumb, see the card explanation)
+
+### sessions_balanced
+
+- **Card:** sessions
+- **Trigger:** At least 3 sessions with a heart rate in the last 7 days, at least one easy (zone 1 or 2) and one hard (zone 4 or 5), and not mostly easy.
+- **Text (English):** Your last 7 days mix {easy} easy and {hard} hard sessions: a balance that gives the hard ones room to work.
+- **Basis:** Endurance athletes train most sessions easy with some hard ones between.
+- **References:** [seiler](https://pubmed.ncbi.nlm.nih.gov/20861519/)

@@ -38,7 +38,7 @@ describe("longView", () => {
 });
 
 describe("longFacts", () => {
-	const view = { days: 300, avg: 44.2, min: 30, max: 61, recent: 46, prior: 41 };
+	const view = { days: 300, avg: 44.2, sd: 5, min: 30, max: 61, recent: 46, prior: 41 };
 	const format = (n: number): string => `${Math.round(n)} ms`;
 
 	it("writes the year and the comparison in the plugin language", () => {

@@ -1,4 +1,4 @@
-import { shiftDate } from "../../dates";
+import { daysBetween, localDateString, shiftDate, weekStart } from "../../dates";
 import { computeLoad } from "../cards/load-card";
 import { computeWeekly } from "../cards/weekly-card";
 import { isRecovery } from "../sessions";
@@ -25,7 +25,15 @@ export function weeklyInsights(s: Signals): Insight[] {
 	const m = computeWeekly(s.index, s.date);
 	if (m.average === null || m.cap === null || m.average === 0) return [];
 	if (m.minutes > m.cap) return [{ id: "weekly_over_cap", params: { pct: pct(m.minutes / m.average - 1) } }];
-	return m.minutes >= m.cap * ON_TRACK_FROM ? [{ id: "weekly_on_track" }] : [];
+	const out: Insight[] = [];
+	if (m.minutes >= m.cap * ON_TRACK_FROM) out.push({ id: "weekly_on_track" });
+	// today, with days of the week left: what the room to the limit comes to per day
+	const daysLeft = daysBetween(s.date, shiftDate(weekStart(s.date), 6)) + 1;
+	if (s.date === localDateString(new Date())) {
+		const left = Math.round(m.cap - m.minutes);
+		out.push({ id: "weekly_room", params: { left: String(left), perDay: String(Math.ceil(left / daysLeft)), days: String(daysLeft) } });
+	}
+	return out;
 }
 
 const MIN_SESSIONS = 3;
@@ -44,5 +52,6 @@ export function sessionsInsights(s: Signals): Insight[] {
 	const hard = out.filter((z) => z >= 4).length;
 	const easy = out.filter((z) => z <= 2).length;
 	if (hard >= MIN_SESSIONS && easy === 0) return [{ id: "sessions_all_hard", params: { n: String(hard) } }];
-	return hard >= 1 && easy / out.length >= EASY_SHARE ? [{ id: "sessions_mostly_easy", params: { pct: pct(easy / out.length) } }] : [];
+	if (hard >= 1 && easy / out.length >= EASY_SHARE) return [{ id: "sessions_mostly_easy", params: { pct: pct(easy / out.length) } }];
+	return hard >= 1 && easy >= 1 ? [{ id: "sessions_balanced", params: { easy: String(easy), hard: String(hard) } }] : [];
 }

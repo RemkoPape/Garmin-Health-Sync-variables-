@@ -15,12 +15,15 @@ export interface LongView {
 	avg: number;
 	min: number;
 	max: number;
+	/** Standard deviation of the year's values. */
+	sd: number;
 	/** Average of the last 90 days and of the 90 days before them; null unless both have enough values. */
 	recent: number | null;
 	prior: number | null;
 }
 
 const mean = (values: number[]): number => values.reduce((a, b) => a + b, 0) / values.length;
+const sdOf = (values: number[]): number => Math.sqrt(mean(values.map((v) => (v - mean(values)) ** 2)));
 
 /** The last year up to `date`, or null with fewer than 60 days of values. `read` gives a day's value or null. */
 export function longView(read: (day: string) => number | null, date: string): LongView | null {
@@ -36,7 +39,7 @@ export function longView(read: (day: string) => number | null, date: string): Lo
 	}
 	if (year.length < MIN_YEAR_VALUES) return null;
 	const compare = recent.length >= MIN_WINDOW_VALUES && prior.length >= MIN_WINDOW_VALUES;
-	return { days: year.length, avg: mean(year), min: Math.min(...year), max: Math.max(...year), recent: compare ? mean(recent) : null, prior: compare ? mean(prior) : null };
+	return { days: year.length, avg: mean(year), sd: sdOf(year), min: Math.min(...year), max: Math.max(...year), recent: compare ? mean(recent) : null, prior: compare ? mean(prior) : null };
 }
 
 /** The lines of the year for the box under the light bulb; empty without a long view. `format` writes a value with its unit. */
@@ -45,4 +48,20 @@ export function longFacts(view: LongView | null, format: (value: number) => stri
 	const lines = [t("panelLongRange", lang).replace("{n}", String(view.days)).replace("{avg}", format(view.avg)).replace("{min}", format(view.min)).replace("{max}", format(view.max))];
 	if (view.recent !== null && view.prior !== null) lines.push(t("panelLongChange", lang).replace("{recent}", format(view.recent)).replace("{prior}", format(view.prior)));
 	return lines;
+}
+
+/** Weeks looked back for the pattern of a weekday, and the days it must rest on. */
+const PATTERN_WEEKS = 26;
+const MIN_WEEKDAY_VALUES = 8;
+
+/** What a metric averages on the weekday of `date` against all other days of the last 26 weeks; null with too little data. */
+export function weekdayPattern(read: (day: string) => number | null, date: string): { weekday: number; others: number } | null {
+	const same: number[] = [];
+	const other: number[] = [];
+	for (let i = 1; i <= PATTERN_WEEKS * 7; i++) {
+		const v = read(shiftDate(date, -i));
+		if (v !== null) (i % 7 === 0 ? same : other).push(v);
+	}
+	if (same.length < MIN_WEEKDAY_VALUES || other.length < MIN_YEAR_VALUES) return null;
+	return { weekday: mean(same), others: mean(other) };
 }

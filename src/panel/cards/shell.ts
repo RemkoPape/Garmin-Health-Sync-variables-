@@ -20,7 +20,7 @@ export interface CardShell {
 	/** Small trend line at the bottom of the card. */
 	trend?: TrendView;
 	/** What the data suggests (why a value is off and what helps, or why it is good), shown under the light bulb before the general explanation. */
-	insights?: Insight[];
+	insights: Insight[];
 }
 
 /** The frame every card shares: title, headline value, light bulb button, the details and, when open, the explanation. */
@@ -41,12 +41,11 @@ export function renderCard(parent: HTMLElement, shell: CardShell, details: (card
 	details(card);
 	if (shell.trend) renderTrend(card, shell.trend, shell.lang);
 	if (shell.explainOpen) {
-		const insights = shell.insights ?? [];
 		const facts = shell.facts ?? [];
-		if (insights.length > 0 || facts.length > 0) {
+		if (shell.insights.length > 0 || facts.length > 0) {
 			const box = card.createDiv({ cls: "ghs-insight" });
 			box.createDiv({ cls: "ghs-insight-title", text: t("panelInsightTitle", shell.lang) });
-			for (const insight of insights) box.createDiv({ cls: `ghs-insight-item ghs-insight-${INSIGHTS[insight.id].kind}`, text: insightText(insight, shell.lang) });
+			for (const insight of shell.insights) box.createDiv({ cls: `ghs-insight-item ghs-insight-${INSIGHTS[insight.id].kind}`, text: insightText(insight, shell.lang) });
 			for (const fact of facts) box.createDiv({ cls: "ghs-insight-item ghs-fact", text: fact });
 		}
 		// what the card shows and how it is worked out, with the disclaimer, folded until asked for

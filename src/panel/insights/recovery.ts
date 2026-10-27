@@ -1,7 +1,7 @@
 import { formatMinutes } from "../cards/sleep-card";
 import { windowValues } from "../stats";
 import { shiftDate } from "../../dates";
-import { MAX_INSIGHTS, type Insight } from "./registry";
+import { MAX_INSIGHTS, type Insight, type InsightId } from "./registry";
 import type { Signals } from "./signals";
 
 const hours = (minutes: number): string => String(minutes / 60);
@@ -9,6 +9,8 @@ const pct = (share: number): string => String(Math.round(Math.abs(share) * 100))
 /** A training load this far above the person's norm counts as a spike (the 'strain' zone starts at 1.3). */
 const SPIKE_RATIO = 1.3;
 const SLEEP_DEBT_MIN = 120;
+/** The smallest spread assumed for a very steady person, as in the usual range of the cards. */
+const SD_FLOOR_FOR = { hrv: 2, resting_hr: 1.5 };
 /** Nights in a row below the usual HRV range that count as a pattern and not a single bad night. */
 const HRV_STREAK_NIGHTS = 2;
 const HRV_STREAK_LOOKBACK = 7;
@@ -18,6 +20,18 @@ function lowHrvStreak(s: Signals): number {
 	let n = 0;
 	while (n < HRV_STREAK_LOOKBACK && (s.z("hrv", shiftDate(s.date, -n)) ?? 0) < -1) n++;
 	return n;
+}
+
+/** A change of the 90-day average against the 90 days before that is at least half a standard deviation of the year (the "smallest worthwhile change" of HRV monitoring) is worth a line. */
+const WORTHWHILE_SD_SHARE = 0.5;
+
+/** `rising` is the insight for an average that went up, `falling` for one that went down. */
+function longTrend(s: Signals, key: "hrv" | "resting_hr", rising: InsightId, falling: InsightId): Insight | null {
+	const view = s.long(key);
+	if (!view || view.recent === null || view.prior === null) return null;
+	const delta = view.recent - view.prior;
+	if (Math.abs(delta) < WORTHWHILE_SD_SHARE * Math.max(view.sd, SD_FLOOR_FOR[key])) return null;
+	return { id: delta > 0 ? rising : falling, params: { recent: String(Math.round(view.recent * 10) / 10), delta: String(Math.round(Math.abs(delta) * 10) / 10) } };
 }
 
 export function hrvInsights(s: Signals): Insight[] {
@@ -35,10 +49,12 @@ export function hrvInsights(s: Signals): Insight[] {
 		if (out.length === 0) out.push(streak >= HRV_STREAK_NIGHTS ? { id: "hrv_low_streak", params: { n: String(streak) } } : { id: "unexplained" });
 	} else if (z > 1) {
 		const { ratio } = s.load();
-		if (ratio !== null && ratio < 1) out.push({ id: "hrv_high_light_load", params: { pct: pct(1 - ratio) } });
+		out.push(ratio !== null && ratio < 1 ? { id: "hrv_high_light_load", params: { pct: pct(1 - ratio) } } : { id: "hrv_high_rested" });
 	} else {
 		out.push({ id: "hrv_in_range" });
 	}
+	const trend = longTrend(s, "hrv", "hrv_trend_up", "hrv_trend_down");
+	if (trend) out.push(trend);
 	return out.slice(0, MAX_INSIGHTS);
 }
 
@@ -58,6 +74,8 @@ export function restingHrInsights(s: Signals): Insight[] {
 	} else {
 		out.push({ id: "rhr_in_range" });
 	}
+	const trend = longTrend(s, "resting_hr", "rhr_trend_up", "rhr_trend_down");
+	if (trend) out.push(trend);
 	return out.slice(0, MAX_INSIGHTS);
 }
 
@@ -77,6 +95,7 @@ export function spo2Insights(s: Signals): Insight[] {
 	if (low && (s.z("respiration_rate") ?? 0) > 1) out.push({ id: "spo2_low_with_breathing" });
 	if (low && out.length === 0) out.push({ id: "spo2_low_single" });
 	if (!low && value >= 95) out.push({ id: "spo2_ok" });
+	if (!low && value < 95) out.push({ id: "spo2_usual" });
 	return out.slice(0, MAX_INSIGHTS);
 }
 
@@ -88,5 +107,5 @@ export function breathingInsights(s: Signals): Insight[] {
 	const delta = s.delta("respiration_rate");
 	if (z === null || delta === null) return [];
 	if (z > 1 || delta >= BREATHING_RISE) return [{ id: (s.z("resting_hr") ?? 0) > 1 ? "breathing_up_illness" : "breathing_up_alone" }];
-	return z < -1 ? [] : [{ id: "breathing_ok" }];
+	return [{ id: z < -1 ? "breathing_low" : "breathing_ok" }];
 }

@@ -22,6 +22,7 @@ export function batteryInsights(s: Signals): Insight[] {
 	if (b.charged !== null && b.usualCharged !== null && b.charged >= b.usualCharged + RECHARGE_MARGIN && sleep.minutes !== null && sleep.minutes >= sleep.need - 15) {
 		out.push({ id: "battery_recharge_good", params: { sleep: formatMinutes(sleep.minutes) } });
 	}
+	if (out.length === 0 && b.usualPeak !== null) out.push({ id: "battery_usual", params: { peak: String(Math.round(b.max)), usual: String(Math.round(b.usualPeak)) } });
 	return out.slice(0, MAX_INSIGHTS);
 }
 
@@ -41,6 +42,8 @@ export function stressInsights(s: Signals): Insight[] {
 		if (week !== null && level > week + WEEK_MARGIN) out.push({ id: "stress_high_week", params: { week: String(Math.round(week)) } });
 	} else if (level <= STRESS_CALM) {
 		out.push({ id: "stress_calm" });
+	} else if (week !== null && level <= week + WEEK_MARGIN && out.length === 0) {
+		out.push({ id: "stress_usual", params: { level: String(Math.round(level)), week: String(Math.round(week)) } });
 	}
 	return out.slice(0, MAX_INSIGHTS);
 }

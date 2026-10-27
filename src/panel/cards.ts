@@ -14,7 +14,7 @@ import { computeStress, renderStress } from "./cards/stress-card";
 import { computeVo2, renderVo2 } from "./cards/vo2-card";
 import { computeWeekly, renderWeekly } from "./cards/weekly-card";
 import type { DayIndex } from "./index";
-import { bodyInsights, intensityInsights, stepsInsights, vo2Insights } from "./insights/activity";
+import { bodyInsights, floorsInsights, intensityInsights, stepsInsights, vo2Insights } from "./insights/activity";
 import { batteryInsights, stressInsights } from "./insights/energy";
 import { breathingInsights, hrvInsights, restingHrInsights, spo2Insights } from "./insights/recovery";
 import type { Insight } from "./insights/registry";
@@ -101,7 +101,7 @@ export const PANEL_CARDS: PanelCard[] = [
 	{ id: "stress", title: "panelStressTitle", section: "energy", metrics: ["stress"], needs: "panelNeedsStress", extra: ["stress_high", "recovery_high"], render: (c) => renderStress(c.parent, { ...computeStress(c.index, c.date), insights: stressInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "steps", title: "panelStepsTitle", section: "movement", metrics: ["steps"], needs: "panelNeedsSteps", extra: ["distance_km", "calories_active", "calories_total"], render: (c) => renderSteps(c.parent, { ...computeSteps(c.index, c.date), insights: stepsInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "intensity", title: "panelIntensityTitle", section: "movement", metrics: ["intensity_min"], needs: "panelNeedsIntensity", render: (c) => renderIntensity(c.parent, { ...computeIntensity(c.index, c.date, c.birthYear), insights: intensityInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "floors", title: "panelFloorsTitle", section: "movement", metrics: ["floors"], needs: "panelNeedsFloors", render: (c) => renderFloors(c.parent, computeFloors(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "floors", title: "panelFloorsTitle", section: "movement", metrics: ["floors"], needs: "panelNeedsFloors", render: (c) => renderFloors(c.parent, { ...computeFloors(c.index, c.date), insights: floorsInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "vo2", title: "panelVo2Title", section: "fitness", metrics: ["vo2_max"], needs: "panelNeedsVo2", render: (c) => renderVo2(c.parent, { ...computeVo2(c.index, c.date), insights: vo2Insights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "body", title: "panelBodyTitle", section: "fitness", metrics: ["weight_kg"], needs: "panelNeedsBody", extra: ["body_fat_pct"], render: (c) => renderBody(c.parent, { ...computeBody(c.index, c.date), insights: bodyInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "load", title: "panelLoadTitle", section: "training", metrics: [], needs: "panelNeedsLoad", render: (c) => renderLoad(c.parent, { ...computeLoad(c.index, c.date, c.birthYear), insights: loadInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },

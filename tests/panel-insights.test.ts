@@ -109,8 +109,8 @@ describe("HRV", () => {
 
 	it("explains a high value only when the load eased", async () => {
 		expect(hrvInsights(await hrv(66, (ago) => run(ago, 10, 30)))).toEqual([{ id: "hrv_high_light_load", params: { pct: "60" } }]);
-		expect(hrvInsights(await hrv(66))).toEqual([]);
-		expect(hrvInsights(await hrv(66, (ago) => run(ago, 90, 30)))).toEqual([]);
+		expect(ids(hrvInsights(await hrv(66)))).toEqual(["hrv_high_rested"]);
+		expect(ids(hrvInsights(await hrv(66, (ago) => run(ago, 90, 30))))).toEqual(["hrv_high_rested"]); // the load did not ease
 	});
 });
 
@@ -154,7 +154,7 @@ describe("SpO2", () => {
 
 	it("confirms a healthy value", async () => {
 		expect(ids(spo2Insights(await spo2(96)))).toEqual(["spo2_ok"]);
-		expect(spo2Insights(await spo2(94.5, () => ({}), (ago) => alt(ago, 93, 96)))).toEqual([]); // not low for this sleeper, but below 95
+		expect(ids(spo2Insights(await spo2(94.5, () => ({}), (ago) => alt(ago, 93, 96))))).toEqual(["spo2_usual"]); // not low for this sleeper, but below 95
 	});
 
 	it("calls a single low night a matter of sensor fit and trend", async () => {
@@ -181,9 +181,9 @@ describe("breathing", () => {
 		expect(breathingInsights(await signals((ago) => (ago === 0 ? null : { respiration_rate: 14 })))).toEqual([]);
 	});
 
-	it("confirms a value in range, says nothing about a low one", async () => {
+	it("confirms a value in range, and says a low one is no cause for concern", async () => {
 		expect(ids(breathingInsights(await breathing(14.5)))).toEqual(["breathing_ok"]);
-		expect(breathingInsights(await breathing(11))).toEqual([]);
+		expect(ids(breathingInsights(await breathing(11)))).toEqual(["breathing_low"]);
 	});
 
 	it("pairs a raised rate with a raised resting heart rate as an early illness sign", async () => {
@@ -237,7 +237,7 @@ describe("sleep", () => {
 	it("averages only the nights that have a duration, and needs five of them", async () => {
 		const out = sleepInsights(await nights((ago) => (ago === 0 ? 380 : ago <= 4 ? 380 : null)));
 		expect(ids(out)).toEqual(["sleep_short_average", "sleep_debt_high"]); // 5 nights of 6 h 20 min
-		expect(ids(sleepInsights(await nights((ago) => (ago <= 3 ? 380 : null))))).toEqual([]); // only 4 nights
+		expect(ids(sleepInsights(await nights((ago) => (ago <= 3 ? 380 : null))))).toEqual(["sleep_short_plain"]); // only 4 nights: no average, but the night itself is short
 	});
 
 	it("does not praise a night that reached the need after a week with a sizeable debt", async () => {
@@ -254,12 +254,12 @@ describe("sleep", () => {
 
 	it("does not call a short night late-to-bed when the times are close to the usual", async () => {
 		const out = sleepInsights(await nights((ago) => (ago === 0 ? 330 : 450), () => "23:00", () => "06:30"));
-		expect(ids(out)).toEqual([]);
+		expect(out).toEqual([{ id: "sleep_short_plain", params: { gap: "1 h 30 min", need: "7" } }]);
 	});
 
 	it("keeps quiet about timing with fewer than three nights with times", async () => {
 		const out = sleepInsights(await nights((ago) => (ago === 0 ? 330 : 450), (ago) => (ago < 2 ? "00:30" : null), (ago) => (ago < 2 ? "06:30" : null)));
-		expect(ids(out)).toEqual([]);
+		expect(ids(out)).toEqual(["sleep_short_plain"]);
 	});
 });
 
@@ -344,10 +344,10 @@ describe("body battery", () => {
 	});
 
 	it("keeps quiet for a normal peak, and praises a good recharge after enough sleep", async () => {
-		expect(batteryInsights(await battery({ body_battery_max: 82 }))).toEqual([]);
+		expect(ids(batteryInsights(await battery({ body_battery_max: 82 })))).toEqual(["battery_usual"]);
 		expect(batteryInsights(await battery({ body_battery_max: 82, body_battery: 70, sleep_duration: "7h 30min" }))).toEqual([{ id: "battery_recharge_good", params: { sleep: "7 h 30 min" } }]);
-		expect(batteryInsights(await battery({ body_battery_max: 82, body_battery: 70, sleep_duration: "5h 0min" }))).toEqual([]);
-		expect(batteryInsights(await battery({ body_battery_max: 82, body_battery: 70 }))).toEqual([]);
+		expect(ids(batteryInsights(await battery({ body_battery_max: 82, body_battery: 70, sleep_duration: "5h 0min" })))).toEqual(["battery_usual"]);
+		expect(ids(batteryInsights(await battery({ body_battery_max: 82, body_battery: 70 })))).toEqual(["battery_usual"]);
 	});
 });
 
@@ -369,12 +369,12 @@ describe("stress", () => {
 	it("points out a day with more stressed than recovering minutes, with both amounts", async () => {
 		const stressed = (hi: number, rest: number) => signals((ago) => ({ stress: ago === 0 ? 40 : 35, ...(ago === 0 ? { stress_high: hi, recovery_high: rest } : {}) }), 10);
 		expect(stressInsights(await stressed(240, 130))).toEqual([{ id: "stress_more_stressed", params: { stressed: "4 h", recovering: "2 h 10 min" } }]);
-		expect(stressInsights(await stressed(130, 240))).toEqual([]);
-		expect(stressInsights(await stressed(130, 130))).toEqual([]);
+		expect(ids(stressInsights(await stressed(130, 240)))).toEqual(["stress_usual"]);
+		expect(ids(stressInsights(await stressed(130, 130)))).toEqual(["stress_usual"]);
 	});
 
-	it("is quiet for a level in between and calm for a low one", async () => {
-		expect(stressInsights(await stress(40))).toEqual([]);
+	it("says a level in between is in line with the week, is quiet when it is well above it, and calm for a low one", async () => {
+		expect(stressInsights(await stress(40))).toEqual([{ id: "stress_usual", params: { level: "40", week: "35" } }]);
 		expect(stressInsights(await stress(60, 58))).toEqual([]);
 		expect(ids(stressInsights(await stress(20)))).toEqual(["stress_calm"]);
 	});
@@ -437,8 +437,9 @@ describe("cardio fitness and body", () => {
 		expect(ids(vo2Insights(await signals((ago) => ({ running: "1min", ...(ago % 7 === 0 && ago / 7 < 12 ? { vo2_max: 44 + 0.5 * (ago / 7) } : {}) }), 90)))).toEqual(["vo2_down_other"]);
 	});
 
-	it("is quiet for a steady trend and without a reading", async () => {
-		expect(vo2Insights(await vo2(() => 50))).toEqual([]);
+	it("says a steady trend is held by the current training, and has nothing without a reading or without training", async () => {
+		expect(vo2Insights(await vo2(() => 50))).toEqual([{ id: "vo2_steady", params: { min: "210" } }]); // 30 minutes a day
+		expect(vo2Insights(await vo2(() => 50, () => 0))).toEqual([]);
 		expect(vo2Insights(await signals(() => ({ hrv: 1 }), 90))).toEqual([]);
 	});
 
