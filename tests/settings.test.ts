@@ -77,6 +77,7 @@ describe("the settings layout", () => {
 		expect(Object.keys(keyed(defs, "language").control!.options!)).toEqual(["en", "de", "zh", "ja", "es", "fr"]);
 		expect(keyed(defs, "serverRegion").control!.options).toEqual({ international: en.regionInternational, china: en.regionChina });
 		expect(keyed(defs, "unitSystem").control!.options).toEqual({ metric: en.unitMetric, imperial: en.unitImperial });
+		expect(keyed(defs, "propertiesMode").control!.options).toEqual({ off: en.propertiesOff, fold: en.propertiesFold, hide: en.propertiesHide, foldHide: en.propertiesFoldHide });
 		expect(keyed(defs, "missingNoteBehaviour").control!.options).toEqual({ create: en.missingNoteCreate, history: en.missingNoteHistory, skip: en.missingNoteSkip });
 	});
 

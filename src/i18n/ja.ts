@@ -53,6 +53,7 @@ export const ja: Record<TranslationKeys, string> = {
 	propertiesOff: "そのままにする",
 	propertiesFold: "折りたたむ",
 	propertiesHide: "Garminのプロパティを隠す",
+	propertiesFoldHide: "Garminのプロパティを隠し、残りを折りたたむ",
 	unitMetric: "メートル法（km、kg）",
 	unitImperial: "ヤード・ポンド法（mi、lbs）",
 	settingsLanguage: "言語",

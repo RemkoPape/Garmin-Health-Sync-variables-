@@ -9,7 +9,7 @@ import type { App, TAbstractFile, TFile } from "obsidian";
  * properties" command if the block is still open. Hiding marks the rows (`data-property-key`) with a class and
  * watches the block, because Obsidian rebuilds rows when a value changes, which a sync does.
  */
-export type PropertiesMode = "off" | "fold" | "hide";
+export type PropertiesMode = "off" | "fold" | "hide" | "foldHide";
 
 const FOLD_COMMAND = "editor:toggle-fold-properties";
 const FIRST_DELAY_MS = 300;
@@ -44,17 +44,36 @@ export class NoteProperties {
 		private readonly options: NotePropertiesOptions,
 	) {}
 
+	/** What the setting asks for: folding, hiding or both. */
+	private parts(): { fold: boolean; hide: boolean } {
+		const mode = this.options.mode();
+		return { fold: mode === "fold" || mode === "foldHide", hide: mode === "hide" || mode === "foldHide" };
+	}
+
 	/** A note was opened (also when it is the one already handled: its properties block is new). */
 	fileOpened(file: TFile | null): void {
 		this.cancel();
 		this.unhide();
-		if (file && this.options.mode() !== "off" && this.options.isDaily(file)) this.schedule(file, 0);
+		const { fold, hide } = this.parts();
+		if (file && (fold || hide) && this.options.isDaily(file)) this.schedule(file, 0, fold);
 	}
 
-	/** Panes were moved or switched: handle the active note, except one that was folded already. */
+	/** Panes were moved or switched: handle the active note again. Hiding is repeated, folding is not for a note that was folded already, because the user may have opened it on purpose. */
 	layoutChanged(): void {
 		const file = this.app.workspace.getActiveFile();
-		if (file && (this.options.mode() === "hide" || file.path !== this.folded)) this.fileOpened(file);
+		if (!file) return;
+		const { fold, hide } = this.parts();
+		if (hide) {
+			this.cancel();
+			this.unhide();
+			if (this.options.isDaily(file)) this.schedule(file, 0, fold && file.path !== this.folded);
+		} else if (fold) {
+			if (file.path !== this.folded) this.fileOpened(file);
+		} else {
+			// switched off: nothing is watched and every row is shown again
+			this.cancel();
+			this.unhide();
+		}
 	}
 
 	/** The setting (or what the panel shows) changed: start again with the note that is open. */
@@ -91,22 +110,22 @@ export class NoteProperties {
 		}
 	}
 
-	private schedule(file: TFile, attempt: number): void {
+	private schedule(file: TFile, attempt: number, fold: boolean): void {
 		this.timer = window.setTimeout(() => {
 			this.timer = null;
 			if (this.app.workspace.getActiveFile() !== file) return;
 			const block = activeDocument.querySelector(".workspace-leaf.mod-active .metadata-container");
 			if (!block) {
-				if (attempt < MAX_ATTEMPTS) this.schedule(file, attempt + 1);
+				if (attempt < MAX_ATTEMPTS) this.schedule(file, attempt + 1, fold);
 				return;
 			}
-			if (this.options.mode() === "hide") {
+			if (this.parts().hide) {
 				this.hiding = file;
 				this.hide(block, file);
 				this.observer = new MutationObserver(() => this.hide(block, file));
 				this.observer.observe(block, { childList: true, subtree: true });
-				return;
 			}
+			if (!fold) return;
 			this.folded = file.path;
 			if (!block.classList.contains("is-collapsed")) (this.app as unknown as CommandHost).commands.executeCommandById(FOLD_COMMAND);
 		}, attempt === 0 ? FIRST_DELAY_MS : RETRY_DELAY_MS);

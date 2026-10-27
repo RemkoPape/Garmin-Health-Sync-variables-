@@ -480,6 +480,7 @@ describe("properties of daily notes", () => {
 		expect((await load({ foldProperties: false } as never)).plugin.settings.propertiesMode).toBe("off");
 		expect((await load(null)).plugin.settings.propertiesMode).toBe("off");
 		expect((await load({ propertiesMode: "hide", foldProperties: true } as never)).plugin.settings.propertiesMode).toBe("hide");
+		expect((await load({ propertiesMode: "foldHide" })).plugin.settings.propertiesMode).toBe("foldHide");
 		expect((await load({ propertiesMode: "nonsense" } as never)).plugin.settings.propertiesMode).toBe("off");
 	});
 

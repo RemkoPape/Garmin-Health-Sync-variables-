@@ -53,6 +53,7 @@ export const zh: Record<TranslationKeys, string> = {
 	propertiesOff: "保持原样",
 	propertiesFold: "折叠",
 	propertiesHide: "隐藏 Garmin 属性",
+	propertiesFoldHide: "隐藏 Garmin 属性并折叠其余属性",
 	unitMetric: "公制（km、kg）",
 	unitImperial: "英制（mi、lbs）",
 	settingsLanguage: "语言",

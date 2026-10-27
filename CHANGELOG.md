@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.54
+
+### Added
+
+- **Fold, and hide the Garmin properties**: a fourth choice for **Properties of daily notes** that does both. The Garmin rows are hidden and the remaining block is folded when the note opens (open it with the arrow next to the properties heading; a layout change does not close it again).
+
 ## 0.12.0-beta.53
 
 ### Changed
