@@ -83,30 +83,16 @@ export default class HealthSyncPlugin extends Plugin {
 			callback: () => this.manualSync(),
 		});
 
-		// Command: Backfill Health Data
+		// Command: Backfill Health Data, and the same again for days that already have their data
 		this.addCommand({
 			id: "backfill-health-data",
 			name: t("commandBackfill", this.settings.language),
-			callback: () => {
-				new BackfillModal(this.app, this.settings.language, (from, to) => {
-					this.background((async () => {
-						// Suppress the create-trigger while backfill runs: backfill
-						// creates notes itself, and we don't want those create events
-						// to kick off a parallel auto-sync of the same fresh dates.
-						this.backfillRunning = true;
-						try {
-							// SyncManager.backfill handles its own errors (it shows the sign-in notice itself),
-							// so nothing is thrown out of it; the finally persists whatever happened.
-							await this.syncManager.backfill(from, to, this.settings);
-						} finally {
-							this.backfillRunning = false;
-							// Tokens may have been refreshed/invalidated during the backfill → persist.
-							this.saveTokens();
-							await this.saveSettings();
-						}
-					})(), "backfill");
-				}).open();
-			},
+			callback: () => this.openBackfill(false),
+		});
+		this.addCommand({
+			id: "force-backfill-health-data",
+			name: t("commandBackfillForce", this.settings.language),
+			callback: () => this.openBackfill(true),
 		});
 
 		// Command: fetch the days back to the start of the Garmin account into the history notes
@@ -190,6 +176,28 @@ export default class HealthSyncPlugin extends Plugin {
 		);
 	}
 
+	/** The backfill dialog; `force` fetches every day of the range again and overwrites what is there. */
+	private openBackfill(force: boolean): void {
+		new BackfillModal(this.app, this.settings.language, force, (from, to) => {
+			this.background((async () => {
+				// Suppress the create-trigger while backfill runs: backfill
+				// creates notes itself, and we don't want those create events
+				// to kick off a parallel auto-sync of the same fresh dates.
+				this.backfillRunning = true;
+				try {
+					// SyncManager.backfill handles its own errors (it shows the sign-in notice itself),
+					// so nothing is thrown out of it; the finally persists whatever happened.
+					await this.syncManager.backfill(from, to, this.settings, { force });
+				} finally {
+					this.backfillRunning = false;
+					// Tokens may have been refreshed/invalidated during the backfill → persist.
+					this.saveTokens();
+					await this.saveSettings();
+				}
+			})(), "backfill");
+		}).open();
+	}
+
 	private enabledMetricKeys(): string[] {
 		return Object.entries(this.settings.enabledMetrics).filter(([, enabled]) => enabled).map(([key]) => key);
 	}
@@ -210,6 +218,8 @@ export default class HealthSyncPlugin extends Plugin {
 
 	private async buildHistory(from: string, newest: string, enabled: string[]): Promise<void> {
 		const lang = this.settings.language;
+		// the dialog can be open twice before either build has started; a second build would take the first one's Stop button
+		if (this.historyBuilder) return;
 		const ui = new BuildProgressUi(lang, () => this.historyBuilder?.stop(), Platform.isDesktop ? this.addStatusBarItem() : null);
 		this.historyBuilder = new HistoryBuilder({
 			provider: this.garminProvider,
@@ -834,7 +844,7 @@ class BackfillModal extends Modal {
 	private onSubmit: (from: string, to: string) => void;
 	private lang: string;
 
-	constructor(app: App, lang: string, onSubmit: (from: string, to: string) => void) {
+	constructor(app: App, lang: string, private readonly force: boolean, onSubmit: (from: string, to: string) => void) {
 		super(app);
 		this.lang = lang;
 		this.onSubmit = onSubmit;
@@ -842,7 +852,8 @@ class BackfillModal extends Modal {
 
 	onOpen() {
 		const { contentEl } = this;
-		contentEl.createEl("h2", { text: t("modalBackfillTitle", this.lang) });
+		contentEl.createEl("h2", { text: t(this.force ? "modalBackfillForceTitle" : "modalBackfillTitle", this.lang) });
+		if (this.force) contentEl.createEl("p", { text: t("modalBackfillForceDesc", this.lang) });
 
 		const today = localDateString(new Date());
 		const weekAgoDate = new Date();

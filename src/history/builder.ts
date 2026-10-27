@@ -2,13 +2,12 @@ import { daysBetween, localDateString, shiftDate } from "../dates";
 import { isLoginRequiredError } from "../errors";
 import type { HealthData, HealthProvider } from "../providers/provider";
 import { FETCHED_KEY, type DayRecord } from "./format";
+import { RECENT_DAYS } from "../fetch-log";
 import { recordFromData } from "./record";
 import type { HistoryStore } from "./store";
 
 /** Days without any data in a row, after data was found, that mean the account starts here. */
 export const EMPTY_RUN_STOP = 120;
-/** A day without data newer than this may still fill in, so it is not remembered as empty. */
-const RECENT_DAYS = 3;
 const RETRY_WAITS_MS = [30_000, 60_000];
 const FAILED_DAYS_BEFORE_PAUSE = 3;
 const FIRST_PAUSE_MS = 5 * 60_000;
@@ -80,6 +79,8 @@ export class HistoryBuilder {
 	}
 
 	private wait(ms: number): Promise<void> {
+		// a stop that came while a request was running must not be followed by a wait of up to half an hour
+		if (this.stopped) return Promise.resolve();
 		return new Promise((resolve) => {
 			const done = (): void => {
 				window.clearTimeout(timer);

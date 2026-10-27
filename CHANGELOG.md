@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0-beta.45
+
+### Added
+
+- Command **Backfill health data again (ignore what is already fetched)**: the same range backfill, but every day is fetched again and its values are overwritten. Use it after a gap or a wrong value.
+
+### Changed
+
+- Backfill health data re-fetches only the last **seven** days (was three) because the watch may sync late; every older day that was already fetched is skipped. The history build remembers empty days from the same age on.
+
+### Fixed
+
+- Race conditions found in a review of the history features: a day is now marked as fetched in the backfill log only after it was stored (a failed write used to leave it marked, so the day would never have been retried); pressing **Stop** while a request was running no longer leaves the history build waiting out a retry or a pause of up to 30 minutes; opening **Build Garmin history** twice and starting both can no longer run two builds (the second used to take over the first one's Stop button); what the panel had read of a history note could stay out of date when the note changed during the read, and a history build could take days it already had for missing after its own save, so it fetched them again.
+
 ## 0.12.0-beta.44
 
 ### Changed
@@ -10,7 +24,7 @@
 
 ### Changed
 
-- Backfill health data no longer fetches a day again that an earlier backfill already fetched with all the metrics you have enabled now (or that the history notes already hold). The notice counts only the days it will really fetch, and when nothing is left it says "every day in this range is already there". The last three days are always fetched again, because Garmin may still change them. Days without data count as done; days that failed do not. Enabling another metric makes the earlier days fetch again for it. The plugin remembers this in its settings file (two small bookkeeping entries, no setting to change).
+- Backfill health data no longer fetches a day again that an earlier backfill already fetched with all the metrics you have enabled now (or that the history notes already hold). The notice counts only the days it will really fetch, and when nothing is left it says "every day in this range is already there". The last days (seven, since beta.45) are always fetched again, because Garmin may still change them. Days without data count as done; days that failed do not. Enabling another metric makes the earlier days fetch again for it. The plugin remembers this in its settings file (two small bookkeeping entries, no setting to change).
 
 ## 0.12.0-beta.42
 

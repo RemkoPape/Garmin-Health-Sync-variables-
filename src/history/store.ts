@@ -31,6 +31,8 @@ export class HistoryStore {
 	/** Month to its days; a month without a note is cached as empty so it is not looked for again. */
 	private cache = new Map<string, Map<string, DayRecord>>();
 	private queue: Promise<unknown> = Promise.resolve();
+	/** Counts every change of what a read could have seen (a write, a move, an invalidation): a read that started before it must not be cached. */
+	private generation = 0;
 
 	constructor(private readonly app: App, private readonly settings: { readonly dailyNotePath: string }) {}
 
@@ -41,6 +43,7 @@ export class HistoryStore {
 
 	/** Forget what was read, all of it or the month of one changed note. */
 	invalidate(file?: TAbstractFile): void {
+		this.generation++;
 		const month = file ? monthOfName(file.name) : null;
 		if (month) this.cache.delete(month);
 		else this.cache.clear();
@@ -53,6 +56,7 @@ export class HistoryStore {
 
 	/** Reads the months of a date range that are not cached yet; true when one of them has a note. */
 	async warm(from: string, to: string): Promise<boolean> {
+		const generation = this.generation;
 		let found = false;
 		for (const month of monthsBetween(from, to)) {
 			if (this.cache.has(month)) continue;
@@ -61,7 +65,8 @@ export class HistoryStore {
 				found = true;
 				for (const [date, record] of parseMonth(await this.app.vault.cachedRead(file))) days.set(date, mergeRecord(days.get(date), record));
 			}
-			this.cache.set(month, days);
+			// something changed while the note was being read: what was read may be out of date, so it is not kept
+			if (generation === this.generation) this.cache.set(month, days);
 		}
 		return found;
 	}
@@ -92,7 +97,10 @@ export class HistoryStore {
 			await this.move();
 			for (const [month, days] of byMonth) {
 				await this.write(month, days);
-				this.cache.delete(month);
+				// a month that was read is brought up to date, so a build that checks the days it has is not told they are gone
+				this.generation++;
+				const cached = this.cache.get(month);
+				if (cached) for (const [date, record] of days) cached.set(date, mergeRecord(cached.get(date), record));
 			}
 		};
 		const result = this.queue.then(run);
@@ -133,6 +141,7 @@ export class HistoryStore {
 			moved++;
 		}
 		if (moved === 0) return 0;
+		this.generation++;
 		this.cache.clear();
 		// a folder the notes left empty goes too, but only one that was made for them
 		for (const folder of left) {

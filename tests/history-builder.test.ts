@@ -132,9 +132,9 @@ describe("days without data", () => {
 		provider.defaultData = { metrics: {}, activities: {} };
 	});
 
-	it("remembers an old empty day so it is not asked for again, but not a recent one that may still fill in", async () => {
-		await run("2026-10-20", "2026-10-24");
-		expect(lines()).toEqual(['2026-10-20 {"_m":["hrv","steps"]}', '2026-10-21 {"_m":["hrv","steps"]}']);
+	it("remembers an old empty day so it is not asked for again, but not one from the last week that may still fill in", async () => {
+		await run("2026-10-16", "2026-10-24"); // now is 2026-10-25: days before the 18th are final
+		expect(lines()).toEqual(['2026-10-16 {"_m":["hrv","steps"]}', '2026-10-17 {"_m":["hrv","steps"]}']);
 		expect(notes).toEqual([]);
 	});
 
@@ -238,6 +238,18 @@ describe("stopping", () => {
 		builder.stop();
 		await vi.advanceTimersByTimeAsync(10);
 		expect(await result).toMatchObject({ status: "stopped", failed: 0, fetched: 0 });
+	});
+
+	it("does not wait out a pause or a retry when the stop came while a request was running", async () => {
+		provider.onFetch = () => {
+			builder.stop();
+			throw new Error("down");
+		};
+		const started = Date.now();
+		const result = await run("2026-10-20", "2026-10-24");
+		expect(Date.now() - started).toBe(0);
+		expect(result).toMatchObject({ status: "stopped", fetched: 0, failed: 0 });
+		expect(fetchedDates()).toEqual(["2026-10-24"]);
 	});
 
 	it("does nothing when stopped before it starts", async () => {

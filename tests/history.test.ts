@@ -1,7 +1,7 @@
 // Why it matters: the history notes are the only copy of days that have no daily note. They must round-trip
 // without loss, never throw on a file that was touched by hand or by a sync conflict, merge instead of
 // overwrite, and never make two devices disagree about the text of the same data.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { mergeRecord, parseMonth, sameRecord, serializeMonth } from "../src/history/format";
@@ -184,16 +184,38 @@ describe("the history store", () => {
 		expect(s.covers("2026-10-01", "2026-10-31")).toBe(false);
 	});
 
-	it("drops what it had read of a month after writing to it", async () => {
+	it("brings what it had read of a month up to date when it writes to it", async () => {
 		const app = new App();
 		const s = store(app);
-		await s.put("2026-10-22", { hrv: 40 });
+		await s.put("2026-10-22", { hrv: 40, steps: 1 });
 		await s.warm("2026-10-01", "2026-10-31");
-		expect(s.get("2026-10-22")).toEqual({ hrv: 40 });
 		await s.put("2026-10-23", { hrv: 41 });
-		expect(s.get("2026-10-23")).toBeNull();
-		await s.warm("2026-10-01", "2026-10-31");
+		await s.put("2026-10-22", { steps: 2 });
 		expect(s.get("2026-10-23")).toEqual({ hrv: 41 });
+		expect(s.get("2026-10-22")).toEqual({ hrv: 40, steps: 2 });
+		await s.put("2026-09-30", { hrv: 39 }); // a month that was not read stays unread
+		expect(s.get("2026-09-30")).toBeNull();
+	});
+
+	it("does not keep a read that was overtaken by a write or a change of the note", async () => {
+		const app = new App();
+		app.vault.seed(FILE, serializeMonth("2026-10", new Map([["2026-10-22", { hrv: 40 }]])));
+		const s = store(app);
+		const read = vi.spyOn(app.vault, "cachedRead");
+		let release: () => void = () => undefined;
+		read.mockImplementationOnce(async (file) => {
+			await new Promise<void>((resolve) => (release = resolve));
+			return app.vault.text(file.path);
+		});
+		const warming = s.warm("2026-10-01", "2026-10-31");
+		await Promise.resolve();
+		app.vault.overwrite(FILE, serializeMonth("2026-10", new Map([["2026-10-22", { hrv: 99 }]])));
+		s.invalidate(app.vault.getAbstractFileByPath(FILE) as never);
+		release();
+		expect(await warming).toBe(true);
+		expect(s.covers("2026-10-01", "2026-10-31")).toBe(false);
+		await s.warm("2026-10-01", "2026-10-31");
+		expect(s.get("2026-10-22")).toEqual({ hrv: 99 });
 	});
 });
 

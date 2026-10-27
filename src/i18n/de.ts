@@ -4,6 +4,9 @@ export const de: Record<TranslationKeys, string> = {
 	// Commands
 	commandSync: "Aktuelle Notiz synchronisieren",
 	commandBackfill: "Gesundheitsdaten nachträglich auffüllen",
+	commandBackfillForce: "Gesundheitsdaten erneut nachträglich auffüllen (Vorhandenes ignorieren)",
+	modalBackfillForceTitle: "Erneut nachsynchronisieren",
+	modalBackfillForceDesc: "Holt jeden Tag des Zeitraums erneut, auch bereits vollständige Tage, und überschreibt ihre Werte. Nutze das nach einer Lücke oder bei einem falschen Wert; die normale Nachsynchronisierung überspringt Tage, die sie schon hat.",
 	commandImportHistory: "Verlauf aus Daily Notes importieren",
 	commandManualLogin: "Mit Service-Ticket anmelden",
 

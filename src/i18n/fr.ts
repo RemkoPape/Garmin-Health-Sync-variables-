@@ -4,6 +4,9 @@ export const fr: Record<TranslationKeys, string> = {
 	// Commands
 	commandSync: "Synchroniser la note active",
 	commandBackfill: "Remplir les données de santé",
+	commandBackfillForce: "Remplir de nouveau les données de santé (ignorer ce qui est déjà récupéré)",
+	modalBackfillForceTitle: "Remplir de nouveau",
+	modalBackfillForceDesc: "Récupère de nouveau chaque jour de la période, même les jours déjà complets, et écrase leurs valeurs. À utiliser après une lacune ou une valeur erronée ; le remplissage normal ignore les jours qu’il a déjà.",
 	commandImportHistory: "Importer l’historique depuis les notes quotidiennes",
 	commandManualLogin: "Se connecter avec un ticket de service",
 

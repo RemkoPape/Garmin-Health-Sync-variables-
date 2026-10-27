@@ -1,3 +1,6 @@
+/** A day this recent may still change on Garmin's side (the watch syncs late), so a backfill fetches it again; older days are final. */
+export const RECENT_DAYS = 7;
+
 /** What the backfill remembers about the days it has fetched, so a second run does not fetch them again. */
 export interface FetchLog {
 	/** Day to the index in `fetchSets` of the metrics that were requested for it. */

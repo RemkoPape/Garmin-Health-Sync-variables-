@@ -5,7 +5,7 @@ import type { HistoryStore } from "./history/store";
 import { recordFromData } from "./history/record";
 import { estimateMs, formatDuration } from "./history/progress";
 import { isComplete } from "./history/builder";
-import { isFetched, markFetched } from "./fetch-log";
+import { RECENT_DAYS, isFetched, markFetched } from "./fetch-log";
 import { localDateString, shiftDate } from "./dates";
 import type { HealthSyncSettings } from "./settings";
 import { t } from "./i18n/t";
@@ -20,9 +20,6 @@ import { isLoginRequiredError } from "./errors";
  *    no API call was made, so the caller should retry later without a cooldown
  *  - "error": configuration/auth/transient failure
  */
-/** A day this recent may still change on Garmin's side, so a backfill fetches it again. */
-const RECENT_DAYS = 3;
-
 export type SyncOutcome = "synced" | "no-data" | "skipped-missing-note" | "error";
 
 export class SyncManager {
@@ -148,7 +145,7 @@ export class SyncManager {
 	}
 
 	/** Backfill for a date range */
-	async backfill(fromDate: string, toDate: string, settings: HealthSyncSettings): Promise<number> {
+	async backfill(fromDate: string, toDate: string, settings: HealthSyncSettings, options: { force?: boolean } = {}): Promise<number> {
 		if (!this.provider.isConfigured()) {
 			new Notice(t("noticeLoginRequired", settings.language));
 			return 0;
@@ -180,8 +177,8 @@ export class SyncManager {
 				dailyNotePath: settings.dailyNotePath,
 				dailyNoteFormat: settings.dailyNoteFormat,
 			}));
-			const dates = candidates.filter((date) => !(date < recentLimit && (isFetched(settings, date, enabledMetrics) || this.isInHistory(date, enabledMetrics))));
-			if (candidates.length > 0 && dates.length === 0) {
+			const dates = candidates.filter((date) => options.force || !(date < recentLimit && (isFetched(settings, date, enabledMetrics) || this.isInHistory(date, enabledMetrics))));
+			if (!options.force && candidates.length > 0 && dates.length === 0) {
 				new Notice(t("noticeBackfillNothing", settings.language), 10000);
 				return 0;
 			}
@@ -197,7 +194,6 @@ export class SyncManager {
 				try {
 					const data = await this.provider.fetchData(date, enabledMetrics);
 					const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
-					if (date < recentLimit) markFetched(settings, date, enabledMetrics);
 
 					if (hasData) {
 						const mayCreate = await this.keepDay(date, data, enabledMetrics, settings);
@@ -205,6 +201,8 @@ export class SyncManager {
 						await writeToDailyNote(this.app, date, outputData, this.noteOptions(settings, mayCreate));
 						count++;
 					}
+					// only a day that was really stored counts as fetched: a failed write leaves it for the next run
+					if (date < recentLimit) markFetched(settings, date, enabledMetrics);
 				} catch (error) {
 					if (isLoginRequiredError(error)) {
 						new Notice(t("noticeLoginRequired", settings.language));
