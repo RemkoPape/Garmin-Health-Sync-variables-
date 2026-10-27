@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.32
+
+### Fixed
+
+- Sleep timeline: an axis end label (for example 06:00) no longer sits on top of the label of a usual time that is close to it (04:51). An end label is now left out when it is closer than 14 percent of the axis to a usual bedtime or wake-up time, so it works the same for a short and a tall axis.
+
 ## 0.12.0-beta.31
 
 ### Added
