@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.50
+
+### Changed
+
+- The day picker is easier to see and aligned: the date now sits in a bordered button with a calendar icon, centred between the arrows (it was at the left edge and a little too high).
+
 ## 0.12.0-beta.49
 
 ### Added

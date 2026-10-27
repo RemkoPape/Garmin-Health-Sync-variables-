@@ -114,6 +114,7 @@ export class HealthPanelView extends ItemView {
 		this.navButton(nav, "chevron-left", t("panelPrevDay", lang), () => this.move(-1), false);
 		// the date is also a day picker: a date field of the system lies invisibly over it, so a tap opens the calendar
 		const pick = nav.createDiv({ cls: "ghs-daynav-pick" });
+		setIcon(pick.createSpan({ cls: "ghs-daynav-icon" }), "calendar");
 		pick.createSpan({ cls: "ghs-daynav-date", text: formatPanelDate(this.date, lang) });
 		const input = pick.createEl("input", { cls: "ghs-daynav-input", attr: { type: "date", max: today, "aria-label": t("panelPickDay", lang) } });
 		input.value = this.date;
