@@ -150,6 +150,7 @@ describe("renderSleep", () => {
 		render(computeSleep(await indexOf([360, 390, 420, 480, 300, 450, 405], 77), END));
 		expect(root.querySelector(".ghs-card-title")?.textContent).toBe(en.panelSleepTitle);
 		expect(root.querySelector(".ghs-card-value")?.textContent).toBe("6 h · 77");
+		expect(root.querySelector(".ghs-unit")?.classList.contains("ghs-unit-strong")).toBe(true);
 		expect(notes()).toEqual(["Sleep debt, last 7 nights: 3 h 45 min"]);
 		expect(root.querySelector(".ghs-foot-label")?.textContent).toBe(en.panelTonight);
 		expect(root.querySelector(".ghs-foot-value")?.textContent).toBe("Aim for 7 h 45 min");

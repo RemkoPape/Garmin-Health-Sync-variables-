@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.40
+
+### Changed
+
+- Sleep card: the sleep score next to the sleep time is now as bold and as dark as the time, in the same size, so it is easy to notice.
+
 ## 0.12.0-beta.39
 
 ### Added
