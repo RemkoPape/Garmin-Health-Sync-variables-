@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0-beta.16
+
+### Changed
+
+- **Cards show numbers; advice lives under (i).** The fixed tips on the cards are gone: the sleep stages tip ("Tonight … no alcohol"), the load balance suggestions ("Hold steady", "Ease off"), the cardio fitness tips and the body "on track / check hydration" lines, plus "take the stairs" on floors and "keep the remaining days easy" on weekly load. What they said is covered by the data-based interpretation under (i), which also gets one new text for the maintain zone of the load balance. The trend lines stay on the cards.
+- Targets and quantities share one row style: a muted label and a neutral value on the right (sleep now reads "Tonight — Aim for 7 h" in the same style as the steps, floors and intensity rows). Green is reserved for something reached (zone done, goal reached) and amber for a warning, so "61 min left" no longer looks like good news.
+- The resting heart rate explanation no longer lists alcohol among the possible causes.
+
 ## 0.12.0-beta.15
 
 ### Fixed

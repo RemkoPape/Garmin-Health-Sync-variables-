@@ -43,7 +43,6 @@ describe("VO2 max card", () => {
 		expect(root.querySelectorAll(".ghs-vo2-bars .ghs-trend-bar")).toHaveLength(12);
 		expect(root.querySelectorAll(".ghs-trend-bar-last")).toHaveLength(1);
 		expect(text(".ghs-foot-label")).toBe("↑ +6 over 12 weeks");
-		expect(text(".ghs-foot-value")).toBe(en.panelVo2Up);
 	});
 
 	it("falls", async () => {
@@ -51,7 +50,6 @@ describe("VO2 max card", () => {
 		expect(model.direction).toBe("down");
 		renderVo2(root, model, "en", false, noop);
 		expect(text(".ghs-foot-label")).toBe("↓ −6 over 12 weeks");
-		expect(text(".ghs-foot-value")).toBe(en.panelVo2Down);
 	});
 
 	it("calls a change within 0.3 steady", async () => {
@@ -59,7 +57,6 @@ describe("VO2 max card", () => {
 		expect(model.direction).toBe("steady");
 		renderVo2(root, model, "en", false, noop);
 		expect(text(".ghs-foot-label")).toBe("→ +0 over 12 weeks");
-		expect(text(".ghs-foot-value")).toBe(en.panelVo2Steady);
 	});
 
 	it("uses the latest day of a week and ignores days after the shown day", async () => {
@@ -102,7 +99,7 @@ describe("VO2 max card", () => {
 	it("speaks the plugin language and shows the explanation", async () => {
 		renderVo2(root, computeVo2(await weekly((w) => 50 - 0.5 * w), END), "de", true, noop);
 		expect(text(".ghs-foot-label")).toBe("↑ +6 in 12 Wochen");
-		expect(text(".ghs-foot-value")).toBe(de.panelVo2Up);
+		expect(root.querySelector(".ghs-foot-value")).toBeNull(); // the advice is under (i)
 		expect(text(".ghs-explain")).toBe(de.panelVo2Explain);
 	});
 });
@@ -126,7 +123,7 @@ describe("body card", () => {
 		expect(text(".ghs-card-value")).toBe("79.7 kg");
 		expect(root.querySelectorAll(".ghs-dots-point")).toHaveLength(28);
 		expect(text(".ghs-foot-label")).toBe("+0.7 kg per week");
-		expect(text(".ghs-foot-value")).toBe(en.panelBodyOk);
+		expect(root.querySelector(".ghs-foot-value")).toBeNull(); // within the usual: only the change per week
 		expect(root.querySelector(".ghs-foot-over")).toBeNull();
 	});
 
@@ -158,7 +155,7 @@ describe("body card", () => {
 	it("draws a flat series in the middle", async () => {
 		renderBody(root, computeBody(await body(() => 80), END), "en", false, noop);
 		expect((root.querySelector(".ghs-dots-point") as HTMLElement).style.getPropertyValue("--ghs-y")).toBe("50%");
-		expect(text(".ghs-foot-value")).toBe(en.panelBodyOk);
+		expect(root.querySelector(".ghs-foot-value")).toBeNull();
 	});
 
 	it("shows the body fat mean when there is some", async () => {
@@ -197,7 +194,7 @@ describe("body card", () => {
 	it("speaks the plugin language and shows the explanation", async () => {
 		renderBody(root, computeBody(await body((ago) => 80 - 0.1 * ago), END), "de", true, noop);
 		expect(text(".ghs-foot-label")).toBe("+0,7 kg pro Woche");
-		expect(text(".ghs-foot-value")).toBe(de.panelBodyOk);
+		expect(root.querySelector(".ghs-foot-value")).toBeNull();
 		expect(text(".ghs-explain")).toBe(de.panelBodyExplain);
 	});
 });

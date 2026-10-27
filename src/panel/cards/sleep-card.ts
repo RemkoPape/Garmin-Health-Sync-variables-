@@ -189,7 +189,9 @@ export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string
 					.replace("{wakeSd}", String(Math.round(sc.wakeSd))),
 			});
 		}
-		card.createDiv({ cls: "ghs-card-action", text: t("panelSleepTonight", lang).replace("{target}", formatMinutes(model.target)) });
+		const foot = card.createDiv({ cls: "ghs-foot" });
+		foot.createSpan({ cls: "ghs-foot-label", text: t("panelTonight", lang) });
+		foot.createSpan({ cls: "ghs-foot-value", text: t("panelSleepTonight", lang).replace("{target}", formatMinutes(model.target)) });
 		if (model.have < NIGHTS) {
 			card.createDiv({ cls: "ghs-card-note ghs-card-warning", text: t("panelSleepPartial", lang).replace("{have}", String(model.have)) });
 		}

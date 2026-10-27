@@ -11,6 +11,7 @@ The interpretation is deliberately kept under (i) so the cards stay uncluttered.
 
 - **Rule based and local.** Every text comes from a fixed rule over the daily notes in the vault. Nothing is sent anywhere and nothing is generated.
 - **Data first.** A rule fires on the person's own numbers: their 30 day range, last night's sleep, the load of the last week, yesterday's steps. The text names those numbers where it helps ("you went to bed 1 h 10 min later than usual").
+- **Numbers on the card, advice under (i).** A card shows what was measured and the numbers to hit (steps to the zone, minutes a day, tonight's sleep target) in one row style: a muted label and a value on the right, neutral in colour, green only when something is reached (zone done, goal reached) and amber for a warning. Recommendations and explanations ("ease off", "take the stairs") never sit on the card; they live in this file and under (i). Trend lines stay on the card.
 - **No generic tips.** There is no "avoid alcohol before bed" or "drink more water". A tip only appears when the data points to it, and it is the lever that the data points to (an earlier bedtime when the hours were lost at the start of the night, sleeping to the usual time when the alarm was early, and so on).
 - **Honest about what is not explained.** When no rule finds a cause, the text says so (`unexplained`) and points to the trend instead of inventing one.
 - **Never a diagnosis.** Wrist data are estimates and the studies describe groups of people. Every interpretation box ends with a note saying so, and illness-related texts say "worth watching" and "if you feel unwell", not more.
@@ -488,6 +489,14 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Trigger:** The ratio is below 0.8.
 - **Text (English):** Your last 7 days are {pct} percent below your usual weekly load. Fine for a planned lighter week; otherwise add one session and build gradually.
 - **Basis:** Describes a lighter week; no claim beyond arithmetic.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### load_maintain
+
+- **Card:** load
+- **Trigger:** The ratio is between 0.8 and 1.0.
+- **Text (English):** A little below your usual weekly load. Fine as a steady week; if you want to build, add one session and raise load gradually.
+- **Basis:** Arithmetic on the user's own load; no claim beyond it.
 - **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
 
 ### load_build

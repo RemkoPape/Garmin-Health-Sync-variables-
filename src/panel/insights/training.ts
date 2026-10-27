@@ -14,7 +14,8 @@ export function loadInsights(s: Signals): Insight[] {
 	if (m.zone === 4) return [{ id: "load_overreach", params: { pct: pct(m.ratio - 1) } }];
 	if (m.zone === 3) return [{ id: "load_strain", params: { pct: pct(m.ratio - 1) } }];
 	if (m.zone === 0) return [{ id: "load_detrain", params: { pct: pct(1 - m.ratio) } }];
-	return m.zone === 2 ? [{ id: "load_build" }] : [];
+	if (m.zone === 1) return [{ id: "load_maintain" }];
+	return [{ id: "load_build" }];
 }
 
 /** A week within this share of the cap, below it, is on track. */

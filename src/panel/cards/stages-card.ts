@@ -16,16 +16,13 @@ interface StageSpec {
 	id: StageId;
 	key: string;
 	label: TranslationKeys;
-	/** The deviation that matters: "low" for deep and REM, "high" for awake. */
-	flag: "low" | "high" | null;
-	action: TranslationKeys | null;
 }
 
 const STAGES: StageSpec[] = [
-	{ id: "deep", key: "sleep_deep", label: "panelStageDeep", flag: "low", action: "panelStagesDeepLow" },
-	{ id: "rem", key: "sleep_rem", label: "panelStageRem", flag: "low", action: "panelStagesRemLow" },
-	{ id: "light", key: "sleep_light", label: "panelStageLight", flag: null, action: null },
-	{ id: "awake", key: "sleep_awake", label: "panelStageAwake", flag: "high", action: "panelStagesAwakeHigh" },
+	{ id: "deep", key: "sleep_deep", label: "panelStageDeep" },
+	{ id: "rem", key: "sleep_rem", label: "panelStageRem" },
+	{ id: "light", key: "sleep_light", label: "panelStageLight" },
+	{ id: "awake", key: "sleep_awake", label: "panelStageAwake" },
 ];
 
 export interface StageModel {
@@ -41,8 +38,6 @@ export interface StagesModel {
 	insights: Insight[];
 	/** Null when the night has no stage data. */
 	stages: StageModel[] | null;
-	/** The stage whose deviation to the usual is worth an action, if any. */
-	flagged: StageModel | null;
 }
 
 export function computeStages(index: DayIndex, date: string): StagesModel {
@@ -53,11 +48,7 @@ export function computeStages(index: DayIndex, date: string): StagesModel {
 		const b = baseline(windowValues(index, spec.key, date, WINDOW_DAYS, true), STAGES_MIN_NIGHTS, SD_FLOOR_MIN);
 		stages.push({ spec, minutes, baseline: b, deviation: b ? { z: zScore(minutes, b), minutes: Math.round(minutes - b.mean) } : null });
 	}
-	// the most deviant stage in the direction that matters, beyond one standard deviation
-	const badness = (s: StageModel): number => (s.deviation === null || s.spec.flag === null ? 0 : s.spec.flag === "low" ? -s.deviation.z : s.deviation.z);
-	let flagged: StageModel | null = null;
-	for (const s of stages) if (badness(s) > 1 && (flagged === null || badness(s) > badness(flagged))) flagged = s;
-	return { insights: [], stages: stages.length === STAGES.length ? stages : null, flagged };
+	return { insights: [], stages: stages.length === STAGES.length ? stages : null };
 }
 
 export function renderStages(parent: HTMLElement, model: StagesModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
@@ -79,11 +70,6 @@ export function renderStages(parent: HTMLElement, model: StagesModel, lang: stri
 				const delta = s.deviation.minutes;
 				value.createSpan({ cls: "ghs-chip-delta ghs-chip-delta-down", text: ` · ${delta < 0 ? "−" : "+"}${Math.abs(delta)}` });
 			}
-		}
-		if (model.flagged?.spec.action) {
-			const foot = card.createDiv({ cls: "ghs-foot" });
-			foot.createSpan({ cls: "ghs-foot-label", text: t("panelTonight", lang) });
-			foot.createSpan({ cls: "ghs-foot-value", text: t(model.flagged.spec.action, lang) });
 		}
 	});
 }

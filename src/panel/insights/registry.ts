@@ -77,6 +77,7 @@ export const INSIGHTS = {
 	load_overreach: { card: "load", kind: "watch" },
 	load_strain: { card: "load", kind: "watch" },
 	load_detrain: { card: "load", kind: "watch" },
+	load_maintain: { card: "load", kind: "good" },
 	load_build: { card: "load", kind: "good" },
 
 	weekly_over_cap: { card: "weekly", kind: "watch" },

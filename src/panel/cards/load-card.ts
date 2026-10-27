@@ -17,12 +17,12 @@ const DOMAIN_HIGH = 1.8;
 
 export type Zone = 0 | 1 | 2 | 3 | 4;
 
-const ZONES: { upTo: number; name: TranslationKeys; action: TranslationKeys }[] = [
-	{ upTo: 0.8, name: "panelZoneDetrain", action: "panelLoadActAdd" },
-	{ upTo: 1.0, name: "panelZoneMaintain", action: "panelLoadActBuild" },
-	{ upTo: 1.3, name: "panelZoneBuild", action: "panelLoadActHold" },
-	{ upTo: 1.5, name: "panelZoneStrain", action: "panelLoadActEase" },
-	{ upTo: Infinity, name: "panelZoneOverreach", action: "panelLoadActRest" },
+const ZONES: { upTo: number; name: TranslationKeys }[] = [
+	{ upTo: 0.8, name: "panelZoneDetrain" },
+	{ upTo: 1.0, name: "panelZoneMaintain" },
+	{ upTo: 1.3, name: "panelZoneBuild" },
+	{ upTo: 1.5, name: "panelZoneStrain" },
+	{ upTo: Infinity, name: "panelZoneOverreach" },
 ];
 
 export interface LoadModel {
@@ -74,7 +74,7 @@ export function renderLoad(parent: HTMLElement, model: LoadModel, lang: string, 
 			return;
 		}
 		if (model.ratio === null || model.zone === null) {
-			card.createDiv({ cls: "ghs-card-action", text: t("panelLoadStart", lang) });
+			card.createDiv({ cls: "ghs-card-note", text: t("panelLoadStart", lang) });
 			return;
 		}
 		const bar = card.createDiv({ cls: "ghs-range ghs-load-bar", attr: { role: "img", "aria-label": `${formatNumber(model.ratio, lang, 2)} · ${t(ZONES[model.zone]!.name, lang)}` } });
@@ -84,7 +84,6 @@ export function renderLoad(parent: HTMLElement, model: LoadModel, lang: string, 
 		ZONES.forEach((z, i) => names.createSpan({ cls: `ghs-zone-name${i === model.zone ? " ghs-zone-name-current" : ""}`, text: t(z.name, lang) }));
 		const foot = card.createDiv({ cls: "ghs-foot" });
 		foot.createSpan({ cls: "ghs-foot-label", text: t("panelLoadFoot", lang) });
-		foot.createSpan({ cls: "ghs-foot-value", text: t(ZONES[model.zone]!.action, lang) });
 		if (model.garmin) card.createDiv({ cls: "ghs-card-note", text: t("panelGarminStatus", lang).replace("{status}", model.garmin) });
 		if (model.weeks < CHRONIC_WEEKS) {
 			card.createDiv({ cls: "ghs-card-note ghs-card-warning", text: t("panelWeeksBasis", lang).replace("{have}", String(model.weeks)).replace("{need}", String(CHRONIC_WEEKS)) });

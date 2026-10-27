@@ -93,7 +93,7 @@ export function renderIntensity(parent: HTMLElement, model: IntensityModel, lang
 				: model.perDay === null
 					? t("panelIntensityToGoLastDay", lang).replace("{min}", formatNumber(model.remaining, lang, 0))
 					: t("panelIntensityToGo", lang).replace("{min}", formatNumber(model.remaining, lang, 0)).replace("{perDay}", String(model.perDay));
-		foot.createSpan({ cls: "ghs-foot-value", text });
+		foot.createSpan({ cls: `ghs-foot-value${model.remaining === 0 ? " ghs-foot-good" : ""}`, text });
 		if (model.goalWeeks > 0) card.createDiv({ cls: "ghs-card-note", text: t(model.youth ? "panelIntensityGoalPersonalYouth" : "panelIntensityGoalPersonal", lang).replace("{n}", String(model.goalWeeks)) });
 	});
 }

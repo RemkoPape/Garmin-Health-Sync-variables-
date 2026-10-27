@@ -79,7 +79,7 @@ export function renderBody(parent: HTMLElement, model: BodyModel, lang: string, 
 		}
 		const foot = card.createDiv({ cls: "ghs-foot" });
 		foot.createSpan({ cls: "ghs-foot-label", text: t("panelBodyPerWeek", lang).replace("{delta}", `${formatSigned(model.perWeek, lang)} ${model.unit}`) });
-		foot.createSpan({ cls: `ghs-foot-value${model.fast ? " ghs-foot-over" : ""}`, text: t(model.fast ? "panelBodyFast" : "panelBodyOk", lang) });
+		if (model.fast) foot.createSpan({ cls: "ghs-foot-value ghs-foot-over", text: t("panelBodyFast", lang) });
 		if (model.fat !== null) card.createDiv({ cls: "ghs-card-note", text: t("panelBodyFat", lang).replace("{n}", formatNumber(model.fat, lang, 1)) });
 	});
 }

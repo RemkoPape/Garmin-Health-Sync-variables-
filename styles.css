@@ -164,11 +164,6 @@
 	margin: -8px -10px;
 }
 
-.ghs-card-action {
-	font-size: var(--font-ui-small);
-	font-weight: var(--font-semibold);
-}
-
 /* Range bar: colour scale from the usual range outwards */
 .ghs-range {
 	position: relative;
@@ -335,9 +330,13 @@
 }
 
 .ghs-foot-value {
-	color: var(--color-green);
+	color: var(--text-normal);
 	font-weight: var(--font-semibold);
 	text-align: right;
+}
+
+.ghs-foot-good {
+	color: var(--color-green);
 }
 
 .ghs-chips {
