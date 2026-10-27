@@ -69,13 +69,16 @@
 .ghs-panel {
 	/* One data colour for everything that has no good or bad side: the accent of the theme with its lightness held between 0.5 and 0.72, so a very bright or very dark accent still stands out on a light and on a dark card. The shades fade it towards the card, strongest first. */
 	--ghs-data: var(--interactive-accent);
+	/* The card colour: the theme's secondary background with a hint of the accent, so the cards sit in the theme instead of beside it */
+	--ghs-card: color-mix(in oklab, var(--background-secondary), var(--interactive-accent) 5%);
+	--ghs-edge: var(--interactive-accent);
 	--ghs-shade-1: var(--ghs-data);
-	--ghs-shade-2: color-mix(in oklab, var(--ghs-data) 70%, var(--background-secondary));
-	--ghs-shade-3: color-mix(in oklab, var(--ghs-data) 45%, var(--background-secondary));
-	--ghs-shade-4: color-mix(in oklab, var(--ghs-data) 25%, var(--background-secondary));
+	--ghs-shade-2: color-mix(in oklab, var(--ghs-data) 70%, var(--ghs-card));
+	--ghs-shade-3: color-mix(in oklab, var(--ghs-data) 45%, var(--ghs-card));
+	--ghs-shade-4: color-mix(in oklab, var(--ghs-data) 25%, var(--ghs-card));
 	/* Five effort levels, from easy to hard: the colours of the load zones, so one scale means the same everywhere */
 	--ghs-level-1: var(--text-faint);
-	--ghs-level-2: color-mix(in srgb, var(--color-green) 45%, var(--background-secondary));
+	--ghs-level-2: color-mix(in srgb, var(--color-green) 45%, var(--ghs-card));
 	--ghs-level-3: var(--color-green);
 	--ghs-level-4: var(--color-orange);
 	--ghs-level-5: var(--color-red);
@@ -84,9 +87,19 @@
 	gap: var(--size-4-6);
 }
 
+/* On a dark theme the cards take a stronger hint of the accent and the data colour is lifted, because a dark accent barely shows on a dark card */
+.theme-dark .ghs-panel {
+	--ghs-card: color-mix(in oklab, var(--background-secondary), var(--interactive-accent) 10%);
+}
+
 @supports (color: oklch(from red l c h)) {
 	.ghs-panel {
 		--ghs-data: oklch(from var(--interactive-accent) clamp(0.5, l, 0.72) c h);
+	}
+
+	.theme-dark .ghs-panel {
+		--ghs-data: oklch(from var(--interactive-accent) clamp(0.68, l, 0.85) c h);
+		--ghs-edge: var(--ghs-data);
 	}
 }
 
@@ -120,11 +133,11 @@
 	flex-direction: column;
 	gap: var(--size-2-3);
 	padding: var(--size-4-2) var(--size-4-3);
-	background: var(--background-secondary);
+	background: var(--ghs-card);
 	border: 1px solid var(--background-modifier-border);
 	/* A quiet edge in the user's own accent colour tells the cards apart without adding colours; only the Today
 	   verdict (below) and the dashed "No reading" card change it */
-	border-left: 4px solid var(--interactive-accent);
+	border-left: 4px solid var(--ghs-edge);
 	border-radius: var(--radius-m);
 }
 
@@ -242,7 +255,7 @@
 	border: 3px solid var(--color-green);
 	background: var(--text-on-accent);
 	transform: translate(-50%, -50%);
-	box-shadow: 0 0 0 1px var(--background-secondary);
+	box-shadow: 0 0 0 1px var(--ghs-card);
 }
 
 /* Steps below the usual are not a warning: a dark ring that shows on the accent coloured bar */
@@ -338,7 +351,7 @@
 	box-sizing: border-box;
 	border: 2px solid var(--text-normal);
 	border-radius: var(--radius-s);
-	background: var(--background-secondary);
+	background: var(--ghs-card);
 	opacity: 0.35;
 }
 
@@ -863,6 +876,12 @@
 
 .ghs-night-asleep-last {
 	opacity: 1;
+}
+
+/* Earlier nights fade less on a dark card, where the same opacity looks dimmer */
+.theme-dark .ghs-night-bar:not(.ghs-night-bar-last),
+.theme-dark .ghs-night-asleep:not(.ghs-night-asleep-last) {
+	opacity: 0.8;
 }
 
 /* VO2 max: twelve weekly values */
