@@ -50,7 +50,7 @@ export function renderFloors(parent: HTMLElement, model: FloorsModel, lang: stri
 		const toHigh = zone.high - floors;
 		const range = toLow >= toHigh ? String(toHigh) : `${toLow}–${toHigh}`;
 		foot.createSpan({
-			cls: "ghs-foot-value",
+			cls: `ghs-foot-value${toHigh <= 0 ? " ghs-foot-good" : ""}`,
 			text: toHigh <= 0 ? t("panelZoneDone", lang) : t("panelFloorsToGo", lang).replace("{range}", range),
 		});
 	});

@@ -43,14 +43,15 @@ describe("load balance card", () => {
 	};
 
 	it.each([
-		[10, 30, "Detrain", "Add a session this week"], // 70 / 175 = 0.4
-		[26, 30, "Maintain", "Add 10 percent to build"], // 0.897
-		[30, 30, "Build", "Hold steady"], // 1.0
-		[50, 30, "Strain", "Ease off, next session easy"], // 1.43
-		[60, 30, "Overreach", "Day off or recovery only"], // 1.6
-	])("recent %s against %s a day is %s", async (recent, earlier, name, action) => {
+		[10, 30, "Detrain"], // 70 / 175 = 0.4
+		[26, 30, "Maintain"], // 0.897
+		[30, 30, "Build"], // 1.0
+		[50, 30, "Strain"], // 1.43
+		[60, 30, "Overreach"], // 1.6
+	])("recent %s against %s a day is %s, shown as the zone only (the advice is under (i))", async (recent, earlier, name) => {
 		expect(await zone(recent, earlier)).toBe(name);
-		expect(text(".ghs-foot-value")).toBe(action);
+		expect(root.querySelector(".ghs-foot-value")).toBeNull();
+		expect(text(".ghs-foot-label")).toBe(en.panelLoadFoot);
 	});
 
 	it("shows the ratio and puts the dot on a bar from 0.5 to 1.8", async () => {
@@ -82,7 +83,7 @@ describe("load balance card", () => {
 
 	it("suggests a first easy session when there is no load at all", async () => {
 		renderLoad(root, computeLoad(await indexOf(() => ({ hrv: 40 })), END), "en", false, noop);
-		expect(text(".ghs-card-action")).toBe(en.panelLoadStart);
+		expect(text(".ghs-card-note")).toBe(en.panelLoadStart);
 		expect(root.querySelector(".ghs-card-value")).not.toBeNull();
 		expect(text(".ghs-card-value")).toBe("");
 	});
@@ -112,7 +113,7 @@ describe("load balance card", () => {
 
 	it("speaks the plugin language and shows the explanation", async () => {
 		renderLoad(root, computeLoad(await load(30, 30), END), "de", true, noop);
-		expect(text(".ghs-foot-value")).toBe(de.panelLoadActHold);
+		expect(text(".ghs-foot-label")).toBe(de.panelLoadFoot);
 		expect(text(".ghs-explain")).toBe(de.panelLoadExplain);
 	});
 });

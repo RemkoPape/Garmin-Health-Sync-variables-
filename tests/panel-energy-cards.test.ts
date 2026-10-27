@@ -128,38 +128,22 @@ describe("sleep stages card", () => {
 		expect(root.querySelector(".ghs-chip-delta")).toBeNull();
 	});
 
-	it("flags low deep sleep with the deviation in minutes and a tip", async () => {
+	it("shows the deviation in minutes when a stage is more than one standard deviation from the usual, and no tip", async () => {
 		// usual deep 60 min with a floor sd of 8; tonight 40 min -> z -2.5
 		const model = computeStages(await stages([40, 90, 200, 20], [60, 90, 200, 20]), END);
-		expect(model.flagged?.spec.id).toBe("deep");
 		renderStages(root, model, "en", false, noop);
 		expect(root.querySelector(".ghs-chip-delta")?.textContent).toBe(" · −20");
-		expect(text(".ghs-foot-value")).toBe(en.panelStagesDeepLow);
-		expect(text(".ghs-foot-label")).toBe(en.panelTonight);
-	});
-
-	it("flags high awake time and low REM, and picks the most deviant", async () => {
-		expect(computeStages(await stages([60, 90, 200, 40], [60, 90, 200, 20]), END).flagged?.spec.id).toBe("awake");
-		expect(computeStages(await stages([60, 60, 200, 20], [60, 90, 200, 20]), END).flagged?.spec.id).toBe("rem");
-		// deep -1.5 sd, awake +2.5 sd -> awake
-		expect(computeStages(await stages([48, 90, 200, 40], [60, 90, 200, 20]), END).flagged?.spec.id).toBe("awake");
-		// REM -2.5 sd beats deep -1.5 sd
-		expect(computeStages(await stages([48, 70, 200, 20], [60, 90, 200, 20]), END).flagged?.spec.id).toBe("rem");
+		expect(root.querySelector(".ghs-foot")).toBeNull();
+		expect(root.querySelector(".ghs-card-action")).toBeNull();
 	});
 
 	it("shows a plus sign for more than usual", async () => {
 		renderStages(root, computeStages(await stages([60, 90, 200, 40], [60, 90, 200, 20]), END), "en", false, noop);
 		expect(root.querySelector(".ghs-chip-delta")?.textContent).toBe(" · +20");
-		expect(text(".ghs-foot-value")).toBe(en.panelStagesAwakeHigh);
-	});
-
-	it("does not flag the other directions or the light stage", async () => {
-		expect(computeStages(await stages([80, 110, 260, 10], [60, 90, 200, 20]), END).flagged).toBeNull();
 	});
 
 	it("shows the amounts without ticks while the history is too short", async () => {
 		const model = computeStages(await stages([60, 90, 200, 20], [60, 90, 200, 20], 5), END);
-		expect(model.flagged).toBeNull();
 		renderStages(root, model, "en", false, noop);
 		expect(root.querySelector(".ghs-stage-mean")).toBeNull();
 		expect(root.querySelectorAll(".ghs-stage-row")).toHaveLength(4);

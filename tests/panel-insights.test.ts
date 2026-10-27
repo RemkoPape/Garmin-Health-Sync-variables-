@@ -440,8 +440,8 @@ describe("load balance and weekly load", () => {
 		expect(out).toEqual([pct === undefined ? { id } : { id, params: { pct } }]);
 	});
 
-	it("has nothing in the maintain zone or without a ratio", async () => {
-		expect(loadInsights(await signals((ago) => run(ago, 26, 30), 35))).toEqual([]);
+	it("calls the maintain zone a steady week, and has nothing without a ratio", async () => {
+		expect(loadInsights(await signals((ago) => run(ago, 26, 30), 35))).toEqual([{ id: "load_maintain" }]);
 		expect(loadInsights(await signals(() => ({ hrv: 1 }), 35))).toEqual([]);
 	});
 

@@ -88,7 +88,7 @@ export function renderSteps(parent: HTMLElement, model: StepsModel, lang: string
 			foot.createSpan({ cls: "ghs-foot-label", text: t(model.today ? "panelToTopOfZoneSoFar" : "panelToTopOfZone", lang) });
 			const left = Math.ceil(zoneTop - model.steps);
 			foot.createSpan({
-				cls: "ghs-foot-value",
+				cls: `ghs-foot-value${left <= 0 ? " ghs-foot-good" : ""}`,
 				text: left <= 0 ? t("panelZoneDone", lang) : t("panelStepsToGo", lang).replace("{steps}", formatNumber(left, lang, 0)).replace("{min}", String(Math.ceil(left / STEPS_PER_MINUTE))),
 			});
 		}

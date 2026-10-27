@@ -90,7 +90,9 @@ describe("renderSleep", () => {
 		expect(root.querySelector(".ghs-card-title")?.textContent).toBe(en.panelSleepTitle);
 		expect(root.querySelector(".ghs-card-value")?.textContent).toBe("6 h · 77");
 		expect(notes()).toEqual(["Sleep debt, last 7 nights: 3 h 45 min"]);
-		expect(root.querySelector(".ghs-card-action")?.textContent).toBe("Tonight: aim for 7 h 45 min");
+		expect(root.querySelector(".ghs-foot-label")?.textContent).toBe(en.panelTonight);
+		expect(root.querySelector(".ghs-foot-value")?.textContent).toBe("Aim for 7 h 45 min");
+		expect(root.querySelector(".ghs-card-action")).toBeNull();
 		expect(root.querySelector(".ghs-card-warning")).toBeNull();
 	});
 

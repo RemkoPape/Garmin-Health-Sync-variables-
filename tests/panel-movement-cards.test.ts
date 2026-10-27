@@ -42,6 +42,7 @@ describe("steps card", () => {
 		expect(Array.from(root.querySelectorAll(".ghs-tick-label")).map((e) => e.textContent)).toEqual(["10.0k", "11.0k"]);
 		// 11,000 - 9,742 = 1,258 steps = 13 minutes at 100 steps/min
 		expect(text(".ghs-foot-value")).toBe("1,258 · 13 min walk");
+		expect(root.querySelector(".ghs-foot-good")).toBeNull(); // a quantity is not good news
 		expect(text(".ghs-foot-label")).toBe(en.panelToTopOfZone);
 		expect(root.querySelector(".ghs-dot-warn")).not.toBeNull();
 	});
@@ -57,6 +58,7 @@ describe("steps card", () => {
 	it("says the zone is done, and never warns, above it", async () => {
 		renderSteps(root, computeSteps(await steps(12_500), END), "en", false, noop);
 		expect(text(".ghs-foot-value")).toBe(en.panelZoneDone);
+		expect(root.querySelector(".ghs-foot-good")).not.toBeNull();
 		expect(root.querySelector(".ghs-dot-ok")).not.toBeNull();
 	});
 
@@ -153,6 +155,7 @@ describe("intensity minutes card", () => {
 	it("says the goal is reached", async () => {
 		renderIntensity(root, computeIntensity(await week([60, 60, 40, 0]), END), "en", false, noop);
 		expect(text(".ghs-foot-value")).toBe(en.panelGoalReached);
+		expect(root.querySelector(".ghs-foot-good")).not.toBeNull();
 	});
 
 	it("on the last day of the week, gives the minutes left without a per-day figure", async () => {
@@ -250,13 +253,13 @@ describe("floors card", () => {
 		expect(blocks).toHaveLength(14);
 		expect(root.querySelectorAll(".ghs-block-filled")).toHaveLength(8);
 		expect(root.querySelectorAll(".ghs-block-zone")).toHaveLength(3);
-		expect(text(".ghs-foot-value")).toBe("Floors to go: 2–3 · take the stairs");
+		expect(text(".ghs-foot-value")).toBe("Floors to go: 2–3");
 		expect(text(".ghs-foot-label")).toBe(en.panelToYourZone);
 	});
 
 	it("gives a single number when only one floor is left to the zone", async () => {
 		renderFloors(root, computeFloors(await floors(10), END), "en", false, noop);
-		expect(text(".ghs-foot-value")).toBe("Floors to go: 1 · take the stairs");
+		expect(text(".ghs-foot-value")).toBe("Floors to go: 1");
 	});
 
 	it("says the zone is done at or above its top", async () => {
@@ -289,7 +292,7 @@ describe("floors card", () => {
 
 	it("speaks the plugin language and shows the explanation", async () => {
 		renderFloors(root, computeFloors(await floors(8), END), "de", true, noop);
-		expect(text(".ghs-foot-value")).toBe("Etagen bis zur Zone: 2–3 · nimm die Treppe");
+		expect(text(".ghs-foot-value")).toBe("Etagen bis zur Zone: 2–3");
 		expect(text(".ghs-explain")).toBe(de.panelFloorsExplain);
 	});
 });

@@ -81,6 +81,5 @@ export function renderVo2(parent: HTMLElement, model: Vo2Model, lang: string, ex
 		});
 		const foot = card.createDiv({ cls: "ghs-foot" });
 		foot.createSpan({ cls: "ghs-foot-label", text: `${ARROWS[model.direction]} ${t("panelVo2Change", lang).replace("{delta}", formatSigned(model.change, lang))}` });
-		foot.createSpan({ cls: "ghs-foot-value", text: t(model.direction === "up" ? "panelVo2Up" : model.direction === "down" ? "panelVo2Down" : "panelVo2Steady", lang) });
 	});
 }
