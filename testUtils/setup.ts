@@ -9,6 +9,7 @@ g.window = g.window ?? win;
 g.document = g.document ?? win.document;
 g.activeWindow = g.window;
 g.activeDocument = g.document;
+g.MutationObserver = win.MutationObserver;
 g.createFragment = (callback?: (el: DocumentFragment) => void): DocumentFragment => {
 	const frag = win.document.createDocumentFragment() as unknown as DocumentFragment;
 	callback?.(frag);
