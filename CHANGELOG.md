@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.35
+
+### Changed
+
+- Weekly load: every bar now says what it measures. The top bar has its own heading, "Training time" with the minutes, like "Running" or "Cycling" with their distance below it. All bars are drawn by the same code, so cycling (or any other distance sport with logged kilometres) looks exactly like running.
+
 ## 0.12.0-beta.34
 
 ### Changed

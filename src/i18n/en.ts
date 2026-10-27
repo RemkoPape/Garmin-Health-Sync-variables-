@@ -368,6 +368,7 @@ export const en = {
 	panelWeeksBasis: "Based on {have} of {need} weeks.",
 	panelWeeklyTitle: "Weekly load",
 	panelWeeklyExplain: "Weekly load adds up your training minutes of this week, without recovery sessions. The grey tick is your usual week, the average of your previous weeks. The red tick is the limit, 10 percent above it, a common ceiling for how fast to raise training. Minutes past the limit turn orange.",
+	panelWeeklyMinutes: "Training time",
 	panelWeeklyAverage: "Usual",
 	panelWeeklyCap: "Limit",
 	panelWeeklyFoot: "Until the limit",

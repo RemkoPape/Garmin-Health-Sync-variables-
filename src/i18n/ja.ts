@@ -369,6 +369,7 @@ export const ja: Record<TranslationKeys, string> = {
 	panelWeeksBasis: "{need}週中{have}週分に基づく値です。",
 	panelWeeklyTitle: "週間負荷",
 	panelWeeklyExplain: "週間負荷は、今週のトレーニング時間（リカバリーセッションを除く）の合計です。グレーの線は普段の週、つまりこれまでの週の平均です。赤い線は上限で、そこから10パーセント上、トレーニングを増やす速さの一般的な目安です。上限を超えた分はオレンジになります。",
+	panelWeeklyMinutes: "トレーニング時間",
 	panelWeeklyAverage: "普段",
 	panelWeeklyCap: "上限",
 	panelWeeklyFoot: "上限まで",
