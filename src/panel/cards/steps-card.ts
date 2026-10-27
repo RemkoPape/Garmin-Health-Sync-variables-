@@ -26,6 +26,8 @@ export interface StepsModel {
 	distance: { value: number; unit: "km" | "mi" } | null;
 	active: { value: number; avg: number | null } | null;
 	total: number | null;
+	/** Steps of the day before, to set an unfinished day against a whole one. */
+	dayBefore: number | null;
 	/** The shown day is today, so the day is not over. */
 	today: boolean;
 }
@@ -47,6 +49,7 @@ export function computeSteps(index: DayIndex, date: string): StepsModel {
 		distance: distanceValue === null ? null : { value: distanceValue, unit: km !== null ? "km" : "mi" },
 		active: active === null ? null : { value: active, avg: average(index, "calories_active", date, WINDOW_DAYS, STEPS_MIN_DAYS) },
 		total: index.value("calories_total", date),
+		dayBefore: index.value("steps", shiftDate(date, -1)),
 		today: date === localDateString(new Date()),
 	};
 }
@@ -98,6 +101,7 @@ export function renderSteps(parent: HTMLElement, model: StepsModel, lang: string
 		}
 		if (model.active) chip(chips, t("panelActive", lang), formatNumber(model.active.value, lang, 0), model.active.avg === null ? null : model.active.value - model.active.avg, lang);
 		if (model.total !== null) chip(chips, t("panelTotalKcal", lang), formatNumber(model.total, lang, 0), null, lang);
+		if (model.dayBefore !== null) chip(chips, t("panelDayBefore", lang), formatNumber(model.dayBefore, lang, 0), model.dayBefore - model.base, lang);
 		if (!chips.hasChildNodes()) chips.remove();
 	});
 }

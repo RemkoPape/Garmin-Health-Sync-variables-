@@ -1,20 +1,13 @@
-import { shiftDate, weekStart } from "../../dates";
+import { weekStart } from "../../dates";
 import { t } from "../../i18n/t";
 import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
-import { CHRONIC_WEEKS, DISTANCE_CATEGORIES, heartRateHistory, intensityStep, kmBetween, minutesBetween, previousWeeks, previousWeeksKm, type DistanceCategory, type Step } from "../load";
-import { isRecovery } from "../sessions";
-import { maxHrAt } from "../zones";
+import { CHRONIC_WEEKS, DISTANCE_CATEGORIES, kmBetween, minutesBetween, previousWeeks, previousWeeksKm, type DistanceCategory } from "../load";
 import { renderCard } from "./shell";
 import type { Insight } from "../insights/registry";
 
 /** Training may grow by at most this much over the average of the previous weeks. */
 const CAP_FACTOR = 1.1;
-
-export interface WeekSegment {
-	minutes: number;
-	step: Step | null;
-}
 
 /** The week of a distance sport: kilometres so far against the average of the previous weeks and a cap 10 percent above it. */
 export interface WeeklyDistance {
@@ -27,28 +20,18 @@ export interface WeeklyDistance {
 export interface WeeklyModel {
 	/** What the data suggests, filled in by the panel (see insights/). */
 	insights: Insight[];
-	/** Segment colours come from heart rate zones (a birth year is set). */
-	zones: boolean;
 	/** Running and cycling distance, for the sports that have any this week or in the previous weeks. */
 	distances: WeeklyDistance[];
 	/** Minutes so far this week, up to and including the shown day. */
 	minutes: number;
-	/** The sessions of the week so far in order. */
-	segments: WeekSegment[];
 	/** Previous complete weeks that were used (0 to 4). */
 	weeks: number;
 	average: number | null;
 	cap: number | null;
 }
 
-export function computeWeekly(index: DayIndex, date: string, birthYear: number | null = null): WeeklyModel {
-	const maxHr = maxHrAt(birthYear, date);
+export function computeWeekly(index: DayIndex, date: string): WeeklyModel {
 	const start = weekStart(date);
-	const history = heartRateHistory(index, date);
-	const segments: WeekSegment[] = [];
-	for (let day = start; day <= date; day = shiftDate(day, 1)) {
-		for (const s of index.sessions(day)) if (!isRecovery(s)) segments.push({ minutes: s.minutes, step: intensityStep(s, history, maxHr) });
-	}
 	const previous = previousWeeks(index, date);
 	const average = previous.length === 0 ? null : previous.reduce((a, b) => a + b, 0) / previous.length;
 	const distances: WeeklyDistance[] = [];
@@ -58,13 +41,13 @@ export function computeWeekly(index: DayIndex, date: string, birthYear: number |
 		const average = before.length === 0 ? 0 : before.reduce((a, b) => a + b, 0) / before.length;
 		if (km > 0 || average > 0) distances.push({ category, km, average, cap: average * CAP_FACTOR });
 	}
-	return { insights: [], zones: maxHr !== null, distances, minutes: minutesBetween(index, start, date), segments, weeks: previous.length, average, cap: average === null ? null : average * CAP_FACTOR };
+	return { insights: [], distances, minutes: minutesBetween(index, start, date), weeks: previous.length, average, cap: average === null ? null : average * CAP_FACTOR };
 }
 
 const KM_PER_MILE = 1.609344;
 
 export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: string, imperial: boolean, explainOpen: boolean, onToggleExplain: () => void): void {
-	renderCard(parent, { title: t("panelWeeklyTitle", lang), value: formatNumber(model.minutes, lang, 0), unit: "min", explain: model.zones ? `${t("panelWeeklyExplain", lang)} ${t("panelHardnessZones", lang)}` : t("panelWeeklyExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
+	renderCard(parent, { title: t("panelWeeklyTitle", lang), value: formatNumber(model.minutes, lang, 0), unit: "min", explain: t("panelWeeklyExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
 		if (model.average === null || model.cap === null) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLoadLocked", lang) });
 			return;
@@ -72,16 +55,15 @@ export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: stri
 		const domain = Math.max(model.cap * 1.25, model.minutes * 1.05, 1);
 		const bar = card.createDiv({ cls: "ghs-range ghs-range-labelled ghs-weekly", attr: { role: "img", "aria-label": formatNumber(model.minutes, lang, 0) } });
 		const track = bar.createDiv({ cls: "ghs-weekly-track" });
-		for (const s of model.segments) {
-			track.createDiv({ cls: `ghs-weekly-seg ghs-step-${s.step ?? "none"}` }).setCssProps({ "--ghs-w": `${(s.minutes / domain) * 100}%` });
-		}
+		track.createDiv({ cls: "ghs-weekly-seg" }).setCssProps({ "--ghs-w": `${(Math.min(model.minutes, model.cap) / domain) * 100}%` });
+		if (model.minutes > model.cap) track.createDiv({ cls: "ghs-weekly-seg ghs-weekly-seg-over" }).setCssProps({ "--ghs-w": `${((model.minutes - model.cap) / domain) * 100}%` });
 		const over = bar.createDiv({ cls: "ghs-weekly-over" });
 		over.setCssProps({ "--ghs-x": `${(model.cap / domain) * 100}%` });
 		bar.createDiv({ cls: "ghs-tick ghs-tick-solid" }).setCssProps({ "--ghs-x": `${(model.average / domain) * 100}%` });
 		bar.createDiv({ cls: "ghs-tick ghs-tick-solid ghs-tick-cap" }).setCssProps({ "--ghs-x": `${(model.cap / domain) * 100}%` });
 		const labels = bar.createDiv({ cls: "ghs-range-labels" });
-		labels.createSpan({ cls: "ghs-tick-label", text: t("panelWeeklyAverage", lang) }).setCssProps({ "--ghs-x": `${(model.average / domain) * 100}%` });
-		labels.createSpan({ cls: "ghs-tick-label", text: t("panelWeeklyCap", lang) }).setCssProps({ "--ghs-x": `${(model.cap / domain) * 100}%` });
+		labels.createSpan({ cls: "ghs-tick-label", text: `${t("panelWeeklyAverage", lang)} ${formatNumber(model.average, lang, 0)}` }).setCssProps({ "--ghs-x": `${(model.average / domain) * 100}%` });
+		labels.createSpan({ cls: "ghs-tick-label", text: `${t("panelWeeklyCap", lang)} ${formatNumber(model.cap, lang, 0)}` }).setCssProps({ "--ghs-x": `${(model.cap / domain) * 100}%` });
 		const left = Math.round(model.cap - model.minutes);
 		const foot = card.createDiv({ cls: "ghs-foot" });
 		foot.createSpan({ cls: "ghs-foot-label", text: t("panelWeeklyFoot", lang) });

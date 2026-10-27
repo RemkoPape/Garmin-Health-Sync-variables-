@@ -714,7 +714,11 @@
 
 .ghs-weekly-seg {
 	width: var(--ghs-w, 0%);
-	border-right: 1px solid var(--background-secondary);
+	background: var(--ghs-data);
+}
+
+.ghs-weekly-seg-over {
+	background: var(--color-orange);
 }
 
 .ghs-weekly-over {

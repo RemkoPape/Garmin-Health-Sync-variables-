@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.31
+
+### Added
+
+- Steps card: a fourth small tile, **Day before**, with the steps of the previous day and how far it was above or below your usual. An unfinished day now has a whole one beside it.
+
+### Changed
+
+- Weekly load is easier to read: one bar filled in a single colour with the minutes so far, the usual week (grey tick) and the limit (red tick) now labelled with their minutes ("Usual 210", "Limit 231"), and the minutes past the limit turning orange. The session-by-session intensity colouring is gone from this bar; the Sessions card still shows it.
+- Weekly load wording: "Until the limit / 111 min left", "Over the limit", and the distance rows read "Usual 35 km · limit 38.5 km". The explanation under the light bulb is rewritten to match.
+
 ## 0.12.0-beta.30
 
 ### Changed

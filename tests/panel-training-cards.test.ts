@@ -133,17 +133,6 @@ describe("load balance and weekly load with a birth year", () => {
 		renderLoad(root, zoned, "en", true, noop);
 		expect(text(".ghs-explain")).toBe(`${en.panelLoadExplain} ${en.panelHardnessZones}`);
 	});
-
-	it("colours the weekly segments by zone and extends the explanation", async () => {
-		const index = await indexOf(() => ({ running: "30min · Ø150 bpm" }));
-		const model = computeWeekly(index, END, born);
-		expect(model.zones).toBe(true);
-		expect(model.segments.every((s) => s.step === 3)).toBe(true);
-		renderWeekly(root, model, "en", false, true, noop);
-		expect(root.querySelector(".ghs-weekly-seg.ghs-step-3")).not.toBeNull();
-		expect(text(".ghs-explain")).toBe(`${en.panelWeeklyExplain} ${en.panelHardnessZones}`);
-		expect(computeWeekly(index, END).zones).toBe(false);
-	});
 });
 
 describe("weekly load card", () => {
@@ -157,29 +146,27 @@ describe("weekly load card", () => {
 		expect(model.cap).toBeCloseTo(231);
 		renderWeekly(root, model, "en", false, false, noop);
 		expect(text(".ghs-card-value")).toBe("120 min");
-		expect(text(".ghs-foot-value")).toBe("111 min left this week");
+		expect(text(".ghs-foot-value")).toBe("111 min left");
 		expect(text(".ghs-foot-label")).toBe(en.panelWeeklyFoot);
-		expect(Array.from(root.querySelectorAll(".ghs-tick-label")).map((e) => e.textContent)).toEqual(["Average", "Cap"]);
+		expect(Array.from(root.querySelectorAll(".ghs-tick-label")).map((e) => e.textContent)).toEqual(["Usual 210", "Limit 231"]);
 		expect(root.querySelector(".ghs-card-warning")).toBeNull();
 	});
 
-	it("draws one segment per session of the week, in order", async () => {
-		const model = computeWeekly(await week(30), END);
-		expect(model.segments).toHaveLength(4);
-		renderWeekly(root, model, "en", false, false, noop);
+	it("fills the bar with the minutes so far in one colour, up to the limit", async () => {
+		renderWeekly(root, computeWeekly(await week(30), END), "en", false, false, noop);
 		const segs = Array.from(root.querySelectorAll<HTMLElement>(".ghs-weekly-seg"));
-		expect(segs).toHaveLength(4);
+		expect(segs).toHaveLength(1);
 		const domain = Math.max(231 * 1.25, 120 * 1.05);
-		expect(parseFloat(segs[0]!.style.getPropertyValue("--ghs-w"))).toBeCloseTo((30 / domain) * 100, 6);
-		expect(segs[0]!.classList.contains("ghs-step-none")).toBe(true);
+		expect(parseFloat(segs[0]!.style.getPropertyValue("--ghs-w"))).toBeCloseTo((120 / domain) * 100, 6);
 	});
 
-	it("colours segments by intensity once the history has 10 sessions with a heart rate", async () => {
-		const index = await indexOf((ago) => ({ running: `30min · Ø${120 + (ago % 5) * 15} bpm` }));
-		const model = computeWeekly(index, END);
-		expect(model.segments.every((s) => s.step !== null)).toBe(true);
-		renderWeekly(root, model, "en", false, false, noop);
-		expect(root.querySelector(".ghs-weekly-seg.ghs-step-none")).toBeNull();
+	it("turns the minutes past the limit orange", async () => {
+		renderWeekly(root, computeWeekly(await week((ago) => (ago < 4 ? 90 : 30)), END), "en", false, false, noop);
+		const segs = Array.from(root.querySelectorAll<HTMLElement>(".ghs-weekly-seg"));
+		expect(segs).toHaveLength(2);
+		expect(segs[1]!.classList.contains("ghs-weekly-seg-over")).toBe(true);
+		const domain = 360 * 1.05; // 4 x 90 minutes against a limit of 231
+		expect(parseFloat(segs[1]!.style.getPropertyValue("--ghs-w"))).toBeCloseTo(((360 - 231) / domain) * 100, 6);
 	});
 
 	it("warns when the week is over the cap", async () => {
@@ -209,7 +196,7 @@ describe("weekly load card", () => {
 
 	it("speaks the plugin language and shows the explanation", async () => {
 		renderWeekly(root, computeWeekly(await week(30), END), "de", false, true, noop);
-		expect(text(".ghs-foot-value")).toBe("Noch 111 Min. diese Woche");
+		expect(text(".ghs-foot-value")).toBe("Noch 111 Min.");
 		expect(text(".ghs-explain")).toBe(de.panelWeeklyExplain);
 	});
 });
@@ -233,7 +220,7 @@ describe("weekly distance of running and cycling", () => {
 		const model = computeWeekly(await km(5), END);
 		expect(model.distances).toEqual([{ category: "running", km: 20, average: 35, cap: expect.closeTo(38.5, 6) }]);
 		renderWeekly(root, model, "en", false, false, noop);
-		expect(row()).toEqual({ label: en.panelCategoryRunning, value: "20 km", foot: "Average 35 km · cap 38.5 km", left: "18.5 km left" });
+		expect(row()).toEqual({ label: en.panelCategoryRunning, value: "20 km", foot: "Usual 35 km · limit 38.5 km", left: "18.5 km left" });
 		expect(root.querySelectorAll(".ghs-battery-row")).toHaveLength(1);
 		const over = root.querySelector(".ghs-battery-bar .ghs-weekly-over") as HTMLElement;
 		expect(over).not.toBeNull();
@@ -249,7 +236,7 @@ describe("weekly distance of running and cycling", () => {
 	it("shows miles for imperial users", async () => {
 		renderWeekly(root, computeWeekly(await km(5), END), "en", true, false, noop);
 		expect(row().value).toBe("12.4 mi");
-		expect(row().foot).toBe("Average 21.7 mi · cap 23.9 mi");
+		expect(row().foot).toBe("Usual 21.7 mi · limit 23.9 mi");
 	});
 
 	it("tracks cycling too and lists the sports in a fixed order", async () => {
@@ -287,7 +274,7 @@ describe("weekly distance of running and cycling", () => {
 		renderWeekly(root, computeWeekly(await km(5), END), "de", false, false, noop);
 		expect(row().label).toBe(de.panelCategoryRunning);
 		expect(row().left).toBe("Noch 18,5 km");
-		expect(row().foot).toBe("Schnitt 35 km · Grenze 38,5 km");
+		expect(row().foot).toBe("Üblich 35 km · Grenze 38,5 km");
 	});
 });
 

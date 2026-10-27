@@ -72,7 +72,7 @@ describe("steps card", () => {
 		const index = await indexOf((ago) => ({ steps: 10_000, distance_km: 7.2, calories_active: ago === 0 ? 583 : 610, calories_total: 2410 }));
 		renderSteps(root, computeSteps(index, END), "en", false, noop);
 		const chips = Array.from(root.querySelectorAll(".ghs-chip")).map((c) => c.textContent);
-		expect(chips).toEqual(["Distance7.2 km", "Active583 −27", "Total kcal2,410"]);
+		expect(chips).toEqual(["Distance7.2 km", "Active583 −27", "Total kcal2,410", "Day before10,000"]);
 		expect(root.querySelector(".ghs-chip-delta-down")).not.toBeNull();
 	});
 
@@ -98,9 +98,16 @@ describe("steps card", () => {
 		expect(text(".ghs-chip-value")).toBe("4.5 mi");
 	});
 
-	it("omits the chips when the notes have none of them", async () => {
-		renderSteps(root, computeSteps(await steps(9000), END), "en", false, noop);
+	it("omits the chips when the notes have none of them and there is no day before", async () => {
+		const noDayBefore = await indexOf((ago) => (ago === 1 ? null : { steps: ago === 0 ? 9000 : 10_000 }));
+		renderSteps(root, computeSteps(noDayBefore, END), "en", false, noop);
 		expect(root.querySelector(".ghs-chips")).toBeNull();
+	});
+
+	it("sets the day before against the usual steps, so an unfinished day has a whole one beside it", async () => {
+		const index = await indexOf((ago) => ({ steps: ago === 0 ? 3000 : ago === 1 ? 8000 : 10_000 }));
+		renderSteps(root, computeSteps(index, END), "en", false, noop);
+		expect(Array.from(root.querySelectorAll(".ghs-chip")).map((c) => c.textContent)).toEqual(["Day before8,000 −1,714"]);
 	});
 
 	it("says there is no reading but keeps the card when the day has no steps", async () => {

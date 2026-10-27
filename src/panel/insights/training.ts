@@ -22,7 +22,7 @@ export function loadInsights(s: Signals): Insight[] {
 const ON_TRACK_FROM = 0.8;
 
 export function weeklyInsights(s: Signals): Insight[] {
-	const m = computeWeekly(s.index, s.date, s.birthYear);
+	const m = computeWeekly(s.index, s.date);
 	if (m.average === null || m.cap === null || m.average === 0) return [];
 	if (m.minutes > m.cap) return [{ id: "weekly_over_cap", params: { pct: pct(m.minutes / m.average - 1) } }];
 	return m.minutes >= m.cap * ON_TRACK_FROM ? [{ id: "weekly_on_track" }] : [];
