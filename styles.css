@@ -850,9 +850,7 @@
 	bottom: 0;
 }
 
-.ghs-night-window,
-.ghs-night-asleep,
-.ghs-night-need {
+.ghs-night-asleep {
 	position: absolute;
 	left: 0;
 	right: 0;
@@ -860,24 +858,12 @@
 	height: var(--ghs-h, 0%);
 	box-sizing: border-box;
 	border-radius: var(--radius-s);
-}
-
-.ghs-night-window {
-	background: var(--ghs-data);
-	opacity: 0.25;
-}
-
-.ghs-night-asleep {
 	background: var(--ghs-data);
 	opacity: 0.65;
 }
 
 .ghs-night-asleep-last {
 	opacity: 1;
-}
-
-.ghs-night-need {
-	border: 1px dashed var(--text-muted);
 }
 
 .ghs-distance-fill {

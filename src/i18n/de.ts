@@ -288,7 +288,7 @@ export const de: Record<TranslationKeys, string> = {
 	panelSleepTitle: "Schlaf",
 	panelSleepExplain: "Die Schlafschuld summiert, wie weit du in den letzten 7 Nächten jeweils unter {need} Stunden geblieben bist. Der Tipp für heute Nacht sind {need} Stunden plus ein Viertel der Schuld, höchstens eine Stunde extra, auf 15 Minuten abgerundet. Der Bedarf ist individuell, nimm es als grobe Orientierung. Das ist keine medizinische Beratung.",
 	panelSleepSchedule: "Schlafenszeit {bed} ±{bedSd} Min. · Aufstehen {wake} ±{wakeSd} Min.",
-	panelSleepExplainTimes: "Jede Spalte reicht von der Schlafenszeit bis zum Aufstehen: der blasse Balken ist die Zeit im Bett, der volle Balken die Schlafzeit und der gestrichelte Kasten sind {need} Stunden ab Schlafenszeit. Ein voller Balken, der über dem Kasten endet, bedeutet zu wenig Schlaf in dieser Nacht. Die ±-Werte zeigen, wie stark deine Zeiten schwanken.",
+	panelSleepExplainTimes: "Jede Spalte ist eine Nacht: Der Balken beginnt zur Schlafenszeit und ist so lang wie dein Schlaf, die gepunkteten Linien markieren deine übliche Schlafens- und Aufwachzeit. Ein Balken, der unter der ersten Linie beginnt, ist eine späte Nacht, einer, der über der zweiten endet, eine kurze.",
 	panelSleepDebt: "Schlafschuld, letzte 7 Nächte: {debt}",
 	panelSleepNoDebt: "Keine Schlafschuld in den letzten 7 Nächten",
 	panelSleepDebtPersonal: "Schlafschuld, letzte 7 Nächte: {debt}, gemessen an deinem Üblichen {usual}",

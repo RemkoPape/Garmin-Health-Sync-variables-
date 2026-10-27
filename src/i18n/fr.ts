@@ -287,7 +287,7 @@ export const fr: Record<TranslationKeys, string> = {
 	panelSleepTitle: "Sommeil",
 	panelSleepExplain: "La dette de sommeil additionne ce qui vous a manqué par rapport à {need} heures sur chacune des 7 dernières nuits. La suggestion pour ce soir est {need} heures plus un quart de la dette, au plus une heure de plus, arrondie à 15 minutes inférieures. Les besoins varient, voyez-y un repère approximatif. Ceci n’est pas un avis médical.",
 	panelSleepSchedule: "Coucher {bed} ±{bedSd} min · lever {wake} ±{wakeSd} min",
-	panelSleepExplainTimes: "Chaque colonne va du coucher au lever : la barre pâle est le temps au lit, la barre pleine le temps dormi et le cadre en pointillés représente {need} heures à partir du coucher. Une barre pleine qui s’arrête au-dessus du cadre signifie trop peu de sommeil cette nuit-là. Les valeurs ± montrent la régularité de vos horaires.",
+	panelSleepExplainTimes: "Chaque colonne est une nuit : la barre commence au coucher et dure autant que votre sommeil, et les lignes pointillées marquent vos heures habituelles de coucher et de lever. Une barre qui commence sous la première ligne est une nuit tardive, une qui finit au-dessus de la seconde, une nuit courte.",
 	panelSleepDebt: "Dette de sommeil, 7 dernières nuits : {debt}",
 	panelSleepNoDebt: "Aucune dette de sommeil sur les 7 dernières nuits",
 	panelSleepDebtPersonal: "Dette de sommeil, 7 dernières nuits : {debt}, par rapport à votre habitude de {usual}",

@@ -284,7 +284,7 @@ describe("sleep timeline (nights with bedtime and wake-up time)", () => {
 		expect(model.nights.every((n) => n.bed === null && n.span === null)).toBe(true);
 	});
 
-	it("places each night on a clock that runs downwards with the need as a dashed box from bedtime", async () => {
+	it("places each night on a clock that runs downwards as one bar from bedtime as long as the sleep", async () => {
 		const model = computeSleep(await timed((ago) => (ago === 0 ? 360 : 450)), END);
 		render(model);
 		// bedtime 23:00 = 1380, up at 06:30: 450 min in bed; axis from 22:00 to 07:00 (540 min)
@@ -292,11 +292,10 @@ describe("sleep timeline (nights with bedtime and wake-up time)", () => {
 		expect(root.querySelector(".ghs-axis-bottom")).toBeNull(); // 07:00 would sit on the 06:30 line
 		const css = (el: Element | null, prop: string): string => (el as HTMLElement).style.getPropertyValue(prop);
 		const last = root.querySelectorAll(".ghs-night")[6]!;
-		expect(css(last.querySelector(".ghs-night-window"), "--ghs-y")).toBe(`${(60 / 540) * 100}%`);
-		expect(css(last.querySelector(".ghs-night-window"), "--ghs-h")).toBe(`${(450 / 540) * 100}%`);
-		expect(css(last.querySelector(".ghs-night-need"), "--ghs-h")).toBe(`${(420 / 540) * 100}%`);
-		// the shown night slept 6 h: its solid bar is shorter than the dashed need box
+		expect(css(last.querySelector(".ghs-night-asleep"), "--ghs-y")).toBe(`${(60 / 540) * 100}%`);
 		expect(css(last.querySelector(".ghs-night-asleep"), "--ghs-h")).toBe(`${(360 / 540) * 100}%`);
+		expect(root.querySelector(".ghs-night-window")).toBeNull();
+		expect(root.querySelector(".ghs-night-need")).toBeNull();
 		expect(last.querySelector(".ghs-night-asleep-last")).not.toBeNull();
 		expect(root.querySelectorAll(".ghs-night-asleep-last")).toHaveLength(1);
 		const first = root.querySelectorAll(".ghs-night")[0]!;
@@ -325,7 +324,7 @@ describe("sleep timeline (nights with bedtime and wake-up time)", () => {
 		const model = computeSleep(await timed((ago) => (ago === 3 ? null : 420), (ago) => (ago === 5 ? null : { start: "23:00", end: "06:30" })), END);
 		render(model);
 		const cols = Array.from(root.querySelectorAll(".ghs-night"));
-		expect(cols[1]!.querySelector(".ghs-night-window")).toBeNull();
+		expect(cols[1]!.querySelector(".ghs-night-asleep")).toBeNull();
 		expect(cols[1]!.querySelector(".ghs-night-day")).not.toBeNull();
 		expect((cols[3]!.querySelector(".ghs-night-asleep") as HTMLElement).style.getPropertyValue("--ghs-h")).toBe(`${(450 / 540) * 100}%`);
 	});
@@ -390,14 +389,5 @@ describe("sleep need by age", () => {
 		renderSleep(root, model, "en", true, () => undefined);
 		expect(root.querySelector(".ghs-nights-need-label")?.textContent).toBe("8 h");
 		expect(root.querySelector(".ghs-explain")?.textContent).toContain("fell short of 8 hours");
-	});
-
-	it("uses the need for the timeline's dashed box too", async () => {
-		const app = new App();
-		await seedHistory(app, { end: END, days: 7, frontmatter: () => ({ sleep_duration: dur(450), sleep_start: "23:00", sleep_end: "07:00" }) });
-		const model = computeSleep(new DayIndex(app as never, () => settings), END, 2026 - 15);
-		renderSleep(root, model, "en", true, () => undefined);
-		expect((root.querySelector(".ghs-night-need") as HTMLElement).style.getPropertyValue("--ghs-h")).not.toBe("");
-		expect(root.querySelector(".ghs-explain")?.textContent).toContain("dashed box is 8 hours from bedtime");
 	});
 });
