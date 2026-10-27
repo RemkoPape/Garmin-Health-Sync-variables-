@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0-beta.20
+
+### Changed
+
+- **Darker text.** Titles, rows, notes, footers, labels on scales and the explanation now use the normal text colour instead of the muted grey; only units and the section headers stay muted. The weight of a line (bold value, normal label) carries the hierarchy instead of the grey.
+- **Trend bars are readable**: muted grey bars with the latest day in the normal text colour, 4 px wide (they were a very light grey).
+- **Light bulb:** 16 px with a normal 2 px stroke in the normal text colour, flush with the right edge of the card like the values below it. On a phone the 44 px touch target reaches into the empty space to its left instead of pushing the icon inwards.
+
 ## 0.12.0-beta.19
 
 ### Changed
