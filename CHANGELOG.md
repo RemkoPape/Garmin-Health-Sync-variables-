@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0-beta.37
+
+### Changed
+
+- Dark theme: the accent colour used in the panel (the left edge, bars and shades) is lifted to a lightness that stands out on a dark card, instead of using a dark accent as it is. Earlier nights in the sleep chart fade less.
+- The card background now carries a hint of your accent colour: 5 percent in a light theme, 10 percent in a dark one, so the cards sit in the theme instead of beside it. The shades and the dot rings use the same card colour.
+
 ## 0.12.0-beta.36
 
 ### Changed
