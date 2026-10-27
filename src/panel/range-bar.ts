@@ -38,7 +38,7 @@ export function rangeBar(parent: HTMLElement, o: RangeBarOptions): HTMLElement {
 		wrap.createDiv({ cls: "ghs-tick" }).setCssProps({ "--ghs-x": x });
 		labels?.createSpan({ cls: "ghs-tick-label", text: formatNumber(edge, o.lang, 0) }).setCssProps({ "--ghs-x": x });
 	}
-	if (o.labels === false) wrap.addClass("ghs-range-compact");
+	wrap.addClass(o.labels === false ? "ghs-range-compact" : "ghs-range-labelled");
 	wrap.createDiv({ cls: `ghs-dot ghs-dot-${o.tone}` }).setCssProps({ "--ghs-x": `${pct(o.value, o.mean, o.sd)}%` });
 	return wrap;
 }

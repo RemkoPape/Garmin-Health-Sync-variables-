@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.0-beta.19
+
+### Changed
+
+- **Layout and formatting polish across all cards, no information changed.**
+  - One text scale: the title and the lines of a card (rows, notes, footers) share one size, and numbers on scales, the trend and the explanation are one step smaller. Before, rows and notes on the same card used different sizes.
+  - One bar thickness (8 px) for every bar: stages, weekly load, stress split, body battery.
+  - The trend line is set apart from the card's content by a hairline and is lighter (thinner, softer bars).
+  - The stressed/recovering labels are calm text with a coloured dot instead of bold coloured text.
+  - Bars without numbers underneath no longer reserve room for them (the gap under the stress bar, load balance).
+  - The light bulb is smaller and quieter (13 px, set on the icon itself so Obsidian's own icon size no longer overrides it); the touch target stays 44 px on a phone.
+
 ## 0.12.0-beta.18
 
 ### Added
