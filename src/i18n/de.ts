@@ -4,6 +4,7 @@ export const de: Record<TranslationKeys, string> = {
 	// Commands
 	commandSync: "Aktuelle Notiz synchronisieren",
 	commandBackfill: "Gesundheitsdaten nachträglich auffüllen",
+	commandImportHistory: "Verlauf aus Daily Notes importieren",
 	commandManualLogin: "Mit Service-Ticket anmelden",
 
 	// Settings
@@ -23,8 +24,11 @@ export const de: Record<TranslationKeys, string> = {
 	settingsAutoSync: "Gesundheitsdaten automatisch synchronisieren",
 	settingsAutoSyncDesc: "Automatisch die letzten 7 Tage abrufen beim Start von Obsidian",
 	settingsAutoSyncPaused: "Pausiert wegen Auth-Fehler — nach erneutem Login wieder aktivieren",
-	settingsCreateDailyNote: "Daily Note bei Bedarf anlegen",
-	settingsCreateDailyNoteDesc: "Wenn deaktiviert, wartet der Auto-Sync, bis eine echte Daily Note existiert, statt eine anzulegen (leere Platzhalter zählen nicht). Manueller Sync und Backfill legen weiterhin Notes an. Hilft, Konflikte mit Tools zu vermeiden, die die Note verwalten.",
+	settingsMissingNote: "Tage ohne Daily Note",
+	settingsMissingNoteDesc: "Was das Plugin mit einem Tag ohne Daily Note macht, bei Auto-Sync und Nachsynchronisierung. Note anlegen: wie bisher. In Verlaufsdateien speichern: Der Tag wird in kleinen Monatsnotizen im Ordner „Garmin history“ neben deinen Daily Notes abgelegt, die das Panel liest, und es wird keine Note angelegt; Tage mit Note werden in Note und Verlauf gespeichert. Tag überspringen: Es werden nur Tage abgerufen, die schon eine Note haben.",
+	missingNoteCreate: "Note anlegen",
+	missingNoteHistory: "In Verlaufsdateien speichern",
+	missingNoteSkip: "Tag überspringen",
 	settingsPrefix: "Property-Präfix",
 	settingsPrefixDesc: "'ohs_' Präfix vor alle Properties setzen",
 	settingsDailyNotePath: "Daily Notes Pfad",
@@ -102,6 +106,8 @@ export const de: Record<TranslationKeys, string> = {
 	noticeBackfillStart: "Starte Nachsynchronisierung...",
 	noticeBackfillDone: "Nachsynchronisierung abgeschlossen: {count} Tage aktualisiert",
 	noticeBackfillDoneWithErrors: "Nachsynchronisierung abgeschlossen: {count} Tage aktualisiert, {failed} fehlgeschlagen (siehe Konsole)",
+	noticeHistoryImported: "{count} Tage aus deinen Daily Notes in den Verlauf kopiert",
+	noticeHistoryImportEmpty: "Keine Garmin-Daten in deinen Daily Notes gefunden",
 
 	noticeManualLoginFailed: "Manuelle Anmeldung fehlgeschlagen — kein gültiges Ticket gefunden oder Ticket abgelaufen. Tickets sind nur einmal und kurz gültig; bitte erneut anmelden und das neue Ticket sofort einfügen.",
 

@@ -30,6 +30,8 @@ const PANEL_CARD_KEY_PREFIX = "panel:";
 
 export type ServerRegion = "international" | "china";
 export type UnitSystem = "metric" | "imperial";
+/** What happens with a day that has no daily note: create the note, keep the day only in the history notes, or leave the day alone (no fetching). */
+export type MissingNoteBehaviour = "create" | "history" | "skip";
 
 export interface HealthSyncSettings {
 	usePrefix: boolean;
@@ -43,7 +45,7 @@ export interface HealthSyncSettings {
 	garminOAuth2: string; // JSON-serialized OAuth2Token (short-lived)
 	language: string;
 	autoSync: boolean;
-	createDailyNoteIfMissing: boolean; // When false, sync waits for the note instead of creating it
+	missingNoteBehaviour: MissingNoteBehaviour; // What to do with a day that has no daily note
 	writeTrainings: boolean; // Machine-readable training data in frontmatter
 	writeWorkoutLocation: boolean; // Reverse-geocoded workout location in frontmatter
 	serverRegion: ServerRegion;
@@ -66,7 +68,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	garminOAuth2: "",
 	language: "en",
 	autoSync: true,
-	createDailyNoteIfMissing: true,
+	missingNoteBehaviour: "create",
 	writeTrainings: false,
 	writeWorkoutLocation: true,
 	serverRegion: "international",
@@ -174,9 +176,17 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			// still create. Avoids conflicts with the tool that owns the note
 			// (Templater, Calendar, an external sync, ...).
 			{
-				name: t("settingsCreateDailyNote", lang),
-				desc: t("settingsCreateDailyNoteDesc", lang),
-				control: { type: "toggle", key: "createDailyNoteIfMissing" },
+				name: t("settingsMissingNote", lang),
+				desc: t("settingsMissingNoteDesc", lang),
+				control: {
+					type: "dropdown",
+					key: "missingNoteBehaviour",
+					options: {
+						create: t("missingNoteCreate", lang),
+						history: t("missingNoteHistory", lang),
+						skip: t("missingNoteSkip", lang),
+					},
+				},
 			},
 			{
 				name: t("settingsDailyNotePath", lang),

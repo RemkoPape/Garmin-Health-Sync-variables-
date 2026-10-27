@@ -8,6 +8,7 @@ import { seedHistory } from "../testUtils/fakeHistory";
 import { DEFAULT_SETTINGS } from "../src/settings";
 import { en } from "../src/i18n/en";
 import { de } from "../src/i18n/de";
+import { serializeMonth } from "../src/history/format";
 
 const NOW = new Date(2026, 9, 22, 10, 0, 0);
 
@@ -122,6 +123,36 @@ describe("health panel view", () => {
 		app.vault.fire(event, app.vault.getMarkdownFiles()[0]!);
 		await vi.advanceTimersByTimeAsync(300);
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
+	});
+
+	it("draws the day from the history notes once they are read, and again when a history note changes", async () => {
+		const app = new App();
+		const path = "Garmin history/Garmin history 2026-10.md";
+		app.vault.seed(path, serializeMonth("2026-10", new Map([["2026-10-22", { hrv: 64 }]])));
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
+		await view.onOpen();
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms");
+		app.vault.overwrite(path, serializeMonth("2026-10", new Map([["2026-10-22", { hrv: 65 }]])));
+		app.metadataCache.fireChanged(app.vault.getAbstractFileByPath(path) as never);
+		await vi.advanceTimersByTimeAsync(300);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("65 ms");
+	});
+
+	it("does not read the history notes again when an ordinary note changes", async () => {
+		const app = new App();
+		app.vault.seed("Garmin history/Garmin history 2026-10.md", serializeMonth("2026-10", new Map([["2026-10-22", { hrv: 64 }]])));
+		const reads = vi.spyOn(app.vault, "cachedRead");
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
+		await view.onOpen();
+		await vi.advanceTimersByTimeAsync(0);
+		const first = reads.mock.calls.length;
+		app.metadataCache.fireChanged(note("2026-10-22.md"));
+		await vi.advanceTimersByTimeAsync(300);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(reads.mock.calls.length).toBe(first);
 	});
 
 	it("drops a pending render when closed", async () => {

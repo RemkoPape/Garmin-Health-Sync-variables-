@@ -60,7 +60,7 @@ describe("the settings layout", () => {
 			["panelEnabled", "toggle"],
 			["birthYear", "text"],
 			["autoSync", "toggle"],
-			["createDailyNoteIfMissing", "toggle"],
+			["missingNoteBehaviour", "dropdown"],
 			["dailyNotePath", "text"],
 			["dailyNoteFormat", "text"],
 			["dailyNoteTemplate", "textarea"],
@@ -76,6 +76,7 @@ describe("the settings layout", () => {
 		expect(Object.keys(keyed(defs, "language").control!.options!)).toEqual(["en", "de", "zh", "ja", "es", "fr"]);
 		expect(keyed(defs, "serverRegion").control!.options).toEqual({ international: en.regionInternational, china: en.regionChina });
 		expect(keyed(defs, "unitSystem").control!.options).toEqual({ metric: en.unitMetric, imperial: en.unitImperial });
+		expect(keyed(defs, "missingNoteBehaviour").control!.options).toEqual({ create: en.missingNoteCreate, history: en.missingNoteHistory, skip: en.missingNoteSkip });
 	});
 
 	it("shows standard metrics in a group and extended ones on their own page", () => {

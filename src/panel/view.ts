@@ -1,14 +1,17 @@
-import { ItemView, TFile, WorkspaceLeaf, setIcon } from "obsidian";
+import { ItemView, TFile, WorkspaceLeaf, setIcon, type TAbstractFile } from "obsidian";
 import type HealthSyncPlugin from "../main";
 import { dateFromDailyNote } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
 import { PANEL_CARDS, SECTION_TITLES, type SectionId } from "./cards";
+import { HistoryStore } from "../history/store";
 import { formatPanelDate } from "./format";
 import { DayIndex } from "./index";
 
 export const VIEW_TYPE_HEALTH_PANEL = "garmin-health-panel";
 const RENDER_DEBOUNCE_MS = 300;
+/** How far back the history notes are read for the shown day: the longest window of a card is 90 days. */
+const HISTORY_DAYS = 120;
 
 /** Read-only side panel. Cards are computed from the daily notes' frontmatter; nothing is written or fetched. */
 export class HealthPanelView extends ItemView {
@@ -16,13 +19,15 @@ export class HealthPanelView extends ItemView {
 	/** A render was skipped while the leaf was hidden; do it when it is shown again. */
 	private dirty = false;
 	private readonly index: DayIndex;
+	private readonly history: HistoryStore;
 	private renderTimer = 0;
 	/** Card whose explanation is open; only one at a time. */
 	private explain: string | null = null;
 
 	constructor(leaf: WorkspaceLeaf, private readonly plugin: HealthSyncPlugin) {
 		super(leaf);
-		this.index = new DayIndex(this.app, () => this.plugin.settings);
+		this.history = new HistoryStore(this.app, this.plugin.settings);
+		this.index = new DayIndex(this.app, () => this.plugin.settings, this.history);
 	}
 
 	getViewType(): string {
@@ -48,7 +53,9 @@ export class HealthPanelView extends ItemView {
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.renderIfDirty()));
 		this.registerEvent(this.app.workspace.on("layout-change", () => this.renderIfDirty()));
 		// The sync writes notes in bursts: rebuild the index lazily and render once after the burst.
-		const changed = (): void => {
+		const changed = (file?: TAbstractFile): void => {
+			// a history note that changed must be read again; every other note leaves what was read alone
+			if (file && this.history.isHistoryFile(file)) this.history.invalidate(file);
 			this.index.invalidate();
 			window.clearTimeout(this.renderTimer);
 			this.renderTimer = window.setTimeout(() => this.render(), RENDER_DEBOUNCE_MS);
@@ -93,6 +100,7 @@ export class HealthPanelView extends ItemView {
 			return;
 		}
 		this.dirty = false;
+		this.readHistory();
 		const lang = this.plugin.settings.language;
 		const root = this.contentEl;
 		root.empty();
@@ -105,6 +113,15 @@ export class HealthPanelView extends ItemView {
 		this.navButton(nav, "chevron-right", t("panelNextDay", lang), () => this.move(1), isToday);
 
 		this.renderCards(root, lang);
+	}
+
+	/** Reads the history notes the shown day needs; a note that was read changes the cards, so they are drawn again. */
+	private readHistory(): void {
+		const from = shiftDate(this.date, -HISTORY_DAYS);
+		if (this.history.covers(from, this.date)) return;
+		void this.history.warm(from, this.date).then((found) => {
+			if (found) this.render();
+		});
 	}
 
 	/** The cards the user has not switched off, in order, under their section headers; half-width cards pair up. */

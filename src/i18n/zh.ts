@@ -4,6 +4,7 @@ export const zh: Record<TranslationKeys, string> = {
 	// Commands
 	commandSync: "同步当前笔记",
 	commandBackfill: "回填健康数据",
+	commandImportHistory: "从每日笔记导入历史",
 	commandManualLogin: "使用服务票据登录",
 
 	// Settings
@@ -23,8 +24,11 @@ export const zh: Record<TranslationKeys, string> = {
 	settingsAutoSync: "自动同步每日笔记",
 	settingsAutoSyncDesc: "Obsidian 启动时自动同步一次健康数据",
 	settingsAutoSyncPaused: "因认证错误已暂停 — 重新登录后恢复",
-	settingsCreateDailyNote: "缺失时创建每日笔记",
-	settingsCreateDailyNoteDesc: "关闭后，自动同步会等待真正的每日笔记存在，而不是创建它（空的占位笔记不算）。手动同步和回填仍会创建笔记。有助于避免与管理该笔记的工具发生冲突。",
+	settingsMissingNote: "没有每日笔记的日子",
+	settingsMissingNoteDesc: "在自动同步和补全历史时，如何处理没有每日笔记的日子。创建笔记：与以前相同。保存到历史文件：该日保存在每日笔记旁 Garmin history 文件夹里按月划分的小笔记中，面板会读取它，并且不会创建笔记；有笔记的日子会同时保存到笔记和历史。跳过该日：只获取已有笔记的日子。",
+	missingNoteCreate: "创建笔记",
+	missingNoteHistory: "保存到历史文件",
+	missingNoteSkip: "跳过该日",
 	settingsPrefix: "属性前缀",
 	settingsPrefixDesc: "为所有属性添加 'ohs_' 前缀",
 	settingsDailyNotePath: "每日笔记路径",
@@ -102,6 +106,8 @@ export const zh: Record<TranslationKeys, string> = {
 	noticeBackfillStart: "开始回填数据...",
 	noticeBackfillDone: "回填完成：已更新 {count} 天",
 	noticeBackfillDoneWithErrors: "回填完成：已更新 {count} 天，{failed} 天失败（见控制台）",
+	noticeHistoryImported: "已将 {count} 天的数据从每日笔记复制到历史",
+	noticeHistoryImportEmpty: "每日笔记中没有 Garmin 数据",
 	noticeManualLoginFailed: "手动登录失败 — 未找到有效票据或票据已过期。票据仅一次有效且很快过期；请重新登录并立即粘贴新票据。",
 
 	// Backfill Modal

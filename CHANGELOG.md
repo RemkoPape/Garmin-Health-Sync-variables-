@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.38
+
+### Added
+
+- **History notes**: the plugin can keep every fetched day in small monthly notes (`Garmin history/Garmin history 2026-10.md`, one JSON line per day, inside your daily notes folder). They are plain markdown, so every sync tool carries them, and the side panel reads them for a day that has no daily note or a note without a value. See `docs/history.md`.
+- Command **Import history from daily notes**: copies the Garmin values of your existing daily notes into the history, without any Garmin request.
+
+### Changed
+
+- The setting **Create daily note when missing** became **Days without a daily note** with three choices: create the note (as before), keep the day in the history files, or skip the day. Your old setting is carried over: on becomes "Create the note", off becomes "Skip the day". With "Skip the day" a manual backfill now fetches only days that already have a note (before, it created them). "Keep in history files" stores the day in the history and creates no note; days that have a note go to the note and to the history.
+
 ## 0.12.0-beta.37
 
 ### Changed

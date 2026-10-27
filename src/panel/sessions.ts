@@ -49,6 +49,11 @@ function parseDisplay(type: string, text: string): Session | null {
 	return { type, category: getActivityCategory(type), count, minutes, km, avgHr, kcal };
 }
 
+/** Whether a frontmatter entry is a session written by the sync ("running": "30min · Ø150 bpm"). */
+export function isActivityEntry(key: string, value: unknown): boolean {
+	return !METRIC_KEYS.has(key) && !NOT_ACTIVITIES.has(key) && typeof value === "string" && parseDisplay(key, value) !== null;
+}
+
 /**
  * The sessions of one day, resolved per note and never from a setting: the setting may have changed part-way
  * through the history. A machine-readable `trainings` list gives the numbers and the category; the per-type

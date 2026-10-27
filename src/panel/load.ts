@@ -64,7 +64,7 @@ function previousWeekStarts(index: DayIndex, date: string): string[] {
 	for (let i = 1; i <= CHRONIC_WEEKS; i++) {
 		const start = shiftDate(thisWeek, -7 * i);
 		let notes = 0;
-		for (let d = 0; d < 7; d++) if (index.hasNote(shiftDate(start, d))) notes++;
+		for (let d = 0; d < 7; d++) if (index.hasDay(shiftDate(start, d))) notes++;
 		if (notes >= MIN_NOTES_PER_WEEK) out.push(start);
 	}
 	return out;

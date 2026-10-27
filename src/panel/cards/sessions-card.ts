@@ -16,7 +16,7 @@ export interface SessionsModel {
 	/** Estimated maximum heart rate from the birth year, null when it is not set. */
 	maxHr: number | null;
 	/** Whether a note exists for the day; without one there is nothing to say. */
-	hasNote: boolean;
+	hasDay: boolean;
 	sessions: (Session & { step: number | null; recovery: boolean; zone: Zone | null })[];
 	location: string | null;
 }
@@ -27,7 +27,7 @@ export function computeSessions(index: DayIndex, date: string, birthYear: number
 	return {
 		insights: [],
 		maxHr,
-		hasNote: index.hasNote(date),
+		hasDay: index.hasDay(date),
 		sessions: index.sessions(date).map((s) => ({ ...s, step: intensityStep(s, history), recovery: isRecovery(s), zone: maxHr === null || s.avgHr === null ? null : zoneOf(s.avgHr, maxHr) })),
 		location: index.location(date),
 	};
@@ -41,9 +41,9 @@ function label(type: string): string {
 
 export function renderSessions(parent: HTMLElement, model: SessionsModel, lang: string, imperial: boolean, explainOpen: boolean, onToggleExplain: () => void): void {
 	const total = model.sessions.reduce((a, s) => a + s.minutes, 0);
-	const value = model.hasNote ? formatNumber(total, lang, 0) : null;
+	const value = model.hasDay ? formatNumber(total, lang, 0) : null;
 	renderCard(parent, { title: t("panelSessionsTitle", lang), value, unit: "min", explain: model.maxHr === null ? t("panelSessionsExplain", lang) : `${t("panelSessionsExplain", lang)} ${t("panelSessionsExplainZones", lang)}`, explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
-		if (!model.hasNote) return;
+		if (!model.hasDay) return;
 		if (model.sessions.length === 0) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelNoSession", lang) });
 			return;

@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DayIndex } from "../src/panel/index";
+import { HistoryStore } from "../src/history/store";
+import { serializeMonth } from "../src/history/format";
 
 const settings = { dailyNotePath: "", dailyNoteFormat: "YYYY-MM-DD" };
 
@@ -81,5 +83,50 @@ describe("DayIndex", () => {
 		expect(index.value("hrv", "2026-10-22")).toBe(50);
 		index.invalidate();
 		expect(index.value("hrv", "2026-10-22")).toBe(51);
+	});
+});
+
+describe("DayIndex with the history notes", () => {
+	const HISTORY = "Garmin history/Garmin history 2026-10.md";
+	const month = (days: Record<string, Record<string, unknown>>): string => serializeMonth("2026-10", new Map(Object.entries(days)));
+
+	async function build(days: Record<string, Record<string, unknown>>, notes: (ago: number) => Record<string, unknown> | null = () => null): Promise<DayIndex> {
+		const app = new App();
+		app.vault.seed(HISTORY, month(days));
+		await seedHistory(app, { end: "2026-10-22", days: 3, frontmatter: notes });
+		const history = new HistoryStore(app as never, settings);
+		await history.warm("2026-10-01", "2026-10-31");
+		return new DayIndex(app as never, () => settings, history);
+	}
+
+	it("answers for a day that has no note", async () => {
+		const index = await build({ "2026-10-10": { hrv: 44, sleep_duration: "6h 24min", sleep_start: "23:10", training_status: "Productive" } });
+		expect(index.value("hrv", "2026-10-10")).toBe(44);
+		expect(index.minutes("sleep_duration", "2026-10-10")).toBe(384);
+		expect(index.clock("sleep_start", "2026-10-10")).toBe(23 * 60 + 10);
+		expect(index.text("training_status", "2026-10-10")).toBe("Productive");
+		expect(index.hasNote("2026-10-10")).toBe(false);
+		expect(index.hasDay("2026-10-10")).toBe(true);
+		expect(index.hasDay("2026-10-11")).toBe(false);
+	});
+
+	it("lets the note win per value and fills the others from the history, prefixed notes included", async () => {
+		const index = await build({ "2026-10-22": { hrv: 44, steps: 7000 }, "2026-10-21": { hrv: 50 } }, (ago) => (ago === 0 ? { hrv: 61 } : ago === 1 ? { ohs_hrv: 62 } : null));
+		expect(index.value("hrv", "2026-10-22")).toBe(61);
+		expect(index.value("steps", "2026-10-22")).toBe(7000);
+		expect(index.value("hrv", "2026-10-21")).toBe(62);
+	});
+
+	it("merges the sessions of the note and the history, the note's entry winning for a type both have", async () => {
+		const index = await build({ "2026-10-22": { running: "30min · Ø150 bpm", cycling: "60min" } }, (ago) => (ago === 0 ? { running: "45min · Ø140 bpm" } : null));
+		const sessions = index.sessions("2026-10-22").map((s) => [s.type, s.minutes]);
+		expect(sessions).toEqual([["cycling", 60], ["running", 45]]);
+		expect(index.sessions("2026-10-15")).toEqual([]);
+	});
+
+	it("does not take a history note for a daily note", async () => {
+		const index = await build({ "2026-10-22": { hrv: 44 } });
+		expect(index.hasNote("2026-10-22")).toBe(false);
+		expect(new DayIndex(new App() as never, () => settings).hasDay("2026-10-22")).toBe(false);
 	});
 });

@@ -4,6 +4,7 @@ export const ja: Record<TranslationKeys, string> = {
 	// Commands
 	commandSync: "現在のノートを同期",
 	commandBackfill: "ヘルスデータをバックフィル",
+	commandImportHistory: "デイリーノートから履歴を取り込む",
 	commandManualLogin: "サービスチケットでログイン",
 
 	// Settings
@@ -23,8 +24,11 @@ export const ja: Record<TranslationKeys, string> = {
 	settingsAutoSync: "デイリーノートを自動同期",
 	settingsAutoSyncDesc: "Obsidian 起動時にヘルスデータを一度同期",
 	settingsAutoSyncPaused: "認証エラーにより一時停止中 — 再ログイン後に再開",
-	settingsCreateDailyNote: "デイリーノートを必要に応じて作成",
-	settingsCreateDailyNoteDesc: "無効にすると、自動同期はデイリーノートを作成せず、実体のあるノートが存在するまで待機します（空のプレースホルダーは対象外）。手動同期とバックフィルは引き続きノートを作成します。ノートを管理する他のツールとの競合を回避できます。",
+	settingsMissingNote: "デイリーノートがない日",
+	settingsMissingNoteDesc: "デイリーノートがない日を、自動同期とバックフィルでどう扱うかを選びます。ノートを作成：従来どおり。履歴ファイルに保存：デイリーノートの隣のGarmin historyフォルダに月ごとの小さなノートとして保存し、パネルがそれを読みます。ノートは作成しません。ノートがある日は、ノートと履歴の両方に保存します。その日をスキップ：すでにノートがある日だけ取得します。",
+	missingNoteCreate: "ノートを作成",
+	missingNoteHistory: "履歴ファイルに保存",
+	missingNoteSkip: "その日をスキップ",
 	settingsPrefix: "プロパティ接頭辞",
 	settingsPrefixDesc: "すべてのプロパティに 'ohs_' 接頭辞を追加",
 	settingsDailyNotePath: "デイリーノートのパス",
@@ -102,6 +106,8 @@ export const ja: Record<TranslationKeys, string> = {
 	noticeBackfillStart: "バックフィルを開始...",
 	noticeBackfillDone: "バックフィル完了：{count} 日分を更新",
 	noticeBackfillDoneWithErrors: "バックフィル完了：{count} 日分を更新、{failed} 日分は失敗（コンソール参照）",
+	noticeHistoryImported: "デイリーノートから{count}日分を履歴にコピーしました",
+	noticeHistoryImportEmpty: "デイリーノートにGarminのデータが見つかりません",
 	noticeManualLoginFailed: "手動ログインに失敗しました — 有効なチケットが見つからないか、期限切れです。チケットは一度しか使えずすぐに失効します。再度サインインして新しいチケットをすぐに貼り付けてください。",
 
 	// Backfill Modal

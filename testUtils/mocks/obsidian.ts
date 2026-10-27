@@ -164,6 +164,11 @@ export class Vault {
 		return this.contents.get(file.path) ?? "";
 	}
 
+	/** Obsidian's cached read: the same text, without hitting the disk again. */
+	async cachedRead(file: TFile): Promise<string> {
+		return this.read(file);
+	}
+
 	async modify(file: TFile, content: string): Promise<void> {
 		this.check("modify", file.path);
 		this.setContent(file, content);
