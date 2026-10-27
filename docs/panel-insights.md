@@ -17,6 +17,15 @@ The interpretation is deliberately kept under the light bulb so the cards stay u
 - **Never a diagnosis.** Wrist data are estimates and the studies describe groups of people. Every interpretation box ends with a note saying so, and illness-related texts say "worth watching" and "if you feel unwell", not more.
 - **At most 3 lines per card**, in the order the rules are listed in the code (`src/panel/insights/`).
 
+## The Today card
+
+The Today card is a rule of thumb taken from the original concept, **not a validated score**. It is not calibrated against Garmin's readiness (which is shown next to it when the watch provides it).
+
+- **Score (0 to 100):** 50 + 12 x z(HRV) - 10 x z(resting heart rate) - 6 x sleep debt in hours (at most 4) + 0.25 x (body battery peak - usual peak). The z values are clamped to plus or minus 2.5 and use the user's own 30 day range; a missing body battery leaves its term out. Without HRV, resting heart rate or the sleep debt there is no own score.
+- **Bands:** 0-24 poor, 25-49 low, 50-74 moderate, 75-94 high, 95-100 prime.
+- **Flags:** HRV low, resting heart rate high, sleep debt above 2 hours, body battery peak more than 15 below usual, stress more than 10 above the 7 day average, breathing more than 1.5 standard deviations up, SpO2 below 94 percent, load ratio above 1.5.
+- **Verdict:** rest (day off, walk and mobility) for band poor or low, 3 or more flags, or raised breathing together with a high resting heart rate; train hard for band high or better with no flag; train as planned for band high or better with one flag or band moderate with none; go easy (zone 2) otherwise.
+
 ## How to add or change an interpretation
 
 1. Add the id to `INSIGHTS` in `src/panel/insights/registry.ts` (card, kind) and the rule in the matching file next to it.
@@ -58,6 +67,78 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **garmin**: Garmin. *Body Battery energy monitoring* (heart rate variability, stress, sleep and activity; sleep charges, stress and strenuous activity drain). [https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
 
 ## Interpretations
+
+### today_flag_hrv
+
+- **Card:** today
+- **Trigger:** HRV is more than 1 standard deviation below its 30 day mean.
+- **Text (English):** HRV is below your usual range.
+- **Basis:** Part of the Today verdict. HRV is one of the heart rate measures that follow training status.
+- **References:** [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### today_flag_rhr
+
+- **Card:** today
+- **Trigger:** Resting heart rate is more than 1 standard deviation above its 30 day mean.
+- **Text (English):** Resting heart rate is above your usual.
+- **Basis:** Part of the Today verdict; resting heart rate follows training status and strain.
+- **References:** [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### today_flag_sleep
+
+- **Card:** today
+- **Trigger:** The sleep debt of the last 7 nights is more than 2 hours.
+- **Text (English):** Your sleep debt over the last 7 nights is {debt}.
+- **Basis:** Part of the Today verdict; arithmetic on the user's own sleep and need.
+- **References:** [kitamura](https://doi.org/10.1038/srep35812)
+
+### today_flag_battery
+
+- **Card:** today
+- **Trigger:** The body battery peak is more than 15 below the usual peak of the last 30 days.
+- **Text (English):** Your body battery peaked {gap} points below your usual.
+- **Basis:** Part of the Today verdict; Garmin describes the battery as reflecting recovery, stress and sleep.
+- **References:** [garmin](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
+
+### today_flag_stress
+
+- **Card:** today
+- **Trigger:** The stress level is more than 10 above the average of the 7 days before.
+- **Text (English):** Your stress level is above your 7-day average.
+- **Basis:** Part of the Today verdict; stress is derived from heart rate variability.
+- **References:** [kim](https://pubmed.ncbi.nlm.nih.gov/29486547/)
+
+### today_flag_breathing
+
+- **Card:** today
+- **Trigger:** The breathing rate is more than 1.5 standard deviations above its 30 day mean.
+- **Text (English):** Your breathing rate is above your usual.
+- **Basis:** Part of the Today verdict; raised respiration is part of the illness pattern in wearable studies.
+- **References:** [natarajan](https://doi.org/10.1038/s41746-020-00363-7)
+
+### today_flag_spo2
+
+- **Card:** today
+- **Trigger:** SpO2 is below 94 percent.
+- **Text (English):** Blood oxygen was below 94 percent.
+- **Basis:** Part of the Today verdict; a low value is a reason to watch, and the FDA advises judging by trends.
+- **References:** [fda](https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters)
+
+### today_flag_load
+
+- **Card:** today
+- **Trigger:** The load ratio (7 days over the 28 day weekly average) is above 1.5.
+- **Text (English):** Your training load of the last 7 days is {pct} percent above your usual.
+- **Basis:** Part of the Today verdict; large spikes in load relative to the usual load were linked to more injuries.
+- **References:** [gabbett](https://doi.org/10.1136/bjsports-2015-095788)
+
+### today_no_flags
+
+- **Card:** today
+- **Trigger:** The Today score exists and none of the eight flags applies.
+- **Text (English):** Nothing stands out. Your HRV, resting heart rate, sleep and your other data are in their usual range.
+- **Basis:** Positive confirmation.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
 
 ### unexplained
 

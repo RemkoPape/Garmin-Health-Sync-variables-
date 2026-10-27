@@ -1,5 +1,6 @@
 import type { TranslationKeys } from "../i18n/en";
 import { computeBattery, renderBattery } from "./cards/battery-card";
+import { computeToday, renderToday } from "./cards/today-card";
 import { computeLoad, renderLoad } from "./cards/load-card";
 import { computeBody, renderBody } from "./cards/body-card";
 import { computeFloors, renderFloors } from "./cards/floors-card";
@@ -19,9 +20,10 @@ import { breathingInsights, hrvInsights, restingHrInsights, spo2Insights } from 
 import type { Insight } from "./insights/registry";
 import { Signals } from "./insights/signals";
 import { sleepInsights, stagesInsights } from "./insights/sleep";
+import { todayInsights } from "./insights/today";
 import { loadInsights, sessionsInsights, weeklyInsights } from "./insights/training";
 
-export type SectionId = "recovery" | "sleep" | "energy" | "movement" | "fitness" | "training";
+export type SectionId = "today" | "recovery" | "sleep" | "energy" | "movement" | "fitness" | "training";
 
 export interface CardContext {
 	parent: HTMLElement;
@@ -73,6 +75,7 @@ const range = (spec: RangeCardSpec, section: SectionId, needs: TranslationKeys):
 
 /** Every card of the panel in display order. Ids are stable: they are stored in the settings. */
 export const PANEL_CARDS: PanelCard[] = [
+	{ id: "today", title: "panelTodayTitle", section: "today", metrics: ["hrv", "resting_hr", "sleep_duration"], needs: "panelNeedsToday", extra: ["body_battery_max", "training_readiness", "spo2", "respiration_rate", "stress"], render: (c) => renderToday(c.parent, { ...computeToday(c.index, c.date, c.birthYear), insights: todayInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
 	range(HRV_CARD, "recovery", "panelNeedsHrv"),
 	range(RESTING_HR_CARD, "recovery", "panelNeedsRestingHr"),
 	range(SPO2_CARD, "recovery", "panelNeedsSpo2"),
@@ -92,6 +95,7 @@ export const PANEL_CARDS: PanelCard[] = [
 ];
 
 export const SECTION_TITLES: Record<SectionId, TranslationKeys> = {
+	today: "panelSectionToday",
 	recovery: "panelSectionRecovery",
 	sleep: "panelSectionSleep",
 	energy: "panelSectionEnergy",

@@ -21,11 +21,11 @@ describe("PANEL_CARDS", () => {
 		const ids = PANEL_CARDS.map((c) => c.id);
 		expect(new Set(ids).size).toBe(ids.length);
 		const order = PANEL_CARDS.map((c) => c.section).filter((s, i, all) => s !== all[i - 1]);
-		expect(order).toEqual(["recovery", "sleep", "energy", "movement", "fitness", "training"]);
+		expect(order).toEqual(["today", "recovery", "sleep", "energy", "movement", "fitness", "training"]);
 	});
 
 	it("keeps the ids stored in users' settings", () => {
-		expect(PANEL_CARDS.map((c) => c.id)).toEqual(["hrv", "resting_hr", "spo2", "respiration_rate", "sleep", "stages", "battery", "stress", "steps", "intensity", "floors", "vo2", "body", "load", "weekly", "sessions"]);
+		expect(PANEL_CARDS.map((c) => c.id)).toEqual(["today", "hrv", "resting_hr", "spo2", "respiration_rate", "sleep", "stages", "battery", "stress", "steps", "intensity", "floors", "vo2", "body", "load", "weekly", "sessions"]);
 	});
 
 	it("names every card and section", () => {
@@ -44,7 +44,8 @@ describe("switching cards off", () => {
 		expect(titles(view)).not.toContain(en.panelRestingHrTitle);
 		expect(titles(view)).not.toContain(en.panelStagesTitle);
 		expect(titles(view)).toHaveLength(PANEL_CARDS.length - 2);
-		expect(titles(view)[0]).toBe(en.panelHrvTitle);
+		expect(titles(view)[0]).toBe(en.panelTodayTitle);
+		expect(titles(view)[1]).toBe(en.panelHrvTitle);
 	});
 
 	it("treats an explicit true like the default", async () => {
@@ -53,7 +54,7 @@ describe("switching cards off", () => {
 
 	it("drops a section header when all its cards are off", async () => {
 		const view = await open({ sleep: false, stages: false });
-		expect(sections(view)).toEqual([en.panelSectionRecovery, en.panelSectionEnergy, en.panelSectionMovement, en.panelSectionFitness, en.panelSectionTraining]);
+		expect(sections(view)).toEqual([en.panelSectionToday, en.panelSectionRecovery, en.panelSectionEnergy, en.panelSectionMovement, en.panelSectionFitness, en.panelSectionTraining]);
 	});
 
 	it("keeps a half-width card on its own when its partner is off", async () => {

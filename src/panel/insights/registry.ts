@@ -12,6 +12,16 @@ export type InsightKind = "watch" | "good";
 export const INSIGHTS = {
 	unexplained: { card: "any", kind: "watch" },
 
+	today_flag_hrv: { card: "today", kind: "watch" },
+	today_flag_rhr: { card: "today", kind: "watch" },
+	today_flag_sleep: { card: "today", kind: "watch" },
+	today_flag_battery: { card: "today", kind: "watch" },
+	today_flag_stress: { card: "today", kind: "watch" },
+	today_flag_breathing: { card: "today", kind: "watch" },
+	today_flag_spo2: { card: "today", kind: "watch" },
+	today_flag_load: { card: "today", kind: "watch" },
+	today_no_flags: { card: "today", kind: "good" },
+
 	hrv_low_load: { card: "hrv", kind: "watch" },
 	hrv_low_sleep: { card: "hrv", kind: "watch" },
 	hrv_low_stress: { card: "hrv", kind: "watch" },

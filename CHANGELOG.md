@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.0-beta.21
+
+### Added
+
+- **Today** card at the top of the panel: your own readiness score from 0 to 100 (poor, low, moderate, high, prime) and one verdict for the day: train hard, train as planned, go easy (zone 2) or a day off (walk and mobility). The score combines HRV and resting heart rate against your own usual, your sleep debt of the last 7 nights and your body battery peak; the verdict follows the score and eight flags (HRV low, resting heart rate high, sleep debt over 2 hours, low body battery peak, high stress, raised breathing, low blood oxygen, load spike). Garmin's own readiness is shown as a reference row when your watch provides it, and alone while your own score has too little data. It appears from 5 days of data and says so until 21 days.
+- Under the light bulb the card lists the flags that shaped the verdict, each with the numbers, or says that nothing stands out.
+- **This is a rule of thumb, not a validated score**: the formula is from the original concept and has not been calibrated against Garmin's readiness. The card, its explanation and `docs/panel-insights.md` say so.
+
+### Changed
+
+- More space between the cards (16 px instead of 12 px), with a section header sitting closer to its own cards than to the card above.
+
 ## 0.12.0-beta.20
 
 ### Changed
