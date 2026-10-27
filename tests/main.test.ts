@@ -388,7 +388,7 @@ describe("build history command", () => {
 	});
 });
 
-describe("fold properties by default", () => {
+describe("properties of daily notes", () => {
 	const dailyNote = (): TFile => Object.assign(new TFile(), { path: `${dayString(0)}.md`, basename: dayString(0) });
 	const openNote = async (app: App, file: TFile): Promise<void> => {
 		app.workspace.activeFile = file;
@@ -396,22 +396,23 @@ describe("fold properties by default", () => {
 		await vi.advanceTimersByTimeAsync(300);
 	};
 	const showProperties = (): void => {
-		document.body.innerHTML = '<div class="workspace-leaf mod-active"><div class="metadata-container"></div></div>';
+		document.body.innerHTML = '<div class="workspace-leaf mod-active"><div class="metadata-container"><div class="metadata-property" data-property-key="hrv"></div><div class="metadata-property" data-property-key="mood"></div></div></div>';
 	};
+	const hiddenRows = (): string[] => Array.from(document.querySelectorAll(".ghs-property-hidden")).map((r) => r.getAttribute("data-property-key")!);
 	afterEach(() => {
 		document.body.innerHTML = "";
 	});
 
-	it("folds a daily note when the setting is on", async () => {
-		const { app } = await load({ foldProperties: true });
+	it("folds a daily note when the setting says fold", async () => {
+		const { app } = await load({ propertiesMode: "fold" });
 		app.workspace.layoutReady();
 		showProperties();
 		await openNote(app, dailyNote());
 		expect(app.commands.executed).toEqual(["editor:toggle-fold-properties"]);
 	});
 
-	it("folds the daily note that is open when Obsidian finishes loading", async () => {
-		const { app } = await load({ foldProperties: true }, (a) => {
+	it("handles the daily note that is open when Obsidian finishes loading", async () => {
+		const { app } = await load({ propertiesMode: "fold" }, (a) => {
 			a.workspace.activeFile = dailyNote();
 		});
 		showProperties();
@@ -421,26 +422,55 @@ describe("fold properties by default", () => {
 	});
 
 	it("leaves daily notes alone when the setting is off, and other notes always", async () => {
-		const off = await load({ foldProperties: false });
+		const off = await load({ propertiesMode: "off" });
 		off.app.workspace.layoutReady();
 		showProperties();
 		await openNote(off.app, dailyNote());
 		expect(off.app.commands.executed).toEqual([]);
 
-		const on = await load({ foldProperties: true });
+		const on = await load({ propertiesMode: "fold" });
 		on.app.workspace.layoutReady();
 		showProperties();
 		await openNote(on.app, Object.assign(new TFile(), { path: "ideas.md", basename: "ideas" }));
 		expect(on.app.commands.executed).toEqual([]);
 	});
 
-	it("follows the setting without a restart and stops folding when the plugin unloads", async () => {
-		const { app, plugin } = await load({ foldProperties: false });
+	it("hides the rows of the cards that are on when the panel is on, and nothing while it is off", async () => {
+		const off = await load({ propertiesMode: "hide", panelEnabled: false });
+		off.app.workspace.layoutReady();
+		showProperties();
+		await openNote(off.app, dailyNote());
+		expect(hiddenRows()).toEqual([]);
+
+		const on = await load({ propertiesMode: "hide", panelEnabled: true, panelCards: { hrv: false, today: false, sleep: false } });
+		on.app.workspace.layoutReady();
+		showProperties();
+		await openNote(on.app, dailyNote());
+		expect(hiddenRows()).toEqual([]); // hrv is on no card that is left
+		on.plugin.settings.panelCards = {};
+		on.plugin.noteProperties.modeChanged();
+		await vi.advanceTimersByTimeAsync(300);
+		expect(hiddenRows()).toEqual(["hrv"]);
+	});
+
+	it("turns the old fold switch into the new choice once, and forgets the old key", async () => {
+		const on = await load({ foldProperties: true } as never);
+		expect(on.plugin.settings.propertiesMode).toBe("fold");
+		expect("foldProperties" in on.plugin.settings).toBe(false);
+		expect((await load({ foldProperties: false } as never)).plugin.settings.propertiesMode).toBe("off");
+		expect((await load(null)).plugin.settings.propertiesMode).toBe("off");
+		expect((await load({ propertiesMode: "hide", foldProperties: true } as never)).plugin.settings.propertiesMode).toBe("hide");
+		expect((await load({ propertiesMode: "nonsense" } as never)).plugin.settings.propertiesMode).toBe("off");
+	});
+
+	it("follows the setting without a restart and stops when the plugin unloads", async () => {
+		const { app, plugin } = await load({ propertiesMode: "off" });
 		app.workspace.layoutReady();
 		showProperties();
-		plugin.settings.foldProperties = true;
+		plugin.settings.propertiesMode = "fold";
 		app.workspace.activeFile = dailyNote();
 		app.workspace.fire("layout-change");
+		plugin.noteProperties.modeChanged();
 		plugin.unload();
 		await vi.advanceTimersByTimeAsync(1000);
 		expect(app.commands.executed).toEqual([]);

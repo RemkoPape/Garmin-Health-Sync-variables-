@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.51
+
+### Changed
+
+- The setting **Fold properties by default** is now **Properties of daily notes** with three choices: **Leave as they are**, **Fold them** (what the old switch did) or **Hide those shown in the panel**. Hiding takes the rows the side panel already draws (the metrics of the cards that are on, the activities and the training list) out of a daily note's properties block, so only your own properties stay; it does nothing while the panel is off and only touches daily notes. Nothing is deleted from a note: switch back and the rows are there. Your old switch is carried over (on becomes "Fold them").
+
 ## 0.12.0-beta.50
 
 ### Changed

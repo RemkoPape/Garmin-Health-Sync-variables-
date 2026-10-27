@@ -12,6 +12,7 @@ import { PANEL_CARDS } from "./panel/cards";
 import { maxHrAt, parseBirthYear } from "./panel/zones";
 import { t } from "./i18n/t";
 import type { TranslationKeys } from "./i18n/en";
+import type { PropertiesMode } from "./note-properties";
 
 /** Maps internal metric keys to their imperial i18n label when unit system is imperial */
 const IMPERIAL_LABEL_MAP: Partial<Record<string, TranslationKeys>> = {
@@ -52,7 +53,7 @@ export interface HealthSyncSettings {
 	writeWorkoutLocation: boolean; // Reverse-geocoded workout location in frontmatter
 	serverRegion: ServerRegion;
 	unitSystem: UnitSystem;
-	foldProperties: boolean; // Fold the properties of a daily note when it opens
+	propertiesMode: PropertiesMode; // What a daily note does with its properties block: nothing, fold it, or hide what the panel shows
 	panelEnabled: boolean; // Side panel with health cards
 	panelCards: Record<string, boolean>; // Cards switched off in the panel (missing = on)
 	panelOrder: string[]; // Card ids in the order the user arranged them (empty = default order)
@@ -78,7 +79,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	writeWorkoutLocation: true,
 	serverRegion: "international",
 	unitSystem: "metric",
-	foldProperties: false,
+	propertiesMode: "off",
 	panelEnabled: false,
 	panelCards: {},
 	panelOrder: [],
@@ -225,9 +226,17 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 				control: { type: "toggle", key: "writeTrainings" },
 			},
 			{
-				name: t("settingsFoldProperties", lang),
-				desc: t("settingsFoldPropertiesDesc", lang),
-				control: { type: "toggle", key: "foldProperties" },
+				name: t("settingsProperties", lang),
+				desc: t("settingsPropertiesDesc", lang),
+				control: {
+					type: "dropdown",
+					key: "propertiesMode",
+					options: {
+						off: t("propertiesOff", lang),
+						fold: t("propertiesFold", lang),
+						hide: t("propertiesHide", lang),
+					},
+				},
 			},
 			{
 				type: "group",
@@ -322,6 +331,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			this.plugin.settings.panelCards[key.slice(PANEL_CARD_KEY_PREFIX.length)] = Boolean(value);
 			await this.plugin.saveSettings();
 			this.plugin.refreshPanels();
+			this.plugin.noteProperties.modeChanged();
 			return;
 		}
 		if (key.startsWith(METRIC_KEY_PREFIX)) {
@@ -341,6 +351,9 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			this.plugin.applyServerRegion();
 		} else if (key === "panelEnabled") {
 			await this.plugin.applyPanelEnabled();
+			this.plugin.noteProperties.modeChanged();
+		} else if (key === "propertiesMode") {
+			this.plugin.noteProperties.modeChanged();
 		} else if (key === "language" || key === "unitSystem") {
 			// Rebuild the definitions so labels reflect the new locale / units.
 			this.update();

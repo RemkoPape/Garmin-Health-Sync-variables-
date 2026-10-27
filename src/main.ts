@@ -18,7 +18,8 @@ import { readStoredTokens, writeStoredTokens } from "./token-store";
 import { isLoginRequiredError } from "./errors";
 import { parseBirthYear } from "./panel/zones";
 import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "./panel/view";
-import { PropertiesFolder } from "./fold-properties";
+import { NoteProperties } from "./note-properties";
+import { visualisedKeys } from "./panel/visualised";
 import { showWhatsNewIfDue, showWhatsNewNotes } from "./whats-new";
 
 const AUTO_SYNC_TRIGGER_DEBOUNCE_MS = 30 * 1000;
@@ -34,6 +35,8 @@ export default class HealthSyncPlugin extends Plugin {
 	private syncManager: SyncManager;
 	/** The history notes (writes only; the panel reads through its own store). */
 	private history: HistoryStore;
+	/** What daily notes do with their properties block. */
+	noteProperties: NoteProperties;
 	private garminProvider: GarminProvider;
 	private autoSyncRunning = false;
 	private autoSyncResyncQueued = false;
@@ -157,14 +160,18 @@ export default class HealthSyncPlugin extends Plugin {
 			this.registerEvent(this.app.vault.on("modify", file => this.onDailyNoteMaybeReady(file)));
 		});
 
-		// Daily notes open with their properties folded (setting "Fold properties by default")
-		const folder = new PropertiesFolder(this.app, (file) => this.settings.foldProperties && dateFromDailyNote(file, this.settings) !== null);
-		this.app.workspace.onLayoutReady(() => {
-			this.registerEvent(this.app.workspace.on("file-open", (file) => folder.fileOpened(file)));
-			this.registerEvent(this.app.workspace.on("layout-change", () => folder.layoutChanged()));
-			folder.layoutChanged();
+		// Daily notes fold their properties or hide those the panel shows (setting "Properties of daily notes")
+		this.noteProperties = new NoteProperties(this.app, {
+			mode: () => this.settings.propertiesMode,
+			isDaily: (file) => dateFromDailyNote(file, this.settings) !== null,
+			hidden: () => visualisedKeys(this.settings),
 		});
-		this.register(() => folder.cancel());
+		this.app.workspace.onLayoutReady(() => {
+			this.registerEvent(this.app.workspace.on("file-open", (file) => this.noteProperties.fileOpened(file)));
+			this.registerEvent(this.app.workspace.on("layout-change", () => this.noteProperties.layoutChanged()));
+			this.noteProperties.layoutChanged();
+		});
+		this.register(() => this.noteProperties.cancel());
 
 		// Auto-sync when opening today's/yesterday's daily note
 		this.registerEvent(
@@ -675,6 +682,10 @@ export default class HealthSyncPlugin extends Plugin {
 		const legacy = (saved ?? {}) as { createDailyNoteIfMissing?: boolean; missingNoteBehaviour?: string };
 		if (!["create", "history", "skip"].includes(legacy.missingNoteBehaviour ?? "")) this.settings.missingNoteBehaviour = legacy.createDailyNoteIfMissing === false ? "skip" : "create";
 		delete (this.settings as unknown as { createDailyNoteIfMissing?: boolean }).createDailyNoteIfMissing;
+		// "Fold properties by default" became a choice of three: on meant folding
+		const legacyFold = (saved ?? {}) as { foldProperties?: boolean; propertiesMode?: string };
+		if (!["off", "fold", "hide"].includes(legacyFold.propertiesMode ?? "")) this.settings.propertiesMode = legacyFold.foldProperties === true ? "fold" : "off";
+		delete (this.settings as unknown as { foldProperties?: boolean }).foldProperties;
 		for (const key of Object.keys(defaults)) {
 			if (this.settings.enabledMetrics[key] === undefined) {
 				this.settings.enabledMetrics[key] = defaults[key]!;

@@ -1225,3 +1225,8 @@
 .ghs-edit-reset {
 	align-self: flex-start;
 }
+
+/* A property row that the side panel already shows, hidden from the properties block of a daily note */
+.metadata-container .ghs-property-hidden {
+	display: none;
+}

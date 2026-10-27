@@ -29,6 +29,7 @@ function make(patch: Partial<HealthSyncSettings> = {}, session = false) {
 		applyServerRegion: vi.fn(),
 		applyPanelEnabled: vi.fn().mockResolvedValue(undefined),
 		refreshPanels: vi.fn(),
+		noteProperties: { modeChanged: vi.fn() },
 		logout: vi.fn().mockResolvedValue(undefined),
 		loginViaBrowser: vi.fn().mockImplementation((done?: () => void) => {
 			done?.();
@@ -67,7 +68,7 @@ describe("the settings layout", () => {
 			["usePrefix", "toggle"],
 			["writeWorkoutLocation", "toggle"],
 			["writeTrainings", "toggle"],
-			["foldProperties", "toggle"],
+			["propertiesMode", "dropdown"],
 		]);
 	});
 
@@ -141,7 +142,9 @@ describe("the settings layout", () => {
 
 		it("adds nothing for the cards that need only the activities", () => {
 			for (const id of ["load", "weekly", "sessions"]) expect(descs()(id)!.includes(en.panelCardTurnOn.split("{")[0]!)).toBe(false);
-			expect(descs()("load")).toBe(en.panelNeedsLoad);
+			expect(descs()("weekly")).toBe(en.panelNeedsWeekly);
+			// the load card only has the training status as a detail
+			expect(descs()("load")).toBe(`${en.panelNeedsLoad} ${en.panelCardAlsoUseful.replace("{metrics}", "Training status")}`);
 		});
 
 		it("falls back to the default of a metric missing from the record", () => {
@@ -158,6 +161,14 @@ describe("the settings layout", () => {
 		expect(tab.getControlValue("panel:hrv")).toBe(false);
 		expect(plugin.saveSettings).toHaveBeenCalledOnce();
 		expect(plugin.refreshPanels).toHaveBeenCalledOnce();
+		expect(plugin.noteProperties.modeChanged).toHaveBeenCalledOnce(); // what the panel shows decides what can be hidden
+	});
+
+	it("restarts the handling of the properties when their setting changes", async () => {
+		const { tab, plugin } = make();
+		await tab.setControlValue("propertiesMode", "hide");
+		expect(plugin.settings.propertiesMode).toBe("hide");
+		expect(plugin.noteProperties.modeChanged).toHaveBeenCalledOnce();
 	});
 
 	it("shows the birth year as text and stores only a believable year, otherwise nothing", async () => {
