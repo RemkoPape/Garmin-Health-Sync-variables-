@@ -38,6 +38,7 @@ export function sleepInsights(s: Signals): Insight[] {
 	}
 	if (sleep.debt !== null && sleep.debt >= DEBT_HIGH_MIN) out.push({ id: "sleep_debt_high", params: { debt: formatMinutes(sleep.debt) } });
 	if (schedule && Math.max(schedule.bedSd, schedule.wakeSd) >= IRREGULAR_SD_MIN) out.push({ id: "sleep_irregular", params: { sd: String(Math.round(Math.max(schedule.bedSd, schedule.wakeSd))) } });
+	if (out.length === 0 && minutes < need - SHORT_MARGIN_MIN) out.push({ id: "sleep_short_plain", params: { gap: formatMinutes(need - minutes), need: String(need / 60) } });
 	if (out.length === 0 && minutes >= need && (sleep.debt ?? 0) < 60) {
 		const regular = schedule !== null && schedule.bedSd < REGULAR_SD_MIN && schedule.wakeSd < REGULAR_SD_MIN;
 		out.push(regular ? { id: "sleep_regular_good", params: { sd: String(Math.round(Math.max(schedule.bedSd, schedule.wakeSd))) } } : { id: "sleep_enough_good", params: { sleep: formatMinutes(minutes) } });

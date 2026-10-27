@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.49
+
+### Added
+
+- **Every card now has something under its light bulb** when it has data. Before, several cards stayed silent in ordinary states. New lines, each from your own data: HRV above your range with no strain (recovered), SpO₂ just under 95 percent but usual, a low breathing rate (no cause for concern), a short night with no other reason (points to tonight's aim), a Body Battery peak in your usual range, a stress level in line with your week, steps at your usual level, floors (new: at or above your usual, or a quiet stretch), a steady VO₂ max with your training minutes per week, the room left to this week's limit per remaining day (today only), and a balanced mix of easy and hard sessions.
+- **Long history, where it tells you something you can act on:**
+  - HRV and resting heart rate: when the 90-day average differs from the 90 days before by at least half the spread of your year (the smallest worthwhile change of HRV monitoring), the card says so, with what to compare it with.
+  - Steps: if this weekday is usually your quiet one (at least 8 such days and 60 other days in the last 26 weeks, 25 percent or more below your other days), the card says so with the weekday in your language, so you can plan a walk.
+- All new texts are in the six languages (unreviewed by native speakers) and each has a section in `docs/panel-insights.md` with its trigger and basis.
+
 ## 0.12.0-beta.48
 
 ### Added

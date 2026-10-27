@@ -3,6 +3,7 @@ import { computeLoad, type LoadModel } from "../cards/load-card";
 import { computeSleep, type SleepModel } from "../cards/sleep-card";
 import type { DayIndex } from "../index";
 import { baseline, windowValues, zScore } from "../stats";
+import { longView, type LongView } from "../longview";
 
 /** The smallest standard deviation per metric, so a very steady user does not get razor-thin ranges. */
 const SD_FLOOR = { hrv: 2, resting_hr: 1.5, spo2: 0.7, respiration_rate: 0.4, stress: 5, steps: 500 };
@@ -33,6 +34,11 @@ export class Signals {
 		const value = this.index.value(key, date);
 		const b = baseline(windowValues(this.index, key, date, BASELINE_DAYS), MIN_DAYS, SD_FLOOR[key]);
 		return value !== null && b ? { z: zScore(value, b), delta: value - b.mean } : null;
+	}
+
+	/** The last year of a metric, null with fewer than 60 days of values. */
+	long(key: keyof typeof SD_FLOOR): LongView | null {
+		return longView((d) => this.index.value(key, d), this.date);
 	}
 
 	yesterday(): string {

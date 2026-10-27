@@ -5,6 +5,7 @@ import type { DayIndex } from "../index";
 import { average } from "../stats";
 import { computeTrend, type Trend } from "../trend";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 export const FLOORS_MIN_DAYS = 5;
 const WINDOW_DAYS = 7;
@@ -12,6 +13,8 @@ const ZONE_FACTOR = 1.1;
 const MIN_BLOCKS = 14;
 
 export interface FloorsModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	trend: Trend | null;
 	floors: number | null;
 	/** Days with floors among the 7 before the shown day. */
@@ -26,12 +29,12 @@ export function computeFloors(index: DayIndex, date: string): FloorsModel {
 	for (let i = 1; i <= WINDOW_DAYS; i++) {
 		if (index.value("floors", shiftDate(date, -i)) !== null) have++;
 	}
-	return { trend: computeTrend((d) => index.value("floors", d), date), floors: index.value("floors", date), have, zone: avg === null ? null : { low: Math.round(avg), high: Math.max(Math.round(avg), Math.round(avg * ZONE_FACTOR)) } };
+	return { insights: [], trend: computeTrend((d) => index.value("floors", d), date), floors: index.value("floors", date), have, zone: avg === null ? null : { low: Math.round(avg), high: Math.max(Math.round(avg), Math.round(avg * ZONE_FACTOR)) } };
 }
 
 export function renderFloors(parent: HTMLElement, model: FloorsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.floors === null ? null : formatNumber(model.floors, lang, 0);
-	renderCard(parent, { title: t("panelFloorsTitle", lang), value, explain: t("panelFloorsExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 1) } }, (card) => {
+	renderCard(parent, { title: t("panelFloorsTitle", lang), value, explain: t("panelFloorsExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 1) } }, (card) => {
 		const { zone, floors } = model;
 		if (!zone) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLocked", lang).replace("{need}", String(FLOORS_MIN_DAYS)).replace("{have}", String(model.have)) });

@@ -1,5 +1,6 @@
 import type { TranslationKeys } from "../../i18n/en";
 import { t } from "../../i18n/t";
+import { weekdayName } from "../format";
 
 /** "watch": something is off and the text says why and what helps. "good": something is good and, where the data allows, why. */
 export type InsightKind = "watch" | "good";
@@ -28,26 +29,34 @@ export const INSIGHTS = {
 	hrv_low_illness: { card: "hrv", kind: "watch" },
 	hrv_low_streak: { card: "hrv", kind: "watch" },
 	hrv_high_light_load: { card: "hrv", kind: "good" },
+	hrv_high_rested: { card: "hrv", kind: "good" },
+	hrv_trend_down: { card: "hrv", kind: "watch" },
+	hrv_trend_up: { card: "hrv", kind: "good" },
 	hrv_in_range: { card: "hrv", kind: "good" },
 
 	rhr_high_load: { card: "resting_hr", kind: "watch" },
 	rhr_high_sleep: { card: "resting_hr", kind: "watch" },
 	rhr_high_illness: { card: "resting_hr", kind: "watch" },
 	rhr_low_fitness: { card: "resting_hr", kind: "good" },
+	rhr_trend_up: { card: "resting_hr", kind: "watch" },
+	rhr_trend_down: { card: "resting_hr", kind: "good" },
 	rhr_in_range: { card: "resting_hr", kind: "good" },
 
 	spo2_low_repeated: { card: "spo2", kind: "watch" },
 	spo2_low_with_breathing: { card: "spo2", kind: "watch" },
 	spo2_low_single: { card: "spo2", kind: "watch" },
 	spo2_ok: { card: "spo2", kind: "good" },
+	spo2_usual: { card: "spo2", kind: "good" },
 
 	breathing_up_illness: { card: "respiration_rate", kind: "watch" },
 	breathing_up_alone: { card: "respiration_rate", kind: "watch" },
 	breathing_ok: { card: "respiration_rate", kind: "good" },
+	breathing_low: { card: "respiration_rate", kind: "good" },
 
 	sleep_short_late_bed: { card: "sleep", kind: "watch" },
 	sleep_short_early_wake: { card: "sleep", kind: "watch" },
 	sleep_short_average: { card: "sleep", kind: "watch" },
+	sleep_short_plain: { card: "sleep", kind: "watch" },
 	sleep_debt_high: { card: "sleep", kind: "watch" },
 	sleep_irregular: { card: "sleep", kind: "watch" },
 	sleep_regular_good: { card: "sleep", kind: "good" },
@@ -67,14 +76,21 @@ export const INSIGHTS = {
 	battery_low_stress: { card: "battery", kind: "watch" },
 	battery_low_load: { card: "battery", kind: "watch" },
 	battery_recharge_good: { card: "battery", kind: "good" },
+	battery_usual: { card: "battery", kind: "good" },
 
 	stress_more_stressed: { card: "stress", kind: "watch" },
 	stress_high_sleep: { card: "stress", kind: "watch" },
 	stress_high_week: { card: "stress", kind: "watch" },
 	stress_calm: { card: "stress", kind: "good" },
+	stress_usual: { card: "stress", kind: "good" },
 
 	steps_below_streak: { card: "steps", kind: "watch" },
 	steps_zone_good: { card: "steps", kind: "good" },
+	steps_in_zone: { card: "steps", kind: "good" },
+	steps_weekday_low: { card: "steps", kind: "watch" },
+
+	floors_below_streak: { card: "floors", kind: "watch" },
+	floors_zone_good: { card: "floors", kind: "good" },
 
 	intensity_behind: { card: "intensity", kind: "watch" },
 	intensity_goal_good: { card: "intensity", kind: "good" },
@@ -82,6 +98,7 @@ export const INSIGHTS = {
 	vo2_down_volume: { card: "vo2", kind: "watch" },
 	vo2_down_other: { card: "vo2", kind: "watch" },
 	vo2_up_good: { card: "vo2", kind: "good" },
+	vo2_steady: { card: "vo2", kind: "good" },
 
 	body_fast: { card: "body", kind: "watch" },
 	body_stable: { card: "body", kind: "good" },
@@ -94,9 +111,11 @@ export const INSIGHTS = {
 
 	weekly_over_cap: { card: "weekly", kind: "watch" },
 	weekly_on_track: { card: "weekly", kind: "good" },
+	weekly_room: { card: "weekly", kind: "good" },
 
 	sessions_all_hard: { card: "sessions", kind: "watch" },
 	sessions_mostly_easy: { card: "sessions", kind: "good" },
+	sessions_balanced: { card: "sessions", kind: "good" },
 } as const satisfies Record<string, { card: string; kind: InsightKind }>;
 
 export type InsightId = keyof typeof INSIGHTS;
@@ -111,7 +130,9 @@ export interface Insight {
 export function insightText(insight: Insight, lang: string): string {
 	let text = t(`insight_${insight.id}` as TranslationKeys, lang);
 	for (const [key, value] of Object.entries(insight.params ?? {})) text = text.split(`{${key}}`).join(value);
-	return text;
+	// "dayOf" is a date: the text names its weekday in the language it is shown in
+	const dayOf = insight.params?.["dayOf"];
+	return dayOf === undefined ? text : text.split("{day}").join(weekdayName(dayOf, lang));
 }
 
 /** At most this many interpretations per card, so the light bulb section stays short. */
