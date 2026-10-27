@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.34
+
+### Changed
+
+- Under the light bulb, the card's own numbers (both sleep debts, the weekday pattern, bedtime and wake-up) now sit inside the "What your data suggests" box, right after the interpretations and above the note, instead of loose below it. The box also shows when a card has numbers but no interpretation.
+
 ## 0.12.0-beta.33
 
 ### Changed

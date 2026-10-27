@@ -924,15 +924,6 @@
 	color: var(--text-normal);
 }
 
-/* The card's own numbers under the light bulb, between the interpretation and the general explanation */
-.ghs-facts {
-	display: flex;
-	flex-direction: column;
-	gap: var(--size-2-2);
-	color: var(--text-normal);
-	font-size: var(--font-ui-small);
-}
-
 /* Interpretation under (i): what the data suggests, set apart from the general explanation */
 .ghs-insight {
 	display: flex;
