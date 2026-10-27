@@ -55,12 +55,40 @@ describe("the readiness score", () => {
 	});
 
 	it("subtracts 6 per hour of sleep debt, at most 4 hours of it", async () => {
-		// 6 h 20 min nights: 40 min short each of 7 nights = 280 min = 4.67 h -> capped at 4 -> -24
-		const m = computeToday(await index({ hrv: 60, resting_hr: 52 }, () => ({ sleep_duration: "6h 20min" })), END, null);
+		// the last week 6 h 20 min after weeks of 7 h 30: 40 min short each of 7 nights = 280 min = 4.67 h -> capped at 4 -> -24
+		const shorter = (night: string) => (ago: number): Fm => ({ sleep_duration: ago < 7 ? night : "7h 30min" });
+		const m = computeToday(await index({ hrv: 60, resting_hr: 52 }, shorter("6h 20min")), END, null);
 		expect(m.score).toBe(26);
 		expect(m.facts.debt).toBe(280);
 		// 6 h 50 min nights: 70 min of debt -> -7
-		expect(computeToday(await index({ hrv: 60, resting_hr: 52 }, () => ({ sleep_duration: "6h 50min" })), END, null).score).toBe(43);
+		expect(computeToday(await index({ hrv: 60, resting_hr: 52 }, shorter("6h 50min")), END, null).score).toBe(43);
+	});
+
+	it("counts the debt against the usual sleep, so a person who never reaches 7 hours does not owe it every day", async () => {
+		const m = computeToday(await index({ hrv: 60, resting_hr: 52 }, () => ({ sleep_duration: "6h 20min" })), END, null);
+		expect(m.facts.debt).toBe(0);
+		expect(m.score).toBe(50);
+		expect(m.flags).toEqual([]);
+	});
+
+	it("scales the HRV and resting heart rate terms by the days of range while it is young, and not at 21 days or more", async () => {
+		const far = { hrv: 54, resting_hr: 58 }; // far out of range: both z values clamp at 2.5, 12 x 2.5 + 10 x 2.5 = 55
+		const young = computeToday(await index(far, () => ({}), 12), END, null);
+		expect(young.baselineDays).toBe(11);
+		expect(young.score).toBe(21); // 50 - 55 x 11 / 21
+		expect(computeToday(await index(far, () => ({}), 45), END, null).score).toBe(0); // 50 - 55, no less than 0
+		expect(computeToday(await index(far, () => ({}), 22), END, null).baselineDays).toBe(21);
+	});
+
+	it("does not call for a day off from a low band alone while the range is young", async () => {
+		const far = { hrv: 54, resting_hr: 58 };
+		const young = computeToday(await index(far, () => ({}), 12), END, null);
+		expect(young.band).toBe(0);
+		expect(young.verdict).toBe("easy");
+		expect(computeToday(await index(far, () => ({}), 45), END, null).verdict).toBe("rest");
+		// raised breathing with a high resting heart rate, or three flags, still mean rest
+		const sick = computeToday(await index({ ...far, respiration_rate: 19 }, (ago) => ({ respiration_rate: alt(ago, 13, 15.4) }), 12), END, null);
+		expect(sick.verdict).toBe("rest");
 	});
 
 	it("adds a quarter of how far the body battery peak is above or below the usual, and leaves it out without one", async () => {
@@ -107,8 +135,9 @@ describe("the flags", () => {
 	});
 
 	it("flags a sleep debt above 2 hours", async () => {
-		expect(await flags({}, () => ({ sleep_duration: "6h 40min" }))).toEqual(["sleep"]); // 20 min x 7 = 140 min
-		expect(await flags({}, () => ({ sleep_duration: "6h 50min" }))).toEqual([]); // 70 min
+		const shorter = (night: string) => (ago: number): Fm => ({ sleep_duration: ago < 7 ? night : "7h 30min" });
+		expect(await flags({}, shorter("6h 40min"))).toEqual(["sleep"]); // 20 min x 7 = 140 min
+		expect(await flags({}, shorter("6h 50min"))).toEqual([]); // 70 min
 	});
 
 	it("flags a body battery peak more than 15 below the usual", async () => {
@@ -271,7 +300,7 @@ describe("what the interpretation says about the day", () => {
 	it("names each flag that shaped the verdict, with the numbers where it helps", async () => {
 		expect(await insights({ hrv: 57, resting_hr: 52 })).toEqual([{ id: "today_flag_hrv" }]);
 		expect(await insights({ hrv: 60, resting_hr: 55 })).toEqual([{ id: "today_flag_rhr" }]);
-		expect(await insights({ hrv: 60, resting_hr: 52 }, () => ({ sleep_duration: "6h 40min" }))).toEqual([{ id: "today_flag_sleep", params: { debt: "2 h 20 min" } }]);
+		expect(await insights({ hrv: 60, resting_hr: 52 }, (ago) => ({ sleep_duration: ago < 7 ? "6h 40min" : "7h 30min" }))).toEqual([{ id: "today_flag_sleep", params: { debt: "2 h 20 min" } }]);
 		expect(await insights({ hrv: 60, resting_hr: 52, body_battery_max: 40 }, (ago) => ({ body_battery_max: alt(ago, 62, 58) }))).toEqual([{ id: "today_flag_battery", params: { gap: "20" } }]);
 		expect(await insights({ hrv: 60, resting_hr: 52, stress: 50 }, () => ({ stress: 30 }))).toEqual([{ id: "today_flag_stress" }]);
 		expect(await insights({ hrv: 60, resting_hr: 52, respiration_rate: 17 }, (ago) => ({ respiration_rate: alt(ago, 13, 15.4) }))).toEqual([{ id: "today_flag_breathing" }]);
