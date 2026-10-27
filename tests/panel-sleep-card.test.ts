@@ -288,7 +288,7 @@ describe("sleep timeline (nights with bedtime and wake-up time)", () => {
 		const model = computeSleep(await timed((ago) => (ago === 0 ? 360 : 450)), END);
 		render(model);
 		// bedtime 23:00 = 1380, up at 06:30: 450 min in bed; axis from 22:00 to 07:00 (540 min)
-		expect(text(".ghs-axis-top")).toBe("22:00");
+		expect(root.querySelector(".ghs-axis-top")).toBeNull(); // 22:00 is 60 of 540 minutes from the 23:00 line
 		expect(root.querySelector(".ghs-axis-bottom")).toBeNull(); // 07:00 would sit on the 06:30 line
 		const css = (el: Element | null, prop: string): string => (el as HTMLElement).style.getPropertyValue(prop);
 		const last = root.querySelectorAll(".ghs-night")[6]!;
@@ -309,9 +309,9 @@ describe("sleep timeline (nights with bedtime and wake-up time)", () => {
 		expect(ys).toEqual([`${(60 / 540) * 100}%`, `${(510 / 540) * 100}%`]);
 	});
 
-	it("keeps an axis label that is an hour or more from a usual time and drops one that is closer", async () => {
-		// bed 23:00, up 06:00: axis 22:00 to 07:00, both labels at least an hour from a line
-		render(computeSleep(await timed(() => 420, () => ({ start: "23:00", end: "06:00" })), END));
+	it("keeps an axis label that is at least 14 percent of the axis from a usual time and drops one that is closer", async () => {
+		// bed 23:20, up 05:30: axis 22:00 to 07:00 (540 min); both labels are 80 and 90 minutes from a line
+		render(computeSleep(await timed(() => 420, () => ({ start: "23:20", end: "05:30" })), END));
 		expect(text(".ghs-axis-top")).toBe("22:00");
 		expect(text(".ghs-axis-bottom")).toBe("07:00");
 		root.empty();

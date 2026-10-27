@@ -59,8 +59,8 @@ export interface SleepSchedule {
 /** From this many nights with times the chart shows when you slept instead of only how long. */
 export const SLEEP_MIN_TIMED_NIGHTS = 3;
 const DAY = 1440;
-/** An end label of the timeline that is closer than this to a usual time is dropped: both would be unreadable. */
-const AXIS_CLEARANCE_MIN = 60;
+/** An end label of the timeline that is closer than this share of the axis to a usual time is dropped: both would be unreadable. */
+const AXIS_CLEARANCE_SHARE = 0.14;
 
 export interface SleepModel {
 	/** What the data suggests, filled in by the panel (see insights/). */
@@ -202,7 +202,7 @@ function timelineChart(parent: HTMLElement, nights: SleepNight[], schedule: Slee
 	const range = Math.ceil(last / 60) * 60 - top;
 	const chart = parent.createDiv({ cls: "ghs-nights ghs-nights-timeline" });
 	// dotted lines at the usual bedtime and wake-up, labelled with their times; an end label that would sit on one is left out
-	const clear = (minutes: number): boolean => usual.every((u) => Math.abs(u - minutes) >= AXIS_CLEARANCE_MIN);
+	const clear = (minutes: number): boolean => usual.every((u) => Math.abs(u - minutes) >= range * AXIS_CLEARANCE_SHARE);
 	if (clear(top)) chart.createSpan({ cls: "ghs-axis-label ghs-axis-top", text: formatClock(top) });
 	if (clear(top + range)) chart.createSpan({ cls: "ghs-axis-label ghs-axis-bottom", text: formatClock(top + range) });
 	for (const minutes of usual) {
