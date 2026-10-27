@@ -140,6 +140,65 @@ describe("F8: switches that never did anything are gone, old files still load", 
 	});
 });
 
+describe("fold properties by default", () => {
+	const dailyNote = (): TFile => Object.assign(new TFile(), { path: `${dayString(0)}.md`, basename: dayString(0) });
+	const openNote = async (app: App, file: TFile): Promise<void> => {
+		app.workspace.activeFile = file;
+		app.workspace.fire("file-open", file);
+		await vi.advanceTimersByTimeAsync(300);
+	};
+	const showProperties = (): void => {
+		document.body.innerHTML = '<div class="workspace-leaf mod-active"><div class="metadata-container"></div></div>';
+	};
+	afterEach(() => {
+		document.body.innerHTML = "";
+	});
+
+	it("folds a daily note when the setting is on", async () => {
+		const { app } = await load({ foldProperties: true });
+		app.workspace.layoutReady();
+		showProperties();
+		await openNote(app, dailyNote());
+		expect(app.commands.executed).toEqual(["editor:toggle-fold-properties"]);
+	});
+
+	it("folds the daily note that is open when Obsidian finishes loading", async () => {
+		const { app } = await load({ foldProperties: true }, (a) => {
+			a.workspace.activeFile = dailyNote();
+		});
+		showProperties();
+		app.workspace.layoutReady();
+		await vi.advanceTimersByTimeAsync(300);
+		expect(app.commands.executed).toEqual(["editor:toggle-fold-properties"]);
+	});
+
+	it("leaves daily notes alone when the setting is off, and other notes always", async () => {
+		const off = await load({ foldProperties: false });
+		off.app.workspace.layoutReady();
+		showProperties();
+		await openNote(off.app, dailyNote());
+		expect(off.app.commands.executed).toEqual([]);
+
+		const on = await load({ foldProperties: true });
+		on.app.workspace.layoutReady();
+		showProperties();
+		await openNote(on.app, Object.assign(new TFile(), { path: "ideas.md", basename: "ideas" }));
+		expect(on.app.commands.executed).toEqual([]);
+	});
+
+	it("follows the setting without a restart and stops folding when the plugin unloads", async () => {
+		const { app, plugin } = await load({ foldProperties: false });
+		app.workspace.layoutReady();
+		showProperties();
+		plugin.settings.foldProperties = true;
+		app.workspace.activeFile = dailyNote();
+		app.workspace.fire("layout-change");
+		plugin.unload();
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(app.commands.executed).toEqual([]);
+	});
+});
+
 describe("startup", () => {
 	it("registers the five commands under their stable ids, named in the user's language", async () => {
 		const { plugin } = await load({ language: "de" });

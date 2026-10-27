@@ -13,6 +13,7 @@ import { readStoredTokens, writeStoredTokens } from "./token-store";
 import { isLoginRequiredError } from "./errors";
 import { parseBirthYear } from "./panel/zones";
 import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "./panel/view";
+import { PropertiesFolder } from "./fold-properties";
 import { showWhatsNewIfDue, showWhatsNewNotes } from "./whats-new";
 
 const AUTO_SYNC_TRIGGER_DEBOUNCE_MS = 30 * 1000;
@@ -143,6 +144,15 @@ export default class HealthSyncPlugin extends Plugin {
 			this.registerEvent(this.app.vault.on("create", file => this.onDailyNoteMaybeReady(file)));
 			this.registerEvent(this.app.vault.on("modify", file => this.onDailyNoteMaybeReady(file)));
 		});
+
+		// Daily notes open with their properties folded (setting "Fold properties by default")
+		const folder = new PropertiesFolder(this.app, (file) => this.settings.foldProperties && dateFromDailyNote(file, this.settings) !== null);
+		this.app.workspace.onLayoutReady(() => {
+			this.registerEvent(this.app.workspace.on("file-open", (file) => folder.fileOpened(file)));
+			this.registerEvent(this.app.workspace.on("layout-change", () => folder.layoutChanged()));
+			folder.layoutChanged();
+		});
+		this.register(() => folder.cancel());
 
 		// Auto-sync when opening today's/yesterday's daily note
 		this.registerEvent(

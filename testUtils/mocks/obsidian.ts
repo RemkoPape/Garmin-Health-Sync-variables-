@@ -390,6 +390,14 @@ export class App {
 	workspace = new Workspace(this);
 	secretStorage: SecretStorageFake | undefined = new SecretStorageFake();
 	local = new Map<string, unknown>();
+	/** Obsidian's command registry (not in the typings): records what was executed. */
+	commands = {
+		executed: [] as string[],
+		executeCommandById(id: string): boolean {
+			this.executed.push(id);
+			return true;
+		},
+	};
 	/** Set by tests to exercise the Periodic Notes / Daily Notes auto-detection. */
 	plugins: { plugins: Record<string, unknown> } | undefined = undefined;
 	internalPlugins: { plugins: Record<string, unknown> } | undefined = undefined;
@@ -437,6 +445,14 @@ export class Plugin {
 	}
 	registerEvent(ref: unknown): void {
 		this.events.push(ref);
+	}
+	cleanups: (() => void)[] = [];
+	register(cleanup: () => void): void {
+		this.cleanups.push(cleanup);
+	}
+	/** Obsidian runs what was registered when the plugin unloads. */
+	unload(): void {
+		for (const cleanup of this.cleanups) cleanup();
 	}
 	registerView(type: string, factory: (leaf: WorkspaceLeaf) => ItemView): void {
 		this.app.workspace.viewFactories.set(type, factory);

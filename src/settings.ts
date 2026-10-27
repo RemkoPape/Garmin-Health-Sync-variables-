@@ -48,6 +48,7 @@ export interface HealthSyncSettings {
 	writeWorkoutLocation: boolean; // Reverse-geocoded workout location in frontmatter
 	serverRegion: ServerRegion;
 	unitSystem: UnitSystem;
+	foldProperties: boolean; // Fold the properties of a daily note when it opens
 	panelEnabled: boolean; // Side panel with health cards
 	panelCards: Record<string, boolean>; // Cards switched off in the panel (missing = on)
 	birthYear: number | null; // Only the year: estimates max heart rate for the heart rate zones in the panel
@@ -70,6 +71,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	writeWorkoutLocation: true,
 	serverRegion: "international",
 	unitSystem: "metric",
+	foldProperties: false,
 	panelEnabled: false,
 	panelCards: {},
 	birthYear: null,
@@ -205,6 +207,11 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 				name: t("settingsWriteTrainings", lang),
 				desc: t("settingsWriteTrainingsDesc", lang),
 				control: { type: "toggle", key: "writeTrainings" },
+			},
+			{
+				name: t("settingsFoldProperties", lang),
+				desc: t("settingsFoldPropertiesDesc", lang),
+				control: { type: "toggle", key: "foldProperties" },
 			},
 			{
 				type: "group",
