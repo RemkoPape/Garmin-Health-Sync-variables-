@@ -369,6 +369,7 @@ export const es: Record<TranslationKeys, string> = {
 	panelWeeksBasis: "Basado en {have} de {need} semanas.",
 	panelWeeklyTitle: "Carga semanal",
 	panelWeeklyExplain: "La carga semanal suma tus minutos de entrenamiento de esta semana, sin las sesiones de recuperación. La marca gris es tu semana habitual, la media de tus semanas anteriores. La marca roja es el límite, un 10 por ciento por encima, un tope habitual para subir el entrenamiento. Los minutos por encima del límite se vuelven naranjas.",
+	panelWeeklyMinutes: "Tiempo de entrenamiento",
 	panelWeeklyAverage: "Habitual",
 	panelWeeklyCap: "Límite",
 	panelWeeklyFoot: "Hasta el límite",

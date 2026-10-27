@@ -369,6 +369,7 @@ export const fr: Record<TranslationKeys, string> = {
 	panelWeeksBasis: "Basé sur {have} semaines sur {need}.",
 	panelWeeklyTitle: "Charge hebdomadaire",
 	panelWeeklyExplain: "La charge hebdomadaire additionne vos minutes d’entraînement de la semaine, sans les séances de récupération. Le trait gris est votre semaine habituelle, la moyenne de vos semaines précédentes. Le trait rouge est la limite, 10 pour cent au-dessus, un plafond courant pour augmenter l’entraînement. Les minutes au-delà de la limite deviennent orange.",
+	panelWeeklyMinutes: "Temps d’entraînement",
 	panelWeeklyAverage: "Habituel",
 	panelWeeklyCap: "Limite",
 	panelWeeklyFoot: "Jusqu’à la limite",

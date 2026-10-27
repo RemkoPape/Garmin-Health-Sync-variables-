@@ -150,6 +150,9 @@ describe("weekly load card", () => {
 		expect(text(".ghs-foot-label")).toBe(en.panelWeeklyFoot);
 		expect(Array.from(root.querySelectorAll(".ghs-tick-label")).map((e) => e.textContent)).toEqual(["Usual 210", "Limit 231"]);
 		expect(root.querySelector(".ghs-card-warning")).toBeNull();
+		// the bar says what it measures, like the sport bars below it
+		expect(text(".ghs-weekly-minutes .ghs-battery-row-label")).toBe("Training time");
+		expect(text(".ghs-weekly-minutes .ghs-battery-row-head span:last-child")).toBe("120 min");
 	});
 
 	it("fills the bar with the minutes so far in one colour, up to the limit", async () => {
@@ -206,7 +209,7 @@ describe("weekly distance of running and cycling", () => {
 	const km = (perDay: number | ((ago: number) => number), extra: Record<string, unknown> = {}) =>
 		indexOf((ago) => ({ running: `${typeof perDay === "number" ? perDay : perDay(ago)} km · 30min`, ...extra }));
 	const row = (i = 0): { label: string; value: string; marks: string[]; left: string } => {
-		const r = root.querySelectorAll(".ghs-battery-row")[i]!;
+		const r = root.querySelectorAll(".ghs-sport-row")[i]!;
 		return {
 			label: r.querySelector(".ghs-battery-row-label")?.textContent ?? "",
 			value: r.querySelector(".ghs-battery-row-head span:last-child")?.textContent ?? "",
@@ -221,17 +224,17 @@ describe("weekly distance of running and cycling", () => {
 		expect(model.distances).toEqual([{ category: "running", km: 20, average: 35, cap: expect.closeTo(38.5, 6) }]);
 		renderWeekly(root, model, "en", false, false, noop);
 		expect(row()).toEqual({ label: en.panelCategoryRunning, value: "20 km", marks: ["Usual 35", "Limit 38.5"], left: "18.5 km left" });
-		expect(root.querySelectorAll(".ghs-battery-row")).toHaveLength(1);
-		const over = root.querySelector(".ghs-battery-row .ghs-weekly-over") as HTMLElement;
+		expect(root.querySelectorAll(".ghs-sport-row")).toHaveLength(1);
+		const over = root.querySelector(".ghs-sport-row .ghs-weekly-over") as HTMLElement;
 		expect(over).not.toBeNull();
-		expect(root.querySelector(".ghs-battery-row .ghs-foot-label")?.textContent).toBe(en.panelWeeklyFoot);
+		expect(root.querySelector(".ghs-sport-row .ghs-foot-label")?.textContent).toBe(en.panelWeeklyFoot);
 	});
 
 	it("warns when over the cap", async () => {
 		renderWeekly(root, computeWeekly(await km((ago) => (ago < 4 ? 12 : 5)), END), "en", false, false, noop);
 		// 48 km this week against a cap of 38.5 km
 		expect(row().left).toBe(en.panelWeeklyOver);
-		expect(root.querySelector(".ghs-battery-row .ghs-foot-over")).not.toBeNull();
+		expect(root.querySelector(".ghs-sport-row .ghs-foot-over")).not.toBeNull();
 	});
 
 	it("shows miles for imperial users", async () => {
@@ -250,7 +253,7 @@ describe("weekly distance of running and cycling", () => {
 		const none = await indexOf(() => ({ yoga: "30min" }));
 		expect(computeWeekly(none, END).distances).toEqual([]);
 		renderWeekly(root, computeWeekly(none, END), "en", false, false, noop);
-		expect(root.querySelector(".ghs-battery-row")).toBeNull();
+		expect(root.querySelector(".ghs-sport-row")).toBeNull();
 		const viaList = await indexOf(() => ({ trainings: [{ type: "trail_running", category: "running", distance_km: 10, duration_min: 60 }] }));
 		expect(computeWeekly(viaList, END).distances[0]).toMatchObject({ category: "running", km: 40 });
 	});
@@ -270,7 +273,7 @@ describe("weekly distance of running and cycling", () => {
 		renderWeekly(root, model, "en", false, false, noop);
 		expect(row().left).toBe(en.panelWeeklyOver);
 		expect(row().marks).toEqual([]);
-		expect(root.querySelector(".ghs-battery-row .ghs-weekly-seg-over")).not.toBeNull();
+		expect(root.querySelector(".ghs-sport-row .ghs-weekly-seg-over")).not.toBeNull();
 	});
 
 	it("speaks the plugin language", async () => {

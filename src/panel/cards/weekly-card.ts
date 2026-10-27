@@ -52,24 +52,19 @@ export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: stri
 			card.createDiv({ cls: "ghs-card-note", text: t("panelLoadLocked", lang) });
 			return;
 		}
-		const domain = Math.max(model.cap * 1.25, model.minutes * 1.05, 1);
-		const bar = card.createDiv({ cls: "ghs-range ghs-range-labelled ghs-weekly", attr: { role: "img", "aria-label": formatNumber(model.minutes, lang, 0) } });
-		const track = bar.createDiv({ cls: "ghs-weekly-track" });
-		track.createDiv({ cls: "ghs-weekly-seg" }).setCssProps({ "--ghs-w": `${(Math.min(model.minutes, model.cap) / domain) * 100}%` });
-		if (model.minutes > model.cap) track.createDiv({ cls: "ghs-weekly-seg ghs-weekly-seg-over" }).setCssProps({ "--ghs-w": `${((model.minutes - model.cap) / domain) * 100}%` });
-		const over = bar.createDiv({ cls: "ghs-weekly-over" });
-		over.setCssProps({ "--ghs-x": `${(model.cap / domain) * 100}%` });
-		bar.createDiv({ cls: "ghs-tick ghs-tick-solid" }).setCssProps({ "--ghs-x": `${(model.average / domain) * 100}%` });
-		bar.createDiv({ cls: "ghs-tick ghs-tick-solid ghs-tick-cap" }).setCssProps({ "--ghs-x": `${(model.cap / domain) * 100}%` });
-		const labels = bar.createDiv({ cls: "ghs-range-labels" });
-		labels.createSpan({ cls: "ghs-tick-label", text: `${t("panelWeeklyAverage", lang)} ${formatNumber(model.average, lang, 0)}` }).setCssProps({ "--ghs-x": `${(model.average / domain) * 100}%` });
-		labels.createSpan({ cls: "ghs-tick-label", text: `${t("panelWeeklyCap", lang)} ${formatNumber(model.cap, lang, 0)}` }).setCssProps({ "--ghs-x": `${(model.cap / domain) * 100}%` });
 		const left = Math.round(model.cap - model.minutes);
-		const foot = card.createDiv({ cls: "ghs-foot" });
-		foot.createSpan({ cls: "ghs-foot-label", text: t("panelWeeklyFoot", lang) });
-		foot.createSpan({
-			cls: `ghs-foot-value${left < 0 ? " ghs-foot-over" : ""}`,
-			text: left < 0 ? t("panelWeeklyOver", lang) : t("panelWeeklyLeft", lang).replace("{min}", formatNumber(left, lang, 0)),
+		weekRow(card, {
+			label: t("panelWeeklyMinutes", lang),
+			shown: `${formatNumber(model.minutes, lang, 0)} min`,
+			value: model.minutes,
+			average: model.average,
+			cap: model.cap,
+			marks: true,
+			number: (n) => formatNumber(n, lang, 0),
+			over: left < 0,
+			leftText: t("panelWeeklyLeft", lang).replace("{min}", formatNumber(left, lang, 0)),
+			rowClass: "ghs-weekly-minutes",
+			lang,
 		});
 		for (const d of model.distances) distanceRow(card, d, lang, imperial);
 		if (model.weeks < CHRONIC_WEEKS) {
@@ -78,33 +73,61 @@ export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: stri
 	});
 }
 
-/** A sport's weekly distance: the same bar as the minutes above, with the usual week and the limit labelled, and what is left to the limit. */
+/** One bar of the card: a heading with what it measures and its value, the bar with the usual week and the limit labelled, and what is left. Minutes and every sport use it, so they read the same. */
+interface WeekRow {
+	label: string;
+	/** The value with its unit, next to the label. */
+	shown: string;
+	value: number;
+	average: number;
+	cap: number;
+	/** Without a usual week (a sport started this week) there is nothing to mark. */
+	marks: boolean;
+	number: (n: number) => string;
+	over: boolean;
+	leftText: string;
+	rowClass: string;
+	lang: string;
+}
+
+function weekRow(card: HTMLElement, o: WeekRow): void {
+	const domain = Math.max(o.cap * 1.25, o.value * 1.05, 0.1);
+	const row = card.createDiv({ cls: `ghs-battery-row ${o.rowClass}` });
+	const head = row.createDiv({ cls: "ghs-battery-row-head" });
+	head.createSpan({ cls: "ghs-battery-row-label", text: o.label });
+	head.createSpan({ text: o.shown });
+	const bar = row.createDiv({ cls: "ghs-range ghs-range-labelled ghs-weekly", attr: { role: "img", "aria-label": `${o.label} ${o.shown}` } });
+	const track = bar.createDiv({ cls: "ghs-weekly-track" });
+	track.createDiv({ cls: "ghs-weekly-seg" }).setCssProps({ "--ghs-w": `${(Math.min(o.value, o.cap) / domain) * 100}%` });
+	if (o.value > o.cap) track.createDiv({ cls: "ghs-weekly-seg ghs-weekly-seg-over" }).setCssProps({ "--ghs-w": `${((o.value - o.cap) / domain) * 100}%` });
+	bar.createDiv({ cls: "ghs-weekly-over" }).setCssProps({ "--ghs-x": `${(o.cap / domain) * 100}%` });
+	if (o.marks) {
+		bar.createDiv({ cls: "ghs-tick ghs-tick-solid" }).setCssProps({ "--ghs-x": `${(o.average / domain) * 100}%` });
+		bar.createDiv({ cls: "ghs-tick ghs-tick-solid ghs-tick-cap" }).setCssProps({ "--ghs-x": `${(o.cap / domain) * 100}%` });
+		const labels = bar.createDiv({ cls: "ghs-range-labels" });
+		labels.createSpan({ cls: "ghs-tick-label", text: `${t("panelWeeklyAverage", o.lang)} ${o.number(o.average)}` }).setCssProps({ "--ghs-x": `${(o.average / domain) * 100}%` });
+		labels.createSpan({ cls: "ghs-tick-label", text: `${t("panelWeeklyCap", o.lang)} ${o.number(o.cap)}` }).setCssProps({ "--ghs-x": `${(o.cap / domain) * 100}%` });
+	}
+	const foot = row.createDiv({ cls: "ghs-foot" });
+	foot.createSpan({ cls: "ghs-foot-label", text: t("panelWeeklyFoot", o.lang) });
+	foot.createSpan({ cls: `ghs-foot-value${o.over ? " ghs-foot-over" : ""}`, text: o.over ? t("panelWeeklyOver", o.lang) : o.leftText });
+}
+
+/** A sport's weekly distance, drawn like the minutes. */
 function distanceRow(card: HTMLElement, d: WeeklyDistance, lang: string, imperial: boolean): void {
 	const unit = imperial ? "mi" : "km";
 	const num = (km: number): string => formatNumber(imperial ? km / KM_PER_MILE : km, lang, 1);
-	const domain = Math.max(d.cap * 1.25, d.km * 1.05, 0.1);
-	const row = card.createDiv({ cls: "ghs-battery-row" });
-	const head = row.createDiv({ cls: "ghs-battery-row-head" });
-	head.createSpan({ cls: "ghs-battery-row-label", text: t(d.category === "running" ? "panelCategoryRunning" : "panelCategoryCycling", lang) });
-	head.createSpan({ text: `${num(d.km)} ${unit}` });
-	const bar = row.createDiv({ cls: "ghs-range ghs-range-labelled ghs-weekly", attr: { role: "img", "aria-label": `${num(d.km)} ${unit}` } });
-	const track = bar.createDiv({ cls: "ghs-weekly-track" });
-	track.createDiv({ cls: "ghs-weekly-seg" }).setCssProps({ "--ghs-w": `${(Math.min(d.km, d.cap) / domain) * 100}%` });
-	if (d.km > d.cap) track.createDiv({ cls: "ghs-weekly-seg ghs-weekly-seg-over" }).setCssProps({ "--ghs-w": `${((d.km - d.cap) / domain) * 100}%` });
-	bar.createDiv({ cls: "ghs-weekly-over" }).setCssProps({ "--ghs-x": `${(d.cap / domain) * 100}%` });
-	// a sport started this week has no usual week yet: nothing to mark
-	if (d.average > 0) {
-		bar.createDiv({ cls: "ghs-tick ghs-tick-solid" }).setCssProps({ "--ghs-x": `${(d.average / domain) * 100}%` });
-		bar.createDiv({ cls: "ghs-tick ghs-tick-solid ghs-tick-cap" }).setCssProps({ "--ghs-x": `${(d.cap / domain) * 100}%` });
-		const labels = bar.createDiv({ cls: "ghs-range-labels" });
-		labels.createSpan({ cls: "ghs-tick-label", text: `${t("panelWeeklyAverage", lang)} ${num(d.average)}` }).setCssProps({ "--ghs-x": `${(d.average / domain) * 100}%` });
-		labels.createSpan({ cls: "ghs-tick-label", text: `${t("panelWeeklyCap", lang)} ${num(d.cap)}` }).setCssProps({ "--ghs-x": `${(d.cap / domain) * 100}%` });
-	}
-	const foot = row.createDiv({ cls: "ghs-foot" });
-	foot.createSpan({ cls: "ghs-foot-label", text: t("panelWeeklyFoot", lang) });
-	const left = d.cap - d.km;
-	foot.createSpan({
-		cls: `ghs-foot-value${left < 0 ? " ghs-foot-over" : ""}`,
-		text: left < 0 ? t("panelWeeklyOver", lang) : t("panelDistanceLeft", lang).replace("{km}", `${num(left)} ${unit}`),
+	weekRow(card, {
+		label: t(d.category === "running" ? "panelCategoryRunning" : "panelCategoryCycling", lang),
+		shown: `${num(d.km)} ${unit}`,
+		value: d.km,
+		average: d.average,
+		cap: d.cap,
+		marks: d.average > 0,
+		number: num,
+		over: d.cap - d.km < 0,
+		leftText: t("panelDistanceLeft", lang).replace("{km}", `${num(d.cap - d.km)} ${unit}`),
+		rowClass: "ghs-sport-row",
+		lang,
 	});
 }

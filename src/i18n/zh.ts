@@ -369,6 +369,7 @@ export const zh: Record<TranslationKeys, string> = {
 	panelWeeksBasis: "基于 {need} 周中的 {have} 周。",
 	panelWeeklyTitle: "每周负荷",
 	panelWeeklyExplain: "每周负荷是本周训练分钟数的总和（不含恢复训练）。灰色刻度是你的通常一周，即之前几周的平均值。红色刻度是上限，比它高 10%，是提高训练量速度的常用上限。超出上限的分钟会变成橙色。",
+	panelWeeklyMinutes: "训练时间",
 	panelWeeklyAverage: "通常",
 	panelWeeklyCap: "上限",
 	panelWeeklyFoot: "距上限",

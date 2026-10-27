@@ -370,6 +370,7 @@ export const de: Record<TranslationKeys, string> = {
 	panelWeeksBasis: "Basiert auf {have} von {need} Wochen.",
 	panelWeeklyTitle: "Wochenbelastung",
 	panelWeeklyExplain: "Die Wochenbelastung addiert deine Trainingsminuten dieser Woche, ohne Erholungseinheiten. Der graue Strich ist deine übliche Woche, der Durchschnitt deiner vorherigen Wochen. Der rote Strich ist die Grenze, 10 Prozent darüber, eine übliche Obergrenze dafür, wie schnell das Training steigen sollte. Minuten über der Grenze werden orange.",
+	panelWeeklyMinutes: "Trainingszeit",
 	panelWeeklyAverage: "Üblich",
 	panelWeeklyCap: "Grenze",
 	panelWeeklyFoot: "Bis zur Grenze",
