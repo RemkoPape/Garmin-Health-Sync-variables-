@@ -67,11 +67,21 @@
 
 /* Health panel (right sidebar) */
 .ghs-panel {
-	/* one data colour for everything that has no good or bad side: the accent of the theme, a little brighter */
-	--ghs-data: color-mix(in srgb, var(--interactive-accent) 80%, white);
+	/* One data colour for everything that has no good or bad side: the accent of the theme with its lightness held between 0.5 and 0.72, so a very bright or very dark accent still stands out on a light and on a dark card. The shades fade it towards the card, strongest first. */
+	--ghs-data: var(--interactive-accent);
+	--ghs-shade-1: var(--ghs-data);
+	--ghs-shade-2: color-mix(in oklab, var(--ghs-data) 70%, var(--background-secondary));
+	--ghs-shade-3: color-mix(in oklab, var(--ghs-data) 45%, var(--background-secondary));
+	--ghs-shade-4: color-mix(in oklab, var(--ghs-data) 25%, var(--background-secondary));
 	display: flex;
 	flex-direction: column;
 	gap: var(--size-4-6);
+}
+
+@supports (color: oklch(from red l c h)) {
+	.ghs-panel {
+		--ghs-data: oklch(from var(--interactive-accent) clamp(0.5, l, 0.72) c h);
+	}
 }
 
 .ghs-daynav {
@@ -310,7 +320,7 @@
 
 /* Steps, intensity minutes and floors */
 .ghs-range-track-steps {
-	background: linear-gradient(to right, color-mix(in srgb, var(--ghs-data) 30%, var(--background-secondary)), var(--ghs-data));
+	background: linear-gradient(to right, var(--ghs-shade-4), var(--ghs-data));
 }
 
 .ghs-zone {
@@ -483,15 +493,15 @@
 }
 
 .ghs-stage-deep {
-	background: var(--interactive-accent);
+	background: var(--ghs-shade-1);
 }
 
 .ghs-stage-rem {
-	background: color-mix(in srgb, var(--interactive-accent) 65%, var(--background-secondary));
+	background: var(--ghs-shade-2);
 }
 
 .ghs-stage-light {
-	background: color-mix(in srgb, var(--interactive-accent) 35%, var(--background-secondary));
+	background: var(--ghs-shade-3);
 }
 
 .ghs-stage-awake {
@@ -578,7 +588,7 @@
 }
 
 .ghs-battery-fill {
-	background: linear-gradient(to right, var(--color-red), var(--color-orange), var(--color-green));
+	background: linear-gradient(to right, var(--ghs-shade-3), var(--ghs-data));
 }
 
 .ghs-battery-usual {
@@ -588,7 +598,7 @@
 
 /* Stress: Garmin's four bands */
 .ghs-range-track-stress {
-	background: linear-gradient(to right, var(--color-cyan) 0%, var(--color-cyan) 25%, var(--color-blue) 25%, var(--color-blue) 50%, var(--color-yellow) 50%, var(--color-yellow) 75%, var(--color-red) 75%, var(--color-red) 100%);
+	background: linear-gradient(to right, var(--ghs-shade-4) 0%, var(--ghs-shade-4) 25%, var(--ghs-shade-3) 25%, var(--ghs-shade-3) 50%, var(--ghs-shade-2) 50%, var(--ghs-shade-2) 75%, var(--ghs-shade-1) 75%, var(--ghs-shade-1) 100%);
 }
 
 /* Trend line: 14 tiny bars and a sentence, set apart from the card's content by a hairline */
@@ -953,11 +963,11 @@
 }
 
 .ghs-split-stressed {
-	background: var(--color-orange);
+	background: var(--ghs-shade-1);
 }
 
 .ghs-split-recovering {
-	background: var(--ghs-data);
+	background: var(--ghs-shade-3);
 }
 
 .ghs-split-labels {
@@ -979,11 +989,11 @@
 }
 
 .ghs-split-label-stressed {
-	--ghs-swatch: var(--color-orange);
+	--ghs-swatch: var(--ghs-shade-1);
 }
 
 .ghs-split-label-recovering {
-	--ghs-swatch: var(--ghs-data);
+	--ghs-swatch: var(--ghs-shade-3);
 }
 
 /* The light bulb: a clear glyph flush with the right edge of the card, in a roomy touch target that reaches into the empty space to its left */

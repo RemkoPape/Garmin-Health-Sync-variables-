@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0-beta.26
+
+### Changed
+
+- Stress and Body Battery use shades of your accent colour too: the four stress bands go from light (calm) to dark (high), the stressed/recovering split uses a dark and a light shade, and the Body Battery bar fills from light to full colour.
+- All accent shades are derived from your accent colour with its lightness held between 0.5 and 0.72, so a very bright or very dark accent no longer makes bars or shade steps hard to tell apart on a light or dark theme. Obsidian versions without relative colour support use the accent unchanged.
+
 ## 0.12.0-beta.25
 
 ### Added
