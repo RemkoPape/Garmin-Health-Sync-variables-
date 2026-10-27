@@ -685,7 +685,7 @@ export default class HealthSyncPlugin extends Plugin {
 		delete (this.settings as unknown as { createDailyNoteIfMissing?: boolean }).createDailyNoteIfMissing;
 		// "Fold properties by default" became a choice of three: on meant folding
 		const legacyFold = (saved ?? {}) as { foldProperties?: boolean; propertiesMode?: string };
-		if (!["off", "fold", "hide"].includes(legacyFold.propertiesMode ?? "")) this.settings.propertiesMode = legacyFold.foldProperties === true ? "fold" : "off";
+		if (!["off", "fold", "hide", "foldHide"].includes(legacyFold.propertiesMode ?? "")) this.settings.propertiesMode = legacyFold.foldProperties === true ? "fold" : "off";
 		delete (this.settings as unknown as { foldProperties?: boolean }).foldProperties;
 		for (const key of Object.keys(defaults)) {
 			if (this.settings.enabledMetrics[key] === undefined) {

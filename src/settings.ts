@@ -235,6 +235,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 						off: t("propertiesOff", lang),
 						fold: t("propertiesFold", lang),
 						hide: t("propertiesHide", lang),
+						foldHide: t("propertiesFoldHide", lang),
 					},
 				},
 			},

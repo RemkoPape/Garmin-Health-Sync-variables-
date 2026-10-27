@@ -53,6 +53,7 @@ export const de: Record<TranslationKeys, string> = {
 	propertiesOff: "Unverändert lassen",
 	propertiesFold: "Einklappen",
 	propertiesHide: "Garmin-Eigenschaften ausblenden",
+	propertiesFoldHide: "Garmin-Eigenschaften ausblenden und den Rest einklappen",
 	unitMetric: "Metrisch (km, kg)",
 	unitImperial: "Imperial (mi, lbs)",
 	settingsLanguage: "Sprache",

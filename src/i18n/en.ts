@@ -51,6 +51,7 @@ export const en = {
 	propertiesOff: "Leave as they are",
 	propertiesFold: "Fold them",
 	propertiesHide: "Hide the Garmin properties",
+	propertiesFoldHide: "Fold, and hide the Garmin properties",
 	unitMetric: "Metric (km, kg)",
 	unitImperial: "Imperial (mi, lbs)",
 	settingsLanguage: "Language",

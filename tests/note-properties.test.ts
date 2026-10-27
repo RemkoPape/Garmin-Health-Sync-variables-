@@ -174,6 +174,17 @@ describe("hiding what the panel shows", () => {
 		expect(rowsHidden()).toEqual([]);
 	});
 
+	it("leaves a note that is not a daily note alone on a layout change, and shows its rows", async () => {
+		showProperties(["hrv"]);
+		properties.layoutChanged();
+		await vi.advanceTimersByTimeAsync(300);
+		expect(rowsHidden()).toEqual(["hrv"]);
+		app.workspace.activeFile = OTHER;
+		properties.layoutChanged();
+		await vi.advanceTimersByTimeAsync(300);
+		expect(rowsHidden()).toEqual([]);
+	});
+
 	it("applies again on every layout change, because the block may be new", async () => {
 		showProperties(["hrv"]);
 		properties.layoutChanged();
@@ -223,5 +234,45 @@ describe("hiding what the panel shows", () => {
 		properties.modeChanged();
 		await vi.advanceTimersByTimeAsync(300);
 		expect(app.commands.executed).toHaveLength(1);
+	});
+});
+
+describe("folding and hiding together", () => {
+	beforeEach(() => {
+		mode = "foldHide";
+	});
+
+	it("hides the rows and folds the block once", async () => {
+		showProperties(["tags", "hrv"]);
+		properties.fileOpened(DAILY as never);
+		await vi.advanceTimersByTimeAsync(300);
+		expect(rowsHidden()).toEqual(["hrv"]);
+		expect(app.commands.executed).toEqual(["editor:toggle-fold-properties"]);
+	});
+
+	it("keeps hiding on a layout change but does not fold again what the user opened", async () => {
+		showProperties(["hrv"]);
+		properties.layoutChanged();
+		await vi.advanceTimersByTimeAsync(300);
+		expect(app.commands.executed).toHaveLength(1);
+		showProperties(["hrv"]); // opened by the user, a new block
+		properties.layoutChanged();
+		await vi.advanceTimersByTimeAsync(300);
+		expect(rowsHidden()).toEqual(["hrv"]);
+		expect(app.commands.executed).toHaveLength(1);
+		properties.fileOpened(DAILY as never); // the note opened again folds again
+		await vi.advanceTimersByTimeAsync(300);
+		expect(app.commands.executed).toHaveLength(2);
+	});
+
+	it("does not fold a block that is already folded, and goes back to folding only when hiding is dropped", async () => {
+		showProperties(["hrv"], true);
+		properties.fileOpened(DAILY as never);
+		await vi.advanceTimersByTimeAsync(300);
+		expect(app.commands.executed).toEqual([]);
+		expect(rowsHidden()).toEqual(["hrv"]);
+		mode = "fold";
+		properties.modeChanged();
+		expect(rowsHidden()).toEqual([]);
 	});
 });

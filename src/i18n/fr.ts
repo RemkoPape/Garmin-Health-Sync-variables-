@@ -53,6 +53,7 @@ export const fr: Record<TranslationKeys, string> = {
 	propertiesOff: "Les laisser telles quelles",
 	propertiesFold: "Les replier",
 	propertiesHide: "Masquer les propriétés Garmin",
+	propertiesFoldHide: "Masquer les propriétés Garmin et replier le reste",
 	unitMetric: "Métrique (km, kg)",
 	unitImperial: "Impérial (mi, lbs)",
 	settingsLanguage: "Langue",

@@ -53,6 +53,7 @@ export const es: Record<TranslationKeys, string> = {
 	propertiesOff: "Dejarlas como están",
 	propertiesFold: "Plegarlas",
 	propertiesHide: "Ocultar las propiedades de Garmin",
+	propertiesFoldHide: "Ocultar las propiedades de Garmin y plegar el resto",
 	unitMetric: "Métrico (km, kg)",
 	unitImperial: "Imperial (mi, lbs)",
 	settingsLanguage: "Idioma",
