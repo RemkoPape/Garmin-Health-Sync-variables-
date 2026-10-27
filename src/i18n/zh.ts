@@ -4,6 +4,9 @@ export const zh: Record<TranslationKeys, string> = {
 	// Commands
 	commandSync: "同步当前笔记",
 	commandBackfill: "回填健康数据",
+	commandBackfillForce: "再次回填健康数据（忽略已获取的）",
+	modalBackfillForceTitle: "再次回填",
+	modalBackfillForceDesc: "重新获取范围内的每一天（包括已完整的日期）并覆盖其值。出现缺失或错误数值后使用；普通回填会跳过已有的日期。",
 	commandImportHistory: "从每日笔记导入历史",
 	commandManualLogin: "使用服务票据登录",
 

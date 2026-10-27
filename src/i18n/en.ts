@@ -2,6 +2,9 @@ export const en = {
 	// Commands
 	commandSync: "Sync current note",
 	commandBackfill: "Backfill health data",
+	commandBackfillForce: "Backfill health data again (ignore what is already fetched)",
+	modalBackfillForceTitle: "Backfill again",
+	modalBackfillForceDesc: "Fetches every day of the range again, even days that are already complete, and overwrites their values. Use it after a gap or a wrong value; the normal backfill skips days it already has.",
 	commandImportHistory: "Import history from daily notes",
 	commandManualLogin: "Log in with service ticket",
 

@@ -343,14 +343,37 @@ describe("backfill", () => {
 			expect(provider.fetchCalls).toEqual([]);
 		});
 
-		it("include days without data, but not failed days or the last three days", async () => {
-			provider.byDate.set("2026-10-20", { metrics: {}, activities: {} });
-			provider.byDate.set("2026-10-21", new Error("down"));
+		it("include days without data, but not failed days or the last week", async () => {
+			provider.byDate.set("2026-10-14", { metrics: {}, activities: {} });
+			provider.byDate.set("2026-10-15", new Error("down"));
 			const s = settings();
-			await run("2026-10-20", "2026-10-25", s);
+			await run("2026-10-14", "2026-10-21", s); // now is 2026-10-25: days before the 18th are final
 			provider.fetchCalls = [];
-			await run("2026-10-20", "2026-10-25", s);
-			expect(fetchedDates()).toEqual(["2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"]);
+			await run("2026-10-14", "2026-10-21", s);
+			expect(fetchedDates()).toEqual(["2026-10-15", "2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21"]);
+		});
+
+		it("are fetched again, and overwritten, when the backfill is forced", async () => {
+			const s = settings();
+			await run("2026-10-10", "2026-10-11", s);
+			provider.fetchCalls = [];
+			provider.defaultData = { metrics: { steps: 9999 }, activities: {} };
+			const p = sync.backfill("2026-10-10", "2026-10-11", s, { force: true });
+			await vi.runAllTimersAsync();
+			expect(await p).toBe(2);
+			expect(fetchedDates()).toEqual(["2026-10-10", "2026-10-11"]);
+			expect(app.vault.text("Daily/2026-10-10.md")).toContain("steps: 9999");
+		});
+
+		it("are not counted as fetched when storing them failed, so the next run tries again", async () => {
+			const s = settings();
+			app.vault.failOn = (op) => (op === "create" ? new Error("disk full") : null);
+			expect(await run("2026-10-10", "2026-10-11", s)).toBe(0);
+			expect(s.fetchLog).toEqual({});
+			app.vault.failOn = null;
+			provider.fetchCalls = [];
+			await run("2026-10-10", "2026-10-11", s);
+			expect(fetchedDates()).toEqual(["2026-10-10", "2026-10-11"]);
 		});
 
 		it("are also skipped when the history notes already hold them with the metrics wanted", async () => {

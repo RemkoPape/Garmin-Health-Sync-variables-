@@ -149,6 +149,36 @@ describe("history notes of an earlier folder", () => {
 	});
 });
 
+describe("force backfill command", () => {
+	it("opens its own dialog and fetches days that are already done again", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		/** Opens the command's dialog, picks the range and starts; returns what the dialog said. */
+		const run = async (command: string): Promise<{ title: string; text: string }> => {
+			loaded.plugin.commands.get(command)!.callback!();
+			const modal = Modal.opened.at(-1)!;
+			const said = { title: modal.contentEl.querySelector("h2")?.textContent ?? "", text: modal.contentEl.querySelector("p")?.textContent ?? "" };
+			const inputs = modal.contentEl.querySelectorAll<HTMLInputElement>("input");
+			inputs[0]!.value = dayString(20);
+			inputs[0]!.dispatchEvent(new window.Event("input"));
+			inputs[1]!.value = dayString(19);
+			inputs[1]!.dispatchEvent(new window.Event("input"));
+			(modal.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
+			await vi.runAllTimersAsync();
+			return said;
+		};
+		expect((await run("backfill-health-data")).title).toBe(en.modalBackfillTitle);
+		expect(fetched(loaded.provider)).toHaveLength(2);
+		loaded.provider.fetchCalls = [];
+		await run("backfill-health-data");
+		expect(fetched(loaded.provider)).toEqual([]);
+		expect(Notice.recorded.at(-1)?.message).toBe(en.noticeBackfillNothing);
+		const forced = await run("force-backfill-health-data");
+		expect(forced).toEqual({ title: en.modalBackfillForceTitle, text: en.modalBackfillForceDesc });
+		expect(fetched(loaded.provider)).toHaveLength(2);
+		expect(loaded.plugin.commands.get("force-backfill-health-data")?.name).toBe(en.commandBackfillForce);
+	});
+});
+
 describe("the backfill log", () => {
 	it("keeps what the backfill remembered across restarts, without sharing it with the defaults", async () => {
 		const { plugin } = await load({ fetchLog: { "2026-10-01": 0 }, fetchSets: [["hrv", "steps"]] });
@@ -252,6 +282,26 @@ describe("build history command", () => {
 		start(loaded, 4);
 		await vi.runAllTimersAsync();
 		expect(fetched(loaded.provider)).toEqual([dayString(4)]);
+	});
+
+	it("does not start a second build from a second dialog that was open at the same time", async () => {
+		const loaded = await load(signedIn());
+		let release: () => void = () => undefined;
+		loaded.provider.gate = new Promise<void>((resolve) => (release = resolve));
+		loaded.plugin.commands.get("build-history")!.callback!();
+		loaded.plugin.commands.get("build-history")!.callback!();
+		const [first, second] = Modal.opened.slice(-2) as [Modal, Modal];
+		for (const modal of [first, second]) {
+			(modal.contentEl.querySelector("input") as HTMLInputElement).value = dayString(3);
+			(modal.contentEl.querySelector("input") as HTMLInputElement).dispatchEvent(new window.Event("input"));
+			(modal.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
+		}
+		await settle();
+		expect(loaded.plugin.statusBarItems).toHaveLength(1);
+		expect(Notice.recorded.filter((n) => n.fragment?.querySelector("button"))).toHaveLength(1);
+		release();
+		await vi.runAllTimersAsync();
+		expect(fetched(loaded.provider)).toEqual([dayString(1), dayString(2), dayString(3)]);
 	});
 
 	it("runs one build at a time and leaves the recent days to the auto-sync afterwards", async () => {
@@ -389,9 +439,9 @@ describe("fold properties by default", () => {
 });
 
 describe("startup", () => {
-	it("registers the seven commands under their stable ids, named in the user's language", async () => {
+	it("registers the eight commands under their stable ids, named in the user's language", async () => {
 		const { plugin } = await load({ language: "de" });
-		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "build-history", "import-history-from-notes", "login-with-ticket", "open-health-panel", "show-whats-new", "sync-health-data"]);
+		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "build-history", "force-backfill-health-data", "import-history-from-notes", "login-with-ticket", "open-health-panel", "show-whats-new", "sync-health-data"]);
 		expect(plugin.commands.get("show-whats-new")?.name).toBe(de.commandWhatsNew);
 		expect(plugin.commands.get("sync-health-data")?.name).toBe(de.commandSync);
 		expect(plugin.commands.get("backfill-health-data")?.name).toBe(de.commandBackfill);

@@ -4,6 +4,9 @@ export const ja: Record<TranslationKeys, string> = {
 	// Commands
 	commandSync: "現在のノートを同期",
 	commandBackfill: "ヘルスデータをバックフィル",
+	commandBackfillForce: "健康データをもう一度バックフィル（取得済みを無視）",
+	modalBackfillForceTitle: "もう一度バックフィル",
+	modalBackfillForceDesc: "期間内のすべての日を、すでに完全な日も含めてもう一度取得し、値を上書きします。欠けや誤った値があったときに使います。通常のバックフィルは取得済みの日をスキップします。",
 	commandImportHistory: "デイリーノートから履歴を取り込む",
 	commandManualLogin: "サービスチケットでログイン",
 

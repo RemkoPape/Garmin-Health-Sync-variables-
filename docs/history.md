@@ -40,7 +40,15 @@ The command **Build Garmin history** fetches the days from yesterday back to the
 
 - Newest day first, so stopping early still leaves the most useful days. Days already in the history are skipped, so a stopped or failed run continues where it left off; nothing else is stored to resume.
 - Only the metrics you have enabled are fetched, one request group per metric group and day, spaced by the same delay as the backfill (about 3 s a day with the default metrics, about 10 s with all of them). The dialog shows the estimate before it starts.
-- A day without any data is remembered as empty once it is older than three days, so it is not asked for again. The run ends at the start of your data: after data was found, 120 days in a row without any.
+- A day without any data is remembered as empty once it is older than a week, so it is not asked for again. The run ends at the start of your data: after data was found, 120 days in a row without any.
 - A day that fails is retried after 30 s and 60 s. Three failed days in a row pause the run for 5 minutes, then 10, 20 and 30; after five pauses without a success it stops. A request for a new sign-in stops it at once. Whatever was fetched is saved in every case.
 - A running build shows a notice at the top with the day, the days done, the time left and a **Stop** button, and on a desktop a percentage in the status bar. The auto-sync waits while it runs; fetches never overlap.
 - A daily note that exists for a fetched day is updated too (never created).
+
+## Skipping and forcing
+
+The command **Backfill health data** (the date range) fetches only what is missing: a day older than a week that an earlier backfill fetched with all the metrics enabled now, or that the history notes already hold, is skipped. The last seven days are always fetched again because the watch may sync late. The command **Backfill health data again (ignore what is already fetched)** fetches every day of the range again and overwrites their values.
+
+## Concurrency
+
+All writes to the history notes go through one queue (a note is read, merged and written in one step, so two writers cannot lose each other's days), and all requests to Garmin go through one chain. What the panel has read of a month is thrown away when the note changes or is written to, and a read that was overtaken by such a change is not kept. A day counts as fetched in the backfill log only after it was stored.
