@@ -234,7 +234,7 @@ function sleepFacts(model: SleepModel, lang: string): string[] {
 export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.minutes === null ? null : formatMinutes(model.minutes);
 	const unit = model.minutes !== null && model.score !== null ? `· ${Math.round(model.score)}` : undefined;
-	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, facts: sleepFacts(model, lang), explain: [t("panelSleepExplain", lang), ...(model.schedule ? [t("panelSleepExplainTimes", lang)] : []), ...(model.weekday || model.reference < model.need ? [t("panelSleepExplainPersonal", lang)] : [])].join(" ").replace(/\{need\}/g, String(model.need / 60)).replace(/\{floor\}/g, String(model.floor / 60)), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
+	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, unitStrong: true, facts: sleepFacts(model, lang), explain: [t("panelSleepExplain", lang), ...(model.schedule ? [t("panelSleepExplainTimes", lang)] : []), ...(model.weekday || model.reference < model.need ? [t("panelSleepExplainPersonal", lang)] : [])].join(" ").replace(/\{need\}/g, String(model.need / 60)).replace(/\{floor\}/g, String(model.floor / 60)), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
 		if (model.debt === null || model.target === null) {
 			card.createDiv({
 				cls: "ghs-card-note",

@@ -9,6 +9,8 @@ export interface CardShell {
 	value: string | null | undefined;
 	/** Small muted text after the value ("ms", "· 78"). */
 	unit?: string;
+	/** The unit text is a figure of its own (the sleep score), set as bold as the value instead of muted. */
+	unitStrong?: boolean;
 	explain: string;
 	/** The card's own numbers that are too much for the card, listed in the same box after the interpretation. */
 	facts?: string[];
@@ -29,7 +31,7 @@ export function renderCard(parent: HTMLElement, shell: CardShell, details: (card
 	if (shell.value === null) card.addClass("ghs-card-empty");
 	if (shell.value !== undefined) {
 		const value = head.createSpan({ cls: "ghs-card-value", text: shell.value ?? t("panelNoReading", shell.lang) });
-		if (shell.value !== null && shell.unit) value.createSpan({ cls: "ghs-unit", text: ` ${shell.unit}` });
+		if (shell.value !== null && shell.unit) value.createSpan({ cls: `ghs-unit${shell.unitStrong ? " ghs-unit-strong" : ""}`, text: ` ${shell.unit}` });
 	} else {
 		head.createSpan({ cls: "ghs-card-value" });
 	}
