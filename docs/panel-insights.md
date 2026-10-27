@@ -1,0 +1,531 @@
+# Health panel: interpretations under (i)
+
+Every card of the health panel has an (i) button. It opens two blocks:
+
+1. **What your data suggests** (framed box, headline in the accent colour): why the value is where it is and what can move it, or, when the value is good and the data allows a guess, what probably made it good. Each line has a coloured edge: orange for something to look at, green for something that is going well.
+2. **The general explanation** (plain, muted text below the box): what the card shows and how it is calculated.
+
+The interpretation is deliberately kept under (i) so the cards stay uncluttered.
+
+## Principles
+
+- **Rule based and local.** Every text comes from a fixed rule over the daily notes in the vault. Nothing is sent anywhere and nothing is generated.
+- **Data first.** A rule fires on the person's own numbers: their 30 day range, last night's sleep, the load of the last week, yesterday's steps. The text names those numbers where it helps ("you went to bed 1 h 10 min later than usual").
+- **No generic tips.** There is no "avoid alcohol before bed" or "drink more water". A tip only appears when the data points to it, and it is the lever that the data points to (an earlier bedtime when the hours were lost at the start of the night, sleeping to the usual time when the alarm was early, and so on).
+- **Honest about what is not explained.** When no rule finds a cause, the text says so (`unexplained`) and points to the trend instead of inventing one.
+- **Never a diagnosis.** Wrist data are estimates and the studies describe groups of people. Every interpretation box ends with a note saying so, and illness-related texts say "worth watching" and "if you feel unwell", not more.
+- **At most 3 lines per card**, in the order the rules are listed in the code (`src/panel/insights/`).
+
+## How to add or change an interpretation
+
+1. Add the id to `INSIGHTS` in `src/panel/insights/registry.ts` (card, kind) and the rule in the matching file next to it.
+2. Add the text `insight_<id>` to all six language files in `src/i18n/` (the translation gate and placeholder test enforce this).
+3. Add a section with this exact heading `### <id>` to this file with **Trigger**, **Basis** and **References** (a link to the study, or `none` and why). `tests/panelInsightsDocs.test.ts` fails when an id has no section, a section has no id or a section lacks one of the three lines.
+4. Test the trigger and the neighbouring case where it must not fire.
+
+## Where the numbers come from
+
+- *Usual range*: the mean and standard deviation of the 30 days before the shown day, from 5 days of data on (standard deviation floors: HRV 2 ms, resting heart rate 1.5 bpm, SpO2 0.7 percent, breathing 0.4 per minute, stress 5, steps 500, body battery peak 5).
+- *Load ratio*: the last 7 days over the weekly average of the last 28 days, each session weighted by its intensity (see the Load balance card).
+- *Sleep need and debt*: 7 hours (8 for ages 14 to 17 and 9 for ages 10 to 13 when a birth year is set); debt is the shortfall summed over the last 7 nights.
+- *Bedtime and wake-up*: from the optional metrics `sleep_start` and `sleep_end` (at least 3 nights).
+
+## References
+
+Only sources that were looked up when this file was written are listed. Where a rule rests on plausibility or on the user's own arithmetic, it says `none` and why.
+
+- **statpearls**: Patel AK, Reddy V, Shumway KR, Araujo JF. *Physiology, Sleep Stages*. StatPearls. [https://www.ncbi.nlm.nih.gov/books/NBK526132/](https://www.ncbi.nlm.nih.gov/books/NBK526132/)
+- **kredlow**: Kredlow MA, Capozzoli MC, Hearon BA, Calkins AW, Otto MW. The effects of physical activity on sleep: a meta-analytic review. *J Behav Med* 2015;38:427-449. [https://pubmed.ncbi.nlm.nih.gov/25596964/](https://pubmed.ncbi.nlm.nih.gov/25596964/)
+- **windred**: Windred DP et al. Sleep regularity is a stronger predictor of mortality risk than sleep duration: a prospective cohort study. *SLEEP* 2024;47(1). [https://www.ukbiobank.ac.uk/publications/sleep-regularity-is-a-stronger-predictor-of-mortality-risk-than-sleep-duration-a-prospective-cohort-study/](https://www.ukbiobank.ac.uk/publications/sleep-regularity-is-a-stronger-predictor-of-mortality-risk-than-sleep-duration-a-prospective-cohort-study/)
+- **kitamura**: Kitamura S et al. Estimating individual optimal sleep duration and potential sleep debt. *Sci Rep* 2016;6:35812. [https://doi.org/10.1038/srep35812](https://doi.org/10.1038/srep35812)
+- **vandongen**: Van Dongen HPA, Maislin G, Mullington JM, Dinges DF. The cumulative cost of additional wakefulness. *Sleep* 2003;26:117-126. [https://pubmed.ncbi.nlm.nih.gov/12683469/](https://pubmed.ncbi.nlm.nih.gov/12683469/)
+- **buchheit**: Buchheit M. Monitoring training status with HR measures: do all roads lead to Rome? *Front Physiol* 2014;5:73. [https://doi.org/10.3389/fphys.2014.00073](https://doi.org/10.3389/fphys.2014.00073)
+- **mishra**: Mishra T et al. Pre-symptomatic detection of COVID-19 from smartwatch data. *Nat Biomed Eng* 2020;4:1208-1220. [https://doi.org/10.1038/s41551-020-00640-6](https://doi.org/10.1038/s41551-020-00640-6)
+- **natarajan**: Natarajan A, Su HW, Heneghan C. Assessment of physiological signs associated with COVID-19 measured using wearable devices. *npj Digit Med* 2020;3:156. [https://doi.org/10.1038/s41746-020-00363-7](https://doi.org/10.1038/s41746-020-00363-7)
+- **kim**: Kim HG, Cheon EJ, Bai DS, Lee YH, Koo BH. Stress and heart rate variability: a meta-analysis and review of the literature. *Psychiatry Investig* 2018;15:235-245. [https://pubmed.ncbi.nlm.nih.gov/29486547/](https://pubmed.ncbi.nlm.nih.gov/29486547/)
+- **zaccaro**: Zaccaro A et al. How breath-control can change your life: a systematic review on psycho-physiological correlates of slow breathing. *Front Hum Neurosci* 2018;12:353. [https://doi.org/10.3389/fnhum.2018.00353](https://doi.org/10.3389/fnhum.2018.00353)
+- **reimers**: Reimers AK, Knapp G, Reimers CD. Effects of exercise on the resting heart rate: a systematic review and meta-analysis of interventional studies. *J Clin Med* 2018;7:503. [https://doi.org/10.3390/jcm7120503](https://doi.org/10.3390/jcm7120503)
+- **akerstedt**: Åkerstedt T. Psychosocial stress and impaired sleep. *Scand J Work Environ Health* 2006;32:493-501. [https://doi.org/10.5271/sjweh.1054](https://doi.org/10.5271/sjweh.1054)
+- **gabbett**: Gabbett TJ. The training-injury prevention paradox: should athletes be training smarter and harder? *Br J Sports Med* 2016;50:273-280. [https://doi.org/10.1136/bjsports-2015-095788](https://doi.org/10.1136/bjsports-2015-095788)
+- **seiler**: Seiler S. What is best practice for training intensity and duration distribution in endurance athletes? *Int J Sports Physiol Perform* 2010;5:276-291. [https://pubmed.ncbi.nlm.nih.gov/20861519/](https://pubmed.ncbi.nlm.nih.gov/20861519/)
+- **bacon**: Bacon AP, Carter RE, Ogle EA, Joyner MJ. VO2max trainability and high intensity interval training in humans: a meta-analysis. *PLoS One* 2013;8:e73182. [https://pubmed.ncbi.nlm.nih.gov/24066036/](https://pubmed.ncbi.nlm.nih.gov/24066036/)
+- **milanovic**: Milanović Z, Sporiš G, Weston M. Effectiveness of high-intensity interval training (HIT) and continuous endurance training for VO2max improvements. *Sports Med* 2015;45:1469-1481. [https://doi.org/10.1007/s40279-015-0365-0](https://doi.org/10.1007/s40279-015-0365-0)
+- **paluch**: Paluch AE et al. Daily steps and all-cause mortality: a meta-analysis of 15 international cohorts. *Lancet Public Health* 2022;7:e219-e228. [https://doi.org/10.1016/S2468-2667(21)00302-9](https://doi.org/10.1016/S2468-2667(21)00302-9)
+- **who**: Bull FC et al. World Health Organization 2020 guidelines on physical activity and sedentary behaviour. *Br J Sports Med* 2020;54:1451-1462. [https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7719906/](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7719906/)
+- **orsama**: Orsama AL et al. Weight rhythms: weight increases during weekends and decreases during weekdays. *Obes Facts* 2014;7:36-47. [https://pubmed.ncbi.nlm.nih.gov/24504358/](https://pubmed.ncbi.nlm.nih.gov/24504358/)
+- **fda**: U.S. Food and Drug Administration. *Pulse oximeters* (accuracy and limitations; use readings as estimates and follow trends). [https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters](https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters)
+- **garmin**: Garmin. *Body Battery energy monitoring* (heart rate variability, stress, sleep and activity; sleep charges, stress and strenuous activity drain). [https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
+
+## Interpretations
+
+### unexplained
+
+- **Card:** any
+- **Trigger:** Shown when a value is outside the usual range (HRV low, resting heart rate high, REM low, awake time high, body battery peak low) and none of the specific reasons below applies.
+- **Text (English):** Nothing else in your data explains it. Single days vary, so look at the trend over several days before changing anything.
+- **Basis:** An honest answer: the other data the plugin has does not explain the change. Single days vary a lot, so the text points to the trend instead of inventing a cause.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### hrv_low_load
+
+- **Card:** hrv
+- **Trigger:** HRV is more than 1 standard deviation below its 30 day mean and the load balance ratio (last 7 days over the 28 day weekly average) is above 1.3.
+- **Text (English):** Your training of the last 7 days is {pct} percent above your usual load. HRV commonly dips after a spike in load and returns within a few easier days, so keep the next days light.
+- **Basis:** HRV reflects autonomic recovery and responds to training load; interpreting it needs the training context.
+- **References:** [buchheit](https://doi.org/10.3389/fphys.2014.00073); [gabbett](https://doi.org/10.1136/bjsports-2015-095788)
+
+### hrv_low_sleep
+
+- **Card:** hrv
+- **Trigger:** HRV is more than 1 standard deviation low and the sleep debt of the last 7 nights is at least 2 hours (needs 5 nights of sleep data).
+- **Text (English):** You slept {debt} less than your need of {need} hours over the last 7 nights. The sleep shortfall is the most direct thing to fix: aim for your need again for a few nights.
+- **Basis:** The sleep shortfall is the lever the user controls. No study is cited for the HRV link itself; the text only points to the shortfall as the first thing to fix, and the debt dynamics are from the references.
+- **References:** [kitamura](https://doi.org/10.1038/srep35812); [vandongen](https://pubmed.ncbi.nlm.nih.gov/12683469/)
+
+### hrv_low_stress
+
+- **Card:** hrv
+- **Trigger:** HRV is more than 1 standard deviation low and the stress level of the day is more than 1 standard deviation above its 30 day mean.
+- **Text (English):** Your stress level today is above your usual, and HRV drops when stress is high. A few minutes of slow breathing, about 6 breaths a minute, raises HRV in the short term.
+- **Basis:** HRV changes with stress in most studies (review); slow breathing around 6 breaths a minute raises HRV in the short term (systematic review).
+- **References:** [kim](https://pubmed.ncbi.nlm.nih.gov/29486547/); [zaccaro](https://doi.org/10.3389/fnhum.2018.00353)
+
+### hrv_low_illness
+
+- **Card:** hrv
+- **Trigger:** HRV is more than 1 standard deviation low and resting heart rate is more than 1 standard deviation above its 30 day mean.
+- **Text (English):** HRV is low while your resting heart rate is up. That pattern often shows when the body is under strain or fighting an infection. If you feel unwell, take a day off and watch the next mornings.
+- **Basis:** Raised resting heart rate with lowered HRV is the pattern wearable studies found around the onset of infection. It is a signal to watch, not a diagnosis.
+- **References:** [mishra](https://doi.org/10.1038/s41551-020-00640-6); [natarajan](https://doi.org/10.1038/s41746-020-00363-7); [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### hrv_high_light_load
+
+- **Card:** hrv
+- **Trigger:** HRV is more than 1 standard deviation above its 30 day mean and the load ratio is below 1.0.
+- **Text (English):** Your training of the last 7 days is {pct} percent below your usual load. HRV tends to rise when load eases, so this fits a well recovered body.
+- **Basis:** HRV tends to rise when training load eases; the text only says this fits a well recovered body.
+- **References:** [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### hrv_in_range
+
+- **Card:** hrv
+- **Trigger:** HRV is within 1 standard deviation of its 30 day mean.
+- **Text (English):** Within your usual range: your recovery looks as usual.
+- **Basis:** Positive confirmation relative to the person's own range.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### rhr_high_load
+
+- **Card:** resting_hr
+- **Trigger:** Resting heart rate is more than 1 standard deviation above its 30 day mean and the load ratio is above 1.3.
+- **Text (English):** Your training of the last 7 days is {pct} percent above your usual load. Resting heart rate often rises after heavy training and falls again with easier days.
+- **Basis:** Resting heart rate is one of the measures that follows training status; interpret it with the training context.
+- **References:** [buchheit](https://doi.org/10.3389/fphys.2014.00073)
+
+### rhr_high_sleep
+
+- **Card:** resting_hr
+- **Trigger:** Resting heart rate is more than 1 standard deviation above its mean and the sleep debt of the last 7 nights is at least 2 hours.
+- **Text (English):** You slept {debt} less than your need over the last 7 nights. A sleep shortfall is a common reason for a higher resting heart rate; catching up over a few nights helps.
+- **Basis:** Plausible and common, but no study is cited; the text offers the sleep shortfall as the first lever.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### rhr_high_illness
+
+- **Card:** resting_hr
+- **Trigger:** Resting heart rate is more than 1 standard deviation above its mean and HRV is more than 1 standard deviation below, or the breathing rate is more than 1 standard deviation above.
+- **Text (English):** A higher resting heart rate together with a lower HRV or faster breathing often marks the start of an illness. If you feel unwell, take a day off and watch the next mornings.
+- **Basis:** Elevated resting heart rate with changes in HRV and respiration is the pattern seen around illness onset in wearable data.
+- **References:** [mishra](https://doi.org/10.1038/s41551-020-00640-6); [natarajan](https://doi.org/10.1038/s41746-020-00363-7)
+
+### rhr_low_fitness
+
+- **Card:** resting_hr
+- **Trigger:** Resting heart rate is more than 1 standard deviation below its 30 day mean.
+- **Text (English):** Lower than usual: resting heart rate falls with regular endurance training and good recovery.
+- **Basis:** Endurance training lowers resting heart rate in controlled trials.
+- **References:** [reimers](https://doi.org/10.3390/jcm7120503)
+
+### rhr_in_range
+
+- **Card:** resting_hr
+- **Trigger:** Resting heart rate is within 1 standard deviation of its 30 day mean.
+- **Text (English):** Within your usual range.
+- **Basis:** Positive confirmation relative to the person's own range.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### spo2_low_repeated
+
+- **Card:** spo2
+- **Trigger:** At least 3 of the last 7 nights (the shown night included) have an average SpO2 below 92 percent.
+- **Text (English):** {n} of the last 7 nights were below 92 percent. Wrist sensors are estimates, but repeated low nights are worth mentioning to a doctor, especially with snoring or daytime tiredness.
+- **Basis:** Wrist sensors are estimates and the FDA advises judging pulse oximetry by trends over time; repeated low nights are a reason to talk to a doctor. This is not a diagnosis.
+- **References:** [fda](https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters)
+
+### spo2_low_with_breathing
+
+- **Card:** spo2
+- **Trigger:** SpO2 is below 94 percent or more than 1 standard deviation below its mean, and the breathing rate is more than 1 standard deviation above its mean.
+- **Text (English):** Your breathing rate is up as well. A cold or a blocked nose can lower oxygen and raise breathing at night; watch how you feel over the next days.
+- **Basis:** Plausible common cause (a cold or congestion); no study cited. Worded as something to watch.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### spo2_low_single
+
+- **Card:** spo2
+- **Trigger:** SpO2 is below 94 percent or more than 1 standard deviation below its mean, and neither of the other SpO2 texts applies.
+- **Text (English):** One low night is often down to sensor fit or sleeping position. Judge it by the trend over several nights, not by a single value.
+- **Basis:** Sensor fit and position affect readings; the FDA advises using readings as estimates and following trends.
+- **References:** [fda](https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters)
+
+### spo2_ok
+
+- **Card:** spo2
+- **Trigger:** SpO2 is 95 percent or higher and not more than 1 standard deviation below its mean.
+- **Text (English):** A healthy sleeper usually sits between 95 and 100 percent. Yours does.
+- **Basis:** The usual range for healthy sleepers; general reference value.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### breathing_up_illness
+
+- **Card:** respiration_rate
+- **Trigger:** The breathing rate is more than 1 standard deviation above its mean, or at least 1.5 breaths a minute above it, and resting heart rate is more than 1 standard deviation above its mean.
+- **Text (English):** Breathing rate and resting heart rate are both up. This pair is an early sign of illness in studies of wearables; if you feel unwell, take a day off.
+- **Basis:** Raised respiration together with raised resting heart rate is part of the illness pattern in wearable studies.
+- **References:** [natarajan](https://doi.org/10.1038/s41746-020-00363-7); [mishra](https://doi.org/10.1038/s41551-020-00640-6)
+
+### breathing_up_alone
+
+- **Card:** respiration_rate
+- **Trigger:** The breathing rate is raised as above but resting heart rate is not.
+- **Text (English):** A raised breathing rate on its own is a weak signal. Watch it for a few nights together with your resting heart rate before drawing conclusions.
+- **Basis:** A raised breathing rate alone is a weak signal; the text asks to watch it with resting heart rate.
+- **References:** [natarajan](https://doi.org/10.1038/s41746-020-00363-7)
+
+### breathing_ok
+
+- **Card:** respiration_rate
+- **Trigger:** The breathing rate is within 1 standard deviation of its mean and less than 1.5 breaths a minute above it.
+- **Text (English):** Within your usual range.
+- **Basis:** Positive confirmation relative to the person's own range.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### sleep_short_late_bed
+
+- **Card:** sleep
+- **Trigger:** The night is more than 30 minutes shorter than the need, a bedtime and wake-up time exist for at least 3 of the last 7 nights, and last night's bedtime is at least 30 minutes later than the average bedtime.
+- **Text (English):** You went to bed {late} later than usual ({bed}), which cost the hours. Your usual bedtime would have given you about {gain} more.
+- **Basis:** Arithmetic on the user's own times: the hours were lost at the start of the night.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### sleep_short_early_wake
+
+- **Card:** sleep
+- **Trigger:** The night is more than 30 minutes shorter than the need and the wake-up was at least 30 minutes earlier than the average wake-up time.
+- **Text (English):** You got up {early} earlier than your usual {wake}. Sleeping to your usual time would have added it back, and REM sleep, which is concentrated in the last hours of the night, would have benefited most.
+- **Basis:** REM periods lengthen toward the morning, so an early alarm costs REM first.
+- **References:** [statpearls](https://www.ncbi.nlm.nih.gov/books/NBK526132/)
+
+### sleep_short_average
+
+- **Card:** sleep
+- **Trigger:** The average of the last 7 nights (at least 5 with data) is at least 20 minutes below the need.
+- **Text (English):** On average you sleep {avg}, which is {gap} short of your {need} hours. An earlier bedtime is usually easier to keep than a later alarm.
+- **Basis:** Arithmetic on the user's own data; an earlier bedtime is offered as the usual practical route.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### sleep_debt_high
+
+- **Card:** sleep
+- **Trigger:** The sleep debt of the last 7 nights is at least 3 hours.
+- **Text (English):** A debt of {debt} takes several nights to pay back. Adding 30 to 60 minutes each night works better than one very long sleep.
+- **Basis:** Debt is recovered over several nights; in a laboratory study 1 hour of debt took about 4 days to recover. Chronic restriction accumulates deficits that people often do not notice.
+- **References:** [kitamura](https://doi.org/10.1038/srep35812); [vandongen](https://pubmed.ncbi.nlm.nih.gov/12683469/)
+
+### sleep_irregular
+
+- **Card:** sleep
+- **Trigger:** The standard deviation of bedtime or wake-up time over the last 7 nights (at least 3 with times) is at least 60 minutes.
+- **Text (English):** Your bed or wake-up time varies by about {sd} minutes. Regular sleep times are linked to lower health risk independent of how long you sleep; try to keep both within 30 minutes.
+- **Basis:** Sleep regularity predicted mortality at least as well as duration in a large cohort.
+- **References:** [windred](https://www.ukbiobank.ac.uk/publications/sleep-regularity-is-a-stronger-predictor-of-mortality-risk-than-sleep-duration-a-prospective-cohort-study/)
+
+### sleep_regular_good
+
+- **Card:** sleep
+- **Trigger:** The night reached the need, the sleep debt is below 1 hour and both the bedtime and wake-up standard deviations are below 30 minutes.
+- **Text (English):** You reached your need and your times are regular (about ±{sd} minutes). Regular timing is linked to lower health risk independent of duration.
+- **Basis:** Same study as above, positive direction.
+- **References:** [windred](https://www.ukbiobank.ac.uk/publications/sleep-regularity-is-a-stronger-predictor-of-mortality-risk-than-sleep-duration-a-prospective-cohort-study/)
+
+### sleep_enough_good
+
+- **Card:** sleep
+- **Trigger:** The night reached the need, the sleep debt is below 1 hour and the times are not regular enough for the previous text.
+- **Text (English):** You reached your need with {sleep} and your sleep debt is small. Your habits of the last nights are working.
+- **Basis:** Positive confirmation relative to the user's need.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### deep_low_inactive
+
+- **Card:** stages
+- **Trigger:** Deep sleep is more than 1 standard deviation below its 30 day mean and yesterday's steps were more than 0.5 standard deviations below their mean.
+- **Text (English):** Yesterday you took fewer steps than usual. Daytime activity is linked to more deep sleep the next night; a longer walk or a session earlier in the day is the most direct lever.
+- **Basis:** Acute exercise produced a small increase in slow-wave sleep in a meta-analysis. Daytime activity is a lever the user controls.
+- **References:** [kredlow](https://pubmed.ncbi.nlm.nih.gov/25596964/)
+
+### deep_low_fragmented
+
+- **Card:** stages
+- **Trigger:** Deep sleep is more than 1 standard deviation low and awake time more than 1 standard deviation high.
+- **Text (English):** You were awake more than usual, which interrupts deep sleep. Look at what disturbed the night: noise, a warm room, stress or breathing.
+- **Basis:** Stress and disturbed sleep go with shorter, fragmented sleep and possibly less deep sleep.
+- **References:** [akerstedt](https://doi.org/10.5271/sjweh.1054)
+
+### deep_low_timing
+
+- **Card:** stages
+- **Trigger:** Deep sleep is more than 1 standard deviation low and neither of the two texts above applies.
+- **Text (English):** Deep sleep happens mostly in the first half of the night and depends on how long you were awake and how active you were. A regular bedtime and an active day are the levers you control.
+- **Basis:** Slow-wave sleep dominates the first part of the night, so it depends on how long the person was awake and on the regularity of the bedtime.
+- **References:** [statpearls](https://www.ncbi.nlm.nih.gov/books/NBK526132/); [kredlow](https://pubmed.ncbi.nlm.nih.gov/25596964/)
+
+### rem_low_early_wake
+
+- **Card:** stages
+- **Trigger:** REM is more than 1 standard deviation low and the wake-up was at least 20 minutes earlier than the average.
+- **Text (English):** You got up {early} earlier than your usual {wake}. REM periods get longer toward the morning, so a shortened morning costs REM first. Sleeping to your usual time, or going to bed earlier, gives it back.
+- **Basis:** REM periods get longer toward the morning, so a shortened morning cuts REM first.
+- **References:** [statpearls](https://www.ncbi.nlm.nih.gov/books/NBK526132/)
+
+### rem_low_short_night
+
+- **Card:** stages
+- **Trigger:** REM is more than 1 standard deviation low, the wake-up was not early, and the night was more than 45 minutes shorter than the need.
+- **Text (English):** A short night costs REM first, because REM periods get longer toward the morning. Going to bed about {gap} earlier, or sleeping later in the morning, is the direct fix.
+- **Basis:** Same physiology: a short night loses the REM-rich last hours first.
+- **References:** [statpearls](https://www.ncbi.nlm.nih.gov/books/NBK526132/)
+
+### awake_high_stress
+
+- **Card:** stages
+- **Trigger:** Awake time is more than 1 standard deviation high and the stress level of the day is more than 1 standard deviation above its mean.
+- **Text (English):** Your stress level was above your usual. Stress is linked to shorter and more fragmented sleep; a few minutes of slow breathing before bed lowers arousal.
+- **Basis:** Stress goes with shorter and more fragmented sleep; slow breathing lowers arousal.
+- **References:** [akerstedt](https://doi.org/10.5271/sjweh.1054); [zaccaro](https://doi.org/10.3389/fnhum.2018.00353)
+
+### awake_high_breathing
+
+- **Card:** stages
+- **Trigger:** Awake time is more than 1 standard deviation high and the breathing rate is more than 1 standard deviation high or SpO2 is more than 1 standard deviation low.
+- **Text (English):** Breathing was off as well. Frequent short wake-ups can come from breathing disturbances; if this repeats together with snoring, mention it to a doctor.
+- **Basis:** Plausible link to breathing disturbances; worded as a reason to mention repeated cases to a doctor. No study cited.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### stages_deep_active
+
+- **Card:** stages
+- **Trigger:** Deep sleep is more than 1 standard deviation above its mean and yesterday's steps were more than 0.5 standard deviations above their mean.
+- **Text (English):** More deep sleep than usual after a day with more steps than usual: activity and deep sleep go together.
+- **Basis:** Acute exercise produced a small increase in slow-wave sleep in a meta-analysis.
+- **References:** [kredlow](https://pubmed.ncbi.nlm.nih.gov/25596964/)
+
+### stages_typical
+
+- **Card:** stages
+- **Trigger:** All four stages are within their usual range and none of the other stage texts applies.
+- **Text (English):** Deep, REM, light and awake time are all in your usual range.
+- **Basis:** Positive confirmation relative to the person's own amounts.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### battery_low_sleep
+
+- **Card:** battery
+- **Trigger:** The body battery peak is more than 10 below the usual peak and last night was more than 45 minutes shorter than the need.
+- **Text (English):** Body battery recharges mainly during sleep, and you slept {sleep}, which is short of your need. That limits how high it gets.
+- **Basis:** Garmin states that sleep charges the body battery.
+- **References:** [garmin](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
+
+### battery_low_stress
+
+- **Card:** battery
+- **Trigger:** The peak is more than 10 below the usual peak and yesterday's stress level was more than 1 standard deviation above its mean.
+- **Text (English):** Yesterday's stress was above your usual. Stress drains the battery, which leaves less to recharge overnight.
+- **Basis:** Garmin states that stress drains the body battery.
+- **References:** [garmin](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
+
+### battery_low_load
+
+- **Card:** battery
+- **Trigger:** The peak is more than 10 below the usual peak and the load ratio is above 1.3.
+- **Text (English):** Your training load is high. Hard training drains the battery faster, so it needs more sleep and easier days to refill.
+- **Basis:** Garmin states that strenuous activity drains the body battery.
+- **References:** [garmin](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
+
+### battery_recharge_good
+
+- **Card:** battery
+- **Trigger:** The overnight charge is at least 5 above the usual charge and the night was within 15 minutes of the need or longer.
+- **Text (English):** A good overnight recharge after {sleep} of sleep.
+- **Basis:** Garmin states that sleep charges the body battery.
+- **References:** [garmin](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
+
+### stress_high_sleep
+
+- **Card:** stress
+- **Trigger:** The stress level is above 50 and the night was more than 60 minutes shorter than the need.
+- **Text (English):** You slept {sleep}, which is short of your need. Stress is read from heart rate variability, which also reflects how well you recovered, so a short night lifts it.
+- **Basis:** Garmin derives stress from heart rate variability, which also reflects recovery.
+- **References:** [garmin](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/); [kim](https://pubmed.ncbi.nlm.nih.gov/29486547/)
+
+### stress_high_week
+
+- **Card:** stress
+- **Trigger:** The stress level is above 50 and more than 10 above the average of the 7 days before.
+- **Text (English):** Above your 7-day average of {week}. If it stays up for days, a few minutes of slow breathing, about 6 breaths a minute, can lower it.
+- **Basis:** Slow breathing around 6 breaths a minute raises HRV and eases arousal in the short term.
+- **References:** [zaccaro](https://doi.org/10.3389/fnhum.2018.00353)
+
+### stress_calm
+
+- **Card:** stress
+- **Trigger:** The stress level is 25 or lower (Garmin's rest band).
+- **Text (English):** A calm level.
+- **Basis:** Positive confirmation.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### steps_below_streak
+
+- **Card:** steps
+- **Trigger:** Steps are below the top of the zone and at least 3 of the 5 days before were more than 0.5 standard deviations below their 30 day mean.
+- **Text (English):** {n} of the last 5 days were quieter than usual. In a pooled analysis of 15 cohorts, more daily steps went with lower mortality, so a short walk today keeps your zone within reach.
+- **Basis:** In a pooled analysis of 15 cohorts, more daily steps went with lower all-cause mortality. Population-level association.
+- **References:** [paluch](https://doi.org/10.1016/S2468-2667(21)00302-9)
+
+### steps_zone_good
+
+- **Card:** steps
+- **Trigger:** Steps are at or above the top of the zone (7 day average plus 10 percent).
+- **Text (English):** Above your zone. In a pooled analysis of 15 cohorts, more daily steps went with lower mortality.
+- **Basis:** Same pooled analysis, positive direction.
+- **References:** [paluch](https://doi.org/10.1016/S2468-2667(21)00302-9)
+
+### intensity_behind
+
+- **Card:** intensity
+- **Trigger:** The week has days left and minutes still missing to the goal.
+- **Text (English):** To reach the goal you need about {perDay} minutes a day over the {days} days left. Brisk walking counts as moderate, and spreading it across days works as well as one long session.
+- **Basis:** The WHO guideline counts moderate activity such as brisk walking and allows spreading it across the week.
+- **References:** [who](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7719906/)
+
+### intensity_goal_good
+
+- **Card:** intensity
+- **Trigger:** The weekly goal is reached.
+- **Text (English):** You reached the weekly goal. For adults the guideline gives 150 to 300 minutes, and more brings further benefits.
+- **Basis:** The WHO guideline recommends 150 to 300 minutes of moderate activity for adults, with additional benefits beyond.
+- **References:** [who](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7719906/)
+
+### vo2_down_volume
+
+- **Card:** vo2
+- **Trigger:** The VO2 max trend is falling and the training minutes of the last 28 days are at least 20 percent below the 28 days before.
+- **Text (English):** Your training minutes fell {pct} percent against the 4 weeks before. This estimate follows how regularly and how hard you train; one or two sessions a week at zone 4 or 5 are what raises it in trials.
+- **Basis:** Interval training raises VO2 max in controlled trials; the estimate follows training regularity and intensity.
+- **References:** [bacon](https://pubmed.ncbi.nlm.nih.gov/24066036/); [milanovic](https://doi.org/10.1007/s40279-015-0365-0)
+
+### vo2_down_other
+
+- **Card:** vo2
+- **Trigger:** The VO2 max trend is falling and the training volume did not fall by 20 percent.
+- **Text (English):** Your training volume did not fall, so heat, hills or too few runs with a good heart rate signal may play a part. Judge it over weeks. One or two hard sessions a week are what raises it in trials.
+- **Basis:** Same literature; other factors (heat, terrain, heart rate signal quality) affect Garmin's estimate. No study cited for those.
+- **References:** [bacon](https://pubmed.ncbi.nlm.nih.gov/24066036/); [milanovic](https://doi.org/10.1007/s40279-015-0365-0)
+
+### vo2_up_good
+
+- **Card:** vo2
+- **Trigger:** The VO2 max trend is rising.
+- **Text (English):** Rising: this estimate follows regular training, and it is the weeks of consistent work that move it.
+- **Basis:** Regular training raises VO2 max.
+- **References:** [bacon](https://pubmed.ncbi.nlm.nih.gov/24066036/)
+
+### body_fast
+
+- **Card:** body
+- **Trigger:** The weight changes by more than 1 percent of the 7 day mean per week over the last 28 days.
+- **Text (English):** Faster than 1 percent of your weight a week. Weight swings from day to day with water, meals and the day of the week; weigh at the same time and judge the 7-day mean.
+- **Basis:** Body weight fluctuates from day to day and with the weekday; a 7 day mean smooths it.
+- **References:** [orsama](https://pubmed.ncbi.nlm.nih.gov/24504358/)
+
+### body_stable
+
+- **Card:** body
+- **Trigger:** At least 3 readings in the last 14 days and no fast change.
+- **Text (English):** Your weight is steady within normal swings.
+- **Basis:** Positive confirmation.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### load_overreach
+
+- **Card:** load
+- **Trigger:** The 7 day over 28 day weekly average load ratio is 1.5 or higher.
+- **Text (English):** Your last 7 days are {pct} percent above your usual weekly load. Sharp rises relative to what you are used to are linked to more injuries; keep two easy days and do not add more this week.
+- **Basis:** Large spikes in load relative to the load the athlete is used to were linked to more injuries. The acute to chronic ratio is debated; the plugin uses it as a guide, not a threshold for harm.
+- **References:** [gabbett](https://doi.org/10.1136/bjsports-2015-095788)
+
+### load_strain
+
+- **Card:** load
+- **Trigger:** The ratio is between 1.3 and 1.5.
+- **Text (English):** Your last 7 days are {pct} percent above your usual weekly load. Hold steady for a few days so your body can catch up.
+- **Basis:** Same source, milder.
+- **References:** [gabbett](https://doi.org/10.1136/bjsports-2015-095788)
+
+### load_detrain
+
+- **Card:** load
+- **Trigger:** The ratio is below 0.8.
+- **Text (English):** Your last 7 days are {pct} percent below your usual weekly load. Fine for a planned lighter week; otherwise add one session and build gradually.
+- **Basis:** Describes a lighter week; no claim beyond arithmetic.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### load_build
+
+- **Card:** load
+- **Trigger:** The ratio is between 1.0 and 1.3.
+- **Text (English):** A gradual build on what you are used to, the range in which training builds fitness with a lower injury risk.
+- **Basis:** A gradual build relative to the usual load was the range associated with lower injury risk.
+- **References:** [gabbett](https://doi.org/10.1136/bjsports-2015-095788)
+
+### weekly_over_cap
+
+- **Card:** weekly
+- **Trigger:** The minutes of the week are above the cap (10 percent above the average of the previous weeks).
+- **Text (English):** You are {pct} percent above your average of the previous weeks. Keep the remaining days easy; big jumps relative to what you are used to carry more risk.
+- **Basis:** Large jumps relative to the usual load carry more risk; the 10 percent figure is a common guideline, not a proven threshold.
+- **References:** [gabbett](https://doi.org/10.1136/bjsports-2015-095788)
+
+### weekly_on_track
+
+- **Card:** weekly
+- **Trigger:** The minutes of the week are between 80 percent of the cap and the cap.
+- **Text (English):** On track for a gradual increase over your usual week.
+- **Basis:** Positive confirmation.
+- **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### sessions_all_hard
+
+- **Card:** sessions
+- **Trigger:** A birth year is set, the last 7 days have at least 3 sessions with a heart rate, at least 3 are in zone 4 or 5 and none in zones 0 to 2.
+- **Text (English):** {n} sessions this week were hard (zone 4 or 5) and none easy. Endurance athletes typically train about 80 percent of their sessions at low intensity, which lets the hard ones work.
+- **Basis:** Descriptive studies of endurance athletes find about 80 percent of sessions at low intensity.
+- **References:** [seiler](https://pubmed.ncbi.nlm.nih.gov/20861519/)
+
+### sessions_mostly_easy
+
+- **Card:** sessions
+- **Trigger:** A birth year is set, at least 3 sessions in 7 days, at least 60 percent in zones 0 to 2 and at least one in zone 4 or 5.
+- **Text (English):** {pct} percent of your sessions this week were easy, with some hard work in between. That mix is close to what endurance athletes typically do.
+- **Basis:** Same review.
+- **References:** [seiler](https://pubmed.ncbi.nlm.nih.gov/20861519/)

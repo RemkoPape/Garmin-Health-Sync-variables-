@@ -6,6 +6,7 @@ import { rangeBar } from "../range-bar";
 import { renderCard } from "./shell";
 import { computeTrend, type Trend } from "../trend";
 import { baseline, windowValues, zScore, type Baseline } from "../stats";
+import type { Insight } from "../insights/registry";
 
 /** Window and days needed for a reliable personal range (spec: about 21 of the last 30). */
 export const RANGE_WINDOW_DAYS = 30;
@@ -66,6 +67,8 @@ export const SPO2_CARD: RangeCardSpec = { id: "spo2", key: "spo2", title: "panel
 export const BREATHING_CARD: RangeCardSpec = { id: "respiration_rate", key: "respiration_rate", title: "panelBreathingTitle", explain: "panelBreathingExplain", unit: "/min", sided: "both", half: true, digits: 1, sdFloor: 0.4, tone: breathingTone };
 
 export interface RangeModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	value: number | null;
 	/** Days with a reading in the window. */
 	have: number;
@@ -81,13 +84,13 @@ export function computeRange(spec: RangeCardSpec, index: DayIndex, date: string)
 	const values = windowValues(index, spec.key, date, RANGE_WINDOW_DAYS);
 	const b = baseline(values, RANGE_EARLY_MIN_DAYS, spec.sdFloor);
 	const value = index.value(spec.key, date);
-	return { value, have: values.length, baseline: b, early: values.length < RANGE_MIN_DAYS, z: value !== null && b ? zScore(value, b) : null, trend: computeTrend((d) => index.value(spec.key, d), date) };
+	return { insights: [], value, have: values.length, baseline: b, early: values.length < RANGE_MIN_DAYS, z: value !== null && b ? zScore(value, b) : null, trend: computeTrend((d) => index.value(spec.key, d), date) };
 }
 
 /** A range card: the day's value against the personal range, with the explanation behind an (i) button. */
 export function renderRange(parent: HTMLElement, spec: RangeCardSpec, model: RangeModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.value === null ? null : formatNumber(model.value, lang, spec.digits);
-	renderCard(parent, { title: t(spec.title, lang), value, unit: spec.unit, explain: t(spec.explain, lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => `${formatNumber(n, lang, spec.digits)} ${spec.unit}` } }, (card) => {
+	renderCard(parent, { title: t(spec.title, lang), value, unit: spec.unit, explain: t(spec.explain, lang), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => `${formatNumber(n, lang, spec.digits)} ${spec.unit}` } }, (card) => {
 		const b = model.baseline;
 		if (!b) {
 			card.createDiv({

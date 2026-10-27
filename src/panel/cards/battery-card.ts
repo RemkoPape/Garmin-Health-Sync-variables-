@@ -4,6 +4,7 @@ import type { DayIndex } from "../index";
 import { average, windowValues } from "../stats";
 import { computeTrend, type Trend } from "../trend";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 /** Days with a peak before the usual peak is shown, and before it is called reliable. */
 export const BATTERY_EARLY_MIN_DAYS = 5;
@@ -11,6 +12,8 @@ export const BATTERY_MIN_DAYS = 14;
 const WINDOW_DAYS = 30;
 
 export interface BatteryModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	trend: Trend | null;
 	max: number | null;
 	min: number | null;
@@ -29,6 +32,7 @@ export function computeBattery(index: DayIndex, date: string): BatteryModel {
 	const peaks = windowValues(index, "body_battery_max", date, WINDOW_DAYS);
 	const enough = peaks.length >= BATTERY_EARLY_MIN_DAYS;
 	return {
+		insights: [],
 		trend: computeTrend((d) => index.value("body_battery_max", d), date),
 		max: index.value("body_battery_max", date),
 		min: index.value("body_battery_min", date),
@@ -44,7 +48,7 @@ const pct = (v: number): number => Math.min(100, Math.max(0, v));
 
 export function renderBattery(parent: HTMLElement, model: BatteryModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.max === null ? null : formatNumber(model.max, lang, 0);
-	renderCard(parent, { title: t("panelBatteryTitle", lang), value, unit: t("panelBatteryUnit", lang), explain: t("panelBatteryExplain", lang), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 0) } }, (card) => {
+	renderCard(parent, { title: t("panelBatteryTitle", lang), value, unit: t("panelBatteryUnit", lang), explain: t("panelBatteryExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatNumber(n, lang, 0) } }, (card) => {
 		if (model.max === null) return;
 		// Two bars on the same 0 to 100 scale: where your daily peaks usually fall, and today.
 		if (model.usualRange !== null && model.usualPeak !== null) {

@@ -1,5 +1,6 @@
 import { setIcon } from "obsidian";
 import { t } from "../../i18n/t";
+import { INSIGHTS, insightText, type Insight } from "../insights/registry";
 import { renderTrend, type TrendView } from "../trend";
 
 export interface CardShell {
@@ -14,6 +15,8 @@ export interface CardShell {
 	lang: string;
 	/** Small trend line at the bottom of the card. */
 	trend?: TrendView;
+	/** What the data suggests (why a value is off and what helps, or why it is good), shown under (i) before the general explanation. */
+	insights?: Insight[];
 }
 
 /** The frame every card shares: title, headline value, (i) button, the details and, when open, the explanation. */
@@ -33,5 +36,13 @@ export function renderCard(parent: HTMLElement, shell: CardShell, details: (card
 	info.addEventListener("click", shell.onToggleExplain);
 	details(card);
 	if (shell.trend) renderTrend(card, shell.trend, shell.lang);
-	if (shell.explainOpen) card.createDiv({ cls: "ghs-explain", text: shell.explain });
+	if (shell.explainOpen) {
+		if (shell.insights && shell.insights.length > 0) {
+			const box = card.createDiv({ cls: "ghs-insight" });
+			box.createDiv({ cls: "ghs-insight-title", text: t("panelInsightTitle", shell.lang) });
+			for (const insight of shell.insights) box.createDiv({ cls: `ghs-insight-item ghs-insight-${INSIGHTS[insight.id].kind}`, text: insightText(insight, shell.lang) });
+			box.createDiv({ cls: "ghs-insight-note", text: t("panelInsightNote", shell.lang) });
+		}
+		card.createDiv({ cls: "ghs-explain", text: shell.explain });
+	}
 }

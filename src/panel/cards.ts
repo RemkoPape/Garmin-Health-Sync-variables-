@@ -13,6 +13,13 @@ import { computeStress, renderStress } from "./cards/stress-card";
 import { computeVo2, renderVo2 } from "./cards/vo2-card";
 import { computeWeekly, renderWeekly } from "./cards/weekly-card";
 import type { DayIndex } from "./index";
+import { bodyInsights, intensityInsights, stepsInsights, vo2Insights } from "./insights/activity";
+import { batteryInsights, stressInsights } from "./insights/energy";
+import { breathingInsights, hrvInsights, restingHrInsights, spo2Insights } from "./insights/recovery";
+import type { Insight } from "./insights/registry";
+import { Signals } from "./insights/signals";
+import { sleepInsights, stagesInsights } from "./insights/sleep";
+import { loadInsights, sessionsInsights, weeklyInsights } from "./insights/training";
 
 export type SectionId = "recovery" | "sleep" | "energy" | "movement" | "fitness" | "training";
 
@@ -44,6 +51,16 @@ export interface PanelCard {
 	render: (ctx: CardContext) => void;
 }
 
+/** The interpretations of a card for the shown day. */
+const signals = (c: CardContext): Signals => new Signals(c.index, c.date, c.birthYear);
+
+const RANGE_INSIGHTS: Record<string, (s: Signals) => Insight[]> = {
+	hrv: hrvInsights,
+	resting_hr: restingHrInsights,
+	spo2: spo2Insights,
+	respiration_rate: breathingInsights,
+};
+
 const range = (spec: RangeCardSpec, section: SectionId, needs: TranslationKeys): PanelCard => ({
 	id: spec.id,
 	title: spec.title,
@@ -51,7 +68,7 @@ const range = (spec: RangeCardSpec, section: SectionId, needs: TranslationKeys):
 	metrics: [spec.key],
 	needs,
 	half: spec.half,
-	render: (c) => renderRange(c.parent, spec, computeRange(spec, c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain),
+	render: (c) => renderRange(c.parent, spec, { ...computeRange(spec, c.index, c.date), insights: RANGE_INSIGHTS[spec.id]!(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain),
 });
 
 /** Every card of the panel in display order. Ids are stable: they are stored in the settings. */
@@ -60,18 +77,18 @@ export const PANEL_CARDS: PanelCard[] = [
 	range(RESTING_HR_CARD, "recovery", "panelNeedsRestingHr"),
 	range(SPO2_CARD, "recovery", "panelNeedsSpo2"),
 	range(BREATHING_CARD, "recovery", "panelNeedsBreathing"),
-	{ id: "sleep", title: "panelSleepTitle", section: "sleep", metrics: ["sleep_duration"], needs: "panelNeedsSleep", extra: ["sleep_score", "sleep_start", "sleep_end"], render: (c) => renderSleep(c.parent, computeSleep(c.index, c.date, c.birthYear), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "stages", title: "panelStagesTitle", section: "sleep", metrics: ["sleep_deep", "sleep_rem", "sleep_light", "sleep_awake"], needs: "panelNeedsStages", render: (c) => renderStages(c.parent, computeStages(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "battery", title: "panelBatteryTitle", section: "energy", metrics: ["body_battery_max"], needs: "panelNeedsBattery", extra: ["body_battery_min", "body_battery"], render: (c) => renderBattery(c.parent, computeBattery(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "stress", title: "panelStressTitle", section: "energy", metrics: ["stress"], needs: "panelNeedsStress", render: (c) => renderStress(c.parent, computeStress(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "steps", title: "panelStepsTitle", section: "movement", metrics: ["steps"], needs: "panelNeedsSteps", extra: ["distance_km", "calories_active", "calories_total"], render: (c) => renderSteps(c.parent, computeSteps(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "intensity", title: "panelIntensityTitle", section: "movement", metrics: ["intensity_min"], needs: "panelNeedsIntensity", render: (c) => renderIntensity(c.parent, computeIntensity(c.index, c.date, c.birthYear), c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "sleep", title: "panelSleepTitle", section: "sleep", metrics: ["sleep_duration"], needs: "panelNeedsSleep", extra: ["sleep_score", "sleep_start", "sleep_end"], render: (c) => renderSleep(c.parent, { ...computeSleep(c.index, c.date, c.birthYear), insights: sleepInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "stages", title: "panelStagesTitle", section: "sleep", metrics: ["sleep_deep", "sleep_rem", "sleep_light", "sleep_awake"], needs: "panelNeedsStages", render: (c) => renderStages(c.parent, { ...computeStages(c.index, c.date), insights: stagesInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "battery", title: "panelBatteryTitle", section: "energy", metrics: ["body_battery_max"], needs: "panelNeedsBattery", extra: ["body_battery_min", "body_battery"], render: (c) => renderBattery(c.parent, { ...computeBattery(c.index, c.date), insights: batteryInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "stress", title: "panelStressTitle", section: "energy", metrics: ["stress"], needs: "panelNeedsStress", render: (c) => renderStress(c.parent, { ...computeStress(c.index, c.date), insights: stressInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "steps", title: "panelStepsTitle", section: "movement", metrics: ["steps"], needs: "panelNeedsSteps", extra: ["distance_km", "calories_active", "calories_total"], render: (c) => renderSteps(c.parent, { ...computeSteps(c.index, c.date), insights: stepsInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "intensity", title: "panelIntensityTitle", section: "movement", metrics: ["intensity_min"], needs: "panelNeedsIntensity", render: (c) => renderIntensity(c.parent, { ...computeIntensity(c.index, c.date, c.birthYear), insights: intensityInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "floors", title: "panelFloorsTitle", section: "movement", metrics: ["floors"], needs: "panelNeedsFloors", render: (c) => renderFloors(c.parent, computeFloors(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "vo2", title: "panelVo2Title", section: "fitness", metrics: ["vo2_max"], needs: "panelNeedsVo2", render: (c) => renderVo2(c.parent, computeVo2(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "body", title: "panelBodyTitle", section: "fitness", metrics: ["weight_kg"], needs: "panelNeedsBody", extra: ["body_fat_pct"], render: (c) => renderBody(c.parent, computeBody(c.index, c.date), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "load", title: "panelLoadTitle", section: "training", metrics: [], needs: "panelNeedsLoad", render: (c) => renderLoad(c.parent, computeLoad(c.index, c.date, c.birthYear), c.lang, c.explainOpen, c.onToggleExplain) },
-	{ id: "weekly", title: "panelWeeklyTitle", section: "training", metrics: [], needs: "panelNeedsWeekly", render: (c) => renderWeekly(c.parent, computeWeekly(c.index, c.date, c.birthYear), c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
-	{ id: "sessions", title: "panelSessionsTitle", section: "training", metrics: [], needs: "panelNeedsSessions", render: (c) => renderSessions(c.parent, computeSessions(c.index, c.date, c.birthYear), c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
+	{ id: "vo2", title: "panelVo2Title", section: "fitness", metrics: ["vo2_max"], needs: "panelNeedsVo2", render: (c) => renderVo2(c.parent, { ...computeVo2(c.index, c.date), insights: vo2Insights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "body", title: "panelBodyTitle", section: "fitness", metrics: ["weight_kg"], needs: "panelNeedsBody", extra: ["body_fat_pct"], render: (c) => renderBody(c.parent, { ...computeBody(c.index, c.date), insights: bodyInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "load", title: "panelLoadTitle", section: "training", metrics: [], needs: "panelNeedsLoad", render: (c) => renderLoad(c.parent, { ...computeLoad(c.index, c.date, c.birthYear), insights: loadInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
+	{ id: "weekly", title: "panelWeeklyTitle", section: "training", metrics: [], needs: "panelNeedsWeekly", render: (c) => renderWeekly(c.parent, { ...computeWeekly(c.index, c.date, c.birthYear), insights: weeklyInsights(signals(c)) }, c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
+	{ id: "sessions", title: "panelSessionsTitle", section: "training", metrics: [], needs: "panelNeedsSessions", render: (c) => renderSessions(c.parent, { ...computeSessions(c.index, c.date, c.birthYear), insights: sessionsInsights(signals(c)) }, c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
 ];
 
 export const SECTION_TITLES: Record<SectionId, TranslationKeys> = {

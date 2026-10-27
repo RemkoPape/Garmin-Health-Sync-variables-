@@ -5,6 +5,7 @@ import type { DayIndex } from "../index";
 import { computeTrend, type Trend } from "../trend";
 import { ageAt } from "../zones";
 import { renderCard } from "./shell";
+import type { Insight } from "../insights/registry";
 
 const NIGHTS = 7;
 /** Fewest nights with data before the debt is shown at all. */
@@ -38,6 +39,9 @@ export interface SleepNight {
 export interface SleepSchedule {
 	/** Minutes since midnight. */
 	bed: number;
+	/** The same averages without wrapping past midnight, to compare with a night's own times (see SleepNight.bed). */
+	bedAbs: number;
+	wakeAbs: number;
 	bedSd: number;
 	wake: number;
 	wakeSd: number;
@@ -48,6 +52,8 @@ export const SLEEP_MIN_TIMED_NIGHTS = 3;
 const DAY = 1440;
 
 export interface SleepModel {
+	/** What the data suggests, filled in by the panel (see insights/). */
+	insights: Insight[];
 	/** Minutes of sleep to aim for. */
 	need: number;
 	trend: Trend | null;
@@ -85,7 +91,7 @@ export function computeSleep(index: DayIndex, date: string, birthYear: number | 
 	}
 	const ready = have >= SLEEP_MIN_NIGHTS;
 	const target = ready ? Math.floor((need + Math.min(debt / 4, MAX_CATCH_UP_MIN)) / TARGET_STEP_MIN) * TARGET_STEP_MIN : null;
-	return { need, schedule: scheduleOf(nights), trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target };
+	return { insights: [], need, schedule: scheduleOf(nights), trend: computeTrend((d) => index.minutes("sleep_duration", d), date), nights, minutes: index.minutes("sleep_duration", date), score: index.value("sleep_score", date), have, debt: ready ? debt : null, target };
 }
 
 function meanAndSd(values: number[]): { mean: number; sd: number } {
@@ -98,7 +104,7 @@ function scheduleOf(nights: SleepNight[]): SleepSchedule | null {
 	if (timed.length < SLEEP_MIN_TIMED_NIGHTS) return null;
 	const bed = meanAndSd(timed.map((n) => n.bed as number));
 	const wake = meanAndSd(timed.map((n) => (n.bed as number) + (n.span as number)));
-	return { bed: bed.mean % DAY, bedSd: bed.sd, wake: wake.mean % DAY, wakeSd: wake.sd };
+	return { bed: bed.mean % DAY, bedAbs: bed.mean, wakeAbs: wake.mean, bedSd: bed.sd, wake: wake.mean % DAY, wakeSd: wake.sd };
 }
 
 /** "07:05" from minutes since midnight. */
@@ -158,7 +164,7 @@ function timelineChart(parent: HTMLElement, nights: SleepNight[], need: number, 
 export function renderSleep(parent: HTMLElement, model: SleepModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const value = model.minutes === null ? null : formatMinutes(model.minutes);
 	const unit = model.minutes !== null && model.score !== null ? `· ${Math.round(model.score)}` : undefined;
-	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: (model.schedule ? `${t("panelSleepExplain", lang)} ${t("panelSleepExplainTimes", lang)}` : t("panelSleepExplain", lang)).replace(/\{need\}/g, String(model.need / 60)), explainOpen, onToggleExplain, lang, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
+	renderCard(parent, { title: t("panelSleepTitle", lang), value, unit, explain: (model.schedule ? `${t("panelSleepExplain", lang)} ${t("panelSleepExplainTimes", lang)}` : t("panelSleepExplain", lang)).replace(/\{need\}/g, String(model.need / 60)), explainOpen, onToggleExplain, lang, insights: model.insights, trend: { trend: model.trend, format: (n) => formatMinutes(n) } }, (card) => {
 		if (model.debt === null || model.target === null) {
 			card.createDiv({
 				cls: "ghs-card-note",
