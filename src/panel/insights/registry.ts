@@ -57,6 +57,7 @@ export const INSIGHTS = {
 	battery_low_load: { card: "battery", kind: "watch" },
 	battery_recharge_good: { card: "battery", kind: "good" },
 
+	stress_more_stressed: { card: "stress", kind: "watch" },
 	stress_high_sleep: { card: "stress", kind: "watch" },
 	stress_high_week: { card: "stress", kind: "watch" },
 	stress_calm: { card: "stress", kind: "good" },

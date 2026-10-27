@@ -31,10 +31,11 @@ const STRESS_CALM = 25;
 const WEEK_MARGIN = 10;
 
 export function stressInsights(s: Signals): Insight[] {
-	const { level, week } = computeStress(s.index, s.date);
+	const { level, week, stressed, recovering } = computeStress(s.index, s.date);
 	if (level === null) return [];
 	const sleep = s.sleep();
 	const out: Insight[] = [];
+	if (stressed !== null && recovering !== null && stressed > recovering) out.push({ id: "stress_more_stressed", params: { stressed: formatMinutes(stressed), recovering: formatMinutes(recovering) } });
 	if (level > STRESS_HIGH) {
 		if (sleep.minutes !== null && sleep.minutes < sleep.need - 60) out.push({ id: "stress_high_sleep", params: { sleep: formatMinutes(sleep.minutes) } });
 		if (week !== null && level > week + WEEK_MARGIN) out.push({ id: "stress_high_week", params: { week: String(Math.round(week)) } });

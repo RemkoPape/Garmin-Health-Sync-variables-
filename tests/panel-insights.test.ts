@@ -348,6 +348,13 @@ describe("stress", () => {
 		]);
 	});
 
+	it("points out a day with more stressed than recovering minutes, with both amounts", async () => {
+		const stressed = (hi: number, rest: number) => signals((ago) => ({ stress: ago === 0 ? 40 : 35, ...(ago === 0 ? { stress_high: hi, recovery_high: rest } : {}) }), 10);
+		expect(stressInsights(await stressed(240, 130))).toEqual([{ id: "stress_more_stressed", params: { stressed: "4 h", recovering: "2 h 10 min" } }]);
+		expect(stressInsights(await stressed(130, 240))).toEqual([]);
+		expect(stressInsights(await stressed(130, 130))).toEqual([]);
+	});
+
 	it("is quiet for a level in between and calm for a low one", async () => {
 		expect(stressInsights(await stress(40))).toEqual([]);
 		expect(stressInsights(await stress(60, 58))).toEqual([]);

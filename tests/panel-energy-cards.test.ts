@@ -253,6 +253,31 @@ describe("stress card", () => {
 		expect(text(".ghs-card-note")).toBe("7-day average 38");
 	});
 
+	it("draws the stressed minutes against the recovering minutes as a split bar", async () => {
+		const index = await indexOf((ago) => ({ stress: 31, ...(ago === 0 ? { stress_high: 65, recovery_high: 190 } : {}) }), 8);
+		renderStress(root, computeStress(index, END), "en", false, noop);
+		const parts = Array.from(root.querySelectorAll<HTMLElement>(".ghs-split-part"));
+		expect(parts.map((p) => p.style.getPropertyValue("--ghs-w"))).toEqual([`${(65 / 255) * 100}%`, `${(190 / 255) * 100}%`]);
+		expect(text(".ghs-split-label-stressed")).toBe("1 h 5 min stressed");
+		expect(text(".ghs-split-label-recovering")).toBe("3 h 10 min recovering");
+	});
+
+	it("shows no split bar without both values or without any minutes", async () => {
+		const only = await indexOf((ago) => ({ stress: 31, ...(ago === 0 ? { stress_high: 65 } : {}) }), 8);
+		renderStress(root, computeStress(only, END), "en", false, noop);
+		expect(root.querySelector(".ghs-split")).toBeNull();
+		root.empty();
+		const none = await indexOf((ago) => ({ stress: 31, ...(ago === 0 ? { stress_high: 0, recovery_high: 0 } : {}) }), 8);
+		renderStress(root, computeStress(none, END), "en", false, noop);
+		expect(root.querySelector(".ghs-split")).toBeNull();
+	});
+
+	it("speaks the plugin language in the split labels", async () => {
+		const index = await indexOf((ago) => ({ stress: 31, ...(ago === 0 ? { stress_high: 65, recovery_high: 190 } : {}) }), 8);
+		renderStress(root, computeStress(index, END), "de", false, noop);
+		expect(text(".ghs-split-label-recovering")).toBe("3 h 10 min in Erholung");
+	});
+
 	it("clamps a level above the scale to the end of the bar", async () => {
 		renderStress(root, computeStress(await stress(130, null), END), "en", false, noop);
 		expect((root.querySelector(".ghs-dot") as HTMLElement).style.getPropertyValue("--ghs-x")).toBe("100%");

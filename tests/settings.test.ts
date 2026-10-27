@@ -362,21 +362,21 @@ describe("copying the diagnostics", () => {
 	});
 });
 
-describe("F8: the Stress duration and Recovery duration switches are gone", () => {
-	it("are not metrics, have no toggle and no label in any language", async () => {
-		const keys = METRICS.map((m) => m.key);
-		expect(keys).not.toContain("stress_high");
-		expect(keys).not.toContain("recovery_high");
-		const toggles = flat(make().defs()).map((i) => i.control?.key);
-		expect(toggles).not.toContain("metric:stress_high");
-		expect(toggles).not.toContain("metric:recovery_high");
+describe("the stress and recovery duration switches (issue 31)", () => {
+	it("are extended metrics, off by default, with a toggle and a label in every language", async () => {
+		for (const key of ["stress_high", "recovery_high"]) {
+			const metric = METRICS.find((m) => m.key === key)!;
+			expect(metric.category).toBe("extended");
+			expect(metric.defaultEnabled).toBe(false);
+			expect(flat(make().defs()).map((i) => i.control?.key)).toContain(`metric:${key}`);
+		}
 		const { es } = await import("../src/i18n/es");
 		const { fr } = await import("../src/i18n/fr");
 		const { ja } = await import("../src/i18n/ja");
 		const { zh } = await import("../src/i18n/zh");
 		for (const table of [en, de, es, fr, ja, zh]) {
-			expect(Object.keys(table)).not.toContain("metric_stress_high");
-			expect(Object.keys(table)).not.toContain("metric_recovery_high");
+			expect(Object.keys(table)).toContain("metric_stress_high");
+			expect(Object.keys(table)).toContain("metric_recovery_high");
 		}
 	});
 });

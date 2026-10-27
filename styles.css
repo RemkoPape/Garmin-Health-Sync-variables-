@@ -925,3 +925,47 @@
 	color: var(--text-faint);
 	font-size: var(--font-ui-smaller);
 }
+
+/* Stress minutes: stressed against recovering */
+.ghs-split {
+	display: flex;
+	height: 8px;
+	overflow: hidden;
+	border-radius: var(--radius-s);
+}
+
+.ghs-split-part {
+	width: var(--ghs-w, 0%);
+}
+
+.ghs-split-stressed {
+	background: var(--color-orange);
+}
+
+.ghs-split-recovering {
+	background: var(--color-blue);
+}
+
+.ghs-split-labels {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+}
+
+.ghs-split-label-stressed {
+	color: var(--color-orange);
+}
+
+.ghs-split-label-recovering {
+	color: var(--color-blue);
+}
+
+/* A smaller light bulb: the default clickable icon is large, especially on a phone */
+.ghs-info.clickable-icon .svg-icon,
+.is-mobile .ghs-info.clickable-icon .svg-icon {
+	width: var(--icon-xs);
+	height: var(--icon-xs);
+	stroke-width: 1.5px;
+}

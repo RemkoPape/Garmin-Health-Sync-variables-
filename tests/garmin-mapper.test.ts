@@ -66,6 +66,19 @@ describe("mapDailySummary", () => {
 		});
 	});
 
+	it("maps the stress minutes (medium and high) and the recovery minutes from seconds", () => {
+		const stress = { mediumStressDuration: 3000, highStressDuration: 1500, restStressDuration: 11400 };
+		expect(mapDailySummary(stress, all("stress_high", "recovery_high"))).toEqual({ stress_high: 75, recovery_high: 190 });
+		expect(mapDailySummary(stress, all("stress_high"))).toEqual({ stress_high: 75 });
+		expect(mapDailySummary(stress, all("recovery_high"))).toEqual({ recovery_high: 190 });
+	});
+
+	it("counts a missing stress band as zero, and writes nothing when Garmin sent none", () => {
+		expect(mapDailySummary({ highStressDuration: 1800 }, all("stress_high"))).toEqual({ stress_high: 30 });
+		expect(mapDailySummary({ mediumStressDuration: 1800 }, all("stress_high"))).toEqual({ stress_high: 30 });
+		expect(mapDailySummary({}, all("stress_high", "recovery_high"))).toEqual({});
+	});
+
 	it("maps only the enabled metrics", () => {
 		expect(mapDailySummary(summary, all("steps"))).toEqual({ steps: 8123 });
 		expect(mapDailySummary(summary, all())).toEqual({});

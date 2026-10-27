@@ -75,6 +75,18 @@ export function mapDailySummary(data: Record<string, unknown>, enabled: Set<stri
 		}
 	}
 
+	// Stress minutes: time stressed (medium and high stress) and time at rest, from durations in seconds. Garmin may
+	// leave one band out, so a missing band counts as 0 as long as at least one is there.
+	if (enabled.has("stress_high")) {
+		const medium = data["mediumStressDuration"];
+		const high = data["highStressDuration"];
+		if (medium != null || high != null) result["stress_high"] = Math.round(((Number(medium) || 0) + (Number(high) || 0)) / 60);
+	}
+	if (enabled.has("recovery_high")) {
+		const rest = data["restStressDuration"];
+		if (rest != null) result["recovery_high"] = Math.round(Number(rest) / 60);
+	}
+
 	return result;
 }
 
