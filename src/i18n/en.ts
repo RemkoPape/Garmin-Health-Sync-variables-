@@ -103,6 +103,7 @@ export const en = {
 	noticeAutoSyncDone: "Health data synced — {count} days updated",
 	noticeBackfillStart: "Starting backfill...",
 	noticeBackfillProgress: "Backfill running: day {n} of {total} ({date}) · about {eta} left",
+	noticeBackfillNothing: "Backfill: every day in this range is already there",
 	noticeBackfillDone: "Backfill complete: {count} days updated",
 	noticeBackfillDoneWithErrors: "Backfill complete: {count} days updated, {failed} failed (see console)",
 	noticeHistoryImported: "Copied {count} days from your daily notes into the history",

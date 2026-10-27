@@ -105,6 +105,7 @@ export const es: Record<TranslationKeys, string> = {
 	noticeAutoSyncDone: "Datos de salud sincronizados — {count} días actualizados",
 	noticeBackfillStart: "Iniciando relleno de datos...",
 	noticeBackfillProgress: "Relleno en curso: día {n} de {total} ({date}) · faltan unos {eta}",
+	noticeBackfillNothing: "Relleno: todos los días de este rango ya están",
 	noticeBackfillDone: "Relleno completado: {count} días actualizados",
 	noticeBackfillDoneWithErrors: "Relleno completado: {count} días actualizados, {failed} con error (ver consola)",
 	noticeHistoryImported: "Se copiaron {count} días de tus notas diarias al historial",

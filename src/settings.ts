@@ -40,6 +40,8 @@ export interface HealthSyncSettings {
 	dailyNoteTemplate: string;
 	enabledMetrics: Record<string, boolean>;
 	lastSyncTimes: Record<string, number>; // Date → last sync timestamp (epoch ms)
+	fetchLog: Record<string, number>; // Backfilled day → index of the metrics requested for it in fetchSets
+	fetchSets: string[][]; // The distinct sets of metrics the backfill requested
 	garminSession: string;
 	garminOAuth1: string; // JSON-serialized OAuth1Token (long-lived, ~1 year)
 	garminOAuth2: string; // JSON-serialized OAuth2Token (short-lived)
@@ -63,6 +65,8 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	dailyNoteTemplate: "",
 	enabledMetrics: getDefaultEnabledMetrics(),
 	lastSyncTimes: {},
+	fetchLog: {},
+	fetchSets: [],
 	garminSession: "",
 	garminOAuth1: "",
 	garminOAuth2: "",

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.43
+
+### Changed
+
+- Backfill health data no longer fetches a day again that an earlier backfill already fetched with all the metrics you have enabled now (or that the history notes already hold). The notice counts only the days it will really fetch, and when nothing is left it says "every day in this range is already there". The last three days are always fetched again, because Garmin may still change them. Days without data count as done; days that failed do not. Enabling another metric makes the earlier days fetch again for it. The plugin remembers this in its settings file (two small bookkeeping entries, no setting to change).
+
 ## 0.12.0-beta.42
 
 ### Added
