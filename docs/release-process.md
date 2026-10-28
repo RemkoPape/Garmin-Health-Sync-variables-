@@ -41,3 +41,5 @@ Only on an explicit go-ahead, after the last beta's smoke test passed on phone a
 ## Dependencies
 
 Dev-only, exact-pinned, at least 14 days old (`.npmrc` `min-release-age`, Dependabot cooldown). `@codemirror/state|view` are pinned to obsidian's exact peer versions and `moment` is obsidian's own copy. esbuild is the only dependency whose output lands in `main.js`, so it moves on a release of its own. Install scripts are denied (`allowScripts`). Known unfixed dev-only advisory: `happy-dom` 20.x (fixed in 21.0.4, adopted once it is 14 days old); the tests load no untrusted content.
+
+See also: [CHANGELOG.md](../CHANGELOG.md) (every beta has its section), [panel-cards.md](panel-cards.md) and [panel-insights.md](panel-insights.md) (a card or an interpretation needs its section before it ships), [NOTICE.md](../NOTICE.md).

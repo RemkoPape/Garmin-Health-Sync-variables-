@@ -51,3 +51,5 @@ The one command **Backfill health data** fetches any range of days, newest first
 ## Concurrency
 
 All writes to the history notes go through one queue (a note is read, merged and written in one step, so two writers cannot lose each other's days), and all requests to Garmin go through one chain. What the panel has read of a month is thrown away when the note changes or is written to, and a read that was overtaken by such a change is not kept. A day counts as fetched in the backfill log only after it was stored.
+
+See also: [the metrics that are stored](metrics.md), [the settings](settings.md) (**Days without a daily note**), [troubleshooting](troubleshooting.md#backfill), [how the panel uses the data](panel-cards.md), [the README](../README.md#backfill-historical-data).

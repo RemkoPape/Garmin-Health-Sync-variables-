@@ -17,7 +17,7 @@ Images in `docs/screenshots/` are **rendered from the real plugin code, never ca
 1. Make the UI or data change. A new card: add it to a scene (or a new scene) in `scenes.ts` and give the synthetic series the metrics it needs.
 2. `npm run screenshots` (all scenes) or `npm run screenshots -- panel-today panel-hydration` (named ones). `npm run check:screenshots` renders into a temp folder and touches nothing; run it before a PR.
 3. **Open every PNG with the Read tool and look at it.** The check cannot see wrong content: odd values (a "poor" readiness on a good-day scene, an orange "low" tag), clipped text, a card that is empty, a day that sits in the story block by accident. If the data looks wrong, change the series or `daysBack`, not the image.
-4. Cross-check README: the gallery sits under "Health side panel" in all six READMEs (`README*.md`); a new image needs an `<img>` with alt text in each language.
+4. Cross-check README: three hero images (`panel-today`, `panel-insights`, `panel-today-dark`) sit at the top of all six READMEs (`README*.md`), because the Obsidian directory page renders the README and that is the first impression; the other images form the gallery under "Health side panel". A new image needs an `<img>` with alt text in each language; `tests/readmeParity.test.ts` compares the image lists. If a card's look changed, check that `docs/panel-cards.md` still describes how it is drawn.
 5. Commit script, scenes, data and images together in the feature PR.
 6. Before a stable release show the images to Daniel and wait for approval.
 

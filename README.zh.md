@@ -17,13 +17,23 @@
 
 > **支持桌面端和移动端**（Windows、macOS、Linux、iOS、Android）。本插件使用 Garmin Connect 的内部 API；Garmin 没有提供官方第三方 API。你使用 Garmin 邮箱和密码登录（如启用两步验证，还需输入验证码）。如果 Garmin 阻止此次尝试，可使用备用的浏览器登录方式。
 
+## 文档
+
+- [设置](docs/settings.md) — 每一项设置
+- [指标](docs/metrics.md) — 写入你笔记的每个属性
+- [侧边面板卡片](docs/panel-cards.md) — 每张卡片显示什么、帮助做哪项日常决定、如何计算
+- [灯泡下的解读](docs/panel-insights.md) — 每条提示何时出现及其依据
+- [历史笔记与回填](docs/history.md) — 历史如何保存与构建
+- [故障排除](docs/troubleshooting.md) — 登录、缺失的指标、面板、笔记和回填
+- [更新日志](CHANGELOG.md) — 每个版本的变化
+
 ## 功能特性
 
 - **启动时自动同步** —— 检查最近 7 天并补充缺失的健康数据
 - **等待笔记模式** — 可让自动同步等待其他工具（Templater、Calendar、外部同步）创建每日笔记，而不是自己创建
 - **手动同步** —— 通过命令面板同步任意已打开的 Daily Note
 - **回填** —— 批量同步一段日期范围（例如最近 3 个月）
-- **20+ 项指标** —— 步数、睡眠评分、HRV、压力、身体电量、SpO2、体重等
+- **30+ 项指标** —— 步数、睡眠评分、HRV、压力、身体电量、SpO2、体重等
 - **运动追踪** —— 每次锻炼以易读的摘要形式呈现
 - **运动地点** —— 通过逆地理编码获取首个 GPS 活动的地名
 - **智能检测** —— 自动识别你的 Daily Notes 路径和格式（来自 Periodic Notes 或内置 Daily Notes 插件）
@@ -193,17 +203,20 @@ Garmin 的 `typeKey` 值会被标准化为更简洁的规范键名：
 
 | 分类 | 示例 |
 |---|---|
-| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking |
-| `running` | running, trail_running, treadmill, ultra_run |
+| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking, virtual_ride |
+| `running` | running, trail_running, treadmill_running, indoor_running, ultra_run |
 | `walking` | walking, indoor_walking |
 | `outdoor` | hiking, mountaineering, rock_climbing, bouldering |
-| `swimming` | swimming, pool_swimming, open_water_swimming |
+| `swimming` | swimming, lap_swimming, pool_swimming, open_water_swimming |
 | `winter` | skiing, backcountry_skiing, cross_country_skiing, snowboarding |
-| `water` | sup, rowing, kayaking, surfing, sailing |
-| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit |
+| `water` | sup, rowing, kayaking, paddling, surfing, sailing |
+| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit, indoor_cardio |
 | `racket` | tennis, badminton, squash, table_tennis, pickleball |
 | `team` | soccer, basketball, volleyball, rugby |
-| `other` | golf, meditation, multi_sport |
+| `recovery` | breathwork, meditation, stretching, mobility（不计入负荷） |
+| `other` | golf, multi_sport, triathlon |
+
+较新的运动会带有 Garmin 的后缀（`kayaking_v2`、`skate_skiing_ws`）；名称和类别会忽略该后缀，因此与不带后缀的运动一样计算。训练会话以插件语言显示运动名称；此处未列出的运动显示为可读文本，并归为 `other`。每周负荷卡片会记录跑步、骑行、步行、户外运动和游泳的距离。
 
 ## 数据与隐私
 
