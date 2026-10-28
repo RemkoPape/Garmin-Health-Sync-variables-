@@ -45,7 +45,9 @@ export class DayIndex {
 	/** The numeric value of a metric on a day, or null when the note, the key or a finite number is missing. */
 	value(key: string, date: string): number | null {
 		const v = this.raw(key, date);
-		return typeof v === "number" && Number.isFinite(v) ? v : null;
+		// a number typed into a text property ("8000") is read as the number it says
+		const n = typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : v;
+		return typeof n === "number" && Number.isFinite(n) ? n : null;
 	}
 
 	/** A duration metric ("6h 13min") on a day in minutes, or null. */

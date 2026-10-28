@@ -28,13 +28,19 @@ describe("DayIndex", () => {
 
 	it("ignores missing notes, missing keys and values that are not finite numbers", async () => {
 		const app = new App();
-		await seedHistory(app, { end: "2026-10-22", days: 4, frontmatter: (ago) => [{ hrv: "62" }, { hrv: Number.NaN }, {}, null][ago] ?? null });
+		await seedHistory(app, { end: "2026-10-22", days: 6, frontmatter: (ago) => [{ hrv: Number.NaN }, {}, null, { hrv: Number.POSITIVE_INFINITY }, { hrv: "62 ms" }, { hrv: "abc" }][ago] ?? null });
 		const index = new DayIndex(app as never, () => settings);
-		expect(index.value("hrv", "2026-10-22")).toBeNull();
-		expect(index.value("hrv", "2026-10-21")).toBeNull();
-		expect(index.value("hrv", "2026-10-20")).toBeNull();
+		for (const day of ["2026-10-22", "2026-10-21", "2026-10-20", "2026-10-19", "2026-10-18", "2026-10-17", "2020-01-01"]) expect(index.value("hrv", day), day).toBeNull();
+	});
+
+	it("reads a number typed into a text property as the number it says, and nothing else that is a string", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 4, frontmatter: (ago) => [{ hrv: "62" }, { hrv: " 61.5 " }, { hrv: "-1" }, { hrv: "" }][ago] ?? null });
+		const index = new DayIndex(app as never, () => settings);
+		expect(index.value("hrv", "2026-10-22")).toBe(62);
+		expect(index.value("hrv", "2026-10-21")).toBe(61.5);
+		expect(index.value("hrv", "2026-10-20")).toBe(-1);
 		expect(index.value("hrv", "2026-10-19")).toBeNull();
-		expect(index.value("hrv", "2020-01-01")).toBeNull();
 	});
 
 	it("skips notes without frontmatter and files that are no daily notes", async () => {

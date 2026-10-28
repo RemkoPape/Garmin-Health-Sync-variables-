@@ -438,3 +438,66 @@ describe("a day whose endpoint failed", () => {
 		expect([...fetchLog]).toEqual(["2026-10-10"]);
 	});
 });
+
+describe("failures of the history file in the middle of a run", () => {
+	it("goes on after a batch that could not be written, and fetches only those days again next time", async () => {
+		const put = store.putMany.bind(store);
+		let first = true;
+		vi.spyOn(store, "putMany").mockImplementation(async (records) => {
+			if (first) {
+				first = false;
+				throw new Error("disk full");
+			}
+			await put(records);
+		});
+		// 12 days: the first batch of 5 fails, the rest are written
+		const result = await run("2026-10-01", "2026-10-12");
+		expect(result).toMatchObject({ status: "done", fetched: 7, failed: 5 });
+		expect(lines()).toHaveLength(7);
+		expect(fetchLog.size).toBe(7);
+		vi.restoreAllMocks();
+		provider.fetchCalls.length = 0;
+		await run("2026-10-01", "2026-10-12");
+		// the first batch was the five newest days of the range; they are the ones asked for again
+		expect(fetchedDates().sort()).toEqual(["2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12"]);
+	});
+
+	it("loses nothing when the failure is at the change of the month: the month that was written stays, the other is retried", async () => {
+		const put = store.putMany.bind(store);
+		vi.spyOn(store, "putMany").mockImplementation(async (records) => {
+			if ([...records.keys()].some((d) => d.startsWith("2026-09"))) throw new Error("no space");
+			await put(records);
+		});
+		const result = await run("2026-09-28", "2026-10-02");
+		expect(result.failed).toBe(3);
+		expect(lines()).toHaveLength(2);
+		expect([...fetchLog].sort()).toEqual(["2026-10-01", "2026-10-02"].filter((d) => d < "2026-10-22"));
+		expect(fetchLog.has("2026-09-28")).toBe(false);
+	});
+
+	it("stops cleanly when the stop comes while a batch is being written, and the batch is in the file", async () => {
+		const put = store.putMany.bind(store);
+		vi.spyOn(store, "putMany").mockImplementation(async (records) => {
+			builder.stop();
+			await put(records);
+		});
+		const result = await run("2026-10-01", "2026-10-12");
+		expect(result.status).toBe("stopped");
+		expect(lines().length).toBeGreaterThanOrEqual(5);
+		expect([...fetchLog].length).toBe(lines().length);
+	});
+});
+
+describe("a day with a failed endpoint when the run is told to fetch complete days again", () => {
+	it("is stored again and still not marked, and a complete answer later replaces the incomplete record", async () => {
+		make(ENABLED, { force: true });
+		provider.byDate.set("2026-10-09", { metrics: { steps: 5000 }, activities: {}, failedEndpoints: ["hrv"] });
+		await run("2026-10-09", "2026-10-09");
+		expect(lines()).toEqual(['2026-10-09 {"_m":[],"steps":5000}']);
+		expect(fetchLog.has("2026-10-09")).toBe(false);
+		provider.byDate.set("2026-10-09", { metrics: { steps: 5000, hrv: 50 }, activities: {} });
+		await run("2026-10-09", "2026-10-09");
+		expect(lines()).toEqual(['2026-10-09 {"_m":["hrv","steps"],"hrv":50,"steps":5000}']);
+		expect(fetchLog.has("2026-10-09")).toBe(true);
+	});
+});

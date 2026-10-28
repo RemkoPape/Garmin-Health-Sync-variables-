@@ -101,7 +101,9 @@ export function stripGarminSuffix(key: string): string {
 }
 
 /** The name of an activity in a language. An activity without a name of its own, in any of the languages, shows its key as text. */
-export function activityLabel(key: string, lang: string): string {
+export function activityLabel(rawKey: string, lang: string): string {
+	// a key typed by hand in a note ("Kayaking", "mountain biking") is the same sport as the key the sync writes
+	const key = rawKey.trim().toLowerCase().replace(/\s+/g, "_");
 	const names = NAMES[stripGarminSuffix(key)];
 	if (!names) return readable(stripGarminSuffix(key));
 	return names[Math.max(0, LANGUAGES.indexOf(lang))]!;

@@ -32,6 +32,8 @@ export function pairedDays(index: DayIndex, keys: [string, string], date: string
 const MIN_FOR_OUTLIERS = 8;
 /** A value this many robust spreads (1.4826 x the median absolute deviation, at least `sdFloor`) from the median is an outlier. */
 const OUTLIER_SPREADS = 5;
+/** More than this share of the values would have to go: then they are not outliers. */
+const MAX_OUTLIER_SHARE = 0.25;
 
 function median(values: number[]): number {
 	const sorted = [...values].sort((a, b) => a - b);
@@ -50,7 +52,9 @@ export function baseline(values: number[], min: number, sdFloor: number): Baseli
 	if (values.length >= MIN_FOR_OUTLIERS) {
 		const mid = median(values);
 		const spread = Math.max(1.4826 * median(values.map((v) => Math.abs(v - mid))), sdFloor);
-		used = values.filter((v) => Math.abs(v - mid) <= OUTLIER_SPREADS * spread);
+		const kept = values.filter((v) => Math.abs(v - mid) <= OUTLIER_SPREADS * spread);
+		// a quarter or more of the values far from the middle is no handful of freak readings but two kinds of days (a new watch, a changed routine): all of them are the person's own, so none is left out
+		if (kept.length >= values.length * (1 - MAX_OUTLIER_SHARE)) used = kept;
 	}
 	const n = used.length;
 	const mean = used.reduce((a, b) => a + b, 0) / n;
@@ -70,6 +74,8 @@ export function average(index: DayIndex, key: string, date: string, days: number
 
 /** Where `x` ranks among `values` (0 to 1): the values below it plus half of those equal to it, so a value that equals all the others is in the middle, not at the top. */
 export function percentileRank(x: number, values: number[]): number {
+	// nothing to rank among: the middle, not NaN
+	if (values.length === 0) return 0.5;
 	const below = values.filter((v) => v < x).length;
 	const equal = values.filter((v) => v === x).length;
 	return (below + equal / 2) / values.length;

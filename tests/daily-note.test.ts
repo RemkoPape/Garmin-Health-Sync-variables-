@@ -714,3 +714,62 @@ describe("what the user wrote in the frontmatter stays as it is", () => {
 		expect(await write("Body\n", { steps: 8000 })).toBe("---\nsteps: 8000\n---\nBody\n");
 	});
 });
+
+describe("patching the frontmatter in place: the block must read back as the merged properties", () => {
+	const write = async (content: string, metrics: Record<string, number | string>, prefix = ""): Promise<string> => {
+		vault.seed(note, content);
+		await writeToDailyNote(asApp(), DATE, health({ metrics }), opts({ prefix }));
+		return vault.text(note);
+	};
+
+	it("leaves a note with the same key twice alone, backed up and reported, as it does for any block it cannot read", async () => {
+		const content = "---\nsteps: 1\nmood: ok\nsteps: 2\n---\nBody\n";
+		expect(await write(content, { steps: 9 })).toBe(content);
+		expect(vault.paths().some((p) => p.startsWith(BACKUP_DIR))).toBe(true);
+		expect(Notice.recorded).toHaveLength(1);
+	});
+
+	it("keeps a comment after a key that does not change and replaces one that does, comment included", async () => {
+		expect(await write("---\nmood: ok # felt fine\nsteps: 1 # old\n---\n", { steps: 9 })).toBe("---\nmood: ok # felt fine\nsteps: 9\n---\n");
+	});
+
+	it("changes the type of a value, from text to a number and back", async () => {
+		await write("---\nsteps: lots\n---\n", { steps: 9000 });
+		expect(frontmatter(note)).toEqual({ steps: 9000 });
+		await write("---\nsleep_duration: 7\n---\n", { sleep_duration: "7h 30min" });
+		expect(frontmatter(note)).toEqual({ sleep_duration: "7h 30min" });
+	});
+
+	it("replaces a key that is there with no value, and one that is null", async () => {
+		await write("---\nsteps:\nmood: ok\n---\n", { steps: 9 });
+		expect(frontmatter(note)).toEqual({ steps: 9, mood: "ok" });
+		await write("---\nsteps: null\n---\n", { steps: 9 });
+		expect(frontmatter(note)).toEqual({ steps: 9 });
+	});
+
+	it("handles keys with characters that mean something in a pattern, and with the prefix next to the plain key", async () => {
+		await write("---\nsteps (daily): 1\nmood: ok\n---\n", { steps: 9 });
+		expect(frontmatter(note)).toEqual({ "steps (daily)": 1, mood: "ok", steps: 9 });
+		await write("---\nsteps: 1\nohs_steps: 2\n---\n", { ohs_steps: 9 });
+		expect(frontmatter(note)).toEqual({ steps: 1, ohs_steps: 9 });
+		const prefixed = await write("---\nsteps: 1\n---\n", { steps: 9 }, "ohs_");
+		expect(prefixed).toBe("---\nsteps: 1\nohs_steps: 9\n---\n");
+	});
+
+	it("handles tabs and Unicode in what the user wrote", async () => {
+		const content = "---\nstimmung: gut\t# ok\nsteps: 1\n---\nBody\n";
+		expect(await write(content, { steps: 9 })).toBe("---\nstimmung: gut\t# ok\nsteps: 9\n---\nBody\n");
+		expect(await write("---\n名前: 山田\nsteps: 1\n---\n", { steps: 9 })).toBe("---\n名前: 山田\nsteps: 9\n---\n");
+	});
+
+	it("writes the block anew when the patch would break an alias (the anchor was on the value that changes)", async () => {
+		await write("---\nsteps: &a 1\nother: *a\n---\n", { steps: 9 });
+		expect(frontmatter(note)).toEqual({ steps: 9, other: 1 });
+	});
+
+	it("writes the block anew when the patch would make an alias point somewhere else", async () => {
+		// before: other is 1 (the latest anchor a); a patch of steps alone would leave it pointing at the first anchor, 5
+		await write("---\nfirst: &a 5\nsteps: &a 1\nother: *a\n---\n", { steps: 9 });
+		expect(frontmatter(note)).toEqual({ first: 5, steps: 9, other: 1 });
+	});
+});
