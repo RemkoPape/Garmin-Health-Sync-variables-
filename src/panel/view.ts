@@ -1,6 +1,6 @@
 import { ItemView, TFile, WorkspaceLeaf, setIcon, type TAbstractFile } from "obsidian";
 import type HealthSyncPlugin from "../main";
-import { dateFromDailyNote } from "../daily-note";
+import { dateFromDailyNote, dateFromNotePath } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
 import { SECTION_TITLES, orderedCards, type SectionId } from "./cards";
@@ -61,7 +61,10 @@ export class HealthPanelView extends ItemView {
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.renderIfDirty()));
 		this.registerEvent(this.app.workspace.on("layout-change", () => this.renderIfDirty()));
 		// The sync writes notes in bursts: rebuild the index lazily and render once after the burst.
+		// a note that is neither a daily note nor a history note changes nothing the panel shows: editing the rest of the vault does not redraw it
+		const relevant = (file?: TAbstractFile): boolean => !(file instanceof TFile) || this.history.isHistoryFile(file) || dateFromDailyNote(file, this.plugin.settings) !== null;
 		const changed = (file?: TAbstractFile): void => {
+			if (!relevant(file)) return;
 			// a history note that changed must be read again; every other note leaves what was read alone
 			if (file && this.history.isHistoryFile(file)) this.history.invalidate(file);
 			this.index.invalidate();
@@ -76,7 +79,14 @@ export class HealthPanelView extends ItemView {
 			if (this.drawnOn !== localDateString(new Date())) this.render();
 		}, MIDNIGHT_CHECK_MS));
 		this.registerEvent(this.app.vault.on("delete", changed));
-		this.registerEvent(this.app.vault.on("rename", changed));
+		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
+			// a note renamed away from a daily or history name changes the panel too
+			const base = typeof oldPath === "string" ? oldPath.slice(oldPath.lastIndexOf("/") + 1) : "";
+			const wasHistory = base !== "" && this.history.isHistoryFile({ name: base } as TAbstractFile);
+			if (wasHistory) this.history.invalidate();
+			if (wasHistory || (base !== "" && dateFromNotePath(oldPath, base.replace(/\.md$/i, ""), this.plugin.settings) !== null)) changed();
+			else changed(file);
+		}));
 		this.render();
 		return Promise.resolve();
 	}
@@ -166,7 +176,11 @@ export class HealthPanelView extends ItemView {
 		const from = shiftDate(this.date, -HISTORY_DAYS);
 		if (this.history.covers(from, this.date)) return;
 		void this.history.warm(from, this.date).then((found) => {
-			if (found) this.render();
+			if (found) {
+				// what the cards worked out before the history was read is out of date
+				this.index.touch();
+				this.render();
+			}
 		});
 	}
 

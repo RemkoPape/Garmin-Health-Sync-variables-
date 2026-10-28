@@ -74,7 +74,7 @@ export class TFolder extends TAbstractFile {
 	children: TAbstractFile[] = [];
 }
 
-type VaultListener = (file: TAbstractFile) => void;
+type VaultListener = (file: TAbstractFile, oldPath?: string) => void;
 
 export class Vault {
 	/** Every write, in order, for assertions: "create" | "modify" | "createFolder". */
@@ -99,12 +99,12 @@ export class Vault {
 	}
 
 	/** Test helper: deliver an event to the listeners, e.g. for a folder, which the mock itself never announces. */
-	fire(name: "create" | "modify" | "delete" | "rename", file: TAbstractFile): void {
-		this.emit(name, file);
+	fire(name: "create" | "modify" | "delete" | "rename", file: TAbstractFile, oldPath?: string): void {
+		this.emit(name, file, oldPath);
 	}
 
-	private emit(name: string, file: TAbstractFile): void {
-		for (const cb of this.listeners[name] ?? []) cb(file);
+	private emit(name: string, file: TAbstractFile, oldPath?: string): void {
+		for (const cb of this.listeners[name] ?? []) cb(file, oldPath);
 	}
 
 	private check(op: string, path: string): void {
@@ -173,7 +173,7 @@ export class Vault {
 		this.files.set(newPath, file as TFile);
 		this.contents.set(newPath, content);
 		this.log.push({ op: "rename", path: `${old} -> ${newPath}` });
-		this.emit("rename", file);
+		this.emit("rename", file, old);
 	}
 
 	/** Removes a file, or an empty folder, from the vault. */

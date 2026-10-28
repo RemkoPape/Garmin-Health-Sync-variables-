@@ -23,8 +23,23 @@ export class DayIndex {
 
 	constructor(private readonly app: App, private readonly settings: () => IndexSettings, private readonly history: HistoryStore | null = null) {}
 
+	/** Changes with every invalidation or touch: what was worked out from the index is out of date when it differs. */
+	private revision = 0;
+	private sessionCache = new Map<string, Session[]>();
+
+	get version(): number {
+		return this.revision;
+	}
+
 	invalidate(): void {
 		this.built = false;
+		this.touch();
+	}
+
+	/** The history that the index reads from changed, the notes did not. */
+	touch(): void {
+		this.revision++;
+		this.sessionCache.clear();
 	}
 
 	/** The numeric value of a metric on a day, or null when the note, the key or a finite number is missing. */
@@ -52,7 +67,12 @@ export class DayIndex {
 	/** The day's sessions; empty for a day without sessions. A note's own entries win over the history's. */
 	sessions(date: string): Session[] {
 		this.build();
-		return parseSessions({ ...this.history?.get(date), ...this.days.get(date) });
+		let sessions = this.sessionCache.get(date);
+		if (!sessions) {
+			sessions = parseSessions({ ...this.history?.get(date), ...this.days.get(date) });
+			this.sessionCache.set(date, sessions);
+		}
+		return sessions;
 	}
 
 	/** A text metric of the day, or null. */

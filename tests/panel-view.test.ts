@@ -141,6 +141,42 @@ describe("health panel view", () => {
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("65 ms");
 	});
 
+	it("does not redraw when a note that is no daily note or history note changes or is deleted", async () => {
+		const { app, view } = await open();
+		const draws = vi.spyOn(view as unknown as { render(): void }, "render");
+		app.metadataCache.fireChanged(note("Projects/plan.md"));
+		app.vault.fire("delete", note("Projects/plan.md"));
+		app.vault.fire("rename", note("Projects/plan2.md"), "Projects/plan.md");
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(draws).not.toHaveBeenCalled();
+		app.vault.fire("rename", note("2026-10-22.md"), "Inbox/idea.md");
+		await vi.advanceTimersByTimeAsync(300);
+		expect(draws).toHaveBeenCalledTimes(1);
+	});
+
+	it("draws again when a daily note is renamed away from its name, and when a history note is", async () => {
+		const { app, view } = await open();
+		const draws = vi.spyOn(view as unknown as { render(): void }, "render");
+		app.vault.fire("rename", note("Inbox/idea.md"), "2026-10-22.md");
+		await vi.advanceTimersByTimeAsync(300);
+		expect(draws).toHaveBeenCalledTimes(1);
+		app.vault.fire("rename", note("Inbox/old.md"), "Garmin history/Garmin history 2026-10.md");
+		await vi.advanceTimersByTimeAsync(300);
+		expect(draws).toHaveBeenCalledTimes(2);
+		// a rename without a known old place falls back to the new file
+		app.vault.fire("rename", note("2026-10-21.md"));
+		await vi.advanceTimersByTimeAsync(300);
+		expect(draws).toHaveBeenCalledTimes(3);
+	});
+
+	it("draws again for a folder, whose notes it cannot tell", async () => {
+		const { app, view } = await open();
+		const draws = vi.spyOn(view as unknown as { render(): void }, "render");
+		app.vault.fire("rename", { path: "Daily", name: "Daily" } as never, "Journal");
+		await vi.advanceTimersByTimeAsync(300);
+		expect(draws).toHaveBeenCalledTimes(1);
+	});
+
 	it("does not read the history notes again when an ordinary note changes", async () => {
 		const app = new App();
 		app.vault.seed("Garmin history/Garmin history 2026-10.md", serializeMonth("2026-10", new Map([["2026-10-22", { hrv: 64 }]])));

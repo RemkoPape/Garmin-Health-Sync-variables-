@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0-beta.66
+
+### Changed
+
+- **The side panel no longer redraws for every note you edit.** It redraws only when a daily note or a history note changes, is renamed (from or to such a name) or is deleted. Before, typing in any note of a large vault rebuilt the index of the whole vault and redrew every card shortly after.
+- **Less work per draw.** The cards of one draw share their signals (the sleep and load models were worked out once per card), the sessions of a day are read once until the notes change, the compiled date patterns of the daily note format are kept instead of being built for every note of the vault at every rebuild, and the history notes are looked up with one pass over the vault instead of one pass per month (14 for the panel, about 60 for a five year backfill).
+
 ## 0.12.0-beta.65
 
 ### Fixed

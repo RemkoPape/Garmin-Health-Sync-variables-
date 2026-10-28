@@ -32,6 +32,17 @@ function escapeRegex(text: string): string {
  * "YYYY/YYYY-MM-DD" only matches when both years agree.
  */
 function dateFormatToRegex(format: string): RegExp {
+	const known = REGEX_CACHE.get(format);
+	if (known) return known;
+	const regex = buildDateFormatRegex(format);
+	REGEX_CACHE.set(format, regex);
+	return regex;
+}
+
+/** The compiled pattern of each format: the panel asks for it once per note of the vault at every rebuild. */
+const REGEX_CACHE = new Map<string, RegExp>();
+
+function buildDateFormatRegex(format: string): RegExp {
 	const seen = new Set<string>();
 	let pattern = "";
 
@@ -76,10 +87,19 @@ export function dateFromDailyNote(
 	file: TFile,
 	settings: { dailyNotePath: string; dailyNoteFormat: string }
 ): string | null {
+	return dateFromNotePath(file.path, file.basename, settings);
+}
+
+/** The same for a note that is known by its path and name only (a note that was renamed or deleted). */
+export function dateFromNotePath(
+	path: string,
+	basename: string,
+	settings: { dailyNotePath: string; dailyNoteFormat: string }
+): string | null {
 	const format = settings.dailyNoteFormat || "YYYY-MM-DD";
 	const basePath = (settings.dailyNotePath || "").replace(/^\/+|\/+$/g, "");
 
-	const notePath = file.path.replace(/\.md$/i, "");
+	const notePath = path.replace(/\.md$/i, "");
 	let relative = notePath;
 	if (basePath) {
 		if (!notePath.startsWith(basePath + "/")) return null;
@@ -92,7 +112,7 @@ export function dateFromDailyNote(
 	// Fallback: match the basename alone, so notes that were moved into
 	// hand-made subfolders below the configured folder stay recognisable.
 	if (!match && basePath && !format.includes("/")) {
-		match = file.basename.match(pattern);
+		match = basename.match(pattern);
 	}
 	if (match?.groups) {
 		const { year, month, day } = match.groups;
@@ -103,7 +123,7 @@ export function dateFromDailyNote(
 	// The pattern above only knows YYYY, MM and DD. Formats with other tokens (a weekday, a month name, ...)
 	// are read back with moment instead, which must reproduce the name exactly.
 	return dateFromFormattedName(relative, format)
-		?? (basePath && !format.includes("/") ? dateFromFormattedName(file.basename, format) : null);
+		?? (basePath && !format.includes("/") ? dateFromFormattedName(basename, format) : null);
 }
 
 /**
