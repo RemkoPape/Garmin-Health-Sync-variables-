@@ -854,7 +854,7 @@ export async function requestUrl(request: RequestUrlParam | string): Promise<Req
 	network.calls.push(req);
 	const route = network.routes.find((r) => matches(r.match, req));
 	if (!route) {
-		network.unrouted.push(`${req.method ?? "GET"} ${req.url}\n${(new Error().stack ?? "").split("\n").filter((l) => /src\/|tests\//.test(l)).slice(0, 8).join("\n")}`);
+		network.unrouted.push(`${req.method ?? "GET"} ${req.url}`);
 		throw new Error(`requestUrl: unrouted request ${req.method ?? "GET"} ${req.url}`);
 	}
 	if (route.respond === "network-error") throw new Error(route.message ?? "net::ERR_FAILED");

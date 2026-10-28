@@ -618,6 +618,8 @@ describe("per-endpoint accessors and the shared cache", () => {
 		net.on(EX, () => new Promise<MockReply>((resolve) => (release = resolve)));
 		api.setRequiredEndpoints(["hrv"]);
 		const run = api.fetchDataForDate(DATE).catch((e: unknown) => e);
+		// signing the request uses the real crypto, so the request leaves a moment later than the fake clock knows
+		await vi.waitFor(() => expect(net.callsTo("oauth/exchange")).toHaveLength(1));
 		await vi.advanceTimersByTimeAsync(25_000);
 		expect((await run as Error).message).toBe("token refresh timeout");
 		expect(api.getAuthState()).toBe("temporarilyUnavailable");
