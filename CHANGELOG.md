@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.77
+
+### Fixed
+
+- **The "How to read this" button was too high on phones.** Beta 67 gave it a 44 px minimum height for fingers, which made the box taller than in beta 63. It keeps the 44 px touch area, but the space is taken back with a negative margin over the card's own padding, so the box is as low as before. Desktop is unchanged.
+
 ## 0.12.0-beta.76
 
 ### Added

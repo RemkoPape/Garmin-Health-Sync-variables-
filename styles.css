@@ -1275,8 +1275,16 @@
 	min-height: 44px;
 }
 
+/* A finger needs a 44px target; the padding is taken back with the margin, so the button is as high as on a desktop (the extra reach lies over the card's own padding) */
 .is-mobile .ghs-about > summary {
+	box-sizing: border-box;
 	min-height: 44px;
+	margin: -13px 0;
+	padding: 0;
+}
+
+.is-mobile .ghs-about[open] > summary {
+	margin-bottom: calc(var(--size-4-2) - 13px);
 }
 
 .ghs-sort-title {
