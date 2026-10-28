@@ -10,6 +10,7 @@ import {
 	mapHrvData,
 	mapBodyBattery,
 	mapSpO2,
+	mapHydration,
 	mapRespiration,
 	mapWeight,
 	mapTrainingReadiness,
@@ -193,6 +194,9 @@ export class GarminProvider implements HealthProvider {
 		}
 		if (enabled.has("spo2")) {
 			group("spo2", "SpO2", this.api.fetchSpO2(date), data => mapSpO2(data, enabled));
+		}
+		if (enabled.has("hydration_ml") || enabled.has("hydration_goal_ml")) {
+			group("hydration", "Hydration", this.api.fetchHydration(date), data => mapHydration(data, enabled));
 		}
 		if (enabled.has("respiration_rate")) {
 			group("respiration", "Respiration", this.api.fetchRespiration(date), data => mapRespiration(data, enabled));

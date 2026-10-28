@@ -900,6 +900,11 @@
 	transform: none;
 }
 
+/* Hydration has one label, kept left of its tick so it never runs off the card */
+.ghs-weekly.ghs-hydration-bar .ghs-tick-label:last-of-type {
+	transform: translateX(-100%);
+}
+
 /* Sleep timeline: when each night happened, not only how long it was */
 .ghs-nights-timeline {
 	height: 168px;

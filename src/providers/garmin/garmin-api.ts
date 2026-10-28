@@ -154,6 +154,7 @@ function getEndpoints(apiBase: string): Record<string, (displayName: string, dat
 		weight: (_, date) => `${apiBase}/weight-service/weight/dateRange?startDate=${date}&endDate=${date}`,
 		spo2: (_, date) => `${apiBase}/wellness-service/wellness/daily/spo2/${date}`,
 		respiration: (_, date) => `${apiBase}/wellness-service/wellness/daily/respiration/${date}`,
+		hydration: (_, date) => `${apiBase}/usersummary-service/usersummary/hydration/daily/${date}`,
 		trainingStatus: (_, date) => `${apiBase}/metrics-service/metrics/maxmet/daily/${date}/${date}`,
 		trainingReadiness: (_, date) => `${apiBase}/metrics-service/metrics/trainingreadiness/${date}`,
 	};
@@ -169,6 +170,7 @@ const ENDPOINT_METRIC_MAP: Record<string, string[]> = {
 	weight: ["weight_kg", "body_fat_pct"],
 	spo2: ["spo2"],
 	respiration: ["respiration_rate"],
+	hydration: ["hydration_ml", "hydration_goal_ml"],
 	trainingStatus: ["training_status", "vo2_max"],
 	trainingReadiness: ["training_readiness"],
 };
@@ -1161,6 +1163,11 @@ export class GarminApi {
 	async fetchSpO2(date: string): Promise<Record<string, unknown>> {
 		const data = await this.getCachedOrFetch(date);
 		return (data.spo2 || {}) as Record<string, unknown>;
+	}
+
+	async fetchHydration(date: string): Promise<Record<string, unknown>> {
+		const data = await this.getCachedOrFetch(date);
+		return (data.hydration || {}) as Record<string, unknown>;
 	}
 
 	// --- Cache + lock: navigate only once per date ---

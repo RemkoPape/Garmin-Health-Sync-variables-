@@ -20,6 +20,8 @@ export const METRICS: MetricDefinition[] = [
 	{ key: "body_battery_max", type: "number", category: "extended", defaultEnabled: false },
 	{ key: "spo2", type: "number", category: "extended", defaultEnabled: false },
 	{ key: "respiration_rate", type: "number", category: "extended", defaultEnabled: false },
+	{ key: "hydration_ml", type: "number", category: "extended", defaultEnabled: false },
+	{ key: "hydration_goal_ml", type: "number", category: "extended", defaultEnabled: false },
 	{ key: "calories_total", type: "number", category: "extended", defaultEnabled: false },
 	{ key: "calories_active", type: "number", category: "extended", defaultEnabled: false },
 	{ key: "distance_km", type: "number", category: "extended", defaultEnabled: false },

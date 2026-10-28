@@ -27,6 +27,7 @@ export const INSIGHTS = {
 	hrv_low_sleep: { card: "hrv", kind: "watch" },
 	hrv_low_stress: { card: "hrv", kind: "watch" },
 	hrv_low_illness: { card: "hrv", kind: "watch" },
+	hrv_low_hydration: { card: "hrv", kind: "watch" },
 	hrv_low_streak: { card: "hrv", kind: "watch" },
 	hrv_high_light_load: { card: "hrv", kind: "good" },
 	hrv_high_rested: { card: "hrv", kind: "good" },
@@ -37,6 +38,7 @@ export const INSIGHTS = {
 	rhr_high_load: { card: "resting_hr", kind: "watch" },
 	rhr_high_sleep: { card: "resting_hr", kind: "watch" },
 	rhr_high_illness: { card: "resting_hr", kind: "watch" },
+	rhr_high_hydration: { card: "resting_hr", kind: "watch" },
 	rhr_low_fitness: { card: "resting_hr", kind: "good" },
 	rhr_trend_up: { card: "resting_hr", kind: "watch" },
 	rhr_trend_down: { card: "resting_hr", kind: "good" },
@@ -83,6 +85,12 @@ export const INSIGHTS = {
 	stress_high_week: { card: "stress", kind: "watch" },
 	stress_calm: { card: "stress", kind: "good" },
 	stress_usual: { card: "stress", kind: "good" },
+
+	hydration_goal_good: { card: "hydration", kind: "good" },
+	hydration_on_pace: { card: "hydration", kind: "good" },
+	hydration_behind_pace: { card: "hydration", kind: "watch" },
+	hydration_below_goal: { card: "hydration", kind: "watch" },
+	hydration_low_streak: { card: "hydration", kind: "watch" },
 
 	steps_below_streak: { card: "steps", kind: "watch" },
 	steps_zone_good: { card: "steps", kind: "good" },
