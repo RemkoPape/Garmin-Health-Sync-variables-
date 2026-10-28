@@ -14,7 +14,7 @@ describe("baseline", () => {
 	});
 
 	it("returns mean and population standard deviation", () => {
-		const b = baseline([2, 4, 4, 4, 5, 5, 7, 9], 8, 0)!;
+		const b = baseline([2, 4, 4, 4, 5, 5, 7, 9], 8, 1)!;
 		expect(b.mean).toBe(5);
 		expect(b.sd).toBe(2);
 		expect(b.n).toBe(8);

@@ -293,6 +293,7 @@ export const ja: Record<TranslationKeys, string> = {
 	panelTodayGarmin: "Garminのコンディション",
 	panelTodayBridge: "自分のスコアに十分なデータがたまるまで、Garmin独自のコンディションを表示します。",
 	panelTodayWaiting: "今日のHRV、安静時心拍数、睡眠のいずれかがまだありません。同期するとスコアが表示されます。",
+	panelSleepDebtPartial: "睡眠負債は{need}晩のうち{have}晩に基づいています。データのない夜は負債なしとして数えるため、スコアが高めに出ることがあります。",
 	insight_today_flag_hrv: "HRVが普段の範囲を下回っています。",
 	insight_today_flag_rhr: "安静時心拍数が普段より高めです。",
 	insight_today_flag_sleep: "直近7夜の睡眠負債は{debt}です。",
