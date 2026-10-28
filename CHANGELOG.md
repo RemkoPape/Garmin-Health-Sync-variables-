@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0-beta.64
+
+### Fixed
+
+- **A backfill never loses days or marks days as done that are not stored.** The history days of a batch are marked as fetched only when the history file holds them; a file that cannot be written leaves the days unmarked and counts them as failed, so the next run fetches them. The place a run has reached is saved only after the pending days are in the files, so a phone that kills the app mid-run no longer leaves days that are marked done but missing.
+- **A day with a failed endpoint is no longer marked complete.** When one request of a day fails (error or timeout) while the others work, the day is stored as it is but remembered as incomplete, and the next backfill fetches it again. A day an endpoint has no data for (404, empty answer, a watch without the feature) is still just a day without that value, never an error or a notice.
+- **One endpoint that answers 401 or 403 no longer logs you out** while the other endpoints of the day work (a watch that does not offer a feature can answer that way). Only when nothing answers is the session treated as dead.
+- **A request that never answers can no longer hold things up.** Each request of a day has its own 25 second limit (before one slow request failed all 30 seconds of the day), the token refresh has one so the sign-in state cannot stay at "refreshing", and the place name lookup gives up after 8 seconds instead of holding the note.
+- **A missing night of HRV stays a gap.** The 7-day average is no longer written as the night's value, which hid that a new watch has HRV only since a few days and shifted the baseline. Stress of -1 or -2 (no reading) is no longer written as a level.
+- **A daily note or history note that another writer created at the same moment** (Templater, a periodic notes plugin, another device) is written into instead of ending in an error and an hour of waiting. The same for the folders.
+- **A backfill that was resumed after a restart takes the job stored then**, not the one from startup, so a run you started and finished in between is not started again. The auto-sync no longer starts in the moment a backfill starts, stops writing when the plugin is closed, and the sign-in notice is removed when the plugin is closed.
+- **Coming back to the app on a phone catches up** with an auto-sync (a phone suspends the app, so nothing ran while it was away).
+- A daily note whose frontmatter is broken is backed up once for the same content and the last five backups are kept, instead of one new file at every sync.
+
 ## 0.12.0-beta.63
 
 ### Changed

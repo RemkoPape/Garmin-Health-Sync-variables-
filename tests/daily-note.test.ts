@@ -582,3 +582,63 @@ function geo(reply: { status: number; body: unknown }): void {
 function network(): void {
 	geo({ status: 200, body: { address: { town: "Bad Honnef", country: "Germany" } } });
 }
+
+describe("another writer is faster than the sync", () => {
+	it("writes into the note that appeared between the check and the create (Templater, a periodic notes plugin, another device)", async () => {
+		vault.failOn = (op, path) => {
+			if (op !== "create" || path !== note) return null;
+			vault.failOn = null;
+			vault.seed(note, "---\nmood: ok\n---\nBody\n");
+			return new Error("File already exists.");
+		};
+		await vault.createFolder("Daily");
+		expect(await writeToDailyNote(asApp(), DATE, health(), opts())).toBe(true);
+		expect(frontmatter(note)).toMatchObject({ mood: "ok", steps: 8000 });
+		expect(vault.text(note)).toContain("Body");
+	});
+
+	it("reports the error when the create fails and no note is there", async () => {
+		vault.failOn = (op, path) => (op === "create" && path === note ? new Error("disk full") : null);
+		await vault.createFolder("Daily");
+		await expect(writeToDailyNote(asApp(), DATE, health(), opts())).rejects.toThrow("disk full");
+	});
+
+	it("goes on when the folder was made in the meantime, and fails when it was not", async () => {
+		vault.failOn = (op, path) => {
+			if (op !== "createFolder" || path !== "Daily") return null;
+			vault.failOn = null;
+			void vault.createFolder("Daily");
+			return new Error("Folder already exists.");
+		};
+		expect(await writeToDailyNote(asApp(), DATE, health(), opts())).toBe(true);
+		vault.failOn = (op, path) => (op === "createFolder" && path === "Other" ? new Error("no permission") : null);
+		await expect(writeToDailyNote(asApp(), DATE, health(), opts({ dailyNotePath: "Other" }))).rejects.toThrow("no permission");
+	});
+});
+
+describe("backups of a note that stays broken", () => {
+	const broken = (n: number): string => `---\nkey: [unclosed ${n}\n---\nBody\n`;
+	const backups = (): string[] => vault.paths().filter((p) => p.startsWith(BACKUP_DIR));
+
+	it("keeps one backup for the same content, however often the sync meets it", async () => {
+		vault.seed(note, broken(1));
+		for (let i = 0; i < 4; i++) {
+			await writeToDailyNote(asApp(), DATE, health(), opts());
+			vi.advanceTimersByTime(5000);
+		}
+		expect(backups()).toHaveLength(1);
+	});
+
+	it("keeps the last five backups of a note whose content keeps changing", async () => {
+		vault.seed(note, broken(0));
+		for (let i = 1; i <= 7; i++) {
+			await vault.modify(vault.getAbstractFileByPath(note) as never, broken(i));
+			await writeToDailyNote(asApp(), DATE, health(), opts());
+			vi.advanceTimersByTime(5000);
+		}
+		const kept = backups();
+		expect(kept).toHaveLength(5);
+		expect(vault.text(kept[kept.length - 1] as string).endsWith(broken(7))).toBe(true);
+		expect(kept.some((p) => vault.text(p).endsWith(broken(1)))).toBe(false);
+	});
+});

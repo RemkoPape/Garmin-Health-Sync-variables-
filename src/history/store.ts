@@ -155,11 +155,17 @@ export class HistoryStore {
 	}
 
 	private async write(month: string, incoming: Map<string, DayRecord>): Promise<void> {
-		const [file] = this.filesOf(month);
+		let [file] = this.filesOf(month);
 		if (!file) {
 			await ensureFolderExists(this.app, this.folder());
-			await this.app.vault.create(`${this.folder()}/${HISTORY_FOLDER} ${month}.md`, serializeMonth(month, incoming));
-			return;
+			try {
+				await this.app.vault.create(`${this.folder()}/${HISTORY_FOLDER} ${month}.md`, serializeMonth(month, incoming));
+				return;
+			} catch (error) {
+				// another device synced the month's note in the meantime: the days are merged into that one
+				[file] = this.filesOf(month);
+				if (!file) throw error;
+			}
 		}
 		await this.app.vault.process(file, (current) => {
 			const days = parseMonth(current);

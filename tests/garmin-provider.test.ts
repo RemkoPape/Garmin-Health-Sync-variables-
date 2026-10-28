@@ -190,7 +190,7 @@ describe("fetchData", () => {
 		route({ dailySummary: { body: "" }, activities: { body: [] } });
 		net.on(/./, { body: "" });
 		const data = await provider.fetchData(DATE, ["steps"]);
-		expect(data).toEqual({ metrics: {}, activities: {}, trainings: [], startLocation: undefined });
+		expect(data).toEqual({ metrics: {}, activities: {}, trainings: [], startLocation: undefined, failedEndpoints: [] });
 	});
 
 	it("a failing group does not drop the others", async () => {

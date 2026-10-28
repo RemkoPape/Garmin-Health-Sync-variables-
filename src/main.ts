@@ -156,6 +156,11 @@ export default class HealthSyncPlugin extends Plugin {
 			// deliberately not accepted as existing. Registered here, not in onload,
 			// so create doesn't fire for every existing file during the initial vault
 			// load.
+			// A phone suspends the app, so nothing runs while it is away: coming back to the app catches up (the 30 s debounce
+			// keeps a quick switch between apps from syncing twice).
+			this.registerDomEvent(document, "visibilitychange", () => {
+				if (document.visibilityState === "visible") this.background(this.tryAutoSync(), "auto-sync");
+			});
 			this.registerEvent(this.app.vault.on("create", file => this.onDailyNoteMaybeReady(file)));
 			this.registerEvent(this.app.vault.on("modify", file => this.onDailyNoteMaybeReady(file)));
 		});
@@ -207,9 +212,12 @@ export default class HealthSyncPlugin extends Plugin {
 
 	/** A backfill that was running when Obsidian closed goes on from the day it had reached, with its notice at the top again. */
 	private resumeBackfill(): void {
-		const job = this.settings.backfillJob;
-		if (!job) return;
-		const timer = window.setTimeout(() => this.startBackfill(job), RESUME_DELAY_MS);
+		if (!this.settings.backfillJob) return;
+		const timer = window.setTimeout(() => {
+			// what is stored now, not what was stored at startup: a run the user started and finished in between has cleared it
+			const job = this.settings.backfillJob;
+			if (job) this.startBackfill(job);
+		}, RESUME_DELAY_MS);
 		this.register(() => window.clearTimeout(timer));
 	}
 
@@ -295,6 +303,9 @@ export default class HealthSyncPlugin extends Plugin {
 	onunload(): void {
 		this.unloading = true;
 		this.syncManager?.stopBackfill();
+		// a notice that stays until it is clicked would call into a plugin that is gone
+		this.loginRequiredNotice?.hide();
+		this.loginRequiredNotice = null;
 		this.garminProvider?.closeActiveLogin();
 	}
 
@@ -304,7 +315,7 @@ export default class HealthSyncPlugin extends Plugin {
 	private async tryAutoSync(options: { force?: boolean } = {}): Promise<void> {
 		if (!this.settings.autoSync) return;
 		// A history build uses the Garmin connection at its own pace; the next trigger picks the recent days up.
-		if (this.syncManager.backfilling) return;
+		if (this.syncManager.backfilling || this.backfillRunning) return;
 		if (this.autoSyncRunning) {
 			// A pass is already in flight. If this is a forced resume (a note just
 			// appeared), queue exactly one more pass to run when it finishes — the
@@ -433,6 +444,8 @@ export default class HealthSyncPlugin extends Plugin {
 
 			for (let i = 0; i < datesToSync.length; i++) {
 				const date = datesToSync[i]!;
+				// the plugin was switched off or reloaded: nothing more is written
+				if (this.unloading) break;
 				// Wait-for-note applies to the background auto-sync only. Manual sync
 				// and backfill never pass this and always create the note.
 				const outcome = await this.syncManager.syncDate(date, this.settings, true, {

@@ -1,7 +1,7 @@
 // Why it matters: reverse geocoding turns a workout's start coordinates into the place name written
 // into the note. It talks to a third-party service, so the request, the failure handling and the name
 // clean-up must be exact.
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { network } from "../testUtils/mocks/obsidian";
 import { reverseGeocode } from "../src/geocoding";
 
@@ -126,5 +126,24 @@ describe("F4: Latin names with diacritics survive the clean-up", () => {
 	it("still drops other scripts next to a Vietnamese name", async () => {
 		network.on(URL_RE, reply({ city: "Hà Nội 河內" }));
 		expect(await reverseGeocode(1, 2)).toBe("Hà Nội");
+	});
+});
+
+describe("a service that does not answer", () => {
+	it("gives no place after 8 seconds instead of holding the note", async () => {
+		vi.useFakeTimers();
+		try {
+			network.on(URL_RE, () => new Promise(() => undefined));
+			const result = reverseGeocode(48.2, 16.4);
+			await vi.advanceTimersByTimeAsync(7_999);
+			let done = false;
+			void result.then(() => (done = true));
+			await vi.advanceTimersByTimeAsync(0);
+			expect(done).toBe(false);
+			await vi.advanceTimersByTimeAsync(1);
+			expect(await result).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

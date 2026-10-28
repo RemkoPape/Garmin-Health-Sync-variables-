@@ -4,9 +4,11 @@
  */
 
 import { requestUrl } from "obsidian";
+import { withTimeout } from "./timeout";
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse";
 const USER_AGENT = "ObsidianHealthSync/1.0";
+const GEOCODE_TIMEOUT_MS = 8000;
 
 /**
  * Removes non-Latin characters from a string.
@@ -30,10 +32,11 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string |
 	try {
 		const lang = activeDocument.documentElement.lang?.slice(0, 2) || "en";
 		const url = `${NOMINATIM_URL}?lat=${lat}&lon=${lon}&format=json&zoom=14&accept-language=${lang}`;
-		const response = await requestUrl({
+		// a place name is not worth a note that waits for it: a service that does not answer is no place
+		const response = await withTimeout(requestUrl({
 			url,
 			headers: { "User-Agent": USER_AGENT },
-		});
+		}), GEOCODE_TIMEOUT_MS, "geocoding timeout");
 
 		if (response.status !== 200) return null;
 

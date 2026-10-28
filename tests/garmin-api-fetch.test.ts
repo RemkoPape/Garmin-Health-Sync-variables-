@@ -456,6 +456,18 @@ describe("fetching endpoints", () => {
 			await expect(api.fetchDataForDate(DATE)).rejects.toBeInstanceOf(LoginRequiredError);
 		});
 
+		it("keeps the login when one endpoint answers 403 on the retry while the others work (a watch without that feature)", async () => {
+			routeData({ hrv: { status: 403 } });
+			net.on(EX, { body: { access_token: "at-2", refresh_token: "rt", expires_in: 3600 } });
+			api.setRequiredEndpoints(["dailySummary", "hrv"]);
+			const results = await api.fetchDataForDate(DATE);
+			expect(Object.keys(results)).toEqual(["dailySummary"]);
+			expect(api.isSessionValid()).toBe(true);
+			expect(api.getAuthState()).toBe("ready");
+			// not a failure to fetch again: the endpoint has no data for this account
+			expect(api.failedEndpoints()).toEqual([]);
+		});
+
 		it("counts the retry's failures instead of the first pass's", async () => {
 			let phase = 0;
 			routeData({ hrv: () => (phase++ === 0 ? { status: 401 } : { status: 500 }), dailySummary: { body: { totalSteps: 1 } } });
@@ -568,17 +580,51 @@ describe("per-endpoint accessors and the shared cache", () => {
 		expect(await api.fetchHrv(DATE)).toEqual({ hrvSummary: { lastNightAvg: 1 } });
 	});
 
-	it("gives up after 30 seconds, tells the diagnostics and reports a fetch error", async () => {
-		routeData({ hrv: () => new Promise<MockReply>(() => undefined) });
+	it("gives up on the whole day after 60 seconds, tells the diagnostics and reports a fetch error", async () => {
+		let release: (r: MockReply) => void = () => undefined;
+		routeData({ profile: () => new Promise<MockReply>((resolve) => (release = resolve)) });
 		api.setRequiredEndpoints(["hrv"]);
 		const run = api.fetchHrv(DATE).catch((e: unknown) => e);
-		await vi.advanceTimersByTimeAsync(29_999);
+		await vi.advanceTimersByTimeAsync(59_999);
 		expect(api.getSyncDiagnostics()).not.toContain("timeout");
 		await vi.advanceTimersByTimeAsync(1);
 		const err = await run;
+		// the request that was given up on is answered late: it ends here, not in a later test
+		release({ body: { displayName: PRIVATE } });
+		await vi.advanceTimersByTimeAsync(0);
 		expect(err).toBeInstanceOf(SyncFetchError);
 		expect((err as Error).message).toBe("fetch_failed: Error");
-		expect(api.getSyncDiagnostics()).toContain("fetch timeout after 30000ms");
+		expect(api.getSyncDiagnostics()).toContain("fetch timeout after 60000ms");
+	});
+
+	it("an endpoint that does not answer fails alone after 25 seconds; the others keep their data", async () => {
+		let release: (r: MockReply) => void = () => undefined;
+		routeData({ hrv: () => new Promise<MockReply>((resolve) => (release = resolve)) });
+		api.setRequiredEndpoints(["dailySummary", "hrv"]);
+		const run = api.fetchDataForDate(DATE);
+		await vi.advanceTimersByTimeAsync(25_000);
+		expect(Object.keys(await run)).toEqual(["dailySummary"]);
+		expect(api.failedEndpoints()).toEqual(["hrv"]);
+		expect(api.getSyncDiagnostics()).toContain("partial failure: hrv");
+		release({ body: {} });
+		await vi.advanceTimersByTimeAsync(0);
+	});
+
+	it("a token refresh that never answers ends as a transient error, not as a refresh that never finishes", async () => {
+		api.setTokens(OAUTH1, null);
+		net.reset();
+		net.on(/thegarth/, { body: {} });
+		let release: (r: MockReply) => void = () => undefined;
+		net.on(EX, () => new Promise<MockReply>((resolve) => (release = resolve)));
+		api.setRequiredEndpoints(["hrv"]);
+		const run = api.fetchDataForDate(DATE).catch((e: unknown) => e);
+		// signing the request uses the real crypto, so the request leaves a moment later than the fake clock knows
+		await vi.waitFor(() => expect(net.callsTo("oauth/exchange")).toHaveLength(1));
+		await vi.advanceTimersByTimeAsync(25_000);
+		expect((await run as Error).message).toBe("token refresh timeout");
+		expect(api.getAuthState()).toBe("temporarilyUnavailable");
+		release({ body: { access_token: "late", refresh_token: "rt", expires_in: 3600 } });
+		await vi.advanceTimersByTimeAsync(0);
 	});
 
 	it("leaves no 30 second timer behind once a fetch has finished", async () => {

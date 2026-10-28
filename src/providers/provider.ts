@@ -19,6 +19,8 @@ export interface HealthData {
 	trainings?: TrainingEntry[];
 	/** Start coordinates of the first activity with GPS */
 	startLocation?: { lat: number; lon: number };
+	/** Endpoints that failed for this day (error or timeout, not "no data"): the day is incomplete and must be fetched again. */
+	failedEndpoints?: string[];
 }
 
 /** Result of an interactive login. `cancelled` = the user closed the login

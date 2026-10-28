@@ -14,7 +14,6 @@ const FAILED_DAYS_BEFORE_PAUSE = 3;
 const FIRST_PAUSE_MS = 5 * 60_000;
 const LAST_PAUSE_MS = 30 * 60_000;
 const PAUSES_BEFORE_GIVING_UP = 5;
-const FLUSH_EVERY_DAYS = 10;
 
 export interface BuildProgress {
 	state: "running" | "paused";
@@ -76,7 +75,7 @@ export function isComplete(record: DayRecord, requested: string[]): boolean {
 	return !Array.isArray(asked) || requested.every((metric) => (asked as string[]).includes(metric));
 }
 
-/** The cursor is reported after this many fetched days. */
+/** The days are saved and the cursor is reported after this many fetched days. */
 const CURSOR_EVERY_DAYS = 5;
 
 /**
@@ -121,6 +120,8 @@ export class Backfill {
 		const recentLimit = shiftDate(localDateString(new Date()), -RECENT_DAYS);
 		const startedAt = Date.now();
 		const pending = new Map<string, DayRecord>();
+		/** Days that count as fetched once the history file holds them: a day is never marked before its record is stored. */
+		let pendingMarks: string[] = [];
 		let pendingMonth = "";
 		let fetched = 0;
 		let skipped = 0;
@@ -150,8 +151,18 @@ export class Backfill {
 		const flush = async (): Promise<void> => {
 			if (pending.size === 0) return;
 			const records = new Map(pending);
+			const marks = pendingMarks;
 			pending.clear();
-			await store.putMany(records);
+			pendingMarks = [];
+			try {
+				await store.putMany(records);
+				for (const day of marks) this.options.markFetched(day);
+			} catch (error) {
+				// the days are neither stored nor marked, so the next run fetches them again
+				console.warn("Garmin Health Sync: could not store the history", error);
+				failed += records.size;
+				fetched -= records.size;
+			}
 		};
 		const report = (state: "running" | "paused", pauseMs = 0): void => {
 			const done = fetched + failed;
@@ -203,12 +214,14 @@ export class Backfill {
 					failedInARow = 0;
 					pauses = 0;
 					hasData = Object.keys(result.metrics).length > 0 || Object.keys(result.activities).length > 0;
+					// an endpoint that failed leaves the day incomplete: stored as it is, but not marked as done
+					const partial = (result.failedEndpoints?.length ?? 0) > 0;
 					try {
 						if (hasData) {
-							if (behaviour === "history") await keep(date, recordFromData(result, requested));
+							if (behaviour === "history") await keep(date, recordFromData(result, partial ? [] : requested));
 							await this.options.writeNote(date, result, behaviour !== "history");
 						} else if (behaviour === "history" && date < recentLimit) {
-							await keep(date, { [FETCHED_KEY]: requested });
+							await keep(date, { [FETCHED_KEY]: partial ? [] : requested });
 						}
 					} catch (error) {
 						// a day that could not be stored is a failed day and is left for the next run; the others go on
@@ -218,9 +231,16 @@ export class Backfill {
 						continue;
 					}
 					fetched++;
-					if (date < recentLimit) this.options.markFetched(date);
-					if (pending.size >= FLUSH_EVERY_DAYS) await flush();
-					if (fetched % CURSOR_EVERY_DAYS === 0) await this.options.onCursor?.(shiftDate(date, -1));
+					if (date < recentLimit && !partial) {
+						// a history day is marked when its record is in the file; a day written into a note is stored already
+						if (pending.has(date)) pendingMarks.push(date);
+						else this.options.markFetched(date);
+					}
+					if (fetched % CURSOR_EVERY_DAYS === 0) {
+						// the cursor and the fetch log must never run ahead of the files
+						await flush();
+						await this.options.onCursor?.(shiftDate(date, -1));
+					}
 					if (date > from && !this.stopped) await this.wait(delay);
 				}
 				if (hasData) {

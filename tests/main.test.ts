@@ -1973,12 +1973,13 @@ describe("the backfill command", () => {
 		expect(fetched(loaded.provider)).toEqual([dayString(1), dayString(2)]);
 	});
 
-	it("reports an unexpected failure and frees the command again", async () => {
+	it("reports days that could not be stored and frees the command again", async () => {
 		const loaded = await load(signedIn());
 		loaded.app.vault.failOn = (op) => (op === "create" ? new Error("disk full") : null);
 		start(loaded, { from: 2, behaviour: "history" });
 		await vi.runAllTimersAsync();
-		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeSyncError);
+		// the days that could not be stored are failed days, left for the next run (not marked as fetched)
+		expect(Notice.recorded.map((n) => n.message).some((m) => m.includes("failed. Run the backfill again"))).toBe(true);
 		expect(loaded.plugin.statusBarItems[0]!.isConnected).toBe(false);
 		loaded.app.vault.failOn = null;
 		const dialogs = Modal.opened.length;
@@ -2090,6 +2091,14 @@ describe("the backfill command", () => {
 			expect(Notice.recorded.filter((n) => n.fragment)).toEqual([]);
 		});
 
+		it("takes the job that is stored when it is due: a run that was started and finished meanwhile has cleared it", async () => {
+			const loaded = await load(signedIn({ backfillJob: { from: dayString(4), to: dayString(3), force: false, untilStart: false, behaviour: "create" } }));
+			loaded.app.workspace.layoutReady();
+			loaded.plugin.settings.backfillJob = null;
+			await vi.advanceTimersByTimeAsync(20_000);
+			expect(Notice.recorded.filter((n) => n.fragment)).toEqual([]);
+		});
+
 		it("keeps the choices of a saved job", async () => {
 			const job = { from: "2026-10-23", to: "2026-10-24", force: true, untilStart: true, behaviour: "history" } as const;
 			expect((await load(signedIn({ backfillJob: job }))).plugin.settings.backfillJob).toEqual(job);
@@ -2102,6 +2111,51 @@ describe("the backfill command", () => {
 				expect((await load({ backfillJob: job as never })).plugin.settings.backfillJob).toBeNull();
 			}
 		});
+	});
+});
+
+describe("races between the sync and the rest of the plugin", () => {
+	it("does not start an auto-sync while a backfill is starting (its flag is set before it has a run)", async () => {
+		const loaded = await load(signedIn());
+		(loaded.plugin as unknown as { backfillRunning: boolean }).backfillRunning = true;
+		await (loaded.plugin as unknown as { tryAutoSync(): Promise<void> }).tryAutoSync();
+		expect(loaded.provider.fetchCalls).toEqual([]);
+	});
+
+	it("catches up when the app comes back to the front, not when it goes away", async () => {
+		const loaded = await load(signedIn());
+		loaded.app.workspace.layoutReady();
+		await vi.advanceTimersByTimeAsync(60_000);
+		const attempt = vi.spyOn(loaded.plugin as unknown as { tryAutoSync(): Promise<void> }, "tryAutoSync");
+		const state = vi.spyOn(document, "visibilityState", "get");
+		state.mockReturnValue("hidden");
+		document.dispatchEvent(new window.Event("visibilitychange"));
+		expect(attempt).not.toHaveBeenCalled();
+		state.mockReturnValue("visible");
+		document.dispatchEvent(new window.Event("visibilitychange"));
+		expect(attempt).toHaveBeenCalledTimes(1);
+		loaded.plugin.unload();
+		document.dispatchEvent(new window.Event("visibilitychange"));
+		expect(attempt).toHaveBeenCalledTimes(1);
+		state.mockRestore();
+	});
+
+	it("writes nothing more once the plugin is closed in the middle of an auto-sync", async () => {
+		const loaded = await load(signedIn());
+		loaded.provider.onFetch = () => loaded.plugin.onunload();
+		loaded.app.workspace.layoutReady();
+		await vi.runAllTimersAsync();
+		expect(loaded.provider.fetchCalls).toHaveLength(1);
+	});
+
+	it("takes the sign-in notice away when the plugin is closed, because its button would call a plugin that is gone", async () => {
+		const loaded = await load({});
+		loaded.app.workspace.layoutReady();
+		await settle();
+		const notice = Notice.recorded.find((n) => n.fragment);
+		expect(notice?.hidden).toBeFalsy();
+		loaded.plugin.onunload();
+		expect(notice?.hidden).toBe(true);
 	});
 });
 
