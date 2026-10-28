@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.61
+
+### Added
+
+- **The what's new window has pictures.** Each item of the 0.12.0 notes now shows a small figure drawn with the real side panel code and styles, so it follows your theme and language: the **Show the health panel** switch with a real HRV card, a card with its light bulb open and what your data suggests, the **Days without a daily note** setting with the history choice and a history file name, and the **Properties of daily notes** setting with a long list of properties against the short one that stays. `npm run screenshots -- whats-new` renders the window for review.
+
 ## 0.12.0-beta.60
 
 ### Added

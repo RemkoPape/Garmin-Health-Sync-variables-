@@ -512,4 +512,6 @@ export const fr: Record<TranslationKeys, string> = {
 	whatsNew0120Item3Text: "Le nouveau réglage Jours sans note quotidienne vous laisse choisir : créer la note comme avant, garder le jour dans de petits fichiers d’historique mensuels, ou ignorer le jour. Avec les fichiers d’historique, le panneau fonctionne aussi les jours sans note, et la commande Construire l’historique Garmin récupère les années précédentes. Les fichiers sont du Markdown simple et se synchronisent avec votre coffre.",
 	whatsNew0120Item4Title: "Des propriétés plus nettes",
 	whatsNew0120Item4Text: "Les données Garmin synchronisées peuvent allonger beaucoup les propriétés d’une note quotidienne. Le nouveau réglage Propriétés des notes quotidiennes peut les replier, masquer les propriétés Garmin que le panneau affiche déjà, ou faire les deux, pour ne garder à l’écran que vos propres propriétés.",
+	whatsNewBefore: "Avant",
+	whatsNewNow: "Maintenant",
 };

@@ -512,4 +512,6 @@ export const es: Record<TranslationKeys, string> = {
 	whatsNew0120Item3Text: "El nuevo ajuste Días sin nota diaria te deja elegir: crear la nota como antes, guardar el día en pequeños archivos de historial mensuales u omitir el día. Con los archivos de historial el panel también funciona en días sin nota, y el comando Crear el historial de Garmin recupera los años anteriores. Los archivos son Markdown simple y se sincronizan con tu vault.",
 	whatsNew0120Item4Title: "Propiedades más ordenadas",
 	whatsNew0120Item4Text: "Los datos de Garmin sincronizados pueden alargar mucho las propiedades de una nota diaria. El nuevo ajuste Propiedades de las notas diarias puede plegarlas, ocultar las propiedades de Garmin que el panel ya muestra, o ambas cosas, para que solo queden a la vista tus propias propiedades.",
+	whatsNewBefore: "Antes",
+	whatsNewNow: "Ahora",
 };

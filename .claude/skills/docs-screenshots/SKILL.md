@@ -21,6 +21,7 @@ Images in `docs/screenshots/` are **rendered from the real plugin code, never ca
 5. Commit script, scenes, data and images together in the feature PR.
 6. Before a stable release show the images to Daniel and wait for approval.
 
-## Not done here
-- The what's new window is plain text (no images). To show a picture there, link a raw GitHub URL of a released image; that is a network request and a design decision, not part of this script.
-- Obsidian's own chrome (tabs, sidebar frame) is not drawn; the images are the panel only.
+## The what's new window
+The window itself shows small figures drawn at run time with the real panel code and styles (`src/ui/whats-new-figures.ts`; an item names one with `figure: "…"` in `src/release-notes.ts`). They are not image files: they follow the user's theme and language and cannot go stale. The `whats-new` scene renders the window for the running minor line so you can look at the figures (`npm run screenshots -- whats-new`); when a release adds a notes entry with a new figure, add its selector to that scene's `expect`. A figure shows where to switch a feature on (the real switch or dropdown with the real labels from the i18n tables) and, where it helps, a real card.
+
+## Not done here- Obsidian's own chrome (tabs, sidebar frame) is not drawn; the images are the panel only.

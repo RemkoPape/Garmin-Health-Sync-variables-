@@ -1,4 +1,5 @@
 import type { TranslationKeys } from "./i18n/en";
+import type { FigureId } from "./ui/whats-new-figures";
 
 /** One release's user-facing notes. All text lives in the i18n tables (every language is required there),
  *  so an entry only names the keys. Newest first. Never remove an entry of a minor line that is still
@@ -8,7 +9,7 @@ export interface ReleaseNote {
 	version: string;
 	title: TranslationKeys;
 	intro: TranslationKeys;
-	items: { title: TranslationKeys; text: TranslationKeys }[];
+	items: { title: TranslationKeys; text: TranslationKeys; /** A small illustration drawn under the text (see ui/whats-new-figures.ts). */ figure?: FigureId }[];
 }
 
 const RELEASE_NOTES: ReleaseNote[] = [
@@ -17,10 +18,10 @@ const RELEASE_NOTES: ReleaseNote[] = [
 		title: "whatsNew0120Title",
 		intro: "whatsNew0120Intro",
 		items: [
-			{ title: "whatsNew0120Item1Title", text: "whatsNew0120Item1Text" },
-			{ title: "whatsNew0120Item2Title", text: "whatsNew0120Item2Text" },
-			{ title: "whatsNew0120Item3Title", text: "whatsNew0120Item3Text" },
-			{ title: "whatsNew0120Item4Title", text: "whatsNew0120Item4Text" },
+			{ title: "whatsNew0120Item1Title", text: "whatsNew0120Item1Text", figure: "panel" },
+			{ title: "whatsNew0120Item2Title", text: "whatsNew0120Item2Text", figure: "light-bulb" },
+			{ title: "whatsNew0120Item3Title", text: "whatsNew0120Item3Text", figure: "history" },
+			{ title: "whatsNew0120Item4Title", text: "whatsNew0120Item4Text", figure: "properties" },
 		],
 	},
 	{

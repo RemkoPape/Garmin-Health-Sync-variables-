@@ -1,6 +1,7 @@
 import { App, Modal, Setting } from "obsidian";
 import { t } from "../i18n/t";
 import type { ReleaseNote } from "../release-notes";
+import { renderFigure } from "./whats-new-figures";
 
 /** The "what's new" window. It closes every normal way (**Got it**, the close icon, Escape, a click next to
  *  the window, the Android back gesture): a user must never be stuck in it. The version is recorded before it
@@ -31,6 +32,7 @@ export class WhatsNewModal extends Modal {
 				const li = list.createEl("li");
 				li.createEl("strong", { text: t(item.title, this.lang) });
 				li.createSpan({ text: ` — ${t(item.text, this.lang)}` });
+				if (item.figure) renderFigure(li, item.figure, this.lang);
 			}
 		}
 

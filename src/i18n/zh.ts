@@ -512,4 +512,6 @@ export const zh: Record<TranslationKeys, string> = {
 	whatsNew0120Item3Text: "新设置“没有每日笔记的日子”让你选择：像以前一样创建笔记、把当天保存到按月划分的小型历史文件中，或跳过该日。有了历史文件，没有笔记的日子面板也能工作，命令“构建 Garmin 历史”可取回之前的几年。这些文件是纯 Markdown，会随 Vault 同步。",
 	whatsNew0120Item4Title: "让属性更清爽",
 	whatsNew0120Item4Text: "同步的 Garmin 数据可能让每日笔记的属性变得很长。新设置“每日笔记的属性”可以折叠它们、隐藏面板已经显示的 Garmin 属性，或两者兼用，这样视野中只留下你自己的属性。",
+	whatsNewBefore: "之前",
+	whatsNewNow: "现在",
 };
