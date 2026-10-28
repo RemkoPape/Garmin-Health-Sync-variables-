@@ -642,3 +642,75 @@ describe("backups of a note that stays broken", () => {
 		expect(kept.some((p) => vault.text(p).endsWith(broken(1)))).toBe(false);
 	});
 });
+
+describe("what the user wrote in the frontmatter stays as it is", () => {
+	const write = async (content: string, metrics: Record<string, number | string>): Promise<string> => {
+		vault.seed(note, content);
+		await writeToDailyNote(asApp(), DATE, health({ metrics }), opts());
+		return vault.text(note);
+	};
+
+	it("keeps comments, quoting, flow lists, wiki links and blank lines when keys are added, and puts the new ones last", async () => {
+		const content = "---\n# my mood log\nmood: 'ok'   # felt fine\ntags: [a, b]\nbook: \"[[Dune]]\"\n\nrating: 4\n---\nBody\n";
+		const result = await write(content, { steps: 8000, sleep_duration: "7h 30min" });
+		expect(result).toBe("---\n# my mood log\nmood: 'ok'   # felt fine\ntags: [a, b]\nbook: \"[[Dune]]\"\n\nrating: 4\nsteps: 8000\nsleep_duration: 7h 30min\n---\nBody\n");
+	});
+
+	it("changes the value of a key on its own line and leaves the rest, a comment before it included", async () => {
+		const content = "---\n# steps of the day\nsteps: 100\ntags: [a, b]\nhrv: 40\n---\nBody\n";
+		expect(await write(content, { steps: 8000 })).toBe("---\n# steps of the day\nsteps: 8000\ntags: [a, b]\nhrv: 40\n---\nBody\n");
+	});
+
+	it("finds a quoted key and a key at the end", async () => {
+		expect(await write("---\n'steps': 100\n---\n", { steps: 8000 })).toBe("---\nsteps: 8000\n---\n");
+		expect(await write("---\ntags: [a]\nsteps: 100\n---\n", { steps: 8000 })).toBe("---\ntags: [a]\nsteps: 8000\n---\n");
+	});
+
+	it("keeps the line endings of the body as they are, also when they are mixed", async () => {
+		const content = "---\r\nmood: ok\r\n---\r\nline one\nline two\r\nline three\n";
+		expect(await write(content, { steps: 8000 })).toBe("---\r\nmood: ok\r\nsteps: 8000\r\n---\r\nline one\nline two\r\nline three\n");
+	});
+
+	it("keeps a byte order mark in front", async () => {
+		expect(await write("﻿---\nmood: ok\n---\nBody\n", { steps: 8000 })).toBe("﻿---\nmood: ok\nsteps: 8000\n---\nBody\n");
+	});
+
+	it("appends after a list that ends the block, where processFrontMatter put the key before it", async () => {
+		const content = "---\nbook_titles:\n- '[[A]]'\n- '[[B]]'\n---\nBody\n";
+		const result = await write(content, { steps: 8000 });
+		expect(result).toBe("---\nbook_titles:\n- '[[A]]'\n- '[[B]]'\nsteps: 8000\n---\nBody\n");
+		expect(frontmatter(note)).toEqual({ book_titles: ["[[A]]", "[[B]]"], steps: 8000 });
+	});
+
+	it("writes the block anew when a value that is a list or goes over several lines has to change", async () => {
+		vault.seed(note, "---\n# kept?\ntrainings:\n  - type: run\nsteps: 1\n---\nBody\n");
+		await writeToDailyNote(asApp(), DATE, health({ metrics: { steps: 5 }, trainings: [{ type: "walk", category: "walking" }] }), opts({ writeTrainings: true }));
+		expect(frontmatter(note)).toMatchObject({ steps: 5, trainings: [{ type: "walk", category: "walking" }] });
+		vault.seed(`Daily/2026-10-23.md`, "---\ntext: |\n  one\n  two\nsteps: 1\n---\n");
+		await writeToDailyNote(asApp(), "2026-10-23", health({ metrics: { steps: 2 } }), opts());
+		expect(frontmatter("Daily/2026-10-23.md")).toMatchObject({ text: "one\ntwo\n", steps: 2 });
+		vault.seed(`Daily/2026-10-24.md`, "---\nlist:\n- a\nsteps: 1\nsteps_extra: 2\n---\n");
+		await writeToDailyNote(asApp(), "2026-10-24", health({ metrics: { steps: 3 } }), opts());
+		expect(frontmatter("Daily/2026-10-24.md")).toMatchObject({ list: ["a"], steps: 3 });
+	});
+
+	it("writes the block anew when the value to change is a scalar that a list or a nested value follows, or its key is not on a line of its own", async () => {
+		// the key is written with a space before the colon, so it is not found on a line of its own
+		vault.seed(note, "---\nsteps : 1\nmood: ok\n---\n");
+		await writeToDailyNote(asApp(), DATE, health({ metrics: { steps: 9 } }), opts());
+		expect(frontmatter(note)).toEqual({ steps: 9, mood: "ok" });
+		// a scalar whose value goes on in the next line
+		vault.seed(`Daily/2026-10-25.md`, "---\nsteps: 1\n  continued\nmood: ok\n---\n");
+		await writeToDailyNote(asApp(), "2026-10-25", health({ metrics: { steps: 9 } }), opts());
+		expect(frontmatter("Daily/2026-10-25.md")).toMatchObject({ steps: 9, mood: "ok" });
+	});
+
+	it("reads a block whose closing line is the last line of the file", async () => {
+		expect(await write("---\nmood: ok\n---", { steps: 8000 })).toBe("---\nmood: ok\nsteps: 8000\n---\n");
+	});
+
+	it("handles an empty block and a note without one as before", async () => {
+		expect(await write("---\n---\nBody\n", { steps: 8000 })).toBe("---\nsteps: 8000\n---\nBody\n");
+		expect(await write("Body\n", { steps: 8000 })).toBe("---\nsteps: 8000\n---\nBody\n");
+	});
+});

@@ -85,6 +85,24 @@ describe("makeSortable", () => {
 		expect(order(el)).toEqual(["b", "c", "a"]); // no longer follows the pointer
 	});
 
+	it("scrolls the panel while a row is dragged to the top or the bottom edge, and not in between", () => {
+		const scroller = document.createElement("div");
+		scroller.className = "view-content";
+		scroller.getBoundingClientRect = () => ({ top: 0, bottom: 600 }) as DOMRect;
+		document.body.appendChild(scroller);
+		const { list: el, rows } = list();
+		scroller.appendChild(el);
+		scroller.scrollTop = 200;
+		rows[0]!.querySelector(".ghs-sort-handle")!.dispatchEvent(pointer("pointerdown"));
+		document.dispatchEvent(pointer("pointermove", 300));
+		expect(scroller.scrollTop).toBe(200);
+		document.dispatchEvent(pointer("pointermove", 580));
+		expect(scroller.scrollTop).toBe(214);
+		document.dispatchEvent(pointer("pointermove", 10));
+		expect(scroller.scrollTop).toBe(200);
+		document.dispatchEvent(pointer("pointerup"));
+	});
+
 	it("ends a drag that was cancelled, and ignores a click with another button", () => {
 		const { rows, onDrop } = list();
 		const handle = rows[1]!.querySelector(".ghs-sort-handle")!;

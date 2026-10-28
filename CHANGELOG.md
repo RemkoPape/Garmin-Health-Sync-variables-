@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0-beta.67
+
+### Fixed
+
+- **The sync leaves the frontmatter of your daily notes as you wrote it.** New values are added after your last property and a changed value is replaced on its own line, so comments, quoting, `[a, b]` lists and `[[links]]`, blank lines and the line endings of the note body stay as they are. Before, any change rewrote the whole block (comments gone, lists reflowed) and joined the body with one kind of line ending. A list or multi-line value that has to change (the training list) still rewrites the block, as before.
+- **Android:** colours that mix with the theme (the card colour, the shades of the charts, the dotted night line) have plain fallbacks, so a card on an old Android WebView keeps its background instead of turning transparent; the date field no longer relies on `inset`; the text of the What's new window is limited to 60 % of the visible height, so the on-screen keyboard does not push its button off screen.
+- **Rearranging cards on a phone:** the handle is a 44 px touch target, the list scrolls while a card is dragged to the top or bottom edge (a list longer than the screen could not be reached), and the "How to read this" line has a 44 px touch height.
+
 ## 0.12.0-beta.66
 
 ### Changed

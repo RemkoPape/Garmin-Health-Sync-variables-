@@ -3,6 +3,10 @@ function idsOf(list: HTMLElement): string[] {
 	return Array.from(list.querySelectorAll<HTMLElement>(".ghs-sort-row")).map((row) => row.dataset["id"]!);
 }
 
+/** Within this many pixels of the top or bottom edge of the scrolling area, dragging scrolls it. */
+const EDGE_PX = 48;
+const SCROLL_STEP_PX = 14;
+
 /**
  * Makes the rows of a list (`.ghs-sort-row` with a `.ghs-sort-handle` in it) movable: drag the handle with a mouse or a
  * finger, or press the arrow keys on it. The rows move while they are dragged; `onDrop` gets the new order of their
@@ -17,8 +21,15 @@ export function makeSortable(list: HTMLElement, onDrop: (ids: string[]) => void)
 			event.preventDefault();
 			row.addClass("ghs-sort-dragging");
 			// listeners on the document, not pointer capture: moving the row in the list would release the capture
+			const scroller = list.closest<HTMLElement>(".view-content");
 			const move = (e: Event): void => {
 				const y = (e as PointerEvent).clientY;
+				// a list longer than the screen: dragging to the edge brings the rest into view
+				if (scroller) {
+					const area = scroller.getBoundingClientRect();
+					if (y < area.top + EDGE_PX) scroller.scrollTop -= SCROLL_STEP_PX;
+					else if (y > area.bottom - EDGE_PX) scroller.scrollTop += SCROLL_STEP_PX;
+				}
 				const next = Array.from(list.querySelectorAll<HTMLElement>(".ghs-sort-row")).filter((r) => r !== row).find((r) => {
 					const box = r.getBoundingClientRect();
 					return y < box.top + box.height / 2;
