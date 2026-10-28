@@ -1367,6 +1367,11 @@
 	font-size: var(--font-ui-small);
 }
 
+.ghs-fig-command-what {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
 .ghs-fig-command:nth-child(odd) {
 	background: var(--background-secondary);
 }

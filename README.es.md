@@ -131,14 +131,14 @@ Abre una Daily Note y ejecuta **Garmin Health Sync: Sync current note** desde la
 
 ### Rellenado retroactivo de datos históricos
 
-¿Tienes años de datos en Garmin? Puedes sincronizar en masa cualquier rango de fechas:
+¿Tienes años de datos de Garmin? **Rellenar datos de salud** obtiene cualquier rango de días:
 
-1. Abre la paleta de comandos (Cmd/Ctrl+P)
-2. Busca **"Rellenar datos de salud"** (Backfill health data)
-3. Elige una fecha de inicio y una de fin
-4. El plugin obtiene todos los datos de ese rango con limitación de velocidad para evitar la restricción de la API, y muestra el día en curso y el tiempo restante
+1. Abre la paleta de comandos (Cmd/Ctrl+P) y busca **"Rellenar datos de salud"**
+2. Elige fecha de inicio y de fin, o activa **Hasta que empiecen mis datos** para retroceder hasta cinco años y parar cuando empiecen tus datos
+3. Decide qué pasa con los días sin nota diaria (**Días sin nota diaria**): crear la nota, guardar el día en archivos de historial u omitirlo
+4. Activa **Volver a obtener los días completos** para sobrescribir los días que ya existen
 
-Un día que un relleno anterior ya obtuvo con todas tus métricas activadas se omite, salvo los últimos 3 días, que aún pueden cambiar. **Rellenar datos de salud de nuevo (ignorar lo ya descargado)** vuelve a obtener cada día y sobrescribe los valores. Lo que pasa con un día sin nota diaria depende de **Días sin nota diaria**.
+Los días se obtienen del más reciente al más antiguo, con la limitación de ritmo que Garmin necesita. Un aviso arriba muestra el día, cuántos días van y el tiempo restante, con un botón **Parar**, y en el escritorio la barra de estado muestra el porcentaje. Si cierras el aviso con un clic, el comando **Mostrar el progreso del backfill en curso** (solo aparece mientras corre uno) o un clic en la barra de estado lo recupera. Solo corre un relleno a la vez. Un relleno detenido o interrumpido continúa tras reiniciar, donde se quedó. Los fallos de Garmin se reintentan, y un día que un relleno anterior obtuvo con todas tus métricas activadas se omite, salvo los últimos 3 días, que aún pueden cambiar.
 
 ### Panel lateral de salud
 
@@ -154,9 +154,9 @@ Activa **Panel lateral** en los ajustes del plugin y ábrelo desde el icono de l
 <img src="docs/screenshots/panel-training.png" width="280" alt="Pasos, equilibrio de carga, carga semanal y sesiones">
 </p>
 
-### Notas de historial y Crear el historial de Garmin
+### Notas de historial
 
-Con **Días sin nota diaria** en **Guardar en archivos de historial**, cada día descargado se guarda también en pequeñas notas mensuales (`Garmin history/Garmin history 2026-10.md`, una línea por día) en tu carpeta de notas diarias. Son markdown simple, así que se sincronizan con tu vault, y el panel las lee para los días sin nota. El comando **Importar historial desde las notas diarias** copia en ellas los valores de Garmin de tus notas existentes. **Crear el historial de Garmin** descarga los días hasta una fecha que elijas (por defecto cinco años), empezando por los más recientes: muestra cuánto tardará, se puede detener y continúa donde se quedó, espera y reintenta si Garmin no responde, y omite los días que ya tiene. Si cambias tu carpeta de notas diarias, las notas de historial se mueven con ella.
+Con **Días sin nota diaria** en **Guardar en archivos de historial**, cada día obtenido también se guarda en pequeñas notas mensuales (`Garmin history/Garmin history 2026-10.md`, una línea por día) en tu carpeta de notas diarias. Son markdown simple, así que se sincronizan con tu vault, y el panel las lee para los días sin nota. El comando **Importar historial desde las notas diarias** copia en ellas los valores de Garmin de tus notas existentes. El relleno puede completarlas hasta el inicio de tus datos de una vez (**Hasta que empiecen mis datos**). Si cambias tu carpeta de notas diarias, las notas de historial se mueven con ella.
 
 ### Propiedades de las notas diarias
 

@@ -34,11 +34,13 @@ export type UnitSystem = "metric" | "imperial";
 /** What happens with a day that has no daily note: create the note, keep the day only in the history notes, or leave the day alone (no fetching). */
 export type MissingNoteBehaviour = "create" | "history" | "skip";
 
-/** A backfill that was started and not finished: `from` is the next day to fetch. */
+/** A backfill that was started and not finished: the run goes from `to` back to `from`, so `to` is the next day to fetch. */
 export interface BackfillJob {
 	from: string;
 	to: string;
 	force: boolean;
+	untilStart: boolean;
+	behaviour: MissingNoteBehaviour;
 }
 
 export interface HealthSyncSettings {

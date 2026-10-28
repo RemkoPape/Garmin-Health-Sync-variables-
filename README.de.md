@@ -132,14 +132,14 @@ Wenn ein anderes Tool deine Daily Notes verwaltet (Templater, das Calendar-Plugi
 
 ### Historische Daten nachträglich auffüllen (Backfill)
 
-Du hast jahrelange Garmin-Daten? Du kannst einen beliebigen Zeitraum auf einmal synchronisieren:
+Du hast Jahre an Garmin-Daten? **Gesundheitsdaten nachträglich auffüllen** holt jeden beliebigen Zeitraum:
 
-1. Öffne die Befehlspalette (Cmd/Ctrl+P)
-2. Suche nach **„Gesundheitsdaten nachträglich auffüllen"**
-3. Wähle ein Start- und Enddatum
-4. Das Plugin holt alle Daten für diesen Zeitraum mit Rate-Limiting, um API-Drosselung zu vermeiden, und zeigt den aktuellen Tag und die Restzeit an
+1. Öffne die Befehlspalette (Cmd/Strg+P) und suche nach **„Gesundheitsdaten nachträglich auffüllen“**
+2. Wähle Start- und Enddatum oder schalte **Bis meine Daten beginnen** ein, um bis zu fünf Jahre zurückzugehen und zu stoppen, wenn deine Daten beginnen
+3. Lege fest, was mit Tagen ohne Daily Note geschieht (**Tage ohne Daily Note**): Note anlegen, den Tag in Verlaufsdateien speichern oder überspringen
+4. Schalte **Vollständige Tage erneut holen** ein, um bereits vorhandene Tage zu überschreiben
 
-Ein Tag, den ein früherer Backfill schon mit allen aktivierten Metriken geholt hat, wird übersprungen, außer den letzten 3 Tagen, die sich noch ändern können. **Gesundheitsdaten erneut nachträglich auffüllen (Vorhandenes ignorieren)** holt jeden Tag erneut und überschreibt die Werte. Was mit einem Tag ohne Daily Note geschieht, richtet sich nach **Tage ohne Daily Note**.
+Die Tage werden vom neuesten an geholt, mit der Drosselung, die Garmin braucht. Eine Meldung oben zeigt den Tag, wie viele Tage fertig sind und die Restzeit, mit einer **Stopp**-Schaltfläche, am Desktop zeigt die Statusleiste den Prozentwert. Klickst du die Meldung weg, holt sie der Befehl **Fortschritt des laufenden Backfills anzeigen** (nur sichtbar, solange einer läuft) oder ein Klick auf die Statusleiste zurück. Es läuft immer nur ein Backfill. Ein gestoppter oder unterbrochener Backfill macht nach einem Neustart dort weiter, wo er aufgehört hat. Garmin-Fehler werden wiederholt, und ein Tag, den ein früherer Backfill mit allen aktivierten Metriken geholt hat, wird übersprungen, außer den letzten 3 Tagen, die sich noch ändern können.
 
 ### Gesundheits-Seitenpanel
 
@@ -155,9 +155,9 @@ Schalte **Seitenpanel** in den Plugin-Einstellungen ein und öffne es über das 
 <img src="docs/screenshots/panel-training.png" width="280" alt="Schritte, Belastungsbalance, Wochenbelastung und Einheiten">
 </p>
 
-### Verlaufsnotizen und Garmin-Verlauf aufbauen
+### Verlaufsnotizen
 
-Wenn **Tage ohne Daily Note** auf **In Verlaufsdateien speichern** steht, wird jeder geholte Tag zusätzlich in kleinen Monatsnotizen (`Garmin history/Garmin history 2026-10.md`, eine Zeile pro Tag) in deinem Daily-Notes-Ordner gespeichert. Sie bestehen aus reinem Markdown, werden also mit deinem Vault synchronisiert, und das Panel liest sie für Tage ohne Note. Der Befehl **Verlauf aus Daily Notes importieren** kopiert die Garmin-Werte deiner vorhandenen Notizen hinein. **Garmin-Verlauf aufbauen** holt die Tage bis zu einem gewählten Datum zurück (Standard fünf Jahre), die neuesten zuerst: Es zeigt, wie lange es dauert, lässt sich stoppen und macht dort weiter, wo es aufgehört hat, wartet und wiederholt, wenn Garmin nicht antwortet, und überspringt Tage, die es schon hat. Wenn du deinen Daily-Notes-Ordner änderst, ziehen die Verlaufsnotizen mit um.
+Steht **Tage ohne Daily Note** auf **In Verlaufsdateien speichern**, wird jeder geholte Tag zusätzlich in kleinen Monatsnotizen gespeichert (`Garmin history/Garmin history 2026-10.md`, eine Zeile pro Tag) in deinem Daily-Notes-Ordner. Sie sind reines Markdown, werden also mit deinem Vault synchronisiert, und das Panel liest sie für Tage ohne Note. Der Befehl **Verlauf aus Daily Notes importieren** kopiert die Garmin-Werte deiner vorhandenen Notes dorthin. Die Nachsynchronisierung kann sie in einem Zug bis zum Beginn deiner Daten füllen (**Bis meine Daten beginnen**). Änderst du deinen Daily-Notes-Ordner, ziehen die Verlaufsnotizen mit um.
 
 ### Eigenschaften der Daily Notes
 

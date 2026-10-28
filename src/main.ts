@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Platform, Plugin, Setting, TAbstractFile, TFile } from "obsidian";
+import { Notice, Platform, Plugin, TAbstractFile, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, type BackfillJob, HealthSyncSettings, HealthSyncSettingTab } from "./settings";
 import { ManualLoginModal } from "./ui/manual-login-modal";
 import { CredentialLoginModal } from "./ui/credential-login-modal";
@@ -6,11 +6,9 @@ import { LoginCooldown } from "./login-cooldown";
 import { SyncManager } from "./sync";
 import { HistoryStore } from "./history/store";
 import { importFromNotes } from "./history/import";
-import { HistoryBuilder } from "./history/builder";
-import { BuildProgressUi } from "./history/progress";
-import { BuildHistoryModal } from "./ui/build-history-modal";
+import { BackfillModal } from "./ui/backfill-modal";
 import { dateFromDailyNote, matchDailyNoteDate } from "./daily-note";
-import { localDateString, shiftDate } from "./dates";
+import { localDateString } from "./dates";
 import { GarminProvider } from "./providers/garmin/garmin-provider";
 import type { OAuth1Token, OAuth2Token } from "./providers/garmin/garmin-oauth";
 import { t } from "./i18n/t";
@@ -43,9 +41,6 @@ export default class HealthSyncPlugin extends Plugin {
 	private autoSyncRunning = false;
 	private autoSyncResyncQueued = false;
 	private backfillRunning = false;
-	/** The running history build, if any. */
-	private historyBuilder: HistoryBuilder | null = null;
-	private buildUi: BuildProgressUi | null = null;
 	/** The plugin is being unloaded: a running backfill ends but stays recorded, so it goes on at the next start. */
 	private unloading = false;
 	private lastAutoSyncAttempt = 0;
@@ -91,32 +86,22 @@ export default class HealthSyncPlugin extends Plugin {
 			callback: () => this.manualSync(),
 		});
 
-		// Command: Backfill Health Data, and the same again for days that already have their data
+		// Command: Backfill health data: any range of days, up to the start of the Garmin account
 		this.addCommand({
 			id: "backfill-health-data",
 			name: t("commandBackfill", this.settings.language),
-			callback: () => this.openBackfill(false),
-		});
-		this.addCommand({
-			id: "force-backfill-health-data",
-			name: t("commandBackfillForce", this.settings.language),
-			callback: () => this.openBackfill(true),
+			callback: () => this.openBackfill(),
 		});
 
-		// Command: bring back the progress notice of a running backfill or history build after it was dismissed
+		// Command: bring back the progress notice of a running backfill after it was dismissed; only listed while one runs
 		this.addCommand({
 			id: "show-progress",
 			name: t("commandShowProgress", this.settings.language),
-			callback: () => {
-				if (!this.revealProgress()) new Notice(t("noticeNoProgress", this.settings.language));
+			checkCallback: (checking) => {
+				if (!this.syncManager.backfilling) return false;
+				if (!checking) this.syncManager.revealProgress();
+				return true;
 			},
-		});
-
-		// Command: fetch the days back to the start of the Garmin account into the history notes
-		this.addCommand({
-			id: "build-history",
-			name: t("commandBuildHistory", this.settings.language),
-			callback: () => this.openBuildHistory(),
 		});
 
 		// Command: copy the Garmin values of the daily notes into the history notes (no Garmin requests)
@@ -199,24 +184,23 @@ export default class HealthSyncPlugin extends Plugin {
 		);
 	}
 
-	/** The backfill dialog; `force` fetches every day of the range again and overwrites what is there. */
-	private openBackfill(force: boolean): void {
+	/** The backfill dialog: which days, what to do with days without a note, and whether to fetch complete days again. */
+	private openBackfill(): void {
 		// a second run would fetch the same days again: the one that runs is shown instead
-		if (this.busyWithHistory()) return;
-		new BackfillModal(this.app, this.settings.language, force, (from, to) => this.startBackfill({ from, to, force })).open();
+		if (this.busyWithBackfill()) return;
+		if (!this.garminProvider.isConfigured()) {
+			new Notice(t("noticeLoginRequired", this.settings.language));
+			return;
+		}
+		const enabled = this.enabledMetricKeys();
+		const delay = this.garminProvider.getRecommendedBatchDelay(enabled);
+		new BackfillModal(this.app, this.settings.language, this.settings.missingNoteBehaviour, delay, enabled.length, (request) => this.startBackfill(request)).open();
 	}
 
-	/** Shows the progress of a running backfill or history build (the notice can be dismissed with a click); true when one runs. */
-	private revealProgress(): boolean {
-		if (this.syncManager.revealProgress()) return true;
-		this.buildUi?.reveal();
-		return this.buildUi !== null;
-	}
-
-	/** Tells the user when a backfill or a history build is already running, and shows its progress. */
-	private busyWithHistory(): boolean {
+	/** Tells the user when a backfill is already running, and shows its progress. */
+	private busyWithBackfill(): boolean {
 		// (the flag is set before the run has its notice, so a double click is caught too)
-		if (!this.revealProgress() && !this.backfillRunning) return false;
+		if (!this.syncManager.revealProgress() && !this.backfillRunning) return false;
 		new Notice(t("noticeBackfillRunning", this.settings.language), 8000);
 		return true;
 	}
@@ -230,7 +214,7 @@ export default class HealthSyncPlugin extends Plugin {
 	}
 
 	private startBackfill(job: BackfillJob): void {
-		if (this.busyWithHistory()) return;
+		if (this.busyWithBackfill()) return;
 		this.settings.backfillJob = job;
 		this.background((async () => {
 			// Suppress the create-trigger while backfill runs: backfill
@@ -239,13 +223,16 @@ export default class HealthSyncPlugin extends Plugin {
 			this.backfillRunning = true;
 			try {
 				await this.saveSettings();
-				// SyncManager.backfill handles its own errors (it shows the sign-in notice itself),
+				// SyncManager.backfill handles its own errors and tells the user how it ended,
 				// so nothing is thrown out of it; the finally persists whatever happened.
 				await this.syncManager.backfill(job.from, job.to, this.settings, {
 					force: job.force,
+					behaviour: job.behaviour,
+					untilStart: job.untilStart,
 					statusBar: () => (Platform.isDesktop ? this.addStatusBarItem() : null),
+					// the run goes from the newest day back, so what is left is the range up to the next day
 					onCursor: async (next) => {
-						this.settings.backfillJob = { ...job, from: next };
+						this.settings.backfillJob = { ...job, to: next };
 						await this.saveSettings();
 					},
 				});
@@ -262,52 +249,6 @@ export default class HealthSyncPlugin extends Plugin {
 
 	private enabledMetricKeys(): string[] {
 		return Object.entries(this.settings.enabledMetrics).filter(([, enabled]) => enabled).map(([key]) => key);
-	}
-
-	/** Asks how far back to go, then builds the history in the background with a progress notice. */
-	private openBuildHistory(): void {
-		const lang = this.settings.language;
-		if (this.busyWithHistory()) return; // one run at a time; its notice is shown
-		if (!this.garminProvider.isConfigured()) {
-			new Notice(t("noticeLoginRequired", lang));
-			return;
-		}
-		const enabled = this.enabledMetricKeys();
-		const delay = this.garminProvider.getRecommendedBatchDelay(enabled);
-		const newest = shiftDate(localDateString(new Date()), -1);
-		new BuildHistoryModal(this.app, lang, newest, delay, enabled.length, (from) => this.background(this.buildHistory(from, newest, enabled), "build history")).open();
-	}
-
-	private async buildHistory(from: string, newest: string, enabled: string[]): Promise<void> {
-		const lang = this.settings.language;
-		// the dialog can be open twice before either build has started; a second build would take the first one's Stop button
-		if (this.busyWithHistory()) return;
-		const ui = new BuildProgressUi(lang, () => this.historyBuilder?.stop(), Platform.isDesktop ? this.addStatusBarItem() : null);
-		this.buildUi = ui;
-		this.historyBuilder = new HistoryBuilder({
-			provider: this.garminProvider,
-			store: this.history,
-			enabledMetrics: enabled,
-			writeNote: (date, data) => this.syncManager.updateExistingNote(date, data, this.settings),
-			onProgress: (progress) => ui.update(progress),
-		});
-		try {
-			if (!this.garminProvider.isSessionValid() && !(await this.garminProvider.authenticate()).ok) {
-				ui.finish({ status: "login-required", fetched: 0, skipped: 0, failed: 0, date: newest, reachedStart: false });
-				return;
-			}
-			ui.finish(await this.historyBuilder.run(from, newest));
-		} catch (error) {
-			console.error("Garmin Health Sync: history build failed", error);
-			ui.dismiss();
-			new Notice(t("noticeSyncError", lang));
-		} finally {
-			this.historyBuilder = null;
-			this.buildUi = null;
-			// Tokens may have been refreshed or invalidated during the build: persist them.
-			this.saveTokens();
-			await this.saveSettings();
-		}
 	}
 
 	private async importHistory(): Promise<void> {
@@ -363,7 +304,7 @@ export default class HealthSyncPlugin extends Plugin {
 	private async tryAutoSync(options: { force?: boolean } = {}): Promise<void> {
 		if (!this.settings.autoSync) return;
 		// A history build uses the Garmin connection at its own pace; the next trigger picks the recent days up.
-		if (this.historyBuilder) return;
+		if (this.syncManager.backfilling) return;
 		if (this.autoSyncRunning) {
 			// A pass is already in flight. If this is a forced resume (a note just
 			// appeared), queue exactly one more pass to run when it finishes — the
@@ -736,7 +677,9 @@ export default class HealthSyncPlugin extends Plugin {
 		this.settings.fetchSets = (saved?.fetchSets ?? []).map((set) => [...set]);
 		const job = saved?.backfillJob;
 		const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
-		this.settings.backfillJob = job && isDate(job.from) && isDate(job.to) && job.from <= job.to ? { from: job.from, to: job.to, force: job.force === true } : null;
+		this.settings.backfillJob = job && isDate(job.from) && isDate(job.to) && job.from <= job.to
+			? { from: job.from, to: job.to, force: job.force === true, untilStart: job.untilStart === true, behaviour: ["create", "history", "skip"].includes(job.behaviour) ? job.behaviour : this.settings.missingNoteBehaviour }
+			: null;
 		this.settings.panelCards = { ...(saved?.panelCards ?? {}) };
 		this.settings.panelOrder = (saved?.panelOrder ?? []).filter((id) => typeof id === "string");
 		this.settings.birthYear = parseBirthYear(saved?.birthYear, new Date().getFullYear());
@@ -910,60 +853,5 @@ export default class HealthSyncPlugin extends Plugin {
 		} catch (error) {
 			console.error("Garmin Health Sync: could not save the settings", error);
 		}
-	}
-}
-
-/** Modal for backfill date range */
-class BackfillModal extends Modal {
-	private onSubmit: (from: string, to: string) => void;
-	private lang: string;
-
-	constructor(app: App, lang: string, private readonly force: boolean, onSubmit: (from: string, to: string) => void) {
-		super(app);
-		this.lang = lang;
-		this.onSubmit = onSubmit;
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.createEl("h2", { text: t(this.force ? "modalBackfillForceTitle" : "modalBackfillTitle", this.lang) });
-		if (this.force) contentEl.createEl("p", { text: t("modalBackfillForceDesc", this.lang) });
-
-		const today = localDateString(new Date());
-		const weekAgoDate = new Date();
-		weekAgoDate.setDate(weekAgoDate.getDate() - 7);
-		const weekAgo = localDateString(weekAgoDate);
-
-		let fromDate = weekAgo;
-		let toDate = today;
-
-		new Setting(contentEl)
-			.setName(t("modalBackfillFrom", this.lang))
-			.addText(text => {
-				text.inputEl.type = "date";
-				text.setValue(weekAgo)
-					.onChange(value => { fromDate = value; });
-			});
-
-		new Setting(contentEl)
-			.setName(t("modalBackfillTo", this.lang))
-			.addText(text => {
-				text.inputEl.type = "date";
-				text.setValue(today)
-					.onChange(value => { toDate = value; });
-			});
-
-		new Setting(contentEl)
-			.addButton(btn => btn
-				.setButtonText(t("modalBackfillStart", this.lang))
-				.setCta()
-				.onClick(() => {
-					this.onSubmit(fromDate, toDate);
-					this.close();
-				}));
-	}
-
-	onClose() {
-		this.contentEl.empty();
 	}
 }

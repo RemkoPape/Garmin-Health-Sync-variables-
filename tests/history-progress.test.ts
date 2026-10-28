@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Notice } from "../testUtils/mocks/obsidian";
 import { BuildProgressUi, formatDuration } from "../src/history/progress";
-import type { BuildProgress, BuildResult } from "../src/history/builder";
+import type { BuildProgress, BuildResult } from "../src/history/backfill";
 import { en } from "../src/i18n/en";
 import { de } from "../src/i18n/de";
 
@@ -32,19 +32,19 @@ describe("the progress notice", () => {
 		const ui = new BuildProgressUi("en", () => undefined, null);
 		ui.update(progress());
 		expect(Notice.recorded[0]).toMatchObject({ duration: 0, hidden: false });
-		expect(shown()).toBe("Garmin history · 2026-10-24 · 40 of up to 400 days · about 1 h 05 min left" + en.historyStop);
+		expect(shown()).toBe("Backfill · 2026-10-24 · 40 of 400 days · about 1 h 05 min left" + en.historyStop);
 	});
 
 	it("leaves the time out until there is a pace to estimate it from", () => {
 		const ui = new BuildProgressUi("en", () => undefined, null);
 		ui.update(progress({ etaMs: null, done: 0 }));
-		expect(shown()).toBe("Garmin history · 2026-10-24 · 0 of up to 400 days" + en.historyStop);
+		expect(shown()).toBe("Backfill · 2026-10-24 · 0 of 400 days" + en.historyStop);
 	});
 
 	it("says when it is paused and for how long, in the user's language", () => {
 		const ui = new BuildProgressUi("de", () => undefined, null);
 		ui.update(progress({ state: "paused", pauseMs: 300_000 }));
-		expect(shown()).toBe("Garmin-Verlauf pausiert, Garmin antwortet nicht. Weiter in 5 min." + de.historyStop);
+		expect(shown()).toBe("Nachsynchronisierung pausiert, Garmin antwortet nicht. Weiter in 5 min." + de.historyStop);
 	});
 
 	it("updates at most once a second, but always shows a pause", () => {
@@ -52,12 +52,12 @@ describe("the progress notice", () => {
 		const text = (): string => Notice.recorded[0]!.fragment!.textContent ?? "";
 		ui.update(progress({ done: 1 }));
 		ui.update(progress({ done: 2 }));
-		expect(text()).toContain("1 of up to");
+		expect(text()).toContain("1 of");
 		ui.update(progress({ state: "paused", pauseMs: 300_000 }));
 		expect(text()).toContain("paused");
 		vi.advanceTimersByTime(1000);
 		ui.update(progress({ done: 3 }));
-		expect(text()).toContain("3 of up to");
+		expect(text()).toContain("3 of");
 	});
 
 	it("calls the stop handler from its button", () => {
@@ -72,7 +72,7 @@ describe("the progress notice", () => {
 		document.body.appendChild(bar);
 		const ui = new BuildProgressUi("en", () => undefined, bar);
 		ui.update(progress({ done: 100, total: 400 }));
-		expect(bar.textContent).toBe("Garmin history 25%");
+		expect(bar.textContent).toBe("Backfill 25%");
 		ui.dismiss();
 		expect(bar.isConnected).toBe(false);
 		expect(Notice.recorded[0]!.hidden).toBe(true);
@@ -85,25 +85,33 @@ describe("how a build ends", () => {
 	it("hides the progress notice and reports what was done for a minute-long read", () => {
 		end(result());
 		expect(Notice.recorded[0]!.hidden).toBe(true);
-		expect(messages().at(-1)).toBe("Garmin history ready: 380 days fetched, 20 were already there");
+		expect(messages().at(-1)).toBe("Backfill done: 380 days fetched, 20 were already there");
 		expect(Notice.recorded.at(-1)!.duration).toBe(15000);
 	});
 
 	it("mentions failed days, unless the build ended where the data starts", () => {
 		end(result({ failed: 2 }));
-		expect(messages().at(-1)).toBe("Garmin history ready: 380 days fetched, 20 were already there, 2 failed. Run the command again to retry them.");
+		expect(messages().at(-1)).toBe("Backfill done: 380 days fetched, 20 were already there, 2 failed. Run the backfill again to retry them.");
 		end(result({ failed: 2, reachedStart: true }));
-		expect(messages().at(-1)).toBe("Garmin history ready: 380 days fetched, 20 were already there");
+		expect(messages().at(-1)).toBe("Backfill done: 380 days fetched, 20 were already there");
+	});
+
+	it("says so when there was nothing to fetch, and keeps the status bar at a whole when no days are due", () => {
+		end(result({ fetched: 0, skipped: 20 }));
+		expect(messages().at(-1)).toBe(en.noticeBackfillNothing);
+		const bar = document.createElement("div");
+		new BuildProgressUi("en", () => undefined, bar).update(progress({ done: 0, total: 0 }));
+		expect(bar.textContent).toBe("Backfill 0%");
 	});
 
 	it("tells where it stopped, that Garmin kept failing, and that a sign-in is needed", () => {
 		end(result({ status: "stopped", date: "2025-06-01" }));
-		expect(messages().at(-1)).toBe("Garmin history stopped at 2025-06-01. Run the command again to continue.");
+		expect(messages().at(-1)).toBe("Backfill stopped at 2025-06-01. Run it again to continue.");
 		end(result({ status: "gave-up" }));
 		expect(messages().at(-1)).toBe(en.historyGaveUp);
 		end(result({ status: "login-required" }));
 		expect(messages().at(-1)).toBe(en.noticeLoginRequired);
 		end(result({ status: "stopped", date: "2025-06-01" }), "de");
-		expect(messages().at(-1)).toBe("Garmin-Verlauf bei 2025-06-01 gestoppt. Führe den Befehl erneut aus, um fortzufahren.");
+		expect(messages().at(-1)).toBe("Nachsynchronisierung bei 2025-06-01 gestoppt. Starte sie erneut, um fortzufahren.");
 	});
 });

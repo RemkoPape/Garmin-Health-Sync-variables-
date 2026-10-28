@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.63
+
+### Changed
+
+- **One backfill command instead of three.** **Backfill health data** now does what **Backfill health data again** and **Build Garmin history** did. Its dialog has the first and last day, **Until my data starts** (back up to five years, stopping where your data begins), the choice for days without a daily note for this run (create the note, keep in history files, skip), and **Fetch complete days again**. The two other commands are gone (they were never in a stable release). **Import history from daily notes** stays, because it makes no Garmin requests.
+- **The backfill runs newest first, with the robust engine of the history build for every range:** failed days are retried after 30 and 60 seconds, repeated failures pause the run, a day that cannot be stored counts as failed and the run goes on, and the progress notice counts only the days that are really fetched, so "day 3 of 8" and the time left are true. The notice and the Stop button are the ones of the history build, in every language.
+- **The progress command is listed only while a backfill runs.**
+- **The auto-sync waits while a backfill runs** (before it only waited during a history build), so the two never fetch the same days.
+- A saved unfinished backfill from beta.58 to beta.62 is read as before; it now also keeps the choice for days without a note and whether to go until the data starts.
+- What's new: the commands list says what each command does, and the item about the backfill describes the single dialog. README and docs/history.md are rewritten for the one command.
+
 ## 0.12.0-beta.62
 
 ### Changed

@@ -455,6 +455,7 @@ export interface Command {
 	id: string;
 	name: string;
 	callback?: () => void;
+	checkCallback?: (checking: boolean) => boolean | void;
 }
 
 export class Plugin {
@@ -639,6 +640,56 @@ export class TextComponent {
 	}
 }
 
+export class ToggleComponent {
+	toggleEl: HTMLInputElement;
+	constructor(containerEl: HTMLElement) {
+		this.toggleEl = document.createElement("input");
+		this.toggleEl.type = "checkbox";
+		containerEl.appendChild(this.toggleEl);
+	}
+	setValue(value: boolean): this {
+		this.toggleEl.checked = value;
+		return this;
+	}
+	onChange(cb: (value: boolean) => void): this {
+		this.toggleEl.addEventListener("change", () => cb(this.toggleEl.checked));
+		return this;
+	}
+	/** Test helper: flip the switch the way a user would. */
+	set(value: boolean): void {
+		this.toggleEl.checked = value;
+		this.toggleEl.dispatchEvent(new window.Event("change"));
+	}
+}
+
+export class DropdownComponent {
+	selectEl: HTMLSelectElement;
+	constructor(containerEl: HTMLElement) {
+		this.selectEl = document.createElement("select");
+		containerEl.appendChild(this.selectEl);
+	}
+	addOption(value: string, display: string): this {
+		const option = document.createElement("option");
+		option.value = value;
+		option.textContent = display;
+		this.selectEl.appendChild(option);
+		return this;
+	}
+	setValue(value: string): this {
+		this.selectEl.value = value;
+		return this;
+	}
+	onChange(cb: (value: string) => void): this {
+		this.selectEl.addEventListener("change", () => cb(this.selectEl.value));
+		return this;
+	}
+	/** Test helper: choose an option the way a user would. */
+	choose(value: string): void {
+		this.selectEl.value = value;
+		this.selectEl.dispatchEvent(new window.Event("change"));
+	}
+}
+
 export class Setting {
 	static all: Setting[] = [];
 	settingEl: HTMLElement;
@@ -648,6 +699,8 @@ export class Setting {
 	buttons: ButtonComponent[] = [];
 	extraButtons: ExtraButtonComponent[] = [];
 	texts: TextComponent[] = [];
+	toggles: ToggleComponent[] = [];
+	dropdowns: DropdownComponent[] = [];
 	constructor(public containerEl: HTMLElement) {
 		this.settingEl = document.createElement("div");
 		this.settingEl.classList.add("setting-item");
@@ -688,6 +741,18 @@ export class Setting {
 		const t = new TextComponent(this.controlEl);
 		this.texts.push(t);
 		cb(t);
+		return this;
+	}
+	addToggle(cb: (t: ToggleComponent) => unknown): this {
+		const toggle = new ToggleComponent(this.controlEl);
+		this.toggles.push(toggle);
+		cb(toggle);
+		return this;
+	}
+	addDropdown(cb: (d: DropdownComponent) => unknown): this {
+		const dropdown = new DropdownComponent(this.controlEl);
+		this.dropdowns.push(dropdown);
+		cb(dropdown);
 		return this;
 	}
 }

@@ -131,14 +131,14 @@ Ouvrez une Daily Note et exécutez **Garmin Health Sync: Sync current note** dep
 
 ### Remplissage rétroactif des données historiques
 
-Vous avez des années de données Garmin ? Vous pouvez synchroniser en masse n'importe quelle plage de dates :
+Des années de données Garmin ? **Remplir les données de santé** récupère n’importe quelle période :
 
-1. Ouvrez la palette de commandes (Cmd/Ctrl+P)
-2. Recherchez **« Remplir les données de santé »** (Backfill health data)
-3. Choisissez une date de début et une date de fin
-4. Le plugin récupère toutes les données de cette période avec une limitation de débit pour éviter le blocage de l'API, et affiche le jour en cours et le temps restant
+1. Ouvrez la palette de commandes (Cmd/Ctrl+P) et cherchez **« Remplir les données de santé »**
+2. Choisissez une date de début et de fin, ou activez **Jusqu’au début de mes données** pour remonter jusqu’à cinq ans et vous arrêter quand vos données commencent
+3. Décidez de ce qui arrive aux jours sans note quotidienne (**Jours sans note quotidienne**) : créer la note, garder le jour dans des fichiers d’historique ou l’ignorer
+4. Activez **Récupérer à nouveau les jours complets** pour écraser les jours déjà présents
 
-Un jour qu’un remplissage précédent a déjà récupéré avec toutes vos métriques activées est ignoré, sauf les 3 derniers jours, qui peuvent encore changer. **Remplir de nouveau les données de santé (ignorer ce qui est déjà récupéré)** récupère chaque jour de nouveau et écrase les valeurs. Ce qui arrive à un jour sans note quotidienne dépend de **Jours sans note quotidienne**.
+Les jours sont récupérés du plus récent au plus ancien, avec la limitation de débit que Garmin exige. Une notification en haut montre le jour, le nombre de jours faits et le temps restant, avec un bouton **Arrêter**, et sur ordinateur la barre d’état affiche le pourcentage. Si vous fermez la notification d’un clic, la commande **Afficher la progression du backfill en cours** (listée seulement pendant un remplissage) ou un clic sur la barre d’état la ramène. Un seul remplissage tourne à la fois. Un remplissage arrêté ou interrompu reprend après un redémarrage, là où il s’est arrêté. Les échecs de Garmin sont réessayés, et un jour qu’un remplissage précédent a récupéré avec toutes vos métriques activées est ignoré, sauf les 3 derniers jours, qui peuvent encore changer.
 
 ### Panneau latéral santé
 
@@ -154,9 +154,9 @@ Activez **Panneau latéral** dans les paramètres du plugin, puis ouvrez-le avec
 <img src="docs/screenshots/panel-training.png" width="280" alt="Pas, équilibre de charge, charge hebdomadaire et séances">
 </p>
 
-### Notes d’historique et Construire l’historique Garmin
+### Notes d’historique
 
-Avec **Jours sans note quotidienne** sur **Garder dans les fichiers d’historique**, chaque jour récupéré est aussi enregistré dans de petites notes mensuelles (`Garmin history/Garmin history 2026-10.md`, une ligne par jour) dans votre dossier de notes quotidiennes. Ce sont de simples fichiers markdown, donc ils se synchronisent avec votre coffre, et le panneau les lit pour les jours sans note. La commande **Importer l’historique depuis les notes quotidiennes** y copie les valeurs Garmin de vos notes existantes. **Construire l’historique Garmin** récupère les jours jusqu’à une date de votre choix (cinq ans par défaut), les plus récents d’abord : elle indique le temps nécessaire, peut être arrêtée et reprend là où elle s’est arrêtée, attend et réessaie si Garmin ne répond pas, et ignore les jours déjà présents. Si vous changez de dossier de notes quotidiennes, les notes d’historique suivent.
+Avec **Jours sans note quotidienne** réglé sur **Garder dans les fichiers d’historique**, chaque jour récupéré est aussi stocké dans de petites notes mensuelles (`Garmin history/Garmin history 2026-10.md`, une ligne par jour) dans votre dossier de notes quotidiennes. Ce sont des fichiers markdown simples, qui se synchronisent avec votre coffre, et le panneau les lit pour les jours sans note. La commande **Importer l’historique depuis les notes quotidiennes** y copie les valeurs Garmin de vos notes existantes. Le remplissage peut les compléter d’un coup jusqu’au début de vos données (**Jusqu’au début de mes données**). Si vous changez de dossier de notes quotidiennes, les notes d’historique suivent.
 
 ### Propriétés des notes quotidiennes
 
