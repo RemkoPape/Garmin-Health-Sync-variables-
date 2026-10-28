@@ -229,7 +229,7 @@ No data is sent to any other server.
 
 **History notes:** the optional history notes contain your health values and live in your vault like your daily notes. The plugin makes no extra network requests for them.
 
-**Clipboard:** The plugin only uses the clipboard when you click a button, never in the background. **Use browser login** reads it once, when you click **Sign in from clipboard**, to pick up the one-time login ticket you copied from your browser. It writes to it when you click to copy the sign-in link, or **Copy diagnostics** (in the settings and in the sign-in window). Diagnostics contain no password, tokens, account data or health values, only technical details of the last sign-in or sync: data type names, HTTP status codes, response sizes and timings.
+**Clipboard:** The plugin only uses the clipboard when you click a button, never in the background. **Use browser login** reads it once, when you click **Sign in from clipboard**, to pick up the one-time login ticket you copied from your browser. It writes to it when you click to copy the sign-in link, or **Copy diagnostics** (in the settings and in the sign-in window). Diagnostics contain no password, tokens, account data or health values, only technical details of the last sign-in or sync: data type names, HTTP status codes, response sizes, timings and the structure of Garmin's answers (field names and types, never values).
 
 ## Development
 

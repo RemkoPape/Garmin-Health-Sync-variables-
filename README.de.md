@@ -229,7 +229,7 @@ Es werden keine Daten an andere Server gesendet.
 
 **Verlaufsnotizen:** Die optionalen Verlaufsnotizen enthalten deine Gesundheitswerte und liegen wie deine Daily Notes in deinem Vault. Das Plugin stellt dafür keine zusätzlichen Netzwerkanfragen.
 
-**Zwischenablage:** Das Plugin nutzt die Zwischenablage nur, wenn du auf eine Schaltfläche klickst, nie im Hintergrund. **Browser-Anmeldung verwenden** liest sie einmal, wenn du auf **Aus Zwischenablage anmelden** klickst, um das einmalige Anmelde-Ticket zu übernehmen, das du aus dem Browser kopiert hast. Geschrieben wird, wenn du den Anmeldelink kopierst oder **Diagnose kopieren** wählst (in den Einstellungen und im Anmeldefenster). Die Diagnose enthält kein Passwort, keine Tokens, keine Kontodaten und keine Gesundheitswerte, nur technische Angaben zur letzten Anmeldung oder Synchronisierung: Namen der Datentypen, HTTP-Statuscodes, Antwortgrößen und Laufzeiten.
+**Zwischenablage:** Das Plugin nutzt die Zwischenablage nur, wenn du auf eine Schaltfläche klickst, nie im Hintergrund. **Browser-Anmeldung verwenden** liest sie einmal, wenn du auf **Aus Zwischenablage anmelden** klickst, um das einmalige Anmelde-Ticket zu übernehmen, das du aus dem Browser kopiert hast. Geschrieben wird, wenn du den Anmeldelink kopierst oder **Diagnose kopieren** wählst (in den Einstellungen und im Anmeldefenster). Die Diagnose enthält kein Passwort, keine Tokens, keine Kontodaten und keine Gesundheitswerte, nur technische Angaben zur letzten Anmeldung oder Synchronisierung: Namen der Datentypen, HTTP-Statuscodes, Antwortgrößen, Laufzeiten und den Aufbau der Garmin-Antworten (Feldnamen und Typen, niemals Werte).
 
 ## Entwicklung
 

@@ -4,6 +4,7 @@ import { LoginRequiredError, GarminAuthError, SyncFetchError, isLoginRequiredErr
 import { getConsumer, getOAuth1, exchange, OAUTH_UA, type OAuth1Token, type OAuth2Token, type Consumer } from "./garmin-oauth";
 import { AuthStateMachine, type AuthState } from "./auth-state";
 import { withTimeout } from "../../timeout";
+import { describeShape } from "./payload-shape";
 import {
 	collectCookies,
 	mobileLogin,
@@ -735,7 +736,7 @@ export class GarminApi {
 	}
 
 	/** Redacted, copy-pasteable log of the last data fetch: endpoint key, HTTP status,
-	 *  body shape and timing only — never URLs, headers, tokens, ids or values. */
+	 *  body shape (field names and types) and timing only — never URLs, headers, tokens, ids or values. */
 	getSyncDiagnostics(): string {
 		return this.syncDiagnostics.join("\n");
 	}
@@ -749,7 +750,7 @@ export class GarminApi {
 	}
 
 	private writeSyncDiag(seq: number, line: string): void {
-		if (seq !== this.syncDiagSeq || this.syncDiagnostics.length >= 90) return;
+		if (seq !== this.syncDiagSeq || this.syncDiagnostics.length >= 140) return;
 		this.syncDiagnostics.push(line);
 	}
 
@@ -1083,6 +1084,8 @@ export class GarminApi {
 				const { status, data, shape, headers } = await withTimeout(this.apiGet(build(dn, date), oauth2), REQUEST_TIMEOUT_MS, "request timeout");
 				log(`${key}: HTTP ${status}, ${shape}, ${describePayload(data)}, ${Date.now() - started}ms`);
 				log(`${key} ${describeHeaders(headers)}`);
+				// the structure of the answer, so a bug report shows what this watch sends: field names and types, no values
+				if (data != null) log(`${key} shape: ${describeShape(data)}`);
 				if (status >= 200 && status < 300) ok++;
 				if (status >= 200 && status < 300 && data != null) {
 					results[key] = this.transformResponse(key, data);

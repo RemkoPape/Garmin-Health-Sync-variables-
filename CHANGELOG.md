@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.74
+
+### Added
+
+- **Copy diagnostics now includes the shape of Garmin's answers.** For each endpoint of the last sync the report lists the field names and types (`dailySummary shape: {totalSteps: int, averageStressLevel: float, ...}`, lists as `[n]` with the fields of their first elements, four levels deep, cut at 1500 characters), and the metrics each mapper filled (`mapper dailySummary: mapped 2 field(s): steps, resting_hr`). This shows exactly what a watch sends, including fields the plugin does not read yet, so a metric that is missing or wrong for a watch can be fixed without guessing. **Never values:** every number, text and id is reduced to its type, and a key that is not a plain field name (an id, a name, an address) is not printed. The report holds up to 140 lines (was 90). README (six languages), docs/settings.md and docs/troubleshooting.md describe it.
+
 ## 0.12.0-beta.73
 
 ### Added
