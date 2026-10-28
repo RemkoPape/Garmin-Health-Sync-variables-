@@ -7,7 +7,7 @@ import { baseline } from "../panel/stats";
  * as images: they follow the user's theme and language, add nothing to the plugin's size and cannot go stale. They are
  * decoration (hidden from screen readers, not clickable); the text of the item carries the meaning.
  */
-export type FigureId = "panel" | "light-bulb" | "history" | "properties";
+export type FigureId = "panel" | "light-bulb" | "history" | "properties" | "backfill" | "commands";
 
 const noop = (): void => undefined;
 /** Ten ordinary mornings, so the card has a usual range to draw. */
@@ -30,9 +30,26 @@ function dropdown(parent: HTMLElement, label: string): void {
 	select.createEl("option", { text: label });
 }
 
+/** A framed part of a figure with a small title, so settings and the panel are not mistaken for one screen. */
+function frame(parent: HTMLElement, title: string): HTMLElement {
+	const box = parent.createDiv({ cls: "ghs-fig-frame" });
+	box.createDiv({ cls: "ghs-fig-label", text: title });
+	return box;
+}
+
+function toggle(control: HTMLElement, on: boolean): void {
+	control.createDiv({ cls: `checkbox-container${on ? " is-enabled" : ""}` });
+}
+
+/** Two places: the settings, where the panel and each card are switched on, and the panel that then shows the cards. */
 function panelFigure(fig: HTMLElement, lang: string): void {
-	settingRow(fig, t("settingsPanelShow", lang), (control) => control.createDiv({ cls: "checkbox-container is-enabled" }));
-	renderRange(fig.createDiv({ cls: "ghs-panel ghs-fig-panel" }), HRV_CARD, model(61, [], "hrv"), lang, false, noop);
+	const settings = frame(fig, t("settingsPanel", lang));
+	settingRow(settings, t("settingsPanelShow", lang), (control) => toggle(control, true));
+	settingRow(settings, t("panelHrvTitle", lang), (control) => toggle(control, true));
+	settingRow(settings, t("panelHydrationTitle", lang), (control) => toggle(control, false));
+	fig.createDiv({ cls: "ghs-fig-arrow", text: "↓" });
+	const panel = frame(fig, t("panelTitle", lang));
+	renderRange(panel.createDiv({ cls: "ghs-panel ghs-fig-panel" }), HRV_CARD, model(61, [], "hrv"), lang, false, noop);
 }
 
 function lightBulbFigure(fig: HTMLElement, lang: string): void {
@@ -60,12 +77,30 @@ function propertiesFigure(fig: HTMLElement, lang: string): void {
 	}
 }
 
+/** What a running backfill shows: the notice at the top with its text and Stop button, and the status bar item. */
+function backfillFigure(fig: HTMLElement, lang: string): void {
+	const notice = fig.createDiv({ cls: "ghs-fig-notice" });
+	const text = t("noticeBackfillProgress", lang).replace("{n}", "3").replace("{total}", "8").replace("{date}", "2026-10-14").replace("{eta}", "4 min");
+	notice.createDiv({ text });
+	notice.createEl("button", { text: t("historyStop", lang) });
+	fig.createDiv({ cls: "ghs-fig-statusbar", text: t("backfillStatusBar", lang).replace("{n}", "3").replace("{total}", "8") });
+}
+
+/** The commands that are new since the last stable release, as the command palette lists them. */
+function commandsFigure(fig: HTMLElement, lang: string): void {
+	for (const key of ["commandOpenPanel", "commandBuildHistory", "commandImportHistory", "commandBackfillForce", "commandShowProgress"] as const) {
+		fig.createDiv({ cls: "ghs-fig-command", text: t(key, lang) });
+	}
+}
+
 /** Draws the illustration `id` into `parent`. */
 export function renderFigure(parent: HTMLElement, id: FigureId, lang: string): HTMLElement {
 	const fig = parent.createDiv({ cls: `ghs-whats-new-figure ghs-fig-${id}`, attr: { "aria-hidden": "true" } });
 	if (id === "panel") panelFigure(fig, lang);
 	else if (id === "light-bulb") lightBulbFigure(fig, lang);
 	else if (id === "history") historyFigure(fig, lang);
-	else propertiesFigure(fig, lang);
+	else if (id === "properties") propertiesFigure(fig, lang);
+	else if (id === "backfill") backfillFigure(fig, lang);
+	else commandsFigure(fig, lang);
 	return fig;
 }

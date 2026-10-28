@@ -10,7 +10,7 @@ import { en } from "../src/i18n/en";
 import { de } from "../src/i18n/de";
 
 /** Every figure; a new one has to be listed here, so it cannot ship undrawn. */
-const FIGURE_IDS: FigureId[] = ["panel", "light-bulb", "history", "properties"];
+const FIGURE_IDS: FigureId[] = ["panel", "light-bulb", "history", "properties", "backfill", "commands"];
 const draw = (id: FigureId, lang = "en"): HTMLElement => renderFigure(document.createElement("div"), id, lang);
 
 describe("what's new figures", () => {
@@ -21,10 +21,15 @@ describe("what's new figures", () => {
 		expect(fig.childElementCount).toBeGreaterThan(0);
 	});
 
-	it("shows the switch of the side panel next to a real card", () => {
+	it("keeps the settings and the panel apart: the switches in one frame, a real card in another", () => {
 		const fig = draw("panel");
-		expect(fig.querySelector(".setting-item-name")?.textContent).toBe(en.settingsPanelShow);
-		expect(fig.querySelector(".checkbox-container.is-enabled")).not.toBeNull();
+		const [settings, panel] = Array.from(fig.querySelectorAll(".ghs-fig-frame")) as HTMLElement[];
+		expect(settings!.querySelector(".ghs-fig-label")?.textContent).toBe(en.settingsPanel);
+		expect(Array.from(settings!.querySelectorAll(".setting-item-name")).map((n) => n.textContent)).toEqual([en.settingsPanelShow, en.panelHrvTitle, en.panelHydrationTitle]);
+		expect(Array.from(settings!.querySelectorAll(".checkbox-container")).map((c) => c.classList.contains("is-enabled"))).toEqual([true, true, false]);
+		expect(settings!.querySelector(".ghs-card")).toBeNull();
+		expect(panel!.querySelector(".ghs-fig-label")?.textContent).toBe(en.panelTitle);
+		expect(panel!.querySelector(".setting-item")).toBeNull();
 		expect(fig.querySelector(".ghs-card-title")?.textContent).toBe(en.panelHrvTitle);
 		expect(fig.querySelector(".ghs-range")).not.toBeNull();
 	});
@@ -33,6 +38,18 @@ describe("what's new figures", () => {
 		const fig = draw("panel");
 		(fig.querySelector(".ghs-info") as HTMLButtonElement).click();
 		expect(fig.querySelector(".ghs-insight")).toBeNull();
+	});
+
+	it("shows the notice of a running backfill with its stop button and the status bar text", () => {
+		const fig = draw("backfill");
+		expect(fig.querySelector(".ghs-fig-notice div")?.textContent).toBe("Backfill running: day 3 of 8 (2026-10-14) · about 4 min left");
+		expect(fig.querySelector(".ghs-fig-notice button")?.textContent).toBe(en.historyStop);
+		expect(fig.querySelector(".ghs-fig-statusbar")?.textContent).toBe("Backfill 3/8");
+	});
+
+	it("lists the commands that are new since the last stable release, named as in the palette", () => {
+		expect(Array.from(draw("commands").querySelectorAll(".ghs-fig-command")).map((c) => c.textContent)).toEqual([en.commandOpenPanel, en.commandBuildHistory, en.commandImportHistory, en.commandBackfillForce, en.commandShowProgress]);
+		expect(draw("commands", "de").querySelector(".ghs-fig-command")?.textContent).toBe(de.commandOpenPanel);
 	});
 
 	it("shows an open light bulb with what the data suggests", () => {

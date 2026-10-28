@@ -34,7 +34,7 @@ export const SCENES: Scene[] = [
 		daysBack: 0,
 		cards: [],
 		open: [],
-		expect: [".ghs-whats-new-figure", ".ghs-fig-panel", ".ghs-insight", ".ghs-fig-compare"],
+		expect: [".ghs-whats-new-figure", ".ghs-fig-frame", ".ghs-fig-panel", ".ghs-insight", ".ghs-fig-compare", ".ghs-fig-notice", ".ghs-fig-command"],
 	},
 	{
 		id: "panel-today",

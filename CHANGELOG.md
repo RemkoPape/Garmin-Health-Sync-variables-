@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.62
+
+### Changed
+
+- **What's new: the side panel figure shows two places.** The settings (the panel switch and the switch of a card, one of them off) sit in one frame and the panel with a real card in another, so it is clear that a card has to be switched on in the settings. The text says so too.
+
+### Added
+
+- **What's new: the backfill.** A new item with a figure of the progress notice (day, days done, time left, Stop button) and the status bar text, and what changed: the notice can be brought back, one backfill at a time, an unfinished backfill goes on after a restart, fetched days are skipped.
+- **What's new: new commands.** A list of the commands that came since the last stable release (open the panel, build the history, import history from daily notes, backfill again, show the progress), named as in the command palette.
+
 ## 0.12.0-beta.61
 
 ### Added
