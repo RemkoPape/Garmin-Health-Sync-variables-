@@ -13,6 +13,9 @@ const MEAN_DAYS = 7;
 const TREND_DAYS = 28;
 /** A change faster than this share of the body weight per week is worth a second look. */
 const FAST_SHARE = 0.01;
+const KG_TO_LBS = 2.20462;
+/** Days between the first and the last reading before a weekly change is worked out: a few days of noise are no trend. */
+const MIN_SPAN_DAYS = 7;
 
 export interface BodyModel {
 	/** What the data suggests, filled in by the panel (see insights/). */
@@ -41,23 +44,30 @@ export function computeBody(index: DayIndex, date: string): BodyModel {
 	const points: { x: number; y: number }[] = [];
 	let unit: "kg" | "lbs" = "kg";
 	let entries = 0;
-	const recent: number[] = [];
+	const readings: { i: number; w: { value: number; unit: "kg" | "lbs" } }[] = [];
 	const fats: number[] = [];
 	for (let i = TREND_DAYS - 1; i >= 0; i--) {
 		const day = shiftDate(date, -i);
 		const w = read(day);
 		if (w) {
 			unit = w.unit;
-			points.push({ x: TREND_DAYS - 1 - i, y: w.value });
-			if (i < ENTRY_WINDOW_DAYS) entries++;
-			if (i < MEAN_DAYS) recent.push(w.value);
+			readings.push({ i, w });
 		}
 		const f = index.value("body_fat_pct", day);
 		if (f !== null && i < MEAN_DAYS) fats.push(f);
 	}
+	// notes in one unit and history records in the other (history keeps kilograms) are brought to the unit of the latest reading
+	const inUnit = (w: { value: number; unit: "kg" | "lbs" }): number => (w.unit === unit ? w.value : unit === "lbs" ? w.value * KG_TO_LBS : w.value / KG_TO_LBS);
+	const recent: number[] = [];
+	for (const { i, w } of readings) {
+		points.push({ x: TREND_DAYS - 1 - i, y: inUnit(w) });
+		if (i < ENTRY_WINDOW_DAYS) entries++;
+		if (i < MEAN_DAYS) recent.push(inUnit(w));
+	}
 	const mean = (v: number[]): number | null => (v.length === 0 ? null : v.reduce((a, b) => a + b, 0) / v.length);
 	const weight = mean(recent);
-	const perWeek = points.length >= 2 ? slope(points) * 7 : null;
+	const span = points.length < 2 ? 0 : points[points.length - 1]!.x - points[0]!.x;
+	const perWeek = points.length >= 2 && span >= MIN_SPAN_DAYS ? slope(points) * 7 : null;
 	return { insights: [], unit, weight, fat: mean(fats), entries, points, perWeek, fast: perWeek !== null && weight !== null && Math.abs(perWeek) > weight * FAST_SHARE };
 }
 

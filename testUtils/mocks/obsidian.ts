@@ -349,6 +349,12 @@ export abstract class ItemView {
 	registerEvent(ref: { name: string }): void {
 		this.events.push(ref);
 	}
+	/** Intervals registered like Obsidian does; they stop when the view closes. */
+	intervals: number[] = [];
+	registerInterval(id: number): number {
+		this.intervals.push(id);
+		return id;
+	}
 	onOpen(): Promise<void> {
 		return Promise.resolve();
 	}
@@ -406,18 +412,22 @@ export class Workspace {
 
 export class MetadataCache {
 	frontmatter = new Map<string, Record<string, unknown>>();
-	private listeners: ((file: TFile) => void)[] = [];
+	private listeners: Record<string, ((file: TFile) => void)[]> = {};
 	getFileCache(file: TFile): { frontmatter?: Record<string, unknown> } | null {
 		const fm = this.frontmatter.get(file.path);
 		return fm ? { frontmatter: fm } : null;
 	}
-	on(_name: "changed", cb: (file: TFile) => void): { name: string } {
-		this.listeners.push(cb);
-		return { name: "changed" };
+	on(name: "changed" | "resolved", cb: (file: TFile) => void): { name: string } {
+		(this.listeners[name] ??= []).push(cb);
+		return { name };
 	}
 	/** Test helper: deliver a "changed" event. */
 	fireChanged(file: TFile): void {
-		for (const cb of this.listeners) cb(file);
+		this.fire("changed", file);
+	}
+	/** Test helper: deliver an event of the cache ("resolved" has no file). */
+	fire(name: "changed" | "resolved", file?: TFile): void {
+		for (const cb of this.listeners[name] ?? []) cb(file as TFile);
 	}
 }
 

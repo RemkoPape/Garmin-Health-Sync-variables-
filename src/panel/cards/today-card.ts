@@ -114,7 +114,7 @@ export function renderToday(parent: HTMLElement, model: TodayModel, lang: string
 		if (!own) {
 			card.createDiv({
 				cls: "ghs-card-note",
-				text: model.garmin !== null ? t("panelTodayBridge", lang) : t("panelLocked", lang).replace("{need}", String(TODAY_MIN_DAYS)).replace("{have}", String(model.have)),
+				text: model.garmin !== null ? t("panelTodayBridge", lang) : model.have >= TODAY_MIN_DAYS ? t("panelTodayWaiting", lang) : t("panelLocked", lang).replace("{need}", String(TODAY_MIN_DAYS)).replace("{have}", String(model.have)),
 			});
 			return;
 		}

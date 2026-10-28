@@ -29,7 +29,7 @@ export function computeFloors(index: DayIndex, date: string): FloorsModel {
 	for (let i = 1; i <= WINDOW_DAYS; i++) {
 		if (index.value("floors", shiftDate(date, -i)) !== null) have++;
 	}
-	return { insights: [], trend: computeTrend((d) => index.value("floors", d), date), floors: index.value("floors", date), have, zone: avg === null ? null : { low: Math.round(avg), high: Math.max(Math.round(avg), Math.round(avg * ZONE_FACTOR)) } };
+	return { insights: [], trend: computeTrend((d) => index.value("floors", d), date), floors: index.value("floors", date), have, zone: avg === null || avg <= 0 ? null : { low: Math.round(avg), high: Math.max(Math.round(avg), Math.round(avg * ZONE_FACTOR)) } };
 }
 
 export function renderFloors(parent: HTMLElement, model: FloorsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {

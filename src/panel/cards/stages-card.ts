@@ -48,7 +48,7 @@ export function computeStages(index: DayIndex, date: string): StagesModel {
 		const b = baseline(windowValues(index, spec.key, date, WINDOW_DAYS, true), STAGES_MIN_NIGHTS, SD_FLOOR_MIN);
 		stages.push({ spec, minutes, baseline: b, deviation: b ? { z: zScore(minutes, b), minutes: Math.round(minutes - b.mean) } : null });
 	}
-	return { insights: [], stages: stages.length === STAGES.length ? stages : null };
+	return { insights: [], stages: stages.length === STAGES.length && stages.some((s) => s.minutes > 0) ? stages : null };
 }
 
 export function renderStages(parent: HTMLElement, model: StagesModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {

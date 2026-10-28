@@ -365,7 +365,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			this.plugin.noteProperties.modeChanged();
 		} else if (key === "propertiesMode") {
 			this.plugin.noteProperties.modeChanged();
-		} else if (key === "language" || key === "unitSystem") {
+		} else if (key === "language" || key === "unitSystem" || key === "dailyNotePath" || key === "dailyNoteFormat") {
 			// Rebuild the definitions so labels reflect the new locale / units.
 			this.update();
 			this.plugin.refreshPanels();

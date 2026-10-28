@@ -36,7 +36,9 @@ export interface StepsModel {
 }
 
 export function computeSteps(index: DayIndex, date: string): StepsModel {
-	const base = average(index, "steps", date, WINDOW_DAYS, STEPS_MIN_DAYS);
+	// an average of 0 (a watch that was off) is no usual day to set a zone on
+	const mean = average(index, "steps", date, WINDOW_DAYS, STEPS_MIN_DAYS);
+	const base = mean !== null && mean > 0 ? mean : null;
 	let have = 0;
 	for (let i = 1; i <= WINDOW_DAYS; i++) if (index.value("steps", shiftDate(date, -i)) !== null) have++;
 	const km = index.value("distance_km", date);

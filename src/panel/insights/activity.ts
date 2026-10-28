@@ -1,4 +1,4 @@
-import { shiftDate } from "../../dates";
+import { localDateString, shiftDate } from "../../dates";
 import { computeBody } from "../cards/body-card";
 import { computeIntensity } from "../cards/intensity-card";
 import { computeSteps } from "../cards/steps-card";
@@ -19,12 +19,13 @@ const QUIET_FLOORS_SHARE = 0.8;
 const QUIET_WEEKDAY_SHARE = 0.75;
 
 export function stepsInsights(s: Signals): Insight[] {
-	const { steps, base } = computeSteps(s.index, s.date);
+	const { steps, base, today } = computeSteps(s.index, s.date);
 	if (steps === null || base === null) return [];
 	if (steps >= base * 1.1) return [{ id: "steps_zone_good" }];
 	const out: Insight[] = [];
 	if (steps >= base) out.push({ id: "steps_in_zone", params: { base: String(Math.round(base)) } });
-	else {
+	else if (!today) {
+		// an unfinished day is not set against whole days
 		let quiet = 0;
 		for (let i = 1; i <= 5; i++) if ((s.z("steps", shiftDate(s.date, -i)) ?? 0) < QUIET_Z) quiet++;
 		if (quiet >= QUIET_STREAK) out.push({ id: "steps_below_streak", params: { n: String(quiet) } });
@@ -41,6 +42,8 @@ export function floorsInsights(s: Signals): Insight[] {
 	const { floors, zone } = computeFloors(s.index, s.date);
 	if (floors === null || zone === null) return [];
 	if (floors >= zone.low && floors > 0) return [{ id: "floors_zone_good" }];
+	// an unfinished day is not set against whole days
+	if (s.date === localDateString(new Date())) return [];
 	let quiet = 0;
 	for (let i = 1; i <= 5; i++) if ((s.index.value("floors", shiftDate(s.date, -i)) ?? zone.low) < zone.low * QUIET_FLOORS_SHARE) quiet++;
 	return quiet >= QUIET_STREAK ? [{ id: "floors_below_streak", params: { n: String(quiet) } }] : [];

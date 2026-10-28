@@ -29,7 +29,7 @@ export function computeTrend(read: (date: string) => number | null, date: string
 	const previous = mean(series.slice(0, WEEK));
 	if (current === null || previous === null) return null;
 	const delta = current - previous;
-	const steady = Math.abs(delta) < Math.abs(previous) * STEADY_SHARE;
+	const steady = delta === 0 || Math.abs(delta) < Math.abs(previous) * STEADY_SHARE;
 	return { series, direction: steady ? "steady" : delta > 0 ? "up" : "down", delta };
 }
 

@@ -196,6 +196,20 @@ describe("the history store", () => {
 		expect(s.covers("2026-10-01", "2026-10-31")).toBe(false);
 	});
 
+	it("keeps answering from a month whose note changed until the new text is read, so a panel does not flash empty", async () => {
+		const app = new App();
+		app.vault.seed(FILE, serializeMonth("2026-10", new Map([["2026-10-22", { hrv: 40 }]])));
+		const s = store(app);
+		await s.warm("2026-10-01", "2026-10-31");
+		s.invalidate(app.vault.getAbstractFileByPath(FILE) as never);
+		expect(s.get("2026-10-22")).toEqual({ hrv: 40 });
+		expect(s.covers("2026-10-01", "2026-10-31")).toBe(false);
+		await s.warm("2026-10-01", "2026-10-31");
+		expect(s.covers("2026-10-01", "2026-10-31")).toBe(true);
+		s.invalidate();
+		expect(s.get("2026-10-22")).toBeNull();
+	});
+
 	it("brings what it had read of a month up to date when it writes to it", async () => {
 		const app = new App();
 		const s = store(app);

@@ -166,14 +166,86 @@ describe("health panel view", () => {
 		expect(before).not.toBe("");
 	});
 
-	it("follows the open daily note and falls back to today for other files", async () => {
+	it("follows the open daily note and stays on the shown day for other notes", async () => {
 		const { app, view } = await open();
 		app.workspace.activeFile = note("2026-10-15.md");
 		app.workspace.fire("file-open");
 		expect(dateText(view)).toBe(formatPanelDate("2026-10-15", "en"));
 		app.workspace.activeFile = note("random.md");
 		app.workspace.fire("file-open");
+		expect(dateText(view)).toBe(formatPanelDate("2026-10-15", "en"));
+		app.workspace.activeFile = note("2026-10-22.md");
+		app.workspace.fire("file-open");
 		expect(dateText(view)).toBe(formatPanelDate("2026-10-22", "en"));
+	});
+
+	it("moves on at midnight when it shows today, and not when a day was chosen", async () => {
+		const { view } = await open();
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(dateText(view)).toBe(formatPanelDate("2026-10-22", "en"));
+		vi.setSystemTime(new Date(2026, 9, 23, 0, 5));
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(dateText(view)).toBe(formatPanelDate("2026-10-23", "en"));
+		buttons(view)[0]!.click();
+		expect(dateText(view)).toBe(formatPanelDate("2026-10-22", "en"));
+		vi.setSystemTime(new Date(2026, 9, 24, 0, 5));
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(dateText(view)).toBe(formatPanelDate("2026-10-22", "en"));
+		// stepping forward to today follows today again
+		const [, next] = buttons(view) as [HTMLButtonElement, HTMLButtonElement];
+		next.click();
+		(buttons(view)[1] as HTMLButtonElement).click();
+		vi.setSystemTime(new Date(2026, 9, 25, 0, 5));
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(dateText(view)).toBe(formatPanelDate("2026-10-25", "en"));
+	});
+
+	it("follows today again after a picked day that is today, and keeps a picked past day", async () => {
+		const { view } = await open();
+		const input = view.contentEl.querySelector<HTMLInputElement>(".ghs-daynav-input")!;
+		input.value = "2026-10-10";
+		input.dispatchEvent(new window.Event("change"));
+		vi.setSystemTime(new Date(2026, 9, 23, 0, 5));
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(dateText(view)).toBe(formatPanelDate("2026-10-10", "en"));
+		const again = view.contentEl.querySelector<HTMLInputElement>(".ghs-daynav-input")!;
+		again.value = "2026-10-23";
+		again.dispatchEvent(new window.Event("change"));
+		vi.setSystemTime(new Date(2026, 9, 24, 0, 5));
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(dateText(view)).toBe(formatPanelDate("2026-10-24", "en"));
+	});
+
+	it("draws again when the metadata of the vault has been read after a restart", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => null });
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
+		await view.onOpen();
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
+		await app.vault.create("2026-10-22.md", "x");
+		app.metadataCache.frontmatter.set("2026-10-22.md", { hrv: 61 });
+		app.metadataCache.fire("resolved");
+		await vi.advanceTimersByTimeAsync(300);
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("61 ms");
+	});
+
+	it("keeps the place in the panel when it is drawn again", async () => {
+		const { view } = await open();
+		view.contentEl.scrollTop = 120;
+		view.refresh();
+		expect(view.contentEl.scrollTop).toBe(120);
+	});
+
+	it("reads the notes again after a setting changed which notes are daily notes", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 61 }) });
+		const plugin = { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } };
+		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, plugin as never);
+		await view.onOpen();
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("61 ms");
+		plugin.settings.dailyNoteFormat = "YYYY.MM.DD";
+		view.refresh();
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
 	});
 
 	it("steps one day at a time and stops at today", async () => {
