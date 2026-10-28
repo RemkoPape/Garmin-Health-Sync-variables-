@@ -365,7 +365,7 @@ async function updateFrontmatter(
 		const nowExisting = now.kind === "present" ? now.data : {};
 		if (!hasChanges(nowExisting, properties)) return current;
 		written = true;
-		return renderWithFrontmatter({ ...nowExisting, ...properties }, now);
+		return renderWithFrontmatter({ ...nowExisting, ...properties }, now, properties);
 	});
 	return written;
 }
@@ -401,24 +401,30 @@ function extractFrontmatter(rawContent: string): FrontmatterParse {
 	const lineEnding = content.includes("\r\n") ? "\r\n" : "\n";
 
 	// File doesn't open with `---\n` → no frontmatter.
-	if (!/^---\r?\n/.test(content)) {
+	const opener = /^---\r?\n/.exec(content);
+	if (!opener) {
 		return { kind: "absent", body: content, lineEnding, bom };
 	}
 
-	const lines = content.split(/\r?\n/);
-	// Find the closing `---` (start at line 1, line 0 is the opener).
-	let closingIdx = -1;
-	for (let i = 1; i < lines.length; i++) {
-		if (lines[i] === "---") {
-			closingIdx = i;
+	// Find the closing `---` line and keep the body exactly as it is, line endings included.
+	const headerStart = opener[0].length;
+	let closingStart = -1;
+	let bodyStart = content.length;
+	for (let pos = headerStart; pos <= content.length; ) {
+		const newline = content.indexOf("\n", pos);
+		const lineEnd = newline === -1 ? content.length : newline;
+		if (content.slice(pos, lineEnd).replace(/\r$/, "") === "---") {
+			closingStart = pos;
+			bodyStart = newline === -1 ? content.length : newline + 1;
 			break;
 		}
+		if (newline === -1) break;
+		pos = newline + 1;
 	}
-	if (closingIdx === -1) {
+	if (closingStart === -1) {
 		return { kind: "invalid", reason: "no closing --- marker found" };
 	}
-
-	const yamlText = lines.slice(1, closingIdx).join(lineEnding);
+	const yamlText = content.slice(headerStart, closingStart).replace(/\r?\n$/, "");
 	let data: unknown;
 	try {
 		data = parseYaml(yamlText);
@@ -429,7 +435,7 @@ function extractFrontmatter(rawContent: string): FrontmatterParse {
 
 	// Empty frontmatter (`---\n---`) → parseYaml returns null. Treat as empty object.
 	if (data === null || data === undefined) {
-		const body = lines.slice(closingIdx + 1).join(lineEnding);
+		const body = content.slice(bodyStart);
 		return {
 			kind: "present",
 			data: {},
@@ -444,7 +450,7 @@ function extractFrontmatter(rawContent: string): FrontmatterParse {
 		return { kind: "invalid", reason: "Frontmatter is not a YAML object (e.g. list or scalar)" };
 	}
 
-	const body = lines.slice(closingIdx + 1).join(lineEnding);
+	const body = content.slice(bodyStart);
 	return {
 		kind: "present",
 		data: data as Record<string, unknown>,
@@ -455,12 +461,52 @@ function extractFrontmatter(rawContent: string): FrontmatterParse {
 	};
 }
 
+/**
+ * Changes the frontmatter text in place: new keys are appended after the last line, and the value of an existing
+ * single-line scalar is replaced on its own line. Everything else the user wrote stays byte for byte. Returns null
+ * when the change cannot be made that way (a list value, a multi-line value, a key that is not found once), and the
+ * caller then writes the block anew.
+ */
+function patchHeader(
+	rawHeader: string,
+	existing: Record<string, unknown>,
+	properties: Record<string, unknown>,
+	lineEnding: string
+): string | null {
+	const lines = rawHeader.split(/\r?\n/);
+	const added: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(properties)) {
+		if (!(key in existing)) {
+			added[key] = value;
+			continue;
+		}
+		if (isDeepEqual(existing[key], value)) continue;
+		if (typeof value === "object" || (typeof existing[key] === "object" && existing[key] !== null)) return null;
+		const keyLine = new RegExp(`^(${escapeRegex(key)}|"${escapeRegex(key)}"|'${escapeRegex(key)}'):(\\s|$)`);
+		const own = lines.map((line, i) => (keyLine.test(line) ? i : -1)).filter((i) => i >= 0);
+		const at = own[0];
+		if (own.length !== 1 || at === undefined) return null;
+		// a value that goes on in the next line (indented, or a list item) is not a single-line scalar
+		const next = lines[at + 1];
+		if (next !== undefined && /^(\s|-\s|-$)/.test(next)) return null;
+		lines[at] = stringifyYaml({ [key]: value }).replace(/\r?\n+$/, "");
+	}
+	if (Object.keys(added).length > 0) lines.push(...stringifyYaml(added).replace(/\r?\n+$/, "").split("\n"));
+	return lines.join(lineEnding);
+}
+
 /** Re-assembles the file content with the merged frontmatter. */
 function renderWithFrontmatter(
 	merged: Record<string, unknown>,
-	parsed: Exclude<FrontmatterParse, { kind: "invalid" }>
+	parsed: Exclude<FrontmatterParse, { kind: "invalid" }>,
+	properties: Record<string, unknown>
 ): string {
 	const lineEnding = parsed.lineEnding;
+	// What the user wrote (comments, quoting, flow lists, blank lines) stays as it is when the change can be made in place
+	if (parsed.kind === "present" && parsed.rawHeader !== "") {
+		const patched = patchHeader(parsed.rawHeader, parsed.data, properties, lineEnding);
+		if (patched !== null) return `${parsed.bom}---${lineEnding}${patched}${lineEnding}---${lineEnding}${parsed.body}`;
+	}
 	let yaml = stringifyYaml(merged);
 	// stringifyYaml ends with a newline already; trim trailing newlines so we control the joining exactly.
 	yaml = yaml.replace(/\r?\n+$/, "");
