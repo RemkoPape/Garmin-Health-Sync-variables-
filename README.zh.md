@@ -2,13 +2,25 @@
 
 # Garmin Health Sync
 
-自动将步数、睡眠、心率、压力、运动等健康数据从 Garmin Connect 同步到 Obsidian Daily Notes —— 作为 frontmatter 属性，可通过 Dataview 查询。
+**你每日笔记的好帮手。** Garmin Health Sync 把 Garmin 手表上最重要的数据带进你的 Obsidian 每日笔记，并可按需展示你与自己日常水平相比的状态。它不是 Garmin Connect 的复制品：目标是帮助你为这一天做出正确的决定。
+
+**两种使用方式**
+
+- **保持简单。** 登录并开启你想要的指标。它们会作为可用 Dataview 查询的属性写入每日笔记，评估由你自己完成。
+- **在笔记旁添加可视化。** 在设置中开启**侧边面板**，即可看到关于准备度、恢复、睡眠、能量、活动和训练的卡片，并与你自己的日常范围对比。每张卡片上的灯泡会告诉你今天的数据提示了什么。[每张卡片显示什么、如何计算](docs/panel-cards.md)。
+
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="准备度和恢复卡片">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="灯泡下方：数据的启示">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="深色主题下的同一组卡片">
+</p>
 
 > **支持桌面端和移动端**（Windows、macOS、Linux、iOS、Android）。本插件使用 Garmin Connect 的内部 API；Garmin 没有提供官方第三方 API。你使用 Garmin 邮箱和密码登录（如启用两步验证，还需输入验证码）。如果 Garmin 阻止此次尝试，可使用备用的浏览器登录方式。
 
 ## 功能特性
 
 - **启动时自动同步** —— 检查最近 7 天并补充缺失的健康数据
+- **等待笔记模式** — 可让自动同步等待其他工具（Templater、Calendar、外部同步）创建每日笔记，而不是自己创建
 - **手动同步** —— 通过命令面板同步任意已打开的 Daily Note
 - **回填** —— 批量同步一段日期范围（例如最近 3 个月）
 - **20+ 项指标** —— 步数、睡眠评分、HRV、压力、身体电量、SpO2、体重等
@@ -18,6 +30,7 @@
 - **子目录支持** —— 在嵌套文件夹中查找已有的 Daily Notes（例如 `Journal/2024-07/`）；文件名格式包含 `/` 时会按日期创建子文件夹（例如 `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`）
 - **语言自动检测** —— UI 语言根据你的 Obsidian 语言设置自动适配（EN、DE、ZH、JA、ES、FR）
 - **可选的结构化数据** —— 机器可读的 `trainings` 字段，用于高级 Dataview 查询
+- **属性前缀** — 可为所有 frontmatter 属性添加 `ohs_` 前缀，以避免与其他插件的名称冲突
 - **健康侧边面板** — 可选的右侧边栏，以卡片展示恢复、睡眠、能量、活动、体能和训练，并与你自己的日常范围对比；点击卡片上的灯泡可查看数据的启示及计算方式；在**设置 → Garmin Health Sync → 侧边面板**中启用
 - **历史笔记** — 可选地把每个获取的日子保存到按月划分的小型 Markdown 笔记中，这样没有每日笔记的日子面板也能工作，数据还能随 Vault 同步
 - **每日笔记的属性** — 打开笔记时折叠属性区，或隐藏面板已经显示的 Garmin 属性
@@ -142,12 +155,9 @@ Garmin 可能会限制同一设备的重复登录尝试，此时插件会显示�
 
 ### 健康侧边面板
 
-在插件设置中开启 **侧边面板**，然后通过侧边栏图标或命令 **打开健康面板** 打开。卡片把今天与你自己的日常范围（最近 30 天）对比，绝不会修改你的笔记。点击日期可选择某一天，用箭头按天移动，用铅笔按钮拖动调整卡片顺序。每张卡片在设置中都有开关，并说明需要启用哪些指标。点击卡片上的灯泡可查看 **你的数据说明了什么**（基于你自己数据的原因和帮助）和 **如何解读**。面板不是医疗建议。在设置中添加出生年份（仅年份）后，可获得心率区间和按年龄设定的目标。
+在插件设置中开启 **侧边面板**，然后通过侧边栏图标或命令 **打开健康面板** 打开。卡片把今天与你自己的日常范围（最近 30 天）对比，绝不会修改你的笔记。点击日期可选择某一天，用箭头按天移动，用铅笔按钮拖动调整卡片顺序。每张卡片在设置中都有开关，并说明需要启用哪些指标。点击卡片上的灯泡可查看 **你的数据说明了什么**（基于你自己数据的原因和帮助）和 **如何解读**。面板不是医疗建议。在设置中添加出生年份（仅年份）后，可获得心率区间和按年龄设定的目标。 参见[每张卡片显示什么、如何计算](docs/panel-cards.md)。
 
 <p>
-<img src="docs/screenshots/panel-today.png" width="280" alt="准备度与恢复">
-<img src="docs/screenshots/panel-today-dark.png" width="280" alt="深色主题下的同样卡片">
-<img src="docs/screenshots/panel-insights.png" width="280" alt="灯泡下方的数据提示">
 <img src="docs/screenshots/panel-hydration.png" width="280" alt="带说明的水分摄入卡片">
 <img src="docs/screenshots/panel-sleep.png" width="280" alt="睡眠与睡眠阶段">
 <img src="docs/screenshots/panel-energy.png" width="280" alt="身体电量、压力与水分摄入">
@@ -160,7 +170,7 @@ Garmin 可能会限制同一设备的重复登录尝试，此时插件会显示�
 
 ### 每日笔记的属性
 
-设置 **每日笔记的属性** 可以在打开每日笔记时折叠属性区、隐藏插件写入的属性（面板会显示它们），或两者兼有。不会从笔记中删除任何内容。
+设置 **每日笔记的属性** 可以在打开每日笔记时折叠属性区、隐藏插件写入的属性（面板会显示它们），或两者兼有。不会从笔记中删除任何内容。 折叠和隐藏沿用了社区插件 [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) 和 [Extended Properties](https://obsidian.md/plugins?id=extended-properties) 的思路；见致谢。
 
 ## 活动键名标准化
 
@@ -219,3 +229,5 @@ npm run build  # 生产构建
 ## 致谢
 
 最初由 [fcandi](https://github.com/fcandi) 创建，现由 [davadev](https://github.com/davadev) 维护和继续开发。
+
+每日笔记中属性的处理方式（折叠属性区、隐藏侧边面板已显示的属性）受到社区插件的启发：Tommy Bergeron 的 [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) 和 electroluminescent 的 [Extended Properties](https://obsidian.md/plugins?id=extended-properties)（均为 MIT 许可）。未复制任何代码；见 [NOTICE.md](NOTICE.md)。

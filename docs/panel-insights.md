@@ -5,7 +5,7 @@ Every card of the health panel has a light bulb button. It opens two blocks:
 1. **What your data suggests** (framed box, headline in the accent colour): why the value is where it is and what can move it, or, when the value is good and the data allows a guess, what probably made it good. Each line has a coloured edge: orange for something to look at, green for something that is going well.
 2. **The general explanation** (plain, muted text below the box): what the card shows and how it is calculated.
 
-The interpretation is deliberately kept under the light bulb so the cards stay uncluttered.
+The interpretation is deliberately kept under the light bulb so the cards stay uncluttered. What each card shows, which decision it helps with and how it is calculated and drawn is in [panel-cards.md](panel-cards.md); this page documents the interpretations and the formulas they rest on.
 
 ## Principles
 

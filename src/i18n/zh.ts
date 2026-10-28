@@ -511,6 +511,8 @@ export const zh: Record<TranslationKeys, string> = {
 	whatsNew0120Item6Text: "打开命令面板，查看自上一个稳定版以来新增的命令：",
 	whatsNew0120Item7Title: "可同步更多指标",
 	whatsNew0120Item7Text: "现在可以同步饮水量及其目标、就寝和起床时间，以及压力和恢复的分钟数。它们默认关闭：请在设置中与其他附加指标一起开启。饮水量有自己的卡片，并为心率变异性和静息心率卡片增加提示；就寝和起床时间显示在睡眠卡片上；压力卡片会将当天与你平时的比例对比。",
+	whatsNew0120Item8Title: "即将推出",
+	whatsNew0120Item8Text: "下一个重大版本将尝试集成最近宣布的 Garmin 官方 API。",
 	whatsNewCmdOpenPanel: "打开带有健康卡片的侧边面板。",
 	whatsNewCmdBackfill: "从 Garmin 获取一段日期范围，直到你的数据开始，并用通知显示进度。",
 	whatsNewCmdImportHistory: "把每日笔记中的 Garmin 值复制到历史文件，无需询问 Garmin。",

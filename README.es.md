@@ -2,13 +2,25 @@
 
 # Garmin Health Sync
 
-Sincroniza automáticamente pasos, sueño, frecuencia cardíaca, estrés, actividades y más desde Garmin Connect a Obsidian Daily Notes — como propiedades de frontmatter que puedes consultar con Dataview.
+**Un compañero para tus notas diarias.** Garmin Health Sync lleva los números que importan de tu reloj Garmin a tus notas diarias de Obsidian y, si quieres, muestra cómo estás respecto a tu propia normalidad. No es una copia de Garmin Connect: el objetivo es ayudarte a tomar las decisiones adecuadas para el día.
+
+**Dos formas de usarlo**
+
+- **Mantenerlo simple.** Inicia sesión y activa las métricas que quieras. Se escriben en tus notas diarias como propiedades que puedes consultar con Dataview, y la evaluación la haces tú.
+- **Añadir visualizaciones junto a tus notas.** Activa el **panel lateral** en los ajustes para ver tarjetas de preparación, recuperación, sueño, energía, movimiento y entrenamiento, comparadas con tu propio rango habitual. La bombilla de cada tarjeta dice lo que tus datos sugieren hoy. [Qué muestra cada tarjeta y cómo se calcula](docs/panel-cards.md).
+
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="Tarjetas de preparación y recuperación">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="Lo que sugieren tus datos, bajo la bombilla">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="Las mismas tarjetas con un tema oscuro">
+</p>
 
 > **Funciona en escritorio y en móvil** (Windows, macOS, Linux, iOS, Android). Este plugin utiliza la API interna de Garmin Connect; no existe una API oficial de terceros. Inicias sesión con tu correo y contraseña de Garmin (y el código de verificación si usas la verificación en dos pasos). Si Garmin bloquea ese intento, hay un inicio de sesión alternativo en el navegador.
 
 ## Características
 
 - **Sincronización automática al iniciar** — comprueba los últimos 7 días y completa los datos de salud faltantes
+- **Modo de espera de nota** — opcionalmente deja que la sincronización automática espere a que otra herramienta (Templater, Calendar, una sincronización externa) cree la Daily Note, en lugar de crearla ella misma
 - **Sincronización manual** — sincroniza cualquier Daily Note abierta mediante la paleta de comandos
 - **Rellenado retroactivo** — sincronización masiva de un rango de fechas (p. ej., los últimos 3 meses)
 - **Más de 20 métricas** — pasos, puntuación de sueño, HRV, estrés, Body Battery, SpO2, peso y más
@@ -18,6 +30,7 @@ Sincroniza automáticamente pasos, sueño, frecuencia cardíaca, estrés, activi
 - **Soporte de subdirectorios** — encuentra Daily Notes existentes en carpetas anidadas (p. ej., `Journal/2024-07/`) y crea subcarpetas por fecha cuando el formato del nombre de archivo contiene `/` (p. ej., `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Detección automática del idioma** — el idioma de la interfaz se configura según el idioma de tu Obsidian (EN, DE, ZH, JA, ES, FR)
 - **Datos estructurados opcionales** — campo `trainings` legible por máquina para consultas avanzadas con Dataview
+- **Prefijo de propiedades** — añade opcionalmente el prefijo `ohs_` a todas las propiedades de frontmatter para evitar conflictos de nombres con otros plugins
 - **Panel lateral de salud** — barra lateral derecha opcional con tarjetas de recuperación, sueño, energía, movimiento, forma física y entrenamiento frente a tu propio rango habitual; toca la bombilla de una tarjeta para ver qué sugieren tus datos y cómo se calcula; actívalo en **Ajustes → Garmin Health Sync → Panel lateral**
 - **Notas de historial** — guarda opcionalmente cada día descargado en pequeñas notas mensuales en markdown, para que el panel también funcione en días sin nota diaria y los datos se sincronicen con tu vault
 - **Propiedades de las notas diarias** — pliega el bloque de propiedades al abrir una nota u oculta las propiedades de Garmin que el panel ya muestra
@@ -142,12 +155,9 @@ Los días se obtienen del más reciente al más antiguo, con la limitación de r
 
 ### Panel lateral de salud
 
-Activa **Panel lateral** en los ajustes del plugin y ábrelo desde el icono de la cinta o con el comando **Abrir el panel de salud**. Las tarjetas comparan hoy con tu propio rango habitual (los últimos 30 días) y nunca modifican tus notas. Toca la fecha para elegir un día, usa las flechas para moverte un día y el botón del lápiz para ordenar las tarjetas arrastrándolas. Cada tarjeta tiene un interruptor en los ajustes que además indica qué métricas activar para ella. Toca la bombilla de una tarjeta para ver **Qué sugieren tus datos** (motivos y qué ayuda, a partir de tus propios datos) y **Cómo leerlo**. El panel no es consejo médico. Si añades tu año de nacimiento (solo el año) en los ajustes, obtienes zonas de frecuencia cardíaca y objetivos según la edad.
+Activa **Panel lateral** en los ajustes del plugin y ábrelo desde el icono de la cinta o con el comando **Abrir el panel de salud**. Las tarjetas comparan hoy con tu propio rango habitual (los últimos 30 días) y nunca modifican tus notas. Toca la fecha para elegir un día, usa las flechas para moverte un día y el botón del lápiz para ordenar las tarjetas arrastrándolas. Cada tarjeta tiene un interruptor en los ajustes que además indica qué métricas activar para ella. Toca la bombilla de una tarjeta para ver **Qué sugieren tus datos** (motivos y qué ayuda, a partir de tus propios datos) y **Cómo leerlo**. El panel no es consejo médico. Si añades tu año de nacimiento (solo el año) en los ajustes, obtienes zonas de frecuencia cardíaca y objetivos según la edad. Consulta [qué muestra cada tarjeta y cómo se calcula](docs/panel-cards.md).
 
 <p>
-<img src="docs/screenshots/panel-today.png" width="280" alt="Preparación y recuperación">
-<img src="docs/screenshots/panel-today-dark.png" width="280" alt="Las mismas tarjetas en un tema oscuro">
-<img src="docs/screenshots/panel-insights.png" width="280" alt="Lo que sugieren tus datos, bajo la bombilla">
 <img src="docs/screenshots/panel-hydration.png" width="280" alt="Tarjeta de hidratación con sus explicaciones">
 <img src="docs/screenshots/panel-sleep.png" width="280" alt="Sueño y fases del sueño">
 <img src="docs/screenshots/panel-energy.png" width="280" alt="Body Battery, estrés e hidratación">
@@ -160,7 +170,7 @@ Con **Días sin nota diaria** en **Guardar en archivos de historial**, cada día
 
 ### Propiedades de las notas diarias
 
-El ajuste **Propiedades de las notas diarias** puede plegar el bloque de propiedades de una nota diaria al abrirla, ocultar las propiedades que escribió el plugin (el panel las muestra) o ambas cosas. No se borra nada de una nota.
+El ajuste **Propiedades de las notas diarias** puede plegar el bloque de propiedades de una nota diaria al abrirla, ocultar las propiedades que escribió el plugin (el panel las muestra) o ambas cosas. No se borra nada de una nota. Plegar y ocultar siguen las ideas de los plugins de la comunidad [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) y [Extended Properties](https://obsidian.md/plugins?id=extended-properties); véase Créditos.
 
 ## Normalización de claves de actividad
 
@@ -219,3 +229,5 @@ npm run build  # compilación para producción
 ## Créditos
 
 Creado originalmente por [fcandi](https://github.com/fcandi). Mantenido y desarrollado por [davadev](https://github.com/davadev).
+
+El tratamiento de las propiedades en las notas diarias (plegar el bloque de propiedades, ocultar las propiedades que muestra el panel lateral) se inspiró en los plugins de la comunidad [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) de Tommy Bergeron y [Extended Properties](https://obsidian.md/plugins?id=extended-properties) de electroluminescent (ambos con licencia MIT). No se copió código; véase [NOTICE.md](NOTICE.md).

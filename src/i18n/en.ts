@@ -510,6 +510,8 @@ export const en = {
 	whatsNew0120Item6Text: "Open the command palette to find what came since the last stable release:",
 	whatsNew0120Item7Title: "More metrics to sync",
 	whatsNew0120Item7Text: "Water intake and its goal, bedtime and wake-up time, and the minutes spent stressed and recovering can now be synced. They are off by default: switch them on in the settings with the other additional metrics. Water intake gets its own card and adds hints to the HRV and resting heart rate cards, bedtime and wake-up time appear on the sleep card, and the stress card compares a day with your usual split.",
+	whatsNew0120Item8Title: "Coming soon",
+	whatsNew0120Item8Text: "The next big release will attempt to integrate the official Garmin API that was recently announced.",
 	whatsNewCmdOpenPanel: "Opens the side panel with your health cards.",
 	whatsNewCmdBackfill: "Fetches a range of days from Garmin, up to the start of your data, with a notice that shows the progress.",
 	whatsNewCmdImportHistory: "Copies the Garmin values of your daily notes into the history files, without asking Garmin.",

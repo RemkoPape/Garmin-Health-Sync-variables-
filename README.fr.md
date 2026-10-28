@@ -2,13 +2,25 @@
 
 # Garmin Health Sync
 
-Synchronisez automatiquement les pas, le sommeil, la fréquence cardiaque, le stress, les activités et plus encore depuis Garmin Connect vers Obsidian Daily Notes — sous forme de propriétés frontmatter interrogeables avec Dataview.
+**Un compagnon pour vos notes quotidiennes.** Garmin Health Sync apporte les chiffres qui comptent de votre montre Garmin dans vos notes quotidiennes Obsidian et, si vous le souhaitez, montre où vous en êtes par rapport à votre propre normalité. Ce n’est pas une copie de Garmin Connect : le but est de vous aider à prendre les bonnes décisions pour la journée.
+
+**Deux façons de l’utiliser**
+
+- **Rester simple.** Connectez-vous et activez les mesures voulues. Elles sont écrites dans vos notes quotidiennes sous forme de propriétés interrogeables avec Dataview, et l’évaluation reste la vôtre.
+- **Ajouter des visuels à côté de vos notes.** Activez le **panneau latéral** dans les réglages pour des cartes sur la disponibilité, la récupération, le sommeil, l’énergie, le mouvement et l’entraînement, comparées à votre propre plage habituelle. L’ampoule de chaque carte indique ce que vos données suggèrent aujourd’hui. [Ce que montre chaque carte et comment elle est calculée](docs/panel-cards.md).
+
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="Cartes de disponibilité et de récupération">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="Ce que suggèrent vos données, sous l’ampoule">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="Les mêmes cartes dans un thème sombre">
+</p>
 
 > **Fonctionne sur ordinateur et sur mobile** (Windows, macOS, Linux, iOS, Android). Ce plugin utilise l’API interne de Garmin Connect ; il n’existe pas d’API tierce officielle. Vous vous connectez avec votre e-mail et votre mot de passe Garmin (et le code de vérification si vous utilisez la validation en deux étapes). Si Garmin bloque cette tentative, une connexion alternative par navigateur est proposée.
 
 ## Fonctionnalités
 
 - **Synchronisation automatique au démarrage** — vérifie les 7 derniers jours et complète les données de santé manquantes
+- **Mode attente de note** — laisse éventuellement la synchronisation automatique attendre qu’un autre outil (Templater, Calendar, une synchronisation externe) crée la Daily Note, au lieu de la créer elle-même
 - **Synchronisation manuelle** — synchronisez n'importe quelle Daily Note ouverte via la palette de commandes
 - **Remplissage rétroactif** — synchronisation en masse d'une plage de dates (par ex. les 3 derniers mois)
 - **Plus de 20 métriques** — pas, score de sommeil, HRV, stress, Body Battery, SpO2, poids, et plus
@@ -18,6 +30,7 @@ Synchronisez automatiquement les pas, le sommeil, la fréquence cardiaque, le st
 - **Support des sous-dossiers** — trouve les Daily Notes existantes dans les dossiers imbriqués (par ex. `Journal/2024-07/`) et crée des sous-dossiers par date lorsque le format du nom de fichier contient `/` (par ex. `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Détection automatique de la langue** — la langue de l'interface est définie selon la langue de votre Obsidian (EN, DE, ZH, JA, ES, FR)
 - **Données structurées optionnelles** — champ `trainings` lisible par machine pour des requêtes Dataview avancées
+- **Préfixe des propriétés** — ajoute éventuellement le préfixe `ohs_` à toutes les propriétés frontmatter pour éviter les conflits de noms avec d’autres plugins
 - **Panneau latéral santé** — barre latérale droite optionnelle avec des cartes pour la récupération, le sommeil, l’énergie, le mouvement, la forme et l’entraînement, comparées à votre propre plage habituelle ; touchez l’ampoule d’une carte pour voir ce que suggèrent vos données et comment c’est calculé ; à activer dans **Réglages → Garmin Health Sync → Panneau latéral**
 - **Notes d’historique** — conservez en option chaque jour récupéré dans de petites notes mensuelles en markdown, pour que le panneau fonctionne aussi les jours sans note quotidienne et que les données se synchronisent avec votre coffre
 - **Propriétés des notes quotidiennes** — repliez le bloc de propriétés à l’ouverture d’une note ou masquez les propriétés Garmin que le panneau affiche déjà
@@ -142,12 +155,9 @@ Les jours sont récupérés du plus récent au plus ancien, avec la limitation d
 
 ### Panneau latéral santé
 
-Activez **Panneau latéral** dans les paramètres du plugin, puis ouvrez-le avec l’icône du ruban ou la commande **Ouvrir le panneau santé**. Les cartes comparent aujourd’hui à votre propre plage habituelle (les 30 derniers jours) et ne modifient jamais vos notes. Touchez la date pour choisir un jour, utilisez les flèches pour avancer d’un jour et le bouton crayon pour réorganiser les cartes en les faisant glisser. Chaque carte a un interrupteur dans les paramètres qui indique aussi quelles métriques activer pour elle. Touchez l’ampoule d’une carte pour **Ce que suggèrent vos données** (raisons et ce qui aide, tirés de vos propres données) et **Comment lire ceci**. Le panneau n’est pas un avis médical. En ajoutant votre année de naissance (seulement l’année) dans les paramètres, vous obtenez des zones de fréquence cardiaque et des objectifs adaptés à l’âge.
+Activez **Panneau latéral** dans les paramètres du plugin, puis ouvrez-le avec l’icône du ruban ou la commande **Ouvrir le panneau santé**. Les cartes comparent aujourd’hui à votre propre plage habituelle (les 30 derniers jours) et ne modifient jamais vos notes. Touchez la date pour choisir un jour, utilisez les flèches pour avancer d’un jour et le bouton crayon pour réorganiser les cartes en les faisant glisser. Chaque carte a un interrupteur dans les paramètres qui indique aussi quelles métriques activer pour elle. Touchez l’ampoule d’une carte pour **Ce que suggèrent vos données** (raisons et ce qui aide, tirés de vos propres données) et **Comment lire ceci**. Le panneau n’est pas un avis médical. En ajoutant votre année de naissance (seulement l’année) dans les paramètres, vous obtenez des zones de fréquence cardiaque et des objectifs adaptés à l’âge. Voir [ce que montre chaque carte et comment elle est calculée](docs/panel-cards.md).
 
 <p>
-<img src="docs/screenshots/panel-today.png" width="280" alt="Disponibilité et récupération">
-<img src="docs/screenshots/panel-today-dark.png" width="280" alt="Les mêmes cartes en thème sombre">
-<img src="docs/screenshots/panel-insights.png" width="280" alt="Ce que suggèrent vos données, sous l’ampoule">
 <img src="docs/screenshots/panel-hydration.png" width="280" alt="Carte d’hydratation et ses explications">
 <img src="docs/screenshots/panel-sleep.png" width="280" alt="Sommeil et phases du sommeil">
 <img src="docs/screenshots/panel-energy.png" width="280" alt="Body Battery, stress et hydratation">
@@ -160,7 +170,7 @@ Avec **Jours sans note quotidienne** réglé sur **Garder dans les fichiers d’
 
 ### Propriétés des notes quotidiennes
 
-Le réglage **Propriétés des notes quotidiennes** peut replier le bloc de propriétés d’une note quotidienne à l’ouverture, masquer les propriétés écrites par le plugin (le panneau les affiche) ou les deux. Rien n’est supprimé d’une note.
+Le réglage **Propriétés des notes quotidiennes** peut replier le bloc de propriétés d’une note quotidienne à l’ouverture, masquer les propriétés écrites par le plugin (le panneau les affiche) ou les deux. Rien n’est supprimé d’une note. Le repli et le masquage suivent les idées des plugins communautaires [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) et [Extended Properties](https://obsidian.md/plugins?id=extended-properties) ; voir Crédits.
 
 ## Normalisation des clés d'activité
 
@@ -219,3 +229,5 @@ npm run build  # build de production
 ## Crédits
 
 Créé à l’origine par [fcandi](https://github.com/fcandi). Maintenu et développé par [davadev](https://github.com/davadev).
+
+La gestion des propriétés dans les notes quotidiennes (replier le bloc de propriétés, masquer les propriétés que montre le panneau latéral) s’est inspirée des plugins communautaires [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) de Tommy Bergeron et [Extended Properties](https://obsidian.md/plugins?id=extended-properties) d’electroluminescent (tous deux sous licence MIT). Aucun code n’a été copié ; voir [NOTICE.md](NOTICE.md).

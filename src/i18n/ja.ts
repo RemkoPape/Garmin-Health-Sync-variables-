@@ -511,6 +511,8 @@ export const ja: Record<TranslationKeys, string> = {
 	whatsNew0120Item6Text: "コマンドパレットを開くと、前回の安定版以降に追加されたものが見つかります。",
 	whatsNew0120Item7Title: "同期できる指標が増えました",
 	whatsNew0120Item7Text: "水分摂取量とその目標、就寝時刻と起床時刻、ストレスと回復の時間を同期できるようになりました。初期設定ではオフです。設定のその他の指標でオンにしてください。水分摂取量は専用カードを持ち、HRVと安静時心拍数のカードにヒントを加えます。就寝時刻と起床時刻は睡眠カードに表示され、ストレスカードは普段の割合と比べて1日を示します。",
+	whatsNew0120Item8Title: "近日公開予定",
+	whatsNew0120Item8Text: "次の大型リリースでは、最近発表された Garmin の公式 API の統合を試みる予定です。",
 	whatsNewCmdOpenPanel: "健康カードのあるサイドパネルを開きます。",
 	whatsNewCmdBackfill: "Garminから期間内の日をデータの始まりまで取得し、進捗を通知で表示します。",
 	whatsNewCmdImportHistory: "デイリーノートのGarmin値を、Garminに問い合わせずに履歴ファイルへコピーします。",
