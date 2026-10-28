@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.58
+
+### Added
+
+- **The progress of a backfill can be brought back.** Clicking the notice dismisses it, but the run goes on. The new command **Show the progress of the running backfill** puts the notice back (also for **Build Garmin history**), and on a desktop a click on the status bar item ("Backfill 3/8") does the same. The backfill notice now has a **Stop** button like the history build.
+- **A backfill goes on after a restart.** A backfill that was running when Obsidian closed is resumed about 10 seconds after the next start, from the day it had reached (the place is saved every 5 days), with its notice at the top again. Stopping it with the button, or letting it finish, ends it.
+
+### Fixed
+
+- **A second backfill could start while one was running** and fetched the days that overlap again. Now the second one is not started: the running one is shown instead. The same holds between a backfill and a history build.
+
 ## 0.12.0-beta.57
 
 ### Added

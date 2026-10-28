@@ -307,7 +307,7 @@ describe("build history command", () => {
 		}
 		await settle();
 		expect(loaded.plugin.statusBarItems).toHaveLength(1);
-		expect(Notice.recorded.filter((n) => n.fragment?.querySelector("button"))).toHaveLength(1);
+		expect(Notice.recorded.filter((n) => n.fragment?.querySelector("button") && !n.hidden)).toHaveLength(1);
 		release();
 		await vi.runAllTimersAsync();
 		expect(fetched(loaded.provider)).toEqual([dayString(1), dayString(2), dayString(3)]);
@@ -499,9 +499,9 @@ describe("properties of daily notes", () => {
 });
 
 describe("startup", () => {
-	it("registers the eight commands under their stable ids, named in the user's language", async () => {
+	it("registers the nine commands under their stable ids, named in the user's language", async () => {
 		const { plugin } = await load({ language: "de" });
-		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "build-history", "force-backfill-health-data", "import-history-from-notes", "login-with-ticket", "open-health-panel", "show-whats-new", "sync-health-data"]);
+		expect([...plugin.commands.keys()].sort()).toEqual(["backfill-health-data", "build-history", "force-backfill-health-data", "import-history-from-notes", "login-with-ticket", "open-health-panel", "show-progress", "show-whats-new", "sync-health-data"]);
 		expect(plugin.commands.get("show-whats-new")?.name).toBe(de.commandWhatsNew);
 		expect(plugin.commands.get("sync-health-data")?.name).toBe(de.commandSync);
 		expect(plugin.commands.get("backfill-health-data")?.name).toBe(de.commandBackfill);
@@ -2052,5 +2052,190 @@ describe("health panel", () => {
 		await plugin.openPanel();
 		app.workspace.getLeavesOfType(PANEL)[0]!.view = null;
 		expect(() => plugin.refreshPanels()).not.toThrow();
+	});
+});
+
+// ---------------------------------------------------------------------------
+// A backfill that is dismissed, repeated or interrupted
+// ---------------------------------------------------------------------------
+
+describe("the backfill notice and its job", () => {
+	function startRange(loaded: Awaited<ReturnType<typeof load>>, force = false, first = "2026-10-20"): void {
+		loaded.plugin.commands.get(force ? "force-backfill-health-data" : "backfill-health-data")!.callback!();
+		const modal = Modal.opened.at(-1)!;
+		const inputs = modal.contentEl.querySelectorAll<HTMLInputElement>("input");
+		inputs[0]!.value = first;
+		inputs[0]!.dispatchEvent(new window.Event("input"));
+		inputs[1]!.value = "2026-10-24";
+		inputs[1]!.dispatchEvent(new window.Event("input"));
+		(modal.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
+	}
+	const openNotices = (): (typeof Notice.recorded)[number][] => Notice.recorded.filter((n) => n.fragment && !n.hidden);
+
+	it("keeps the job while it runs and drops it when the run is over", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.gate = new Promise(() => undefined);
+		startRange(loaded);
+		await settle();
+		expect(loaded.plugin.data).toMatchObject({ backfillJob: { from: "2026-10-20", to: "2026-10-24", force: false } });
+		expect(loaded.plugin.statusBarItems).toHaveLength(1);
+	});
+
+	it("ends the job when the backfill ends", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		startRange(loaded);
+		await vi.runAllTimersAsync();
+		expect(loaded.plugin.settings.backfillJob).toBeNull();
+		expect(loaded.plugin.data).toMatchObject({ backfillJob: null });
+		expect(loaded.plugin.statusBarItems[0]!.isConnected).toBe(false);
+	});
+
+	it("moves the place of the job on while it runs", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		let release: () => void = () => undefined;
+		loaded.provider.onFetch = (date) => {
+			if (date === "2026-10-21") loaded.provider.gate = new Promise<void>((resolve) => (release = resolve));
+		};
+		startRange(loaded, false, "2026-10-15");
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(loaded.plugin.settings.backfillJob).toMatchObject({ from: "2026-10-20", to: "2026-10-24" });
+		expect(loaded.plugin.data).toMatchObject({ backfillJob: { from: "2026-10-20" } });
+		release();
+		await vi.runAllTimersAsync();
+	});
+
+	it("does not start a second backfill while one runs: it shows the first and fetches nothing twice", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.gate = new Promise(() => undefined);
+		startRange(loaded);
+		await settle();
+		loaded.plugin.commands.get("backfill-health-data")!.callback!();
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeBackfillRunning);
+		expect(openNotices()).toHaveLength(1);
+		expect(Modal.opened.filter((m) => m.isOpen)).toHaveLength(0); // no dialog for a second run
+		expect(fetched(loaded.provider)).toEqual(["2026-10-20"]);
+	});
+
+	it("does not start the run of a second dialog that was open at the same time", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.gate = new Promise(() => undefined);
+		loaded.plugin.commands.get("backfill-health-data")!.callback!();
+		loaded.plugin.commands.get("backfill-health-data")!.callback!();
+		for (const modal of Modal.opened.slice(-2)) (modal.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
+		await settle();
+		expect(openNotices()).toHaveLength(1);
+		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticeBackfillRunning);
+		expect(loaded.plugin.statusBarItems).toHaveLength(1);
+	});
+
+	it("does not start a history build or a backfill while the other runs", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.gate = new Promise(() => undefined);
+		startRange(loaded);
+		await settle();
+		const opened = Modal.opened.length;
+		loaded.plugin.commands.get("build-history")!.callback!();
+		expect(Modal.opened).toHaveLength(opened);
+	});
+
+	it("brings the notice back with the show-progress command after it was dismissed", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.gate = new Promise(() => undefined);
+		startRange(loaded);
+		await settle();
+		openNotices()[0]!.hidden = true;
+		expect(openNotices()).toHaveLength(0);
+		loaded.plugin.commands.get("show-progress")!.callback!();
+		expect(openNotices()).toHaveLength(1);
+	});
+
+	it("brings it back with a click on the status bar item", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.gate = new Promise(() => undefined);
+		startRange(loaded);
+		await settle();
+		openNotices()[0]!.hidden = true;
+		loaded.plugin.statusBarItems[0]!.click();
+		expect(openNotices()).toHaveLength(1);
+	});
+
+	it("shows the history build the same way, and says so when nothing runs", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.plugin.commands.get("show-progress")!.callback!();
+		expect(Notice.recorded.at(-1)!.message).toBe(en.noticeNoProgress);
+		loaded.provider.gate = new Promise(() => undefined);
+		loaded.plugin.commands.get("build-history")!.callback!();
+		const modal = Modal.opened.at(-1)!;
+		(modal.contentEl.querySelector("input") as HTMLInputElement).value = dayString(3);
+		(modal.contentEl.querySelector("input") as HTMLInputElement).dispatchEvent(new window.Event("input"));
+		(modal.contentEl.querySelector("button.mod-cta") as HTMLButtonElement).click();
+		await settle();
+		openNotices()[0]!.hidden = true;
+		loaded.plugin.commands.get("show-progress")!.callback!();
+		expect(openNotices()).toHaveLength(1);
+	});
+
+	it("keeps the job when Obsidian closes the plugin mid-run and goes on from it, with the notice, at the next start", async () => {
+		const first = await load(signedIn({ language: "en" }));
+		first.provider.onFetch = (date) => {
+			if (date === "2026-10-22") first.plugin.onunload();
+		};
+		startRange(first);
+		await vi.runAllTimersAsync();
+		expect(fetched(first.provider)).toEqual(["2026-10-20", "2026-10-21", "2026-10-22"]);
+		const saved = first.plugin.data as { backfillJob: unknown };
+		expect(saved.backfillJob).toMatchObject({ to: "2026-10-24", force: false });
+
+		Notice.recorded.length = 0;
+		const second = await load(saved as never);
+		second.app.workspace.layoutReady();
+		await vi.advanceTimersByTimeAsync(9_000);
+		expect(fetched(second.provider)).toEqual([]);
+		await vi.runAllTimersAsync();
+		expect(fetched(second.provider)).toEqual(expect.arrayContaining(["2026-10-24"]));
+		expect(Notice.recorded.some((n) => n.fragment)).toBe(true);
+		expect(second.plugin.settings.backfillJob).toBeNull();
+	});
+
+	it("does not start the saved job when the plugin is closed again before it is due", async () => {
+		const loaded = await load(signedIn({ backfillJob: { from: "2026-10-23", to: "2026-10-24", force: false } }));
+		loaded.app.workspace.layoutReady();
+		loaded.plugin.unload();
+		await vi.advanceTimersByTimeAsync(20_000);
+		expect(Notice.recorded.filter((n) => n.fragment)).toEqual([]);
+	});
+
+	it("has no status bar item on a phone, where the command brings the notice back", async () => {
+		Platform.isDesktop = false;
+		try {
+			const loaded = await load(signedIn({ language: "en" }));
+			loaded.provider.gate = new Promise(() => undefined);
+			startRange(loaded);
+			await settle();
+			expect(loaded.plugin.statusBarItems).toHaveLength(0);
+			expect(openNotices()).toHaveLength(1);
+		} finally {
+			Platform.isDesktop = true;
+		}
+	});
+
+	it("ends the job when the user stops it", async () => {
+		const loaded = await load(signedIn({ language: "en" }));
+		loaded.provider.onFetch = () => openNotices()[0]!.fragment!.querySelector("button")!.click();
+		startRange(loaded);
+		await vi.runAllTimersAsync();
+		expect(loaded.plugin.settings.backfillJob).toBeNull();
+		expect(fetched(loaded.provider)).toEqual(["2026-10-20"]);
+	});
+
+	it("keeps the force flag of a saved job", async () => {
+		const loaded = await load(signedIn({ backfillJob: { from: "2026-10-23", to: "2026-10-24", force: true } }));
+		expect(loaded.plugin.settings.backfillJob).toEqual({ from: "2026-10-23", to: "2026-10-24", force: true });
+	});
+
+	it("ignores a saved job that is not a range of days", async () => {
+		for (const job of [{ from: "x", to: "2026-10-24" }, { from: "2026-10-25", to: "2026-10-24" }, "junk", null]) {
+			expect((await load({ backfillJob: job as never })).plugin.settings.backfillJob).toBeNull();
+		}
 	});
 });

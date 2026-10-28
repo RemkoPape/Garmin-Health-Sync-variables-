@@ -4,6 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App, Notice, network as net } from "../testUtils/mocks/obsidian";
 import { SyncManager } from "../src/sync";
+import { ProgressNotice } from "../src/history/progress";
 import { HistoryStore } from "../src/history/store";
 import { serializeMonth } from "../src/history/format";
 import { DEFAULT_SETTINGS, type HealthSyncSettings } from "../src/settings";
@@ -288,24 +289,103 @@ describe("backfill", () => {
 		expect(Notice.recorded.at(-1)?.duration).toBe(10000);
 	});
 
+	/** The texts the progress notice was given, in order, without the status bar text. */
+	function shown(): { texts: () => string[]; status: () => string[] } {
+		const spy = vi.spyOn(ProgressNotice.prototype, "setText");
+		return { texts: () => spy.mock.calls.map((c) => c[0]), status: () => spy.mock.calls.map((c) => c[1]) };
+	}
+
 	it("updates the notice that stays on screen with the day it is at, so a long run shows progress", async () => {
+		const spy = shown();
 		await run("2026-10-22", "2026-10-24");
-		expect(Notice.recorded[0]!.updates).toEqual([
+		expect(spy.texts()).toEqual([
+			en.noticeBackfillStart,
 			"Backfill running: day 1 of 3 (2026-10-22) · about 1 min left",
 			"Backfill running: day 2 of 3 (2026-10-23) · about 1 min left",
 			"Backfill running: day 3 of 3 (2026-10-24) · about 1 min left",
 		]);
+		expect(spy.status().slice(1)).toEqual(["Backfill 1/3", "Backfill 2/3", "Backfill 3/3"]);
+		vi.restoreAllMocks();
+		const german = shown();
 		provider.batchDelay = 58_500; // 60 s for a day with the time of its requests
 		await run("2026-10-23", "2026-10-24", settings({ language: "de" }));
-		expect(Notice.recorded.find((n) => n.updates[0]?.startsWith("Nachsynchronisierung läuft"))?.updates).toEqual([
+		expect(german.texts().slice(1)).toEqual([
 			"Nachsynchronisierung läuft: Tag 1 von 2 (2026-10-23) · noch etwa 2 min",
 			"Nachsynchronisierung läuft: Tag 2 von 2 (2026-10-24) · noch etwa 1 min",
 		]);
+		vi.restoreAllMocks();
 	});
 
-	it("shows a start notice that stays until the end and is hidden afterwards", async () => {
+	it("shows a notice with a Stop button that stays until the end and is hidden afterwards", async () => {
 		await run("2026-10-24", "2026-10-24");
-		expect(Notice.recorded[0]).toMatchObject({ message: en.noticeBackfillStart, duration: 0, hidden: true });
+		expect(Notice.recorded[0]).toMatchObject({ duration: 0, hidden: true });
+		expect(Notice.recorded[0]!.fragment?.querySelector("button")?.textContent).toBe(en.historyStop);
+	});
+
+	describe("the progress notice", () => {
+		it("comes back after a click dismissed it, with the latest text, and does not stack", async () => {
+			provider.gate = new Promise(() => undefined);
+			void sync.backfill("2026-10-22", "2026-10-24", settings());
+			await vi.advanceTimersByTimeAsync(0);
+			expect(sync.backfilling).toBe(true);
+			expect(sync.revealProgress()).toBe(true);
+			const open = Notice.recorded.filter((n) => n.fragment && !n.hidden);
+			expect(open).toHaveLength(1);
+			expect(open[0]!.fragment!.querySelector(".ghs-history-text")?.textContent).toContain("day 1 of 3");
+		});
+
+		it("has nothing to bring back when no backfill runs", () => {
+			expect(sync.revealProgress()).toBe(false);
+			expect(sync.backfilling).toBe(false);
+		});
+	});
+
+	describe("a second backfill while one runs", () => {
+		it("is not started: it shows the running one and fetches nothing twice", async () => {
+			provider.gate = new Promise(() => undefined);
+			void sync.backfill("2026-10-22", "2026-10-24", settings());
+			await vi.advanceTimersByTimeAsync(0);
+			expect(await sync.backfill("2026-10-23", "2026-10-25", settings())).toBe(0);
+			expect(msgs()).toContain(en.noticeBackfillRunning);
+			expect(fetchedDates()).toEqual(["2026-10-22"]);
+			expect(Notice.recorded.filter((n) => n.fragment && !n.hidden)).toHaveLength(1);
+		});
+
+		it("may start again once the first has ended", async () => {
+			await run("2026-10-24", "2026-10-24");
+			expect(await run("2026-10-24", "2026-10-24", settings({ fetchLog: {} }))).toBe(1);
+		});
+	});
+
+	describe("stopping", () => {
+		it("ends after the day it is at, says where, and lets a later run continue", async () => {
+			provider.onFetch = () => sync.stopBackfill();
+			const count = await run("2026-10-22", "2026-10-24");
+			expect(count).toBe(1);
+			expect(fetchedDates()).toEqual(["2026-10-22"]);
+			expect(msgs().at(-1)).toBe(en.noticeBackfillStopped.replace("{date}", "2026-10-23").replace("{count}", "1"));
+			expect(sync.backfilling).toBe(false);
+		});
+
+		it("does nothing without a running backfill", () => {
+			sync.stopBackfill();
+			expect(sync.backfilling).toBe(false);
+		});
+
+		it("stops from the button of the notice", async () => {
+			provider.onFetch = () => Notice.recorded.find((n) => n.fragment && !n.hidden)!.fragment!.querySelector("button")!.click();
+			expect(await run("2026-10-22", "2026-10-24")).toBe(1);
+		});
+	});
+
+	describe("where it is", () => {
+		it("is reported every 5 days, so a restart can go on from there", async () => {
+			const cursor: string[] = [];
+			const p = sync.backfill("2026-10-10", "2026-10-22", settings(), { onCursor: async (next) => void cursor.push(next) });
+			await vi.runAllTimersAsync();
+			await p;
+			expect(cursor).toEqual(["2026-10-15", "2026-10-20"]);
+		});
 	});
 
 	describe("days that an earlier run fetched", () => {
@@ -324,10 +404,11 @@ describe("backfill", () => {
 			const s = settings();
 			await run("2026-10-10", "2026-10-12", s);
 			provider.fetchCalls = [];
+			const spy = shown();
 			await run("2026-10-08", "2026-10-14", s);
 			expect(fetchedDates()).toEqual(["2026-10-08", "2026-10-09", "2026-10-13", "2026-10-14"]);
-			const progress = Notice.recorded.find((n) => n.updates.length === 4)!;
-			expect(progress.updates[0]).toContain("day 1 of 4");
+			expect(spy.texts()[1]).toContain("day 1 of 4");
+			vi.restoreAllMocks();
 		});
 
 		it("are fetched again when more metrics are wanted now", async () => {
@@ -567,13 +648,13 @@ describe("backfill", () => {
 			expect(provider.authCalls).toBe(1);
 		});
 
-		it("stops when the sign-in fails, hides the start notice and fetches nothing", async () => {
+		it("stops when the sign-in fails, hides the progress notice and fetches nothing", async () => {
 			provider.sessionValid = false;
 			provider.authResult = { ok: false, cancelled: false };
 			expect(await run("2026-10-24", "2026-10-24")).toBe(0);
 			expect(provider.fetchCalls).toEqual([]);
-			expect(msgs()).toEqual([en.noticeBackfillStart, en.noticeLoginRequired]);
-			expect(Notice.recorded[0]?.hidden).toBe(true);
+			expect(msgs().at(-1)).toBe(en.noticeLoginRequired);
+			expect(Notice.recorded.filter((n) => n.fragment).every((n) => n.hidden)).toBe(true);
 		});
 
 		it("stops at a login-required error, keeps the days already done and tells the user once", async () => {

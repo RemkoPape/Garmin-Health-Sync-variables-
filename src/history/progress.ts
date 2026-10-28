@@ -18,24 +18,50 @@ export function estimateMs(days: number, delayMs: number): number {
 	return days * (delayMs + REQUEST_TIME_MS);
 }
 
-const UPDATE_EVERY_MS = 1000;
-
 /**
- * What a long history build shows: a notice that stays at the top with the day, how many days are done, the time
- * left and a Stop button, and on a desktop a status bar item with the percentage. Updated at most once a second.
+ * A notice that stays at the top with a line of text and a Stop button, and on a desktop a status bar item. The
+ * notice can be dismissed with a click; `reveal` puts it back (the status bar item and a command do that), so the
+ * progress of a long run is never lost.
  */
-export class BuildProgressUi {
-	private readonly notice: Notice;
-	private readonly text: HTMLElement;
-	private lastUpdate = 0;
+export class ProgressNotice {
+	private notice: Notice | null = null;
+	private text = "";
+	private line!: HTMLElement;
 
-	constructor(private readonly lang: string, onStop: () => void, private readonly statusBar: HTMLElement | null) {
+	constructor(protected readonly lang: string, private readonly onStop: () => void, protected readonly statusBar: HTMLElement | null) {
+		statusBar?.classList.add("mod-clickable");
+		statusBar?.addEventListener("click", () => this.reveal());
+		this.reveal();
+	}
+
+	/** Shows the notice again, with the latest text; an earlier one is removed. */
+	reveal(): void {
+		this.notice?.hide();
 		const fragment = createFragment();
 		const wrapper = fragment.createDiv({ cls: "ghs-history-notice" });
-		this.text = wrapper.createDiv({ cls: "ghs-history-text" });
-		wrapper.createEl("button", { text: t("historyStop", lang) }).addEventListener("click", onStop);
+		this.line = wrapper.createDiv({ cls: "ghs-history-text", text: this.text });
+		wrapper.createEl("button", { text: t("historyStop", this.lang) }).addEventListener("click", this.onStop);
 		this.notice = new Notice(fragment, 0);
 	}
+
+	setText(text: string, statusText: string): void {
+		this.text = text;
+		this.line.textContent = text;
+		this.statusBar?.setText(statusText);
+	}
+
+	/** Removes the notice and the status bar item. */
+	dismiss(): void {
+		this.notice?.hide();
+		this.statusBar?.remove();
+	}
+}
+
+const UPDATE_EVERY_MS = 1000;
+
+/** What a long history build shows: the day, how many days are done, the time left. Updated at most once a second. */
+export class BuildProgressUi extends ProgressNotice {
+	private lastUpdate = 0;
 
 	update(progress: BuildProgress): void {
 		const now = Date.now();
@@ -43,20 +69,15 @@ export class BuildProgressUi {
 		this.lastUpdate = now;
 		const values = { date: progress.date, done: String(progress.done), total: String(progress.total) };
 		const fill = (text: string): string => Object.entries(values).reduce((acc, [key, value]) => acc.replace(`{${key}}`, value), text);
+		let text: string;
 		if (progress.state === "paused") {
-			this.text.textContent = t("historyPaused", this.lang).replace("{wait}", formatDuration(progress.pauseMs));
+			text = t("historyPaused", this.lang).replace("{wait}", formatDuration(progress.pauseMs));
 		} else if (progress.etaMs === null) {
-			this.text.textContent = fill(t("historyProgressStart", this.lang));
+			text = fill(t("historyProgressStart", this.lang));
 		} else {
-			this.text.textContent = fill(t("historyProgress", this.lang)).replace("{eta}", formatDuration(progress.etaMs));
+			text = fill(t("historyProgress", this.lang)).replace("{eta}", formatDuration(progress.etaMs));
 		}
-		this.statusBar?.setText(t("historyStatusBar", this.lang).replace("{percent}", String(Math.round((progress.done / progress.total) * 100))));
-	}
-
-	/** Removes the notice and the status bar item. */
-	dismiss(): void {
-		this.notice.hide();
-		this.statusBar?.remove();
+		this.setText(text, t("historyStatusBar", this.lang).replace("{percent}", String(Math.round((progress.done / progress.total) * 100))));
 	}
 
 	/** Removes the notice and the status bar item and says how it ended. */
