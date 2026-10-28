@@ -511,6 +511,8 @@ export const en = {
 	whatsNew0120Item3Text: "A new setting for days without a daily note lets you choose: create the note as before, keep the day in small monthly history files, or skip the day. With the history files the side panel also works for days that have no note, and the command that builds your history fetches the years back. The files are plain Markdown and sync with your vault.",
 	whatsNew0120Item4Title: "Declutter your properties",
 	whatsNew0120Item4Text: "Synced Garmin data can make the properties of a daily note very long. The new setting for the properties of daily notes can fold them, hide the Garmin properties that the side panel already shows, or do both, so only your own properties stay in view.",
+	whatsNewBefore: "Before",
+	whatsNewNow: "Now",
 };
 
 export type TranslationKeys = keyof typeof en;

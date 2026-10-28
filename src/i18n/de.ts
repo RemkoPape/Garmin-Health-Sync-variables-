@@ -513,4 +513,6 @@ export const de: Record<TranslationKeys, string> = {
 	whatsNew0120Item3Text: "Die neue Einstellung Tage ohne Daily Note lässt dich wählen: die Note wie bisher anlegen, den Tag in kleinen monatlichen Verlaufsdateien speichern oder den Tag überspringen. Mit den Verlaufsdateien funktioniert das Panel auch für Tage ohne Note, und der Befehl Garmin-Verlauf aufbauen holt die Jahre davor. Die Dateien sind reines Markdown und werden mit deinem Vault synchronisiert.",
 	whatsNew0120Item4Title: "Aufgeräumte Eigenschaften",
 	whatsNew0120Item4Text: "Synchronisierte Garmin-Daten können die Eigenschaften einer Daily Note sehr lang machen. Die neue Einstellung Eigenschaften der Daily Notes kann sie einklappen, die Garmin-Eigenschaften ausblenden, die das Panel schon zeigt, oder beides, sodass nur deine eigenen Eigenschaften sichtbar bleiben.",
+	whatsNewBefore: "Vorher",
+	whatsNewNow: "Jetzt",
 };

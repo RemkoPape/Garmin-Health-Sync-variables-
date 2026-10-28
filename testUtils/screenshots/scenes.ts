@@ -2,6 +2,10 @@
 // because README.md and the what's new window refer to them. Add a scene here and run `npm run screenshots`.
 export interface Scene {
 	id: string;
+	/** "panel" renders the side panel; "whats-new" renders the what's new window of the running minor line. */
+	kind?: "panel" | "whats-new";
+	/** Width of the image in CSS px (default IMAGE_WIDTH). */
+	width?: number;
 	/** Image file in docs/screenshots. */
 	file: string;
 	theme: "light" | "dark";
@@ -20,6 +24,18 @@ export interface Scene {
 export const IMAGE_WIDTH = 460;
 
 export const SCENES: Scene[] = [
+	{
+		id: "whats-new",
+		kind: "whats-new",
+		width: 620,
+		file: "whats-new.png",
+		theme: "light",
+		language: "en",
+		daysBack: 0,
+		cards: [],
+		open: [],
+		expect: [".ghs-whats-new-figure", ".ghs-fig-panel", ".ghs-insight", ".ghs-fig-compare"],
+	},
 	{
 		id: "panel-today",
 		file: "panel-today.png",

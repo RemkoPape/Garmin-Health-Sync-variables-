@@ -5,6 +5,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { it, vi } from "vitest";
 import { App, WorkspaceLeaf } from "../mocks/obsidian";
+import { notesOfLine } from "../../src/release-notes";
+import { WhatsNewModal } from "../../src/ui/whats-new-modal";
 import { HealthPanelView } from "../../src/panel/view";
 import { PANEL_CARDS } from "../../src/panel/cards";
 import { DEFAULT_SETTINGS } from "../../src/settings";
@@ -27,6 +29,14 @@ it("renders every scene", async () => {
 			const shown = shiftDate(SERIES_END, -scene.daysBack);
 			// the panel opens on today; the morning after the shown day, one step back lands on the shown day
 			vi.setSystemTime(new Date(`${shiftDate(shown, 1)}T09:00:00`));
+			if (scene.kind === "whats-new") {
+				const modal = new WhatsNewModal(new App() as never, scene.language, notesOfLine("0.12.0"));
+				modal.open();
+				for (const selector of scene.expect) if (!modal.contentEl.querySelector(selector)) throw new Error(`scene ${scene.id}: nothing matches ${selector}`);
+				writeFileSync(path.join(OUT, `${scene.id}.html`), `<div class="modal ghs-whats-new-modal"><div class="modal-content">${modal.contentEl.innerHTML}</div></div>`);
+				manifest.push({ id: scene.id, file: scene.file, theme: scene.theme, width: scene.width ?? IMAGE_WIDTH, error: null });
+				continue;
+			}
 			const app = new App();
 			await seedHistory(app, { end: shown, days: SERIES_DAYS - scene.daysBack, frontmatter: frontmatterAt(series, scene.daysBack) });
 			const panelCards = Object.fromEntries(PANEL_CARDS.map((c) => [c.id, scene.cards.includes(c.id)]));
@@ -51,7 +61,7 @@ it("renders every scene", async () => {
 		} finally {
 			vi.useRealTimers();
 		}
-		manifest.push({ id: scene.id, file: scene.file, theme: scene.theme, width: IMAGE_WIDTH, error });
+		manifest.push({ id: scene.id, file: scene.file, theme: scene.theme, width: scene.width ?? IMAGE_WIDTH, error });
 	}
 	writeFileSync(path.join(OUT, "manifest.json"), JSON.stringify(manifest, null, 2));
 });

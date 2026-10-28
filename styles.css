@@ -1270,3 +1270,62 @@
 .metadata-container .ghs-property-hidden {
 	display: none;
 }
+
+/* Illustrations of the what's new window, drawn with the real panel code */
+.ghs-whats-new-figure {
+	margin: var(--size-4-2) 0 var(--size-4-3);
+	padding: var(--size-4-3);
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	pointer-events: none;
+}
+
+.ghs-fig-setting {
+	padding: var(--size-4-2) 0;
+}
+
+.ghs-fig-panel {
+	margin-top: var(--size-4-2);
+}
+
+.ghs-fig-file {
+	margin-top: var(--size-4-2);
+	color: var(--text-muted);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-fig-compare {
+	display: flex;
+	gap: var(--size-4-6);
+	margin-top: var(--size-4-2);
+}
+
+.ghs-fig-side {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.ghs-fig-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-fig-bars {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+}
+
+.ghs-fig-bar {
+	width: 60%;
+	height: 6px;
+	border-radius: var(--radius-s);
+	background: var(--background-modifier-border);
+}
+
+.ghs-fig-bar.is-long {
+	width: 90%;
+}

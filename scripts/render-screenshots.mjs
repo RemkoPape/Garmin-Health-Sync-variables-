@@ -56,6 +56,17 @@ button{font:inherit;color:inherit}
 .clickable-icon{display:inline-flex;align-items:center;justify-content:center;padding:var(--size-4-2);border:0;background:transparent;border-radius:var(--radius-s);cursor:pointer;color:var(--text-muted)}
 .svg-icon{width:var(--icon-m);height:var(--icon-m);stroke-width:2px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
 .view-content{padding:var(--size-4-3)}
+.modal{box-sizing:border-box;margin:var(--size-4-4);padding:var(--size-4-6);background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:var(--radius-m);box-shadow:var(--shadow-s)}
+.modal h2,.modal h3{margin:0 0 var(--size-4-2);line-height:1.3}.modal h2{font-size:var(--font-ui-large)}.modal h3{font-size:var(--font-ui-medium)}
+.modal ul{padding-left:var(--size-4-6)}.modal li{margin-bottom:var(--size-4-3)}
+.ghs-whats-new-body{max-height:none!important}
+.setting-item{display:flex;align-items:center;justify-content:space-between;gap:var(--size-4-4)}
+.setting-item-name{font-size:var(--font-ui-medium)}
+.dropdown{font:inherit;font-size:var(--font-ui-small);padding:var(--size-2-3) var(--size-4-4) var(--size-2-3) var(--size-4-3);border:1px solid var(--background-modifier-border);border-radius:var(--radius-s);background:var(--background-secondary);color:var(--text-normal)}
+.checkbox-container{position:relative;width:40px;height:22px;border-radius:11px;background:var(--background-modifier-border)}
+.checkbox-container::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff}
+.checkbox-container.is-enabled{background:var(--interactive-accent)}.checkbox-container.is-enabled::after{left:21px}
+
 `;
 
 function findChrome() {
