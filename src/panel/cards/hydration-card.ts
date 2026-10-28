@@ -45,13 +45,16 @@ export function dayFraction(now: Date): number {
 
 /** The intake the person aims at on a day: the goal Garmin holds for it, else the average goal of the week before. */
 function goalOf(index: DayIndex, date: string): number | null {
-	return index.value("hydration_goal_ml", date) ?? average(index, "hydration_goal_ml", date, WINDOW_DAYS, 1);
+	return positive(index.value("hydration_goal_ml", date)) ?? positive(average(index, "hydration_goal_ml", date, WINDOW_DAYS, 1));
 }
+
+/** A goal or an average of 0 is nothing to measure against. */
+const positive = (n: number | null): number | null => (n !== null && n > 0 ? n : null);
 
 /** How much of the aim a day reached (1 is all of it), or null without an intake or an aim. */
 export function hydrationShare(index: DayIndex, date: string): number | null {
 	const intake = index.value("hydration_ml", date);
-	const aim = goalOf(index, date) ?? average(index, "hydration_ml", date, WINDOW_DAYS, HYDRATION_MIN_DAYS);
+	const aim = goalOf(index, date) ?? positive(average(index, "hydration_ml", date, WINDOW_DAYS, HYDRATION_MIN_DAYS));
 	return intake === null || aim === null ? null : intake / aim;
 }
 
@@ -64,7 +67,7 @@ export function computeHydration(index: DayIndex, date: string): HydrationModel 
 		trend: computeTrend((d) => index.value("hydration_ml", d), date),
 		intake: index.value("hydration_ml", date),
 		goal,
-		usual: average(index, "hydration_ml", date, WINDOW_DAYS, HYDRATION_MIN_DAYS),
+		usual: positive(average(index, "hydration_ml", date, WINDOW_DAYS, HYDRATION_MIN_DAYS)),
 		today,
 		pace: today && goal !== null ? goal * dayFraction(now) : null,
 		long: longView((d) => index.value("hydration_ml", d), date),
@@ -88,7 +91,8 @@ export function renderHydration(parent: HTMLElement, model: HydrationModel, lang
 	const value = intake === null ? null : formatNumber(intake / 1000, lang, 1);
 	renderCard(parent, { title: t("panelHydrationTitle", lang), value, unit: "L", unitKeepCase: true, explain: t("panelHydrationExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights, facts: hydrationFacts(model, lang), trend: { trend: model.trend, format: (n) => litres(n, lang) } }, (card) => {
 		const mark = model.goal ?? model.usual;
-		if (intake === null || mark === null) return;
+		// an intake of 0 is no reading
+		if (intake === null || intake <= 0 || mark === null) return;
 		const domain = Math.max(mark * 1.25, intake * 1.05);
 		const bar = card.createDiv({ cls: "ghs-range ghs-range-labelled ghs-weekly ghs-hydration-bar", attr: { role: "img", "aria-label": `${litres(intake, lang)} / ${litres(mark, lang)}` } });
 		bar.createDiv({ cls: "ghs-weekly-track" }).createDiv({ cls: "ghs-weekly-seg" }).setCssProps({ "--ghs-w": `${(intake / domain) * 100}%` });

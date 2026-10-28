@@ -3,7 +3,7 @@ import type { TranslationKeys } from "../../i18n/en";
 import { formatNumber } from "../format";
 import type { Insight } from "../insights/registry";
 import { Signals } from "../insights/signals";
-import { windowValues } from "../stats";
+import { pairedDays } from "../stats";
 import type { DayIndex } from "../index";
 import { computeBattery } from "./battery-card";
 import { computeStress } from "./stress-card";
@@ -12,6 +12,8 @@ import { renderCard } from "./shell";
 /** Days of HRV, resting heart rate and sleep needed for an own score, and for a reliable one. */
 export const TODAY_MIN_DAYS = 5;
 export const TODAY_RELIABLE_DAYS = 21;
+/** The nights the sleep debt is summed over. */
+const SLEEP_NIGHTS = 7;
 
 export type FlagId = "hrv" | "rhr" | "sleep" | "battery" | "stress" | "breathing" | "spo2" | "load";
 export type Verdict = "hard" | "planned" | "easy" | "rest";
@@ -43,6 +45,8 @@ export interface TodayModel {
 	facts: TodayFacts;
 	/** Garmin's own readiness for the day, if the watch provides it. */
 	garmin: number | null;
+	/** Nights with a sleep duration among the last 7 (the shown one included): the debt rests on these, a night without data counts as no debt. */
+	sleepNights: number;
 	/** The fewest days of HRV and resting heart rate and nights of sleep, for the unlock message. */
 	have: number;
 	/** Days of both HRV and resting heart rate in the last 30 days. */
@@ -83,7 +87,8 @@ export function computeToday(index: DayIndex, date: string, birthYear: number | 
 	const stress = computeStress(index, date);
 	const hrvZ = s.z("hrv");
 	const rhrZ = s.z("resting_hr");
-	const baselineDays = Math.min(windowValues(index, "hrv", date, 30).length, windowValues(index, "resting_hr", date, 30).length);
+	// days on which both were measured: two ranges that cover different weeks (a watch that changed in between) are not one usual range
+	const baselineDays = pairedDays(index, ["hrv", "resting_hr"], date, 30);
 	const loadRatio = s.load().ratio;
 	const batteryGap = battery.max !== null && battery.usualPeak !== null ? battery.usualPeak - battery.max : null;
 	// the debt is counted against the usual sleep of the person, not against the general need, which a person who never reaches it would owe every day
@@ -104,9 +109,10 @@ export function computeToday(index: DayIndex, date: string, birthYear: number | 
 	const garmin = index.value("training_readiness", date);
 	const early = baselineDays < TODAY_RELIABLE_DAYS;
 	const trust = Math.min(1, baselineDays / TODAY_RELIABLE_DAYS);
-	const score = hrvZ !== null && rhrZ !== null && debt !== null ? scoreOf(hrvZ, rhrZ, debt, battery.usualPeak !== null && battery.max !== null ? battery.max - battery.usualPeak : null, trust) : null;
+	// no score from a range too young to lean on, nor without last night's sleep: a missing night would count as no debt and raise the score
+	const score = hrvZ !== null && rhrZ !== null && debt !== null && sleep.minutes !== null && baselineDays >= TODAY_MIN_DAYS ? scoreOf(hrvZ, rhrZ, debt, battery.usualPeak !== null && battery.max !== null ? battery.max - battery.usualPeak : null, trust) : null;
 	const band = score === null ? null : ((BANDS.findIndex((b) => score < b.upTo) as Band));
-	return { insights: [], score, band, verdict: band === null ? null : verdictOf(band, flags, early), flags, facts, garmin, have: Math.min(baselineDays, sleep.have), baselineDays, early };
+	return { insights: [], score, band, verdict: band === null ? null : verdictOf(band, flags, early), flags, facts, garmin, have: Math.min(baselineDays, sleep.have), sleepNights: sleep.have, baselineDays, early };
 }
 
 const VERDICT_TEXT: Record<Verdict, TranslationKeys> = { hard: "panelVerdictHard", planned: "panelVerdictPlanned", easy: "panelVerdictEasy", rest: "panelVerdictRest" };
@@ -132,6 +138,9 @@ export function renderToday(parent: HTMLElement, model: TodayModel, lang: string
 			const foot = card.createDiv({ cls: "ghs-foot" });
 			foot.createSpan({ cls: "ghs-foot-label", text: t("panelTodayGarmin", lang) });
 			foot.createSpan({ cls: "ghs-foot-value", text: formatNumber(model.garmin, lang, 0) });
+		}
+		if (model.sleepNights < SLEEP_NIGHTS) {
+			card.createDiv({ cls: "ghs-card-note ghs-card-warning", text: t("panelSleepDebtPartial", lang).replace("{have}", String(model.sleepNights)).replace("{need}", String(SLEEP_NIGHTS)) });
 		}
 		if (model.early) {
 			card.createDiv({ cls: "ghs-card-note ghs-card-warning", text: t("panelEarly", lang).replace("{have}", String(model.baselineDays)).replace("{need}", String(TODAY_RELIABLE_DAYS)) });

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.69
+
+### Fixed
+
+- **The readiness score no longer rests on a gap that looks like a good day.** The days that make the usual range are now the days on which HRV and resting heart rate were both measured (before it was the smaller of the two counts, so a watch change could leave two ranges on different weeks that counted as one). There is no own score with fewer than 5 such days: before it came out as a neutral 60 with no range behind it. There is also none without last night's sleep, because the missing night counted as no sleep debt and raised the score; the card says it waits for the readings. When some of the last 7 nights have no sleep data the card now says "The sleep debt rests on 5 of 7 nights ... the score may be too high".
+- **Sleep stages of 0 minutes** (a watch that does not record REM or awake time sends 0) no longer pull the usual amount toward 0, draw a deviation from it, or divide a bar by a usual of 0. A stage with no usual amount is drawn without the white tick.
+- **Hydration** with a goal or usual intake of 0 (a goal of 0 from the history) is treated as no goal; the bar, the share and the foot line no longer divide by it.
+- **Tied heart rates no longer inflate intensity.** Where a session's average heart rate ranks among the recent sessions counts half of the equal ones: a session that equals all the others is a middle one (before it ranked as the hardest, so a person who always trains at the same heart rate had every session at the top step and a load ratio that ignored real differences). With a birth year the heart rate zones are used as before.
+- **One freak reading no longer distorts a usual range.** From 8 values on, a value more than 5 robust spreads (1.4826 times the median absolute deviation, at least the metric's floor) from the median is left out of the mean and the spread of the usual range and of the z-scores behind the interpretations. The trend line and its bars stay plain, so the value is still visible there.
+
 ## 0.12.0-beta.68
 
 ### Changed

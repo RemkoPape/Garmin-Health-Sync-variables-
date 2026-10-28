@@ -293,6 +293,7 @@ export const zh: Record<TranslationKeys, string> = {
 	panelTodayGarmin: "佳明准备度",
 	panelTodayBridge: "在你自己的分数有足够数据之前，显示佳明自己的准备度。",
 	panelTodayWaiting: "还缺少今天的心率变异性、静息心率或睡眠数据。同步后会显示分数。",
+	panelSleepDebtPartial: "睡眠债基于{need}晚中的{have}晚；没有数据的夜晚按无欠债计算，因此分数可能偏高。",
 	insight_today_flag_hrv: "HRV 低于你的常规范围。",
 	insight_today_flag_rhr: "静息心率高于日常。",
 	insight_today_flag_sleep: "你最近 7 晚的睡眠债为 {debt}。",

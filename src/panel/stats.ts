@@ -18,12 +18,43 @@ export function windowValues(index: DayIndex, key: string, date: string, days: n
 	return out;
 }
 
-/** Mean and standard deviation, or null with fewer than `min` values. A very stable user still gets a band of at least `sdFloor`. */
+/** Days of the `days` before `date` on which both metrics have a value: what a score built on the two can rest on. */
+export function pairedDays(index: DayIndex, keys: [string, string], date: string, days: number): number {
+	let n = 0;
+	for (let i = 1; i <= days; i++) {
+		const day = shiftDate(date, -i);
+		if (index.value(keys[0], day) !== null && index.value(keys[1], day) !== null) n++;
+	}
+	return n;
+}
+
+/** From this many values a value that lies far from the rest can be told from the usual spread. */
+const MIN_FOR_OUTLIERS = 8;
+/** A value this many robust spreads (1.4826 x the median absolute deviation, at least `sdFloor`) from the median is an outlier. */
+const OUTLIER_SPREADS = 5;
+
+function median(values: number[]): number {
+	const sorted = [...values].sort((a, b) => a - b);
+	const mid = Math.floor(sorted.length / 2);
+	return sorted.length % 2 === 1 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+}
+
+/**
+ * Mean and standard deviation, or null with fewer than `min` values. A very stable user still gets a band of at least
+ * `sdFloor`. With 8 values or more a value far outside the rest (a sensor error, the one day of a fever) is left out of the
+ * mean and the spread, because a single such day would widen the range for weeks and move the mean; `n` counts the values used.
+ */
 export function baseline(values: number[], min: number, sdFloor: number): Baseline | null {
-	const n = values.length;
-	if (n < min) return null;
-	const mean = values.reduce((a, b) => a + b, 0) / n;
-	const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
+	if (values.length < min) return null;
+	let used = values;
+	if (values.length >= MIN_FOR_OUTLIERS) {
+		const mid = median(values);
+		const spread = Math.max(1.4826 * median(values.map((v) => Math.abs(v - mid))), sdFloor);
+		used = values.filter((v) => Math.abs(v - mid) <= OUTLIER_SPREADS * spread);
+	}
+	const n = used.length;
+	const mean = used.reduce((a, b) => a + b, 0) / n;
+	const variance = used.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
 	return { mean, sd: Math.max(Math.sqrt(variance), sdFloor), n };
 }
 
@@ -37,9 +68,11 @@ export function average(index: DayIndex, key: string, date: string, days: number
 	return values.length < min ? null : values.reduce((a, b) => a + b, 0) / values.length;
 }
 
-/** Share of `values` that are at or below `x` (0 to 1). */
+/** Where `x` ranks among `values` (0 to 1): the values below it plus half of those equal to it, so a value that equals all the others is in the middle, not at the top. */
 export function percentileRank(x: number, values: number[]): number {
-	return values.filter((v) => v <= x).length / values.length;
+	const below = values.filter((v) => v < x).length;
+	const equal = values.filter((v) => v === x).length;
+	return (below + equal / 2) / values.length;
 }
 
 /** Least-squares slope of y over x, in y per x; 0 when x does not vary. */
