@@ -500,6 +500,11 @@ export class Plugin {
 	register(cleanup: () => void): void {
 		this.cleanups.push(cleanup);
 	}
+	/** Listens like Obsidian does and stops when the plugin unloads. */
+	registerDomEvent(target: EventTarget, type: string, callback: (event: Event) => void): void {
+		target.addEventListener(type, callback);
+		this.cleanups.push(() => target.removeEventListener(type, callback));
+	}
 	/** Obsidian runs what was registered when the plugin unloads. */
 	unload(): void {
 		for (const cleanup of this.cleanups) cleanup();

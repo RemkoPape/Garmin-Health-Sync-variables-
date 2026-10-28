@@ -233,6 +233,6 @@ export class GarminProvider implements HealthProvider {
 			await this.api.probeRequestVariants(date);
 		}
 
-		return { metrics, activities, trainings, startLocation };
+		return { metrics, activities, trainings, startLocation, failedEndpoints: this.api.failedEndpoints() };
 	}
 }

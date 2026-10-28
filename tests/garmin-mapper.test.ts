@@ -82,6 +82,9 @@ describe("mapDailySummary", () => {
 
 	it("maps only the enabled metrics", () => {
 		expect(mapDailySummary(summary, all("steps"))).toEqual({ steps: 8123 });
+		// -1 and -2 mean "no stress reading", not a level
+		expect(mapDailySummary({ averageStressLevel: -1 }, all("stress"))).toEqual({});
+		expect(mapDailySummary({ averageStressLevel: -2 }, all("stress"))).toEqual({});
 		expect(mapDailySummary(summary, all())).toEqual({});
 	});
 
@@ -155,10 +158,10 @@ describe("mapSleepData", () => {
 });
 
 describe("mapHrvData", () => {
-	it("prefers last night's average, then the weekly average, then hrvStatus", () => {
+	it("uses last night's average, then hrvStatus, and never the weekly average (a night without a reading stays a gap)", () => {
 		const on = all("hrv");
 		expect(mapHrvData({ hrvSummary: { lastNightAvg: 48.6, weeklyAvg: 40 } }, on)).toEqual({ hrv: 49 });
-		expect(mapHrvData({ hrvSummary: { weeklyAvg: 40.4 } }, on)).toEqual({ hrv: 40 });
+		expect(mapHrvData({ hrvSummary: { weeklyAvg: 40.4 } }, on)).toEqual({});
 		expect(mapHrvData({ hrvStatus: 55 }, on)).toEqual({ hrv: 55 });
 		expect(mapHrvData({}, on)).toEqual({});
 	});

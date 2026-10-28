@@ -3,6 +3,7 @@ import type { ServerRegion } from "../../settings";
 import { LoginRequiredError, GarminAuthError, SyncFetchError, isLoginRequiredError, isSyncFetchError, isGarminAuthError, isAuthFailureStatus } from "../../errors";
 import { getConsumer, getOAuth1, exchange, OAUTH_UA, type OAuth1Token, type OAuth2Token, type Consumer } from "./garmin-oauth";
 import { AuthStateMachine, type AuthState } from "./auth-state";
+import { withTimeout } from "../../timeout";
 import {
 	collectCookies,
 	mobileLogin,
@@ -37,6 +38,8 @@ function headerValue(headers: Record<string, string> | undefined, name: string):
 	return typeof value === "string" ? value : undefined;
 }
 
+/** One request (an endpoint, the token refresh) that has not answered by then counts as failed; the whole day gets longer. */
+const REQUEST_TIMEOUT_MS = 25000;
 const DIAG_HEADERS = ["content-encoding", "age", "date", "cache-control", "cf-cache-status", "x-cache", "server"];
 
 /** Response headers for the sync diagnostics: all header names, values only for a short
@@ -883,7 +886,7 @@ export class GarminApi {
 		this.authState.beginRefresh();
 		try {
 			const consumer = await this.getConsumerCached();
-			const oauth2 = await exchange(this.oauth1, consumer, this.urls.domain);
+			const oauth2 = await withTimeout(exchange(this.oauth1, consumer, this.urls.domain), REQUEST_TIMEOUT_MS, "token refresh timeout");
 			this.oauth2 = oauth2;
 			this.authState.onSuccess();
 			console.debug("Garmin Health Sync: OAuth2 silently refreshed, expires_in:", oauth2.expires_in, "s");
@@ -1035,9 +1038,10 @@ export class GarminApi {
 			// The retry re-requested every endpoint that had not produced a result, so its failures replace the first pass's.
 			ok += retry.ok;
 			failed = retry.failed;
-			// F5: if the retry hits 401/403 again, OAuth1 is dead → needsUserLogin
-			// instead of a false onSuccess.
-			if (retry.authFailed) this.failAuth();
+			// F5: if the retry hits 401/403 again and no other endpoint answered, OAuth1 is dead → needsUserLogin
+			// instead of a false onSuccess. A watch without one feature can answer that endpoint with 403 while the
+			// others work: that endpoint has no data, the login is fine.
+			if (retry.authFailed && ok === 0) this.failAuth();
 		}
 
 		// Nothing usable came back and something hard-failed: report an error, not "no data".
@@ -1045,6 +1049,7 @@ export class GarminApi {
 		if (ok === 0 && failed.length > 0) {
 			throw new SyncFetchError("all_endpoints_failed");
 		}
+		if (seq === undefined || seq === this.currentFetchSeq) this.lastFailed = failed;
 		if (failed.length > 0) {
 			log(`partial failure: ${failed.join(", ")}`);
 			console.warn("Garmin Health Sync: endpoints failed:", failed.join(", "));
@@ -1075,7 +1080,7 @@ export class GarminApi {
 			if (!build) return;
 			const started = Date.now();
 			try {
-				const { status, data, shape, headers } = await this.apiGet(build(dn, date), oauth2);
+				const { status, data, shape, headers } = await withTimeout(this.apiGet(build(dn, date), oauth2), REQUEST_TIMEOUT_MS, "request timeout");
 				log(`${key}: HTTP ${status}, ${shape}, ${describePayload(data)}, ${Date.now() - started}ms`);
 				log(`${key} ${describeHeaders(headers)}`);
 				if (status >= 200 && status < 300) ok++;
@@ -1176,6 +1181,8 @@ export class GarminApi {
 	private cachedData: Record<string, unknown> = {};
 	private fetchPromise: Promise<Record<string, unknown>> | null = null;
 	private pendingDate = "";
+	/** The endpoints of the last fetch that failed (error, timeout), as opposed to answering without data. */
+	private lastFailed: string[] = [];
 	private fetchSeq = 0;          // hands out a unique id per started fetch
 	private currentFetchSeq = 0;   // id of the currently valid fetch (F2/F8)
 
@@ -1191,7 +1198,7 @@ export class GarminApi {
 
 		const seq = ++this.fetchSeq;
 		this.currentFetchSeq = seq;
-		const FETCH_TIMEOUT_MS = 30000;
+		const FETCH_TIMEOUT_MS = 60000;
 		let timer = 0;
 		// The timer is cleared as soon as the race is decided, so it can only fire while the fetch is still running.
 		const withTimeout = Promise.race([
@@ -1229,8 +1236,14 @@ export class GarminApi {
 		return this.fetchPromise;
 	}
 
+	/** Endpoints of the last fetched day that failed, so a caller can tell a gap in the data from a day that must be fetched again. */
+	failedEndpoints(): string[] {
+		return this.lastFailed;
+	}
+
 	/** Clear the cache (e.g. after sync) */
 	clearCache(): void {
+		this.lastFailed = [];
 		// Invalidates running fetches (F2/F8): their seq != currentFetchSeq, so their
 		// onSuccess/cache-write effects no longer take hold afterwards.
 		this.currentFetchSeq = ++this.fetchSeq;

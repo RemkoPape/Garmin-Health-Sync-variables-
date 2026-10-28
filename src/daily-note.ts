@@ -205,7 +205,12 @@ export async function ensureFolderExists(app: App, folderPath: string): Promise<
 	for (const part of parts) {
 		current = current ? `${current}/${part}` : part;
 		if (!app.vault.getAbstractFileByPath(current)) {
-			await app.vault.createFolder(current);
+			try {
+				await app.vault.createFolder(current);
+			} catch (error) {
+				// another plugin or device made it in the meantime: the folder is there, which is what was wanted
+				if (!app.vault.getAbstractFileByPath(current)) throw error;
+			}
 		}
 	}
 }
@@ -254,7 +259,14 @@ export async function writeToDailyNote(
 			await ensureFolderExists(app, fileDir);
 		}
 		const initialContent = options.template || "";
-		file = await app.vault.create(filePath, initialContent);
+		try {
+			file = await app.vault.create(filePath, initialContent);
+		} catch (error) {
+			// Templater, a periodic notes plugin or another device made the note in the meantime: write into that one
+			const made = findDailyNoteRecursive(app, fileName, options.dailyNotePath);
+			if (!made) throw error;
+			file = made;
+		}
 	}
 
 	// Build properties map
@@ -449,6 +461,9 @@ function renderWithFrontmatter(
  * Writes a timestamped backup of the file content into _garmin-health-sync/backups/.
  * Best-effort — failures are logged but not propagated.
  */
+/** Backups of one note that are kept. */
+const BACKUPS_KEPT = 5;
+
 async function backupFile(app: App, file: TFile, content: string, reason: string): Promise<void> {
 	try {
 		const backupDir = "_garmin-health-sync/backups";
@@ -457,8 +472,13 @@ async function backupFile(app: App, file: TFile, content: string, reason: string
 		const safeName = file.name.replace(/\.md$/, "");
 		const backupPath = normalizePath(`${backupDir}/${safeName}.${ts}.md`);
 		const header = `<!-- Garmin Health Sync Backup\nReason: ${reason}\nOriginal: ${file.path}\nTimestamp: ${ts}\n-->\n`;
+		// a note that stays broken is met again at every sync: the same content is backed up once, and only the last few are kept
+		const earlier = app.vault.getMarkdownFiles().filter((f) => f.path.startsWith(`${backupDir}/${safeName}.`)).sort((a, b) => b.path.localeCompare(a.path));
+		const newest = earlier[0];
+		if (newest && (await app.vault.read(newest)).endsWith(`-->\n${content}`)) return;
 		await app.vault.create(backupPath, header + content);
 		console.warn("Garmin Health Sync: backup written to", backupPath);
+		for (const old of earlier.slice(BACKUPS_KEPT - 1)) await app.fileManager.trashFile(old);
 	} catch (e) {
 		console.error("Garmin Health Sync: backup failed for", file.path, e);
 	}

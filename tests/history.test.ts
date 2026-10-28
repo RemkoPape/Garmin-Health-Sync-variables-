@@ -334,3 +334,26 @@ describe("history notes that lie elsewhere", () => {
 		expect(s.get("2026-10-01")).toEqual({ a: 1 });
 	});
 });
+
+describe("two devices write the same month", () => {
+	it("merges into the month note another device created between the check and the create", async () => {
+		const app = new App();
+		const s = store(app);
+		app.vault.failOn = (op, path) => {
+			if (op !== "create" || path !== FILE) return null;
+			app.vault.failOn = null;
+			void app.vault.createFolder("Daily/Garmin history").catch(() => undefined);
+			app.vault.seed(FILE, serializeMonth("2026-10", new Map([["2026-10-01", { steps: 1 }]])));
+			return new Error("File already exists.");
+		};
+		await app.vault.createFolder("Daily");
+		await s.putMany(new Map([["2026-10-02", { steps: 2 }]]));
+		expect(lineOf(app)).toEqual(['2026-10-01 {"steps":1}', '2026-10-02 {"steps":2}']);
+	});
+
+	it("reports the error when the create fails and no note is there", async () => {
+		const app = new App();
+		app.vault.failOn = (op, path) => (op === "create" && path === FILE ? new Error("disk full") : null);
+		await expect(store(app).putMany(new Map([["2026-10-02", { steps: 2 }]]))).rejects.toThrow("disk full");
+	});
+});

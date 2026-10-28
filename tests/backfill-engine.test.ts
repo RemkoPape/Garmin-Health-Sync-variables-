@@ -108,13 +108,13 @@ describe("the order and the pace", () => {
 		expect(lines()).toHaveLength(2);
 	});
 
-	it("saves a batch after ten fetched days without waiting for the end", async () => {
+	it("saves a batch after five fetched days without waiting for the end", async () => {
 		const seen: number[] = [];
 		provider.onFetch = (date) => {
-			if (date === "2026-10-13") seen.push(app.vault.paths().length ? lines().length : 0);
+			if (date === "2026-10-19") seen.push(app.vault.paths().length ? lines().length : 0);
 		};
 		await run("2026-10-12", "2026-10-24");
-		expect(seen).toEqual([10]);
+		expect(seen).toEqual([5]);
 	});
 });
 
@@ -364,5 +364,77 @@ describe("the place it has reached", () => {
 	it("is reported every fifth fetched day with the next day to do", async () => {
 		await run("2026-10-10", "2026-10-24");
 		expect(cursors).toEqual(["2026-10-19", "2026-10-14", "2026-10-09"]);
+	});
+});
+
+describe("a day is marked as fetched only when its data is in the files", () => {
+	it("marks the days of a history batch after the file has them, not before", async () => {
+		const marked: number[] = [];
+		const put = store.putMany.bind(store);
+		vi.spyOn(store, "putMany").mockImplementation(async (records) => {
+			marked.push(fetchLog.size);
+			await put(records);
+		});
+		await run("2026-10-08", "2026-10-10");
+		expect(marked).toEqual([0]);
+		expect([...fetchLog].sort()).toEqual(["2026-10-08", "2026-10-09", "2026-10-10"]);
+	});
+
+	it("leaves days unmarked and counts them as failed when the history file cannot be written, so the next run fetches them", async () => {
+		vi.spyOn(store, "putMany").mockRejectedValue(new Error("disk full"));
+		const result = await run("2026-10-08", "2026-10-10");
+		expect(result).toMatchObject({ status: "done", fetched: 0, failed: 3 });
+		expect(fetchLog.size).toBe(0);
+		vi.restoreAllMocks();
+		const again = await run("2026-10-08", "2026-10-10");
+		expect(again).toMatchObject({ fetched: 3, failed: 0 });
+		expect(lines()).toHaveLength(3);
+	});
+
+	it("saves the pending days before it reports the place it has reached", async () => {
+		const order: string[] = [];
+		const put = store.putMany.bind(store);
+		vi.spyOn(store, "putMany").mockImplementation(async (records) => {
+			order.push("files");
+			await put(records);
+		});
+		const push = cursors.push.bind(cursors);
+		cursors.push = (...next: string[]) => {
+			order.push("cursor");
+			return push(...next);
+		};
+		await run("2026-10-01", "2026-10-05");
+		expect(order).toEqual(["files", "cursor"]);
+		expect(lines()).toHaveLength(5);
+	});
+});
+
+describe("a day whose endpoint failed", () => {
+	const partial = (data: Record<string, number> = { steps: 5000 }) => ({ metrics: data, activities: {}, failedEndpoints: ["hrv"] });
+
+	it("is stored as it is but not as complete, so the next run asks again", async () => {
+		provider.byDate.set("2026-10-09", partial());
+		const result = await run("2026-10-09", "2026-10-10");
+		expect(result).toMatchObject({ fetched: 2, failed: 0 });
+		expect(lines().find((l) => l.startsWith("2026-10-09"))).toBe('2026-10-09 {"_m":[],"steps":5000}');
+		expect([...fetchLog]).toEqual(["2026-10-10"]);
+		provider.byDate.clear();
+		provider.fetchCalls.length = 0;
+		await run("2026-10-09", "2026-10-10");
+		expect(fetchedDates()).toEqual(["2026-10-09"]);
+	});
+
+	it("is not remembered as empty either when it has no data at all", async () => {
+		provider.byDate.set("2026-10-09", { metrics: {}, activities: {}, failedEndpoints: ["hrv"] });
+		await run("2026-10-09", "2026-10-09");
+		expect(lines()).toEqual(['2026-10-09 {"_m":[]}']);
+		expect(fetchLog.size).toBe(0);
+	});
+
+	it("is not marked in the fetch log when the day goes into a note", async () => {
+		make(ENABLED, { behaviour: "create" });
+		provider.byDate.set("2026-10-09", partial());
+		await run("2026-10-09", "2026-10-10");
+		expect([...fetchLog]).toEqual(["2026-10-10"]);
 	});
 });

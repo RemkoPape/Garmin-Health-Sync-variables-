@@ -57,6 +57,8 @@ export function mapDailySummary(data: Record<string, unknown>, enabled: Set<stri
 		if (!enabled.has(key)) continue;
 		const raw = data[field];
 		if (raw == null) continue;
+		// Garmin sends -1 or -2 for "no stress reading" (watch off, too much movement): not a level
+		if (key === "stress" && Number(raw) <= 0) continue;
 
 		if (transform) {
 			result[key] = transform(raw);
@@ -139,12 +141,12 @@ export function mapSleepData(data: Record<string, unknown>, enabled: Set<string>
 	return result;
 }
 
-/** Maps HRV data */
+/** Maps HRV data: the night's value only, so a night without a reading stays a gap instead of showing the 7-day average as if it was measured. */
 export function mapHrvData(data: Record<string, unknown>, enabled: Set<string>): Record<string, number | string> {
 	const result: Record<string, number | string> = {};
 	if (!enabled.has("hrv")) return result;
 
-	const hrvValue = get(data, "hrvSummary.lastNightAvg") ?? get(data, "hrvSummary.weeklyAvg") ?? data["hrvStatus"];
+	const hrvValue = get(data, "hrvSummary.lastNightAvg") ?? data["hrvStatus"];
 	if (hrvValue != null) result["hrv"] = Math.round(Number(hrvValue));
 
 	return result;
