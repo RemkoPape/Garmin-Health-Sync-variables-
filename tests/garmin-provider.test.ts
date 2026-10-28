@@ -16,7 +16,7 @@ type Reply = MockReply | (() => MockReply);
 function route(replies: Record<string, Reply> = {}): void {
 	const table: [string, RegExp, Reply][] = [
 		["profile", /socialProfile/, { body: { displayName: "dn" } }],
-		["dailySummary", /usersummary/, { body: { totalSteps: 8123, restingHeartRate: 52, averageStressLevel: 30, moderateIntensityMinutes: 10, vigorousIntensityMinutes: 5 } }],
+		["dailySummary", /usersummary\/daily/, { body: { totalSteps: 8123, restingHeartRate: 52, averageStressLevel: 30, moderateIntensityMinutes: 10, vigorousIntensityMinutes: 5 } }],
 		["sleep", /dailySleepData/, { body: { dailySleepDTO: { sleepTimeSeconds: 27030, sleepScores: { overall: { value: 80 } } } } }],
 		["hrv", /hrv-service/, { body: { hrvSummary: { lastNightAvg: 48 } } }],
 		["bodyBattery", /bodyBattery/, { body: [{ charged: 60 }] }],
@@ -24,6 +24,7 @@ function route(replies: Record<string, Reply> = {}): void {
 		["weight", /weight-service/, { body: { dailyWeightSummaries: [{ weight: 80000 }] } }],
 		["spo2", /spo2/, { body: { averageSpo2: 96 } }],
 		["respiration", /respiration/, { body: { avgWakingRespirationValue: 14 } }],
+		["hydration", /hydration/, { body: { valueInML: 1800, goalInML: 2500 } }],
 		["trainingStatus", /maxmet/, { body: { vo2MaxValue: 50, trainingStatusPhrase: "PRODUCTIVE" } }],
 		["trainingReadiness", /trainingreadiness/, { body: [{ score: 70 }] }],
 	];
@@ -146,7 +147,7 @@ describe("fetchData", () => {
 		route();
 		const all = [
 			"steps", "resting_hr", "stress", "intensity_min", "sleep_duration", "sleep_score", "hrv", "body_battery",
-			"spo2", "respiration_rate", "weight_kg", "training_readiness", "training_status", "vo2_max",
+			"spo2", "respiration_rate", "hydration_ml", "hydration_goal_ml", "weight_kg", "training_readiness", "training_status", "vo2_max",
 		];
 		const data = await provider.fetchData(DATE, all);
 		expect(data.metrics).toEqual({
@@ -160,6 +161,8 @@ describe("fetchData", () => {
 			body_battery: 60,
 			spo2: 96,
 			respiration_rate: 14,
+			hydration_ml: 1800,
+			hydration_goal_ml: 2500,
 			weight_kg: 80,
 			training_readiness: 70,
 			training_status: "PRODUCTIVE",
@@ -264,10 +267,10 @@ describe("C1: values that are not numbers never reach the note", () => {
 			net.reset();
 			net.fail(/thegarth/);
 			const same = { body: j } as MockReply;
-			route({ dailySummary: same, sleep: same, hrv: same, bodyBattery: same, activities: same, weight: same, spo2: same, respiration: same, trainingStatus: same, trainingReadiness: same });
+			route({ dailySummary: same, sleep: same, hrv: same, bodyBattery: same, activities: same, weight: same, spo2: same, respiration: same, hydration: same, trainingStatus: same, trainingReadiness: same });
 			const data = await provider.fetchData(DATE, [
 				"steps", "resting_hr", "stress", "calories_total", "calories_active", "distance_km", "floors", "intensity_min",
-				"sleep_duration", "sleep_score", "sleep_deep", "hrv", "body_battery", "body_battery_min", "spo2", "respiration_rate",
+				"sleep_duration", "sleep_score", "sleep_deep", "hrv", "body_battery", "body_battery_min", "spo2", "respiration_rate", "hydration_ml", "hydration_goal_ml",
 				"weight_kg", "body_fat_pct", "training_readiness", "training_status", "vo2_max",
 			]);
 			for (const [k, v] of Object.entries(data.metrics)) {
@@ -292,6 +295,7 @@ describe("the stress and recovery minutes (issue 31)", () => {
 			sleep: { body: { dailySleepDTO: { sleepTimeSeconds: 27000, sleepScores: { overall: { value: 80 } }, deepSleepSeconds: 1, lightSleepSeconds: 60, remSleepSeconds: 60, awakeSleepSeconds: 60, sleepStartTimestampLocal: Date.UTC(2026, 9, 21, 23, 0), sleepEndTimestampLocal: Date.UTC(2026, 9, 22, 6, 30) } } },
 			bodyBattery: { body: [{ charged: 60, bodyBatteryValuesArray: [[1, 20], [2, 90]] }] },
 			weight: { body: { dailyWeightSummaries: [{ weight: 80000, bodyFat: 20 }] } },
+			hydration: { body: { valueInML: 1800, goalInML: 2500 } },
 		});
 		const { METRICS } = await import("../src/metrics");
 		const keys = METRICS.map((m) => m.key);

@@ -2,6 +2,7 @@ import { formatMinutes } from "../cards/sleep-card";
 import { windowValues } from "../stats";
 import { shiftDate } from "../../dates";
 import { MAX_INSIGHTS, type Insight, type InsightId } from "./registry";
+import { dryYesterday } from "./hydration";
 import type { Signals } from "./signals";
 
 const hours = (minutes: number): string => String(minutes / 60);
@@ -45,6 +46,7 @@ export function hrvInsights(s: Signals): Insight[] {
 		if (debt !== null && debt >= SLEEP_DEBT_MIN) out.push({ id: "hrv_low_sleep", params: { debt: formatMinutes(debt), need: hours(need) } });
 		if ((s.z("stress") ?? 0) > 1) out.push({ id: "hrv_low_stress" });
 		if ((s.z("resting_hr") ?? 0) > 1 || (s.z("respiration_rate") ?? 0) > 1) out.push({ id: "hrv_low_illness" });
+		if (dryYesterday(s)) out.push({ id: "hrv_low_hydration" });
 		const streak = lowHrvStreak(s);
 		if (out.length === 0) out.push(streak >= HRV_STREAK_NIGHTS ? { id: "hrv_low_streak", params: { n: String(streak) } } : { id: "unexplained" });
 	} else if (z > 1) {
@@ -68,6 +70,7 @@ export function restingHrInsights(s: Signals): Insight[] {
 		if (ratio !== null && ratio > SPIKE_RATIO) out.push({ id: "rhr_high_load", params: { pct: pct(ratio - 1) } });
 		if (debt !== null && debt >= SLEEP_DEBT_MIN) out.push({ id: "rhr_high_sleep", params: { debt: formatMinutes(debt) } });
 		if ((s.z("hrv") ?? 0) < -1 || (s.z("respiration_rate") ?? 0) > 1) out.push({ id: "rhr_high_illness" });
+		if (dryYesterday(s)) out.push({ id: "rhr_high_hydration" });
 		if (out.length === 0) out.push({ id: "unexplained" });
 	} else if (z < -1) {
 		out.push({ id: "rhr_low_fitness" });

@@ -30,6 +30,7 @@ function routeData(replies: Record<string, Reply> = {}): void {
 		["weight", /weight-service\/weight\/dateRange/],
 		["spo2", /wellness\/daily\/spo2\//],
 		["respiration", /wellness\/daily\/respiration\//],
+		["hydration", /usersummary\/hydration\/daily\//],
 		["trainingStatus", /metrics-service\/metrics\/maxmet\/daily\//],
 		["trainingReadiness", /metrics-service\/metrics\/trainingreadiness\//],
 	];
@@ -43,6 +44,7 @@ function routeData(replies: Record<string, Reply> = {}): void {
 		weight: { body: { dailyWeightSummaries: [{ weight: 80000 }] } },
 		spo2: { body: { averageSpo2: 96 } },
 		respiration: { body: { avgWakingRespirationValue: 14 } },
+		hydration: { body: { valueInML: 1800, goalInML: 2500 } },
 		trainingStatus: { body: { vo2MaxValue: 50 } },
 		trainingReadiness: { body: [{ score: 70 }] },
 	};
@@ -71,11 +73,12 @@ describe("getRequiredEndpoints", () => {
 	it("adds exactly the endpoints the enabled metrics need, once each", () => {
 		expect(getRequiredEndpoints(["steps", "stress", "sleep_score", "hrv"])).toEqual(["activities", "dailySummary", "sleep", "hrv"]);
 		expect(getRequiredEndpoints(["body_battery_min", "body_battery_max"])).toEqual(["activities", "bodyBattery"]);
-		expect(getRequiredEndpoints(["weight_kg", "body_fat_pct", "spo2", "respiration_rate", "vo2_max", "training_readiness"])).toEqual([
+		expect(getRequiredEndpoints(["weight_kg", "body_fat_pct", "spo2", "respiration_rate", "hydration_ml", "vo2_max", "training_readiness"])).toEqual([
 			"activities",
 			"weight",
 			"spo2",
 			"respiration",
+			"hydration",
 			"trainingStatus",
 			"trainingReadiness",
 		]);
@@ -284,7 +287,7 @@ describe("fetching endpoints", () => {
 		routeData();
 		const results = await api.fetchDataForDate(DATE);
 		expect(Object.keys(results).sort()).toEqual(
-			["activities", "bodyBattery", "dailySummary", "hrv", "respiration", "sleep", "spo2", "trainingReadiness", "trainingStatus", "weight"].sort(),
+			["activities", "bodyBattery", "dailySummary", "hrv", "hydration", "respiration", "sleep", "spo2", "trainingReadiness", "trainingStatus", "weight"].sort(),
 		);
 		expect(results["dailySummary"]).toEqual({ totalSteps: 8123 });
 	});
@@ -320,6 +323,7 @@ describe("fetching endpoints", () => {
 				`/weight-service/weight/dateRange?startDate=${DATE}&endDate=${DATE}`,
 				`/wellness-service/wellness/daily/spo2/${DATE}`,
 				`/wellness-service/wellness/daily/respiration/${DATE}`,
+				`/usersummary-service/usersummary/hydration/daily/${DATE}`,
 				`/metrics-service/metrics/maxmet/daily/${DATE}/${DATE}`,
 				`/metrics-service/metrics/trainingreadiness/${DATE}`,
 			]),
@@ -469,8 +473,8 @@ describe("per-endpoint accessors and the shared cache", () => {
 
 	it("one request per endpoint serves all accessors for a date", async () => {
 		routeData();
-		api.setRequiredEndpoints(["dailySummary", "sleep", "hrv", "bodyBattery", "activities", "weight", "spo2", "respiration", "trainingStatus", "trainingReadiness"]);
-		const [summary, sleep, hrv, bb, acts, weight, spo2, resp, status, readiness] = await Promise.all([
+		api.setRequiredEndpoints(["dailySummary", "sleep", "hrv", "bodyBattery", "activities", "weight", "spo2", "respiration", "hydration", "trainingStatus", "trainingReadiness"]);
+		const [summary, sleep, hrv, bb, acts, weight, spo2, resp, hydration, status, readiness] = await Promise.all([
 			api.fetchDailySummary(DATE),
 			api.fetchSleepData(DATE),
 			api.fetchHrv(DATE),
@@ -479,9 +483,11 @@ describe("per-endpoint accessors and the shared cache", () => {
 			api.fetchWeight(DATE),
 			api.fetchSpO2(DATE),
 			api.fetchRespiration(DATE),
+			api.fetchHydration(DATE),
 			api.fetchTrainingStatus(DATE),
 			api.fetchTrainingReadiness(DATE),
 		]);
+		expect(hydration).toEqual({ valueInML: 1800, goalInML: 2500 });
 		expect(summary).toEqual({ totalSteps: 8123 });
 		expect(sleep).toEqual({ sleepTimeSeconds: 27000 });
 		expect(hrv).toEqual({ hrvSummary: { lastNightAvg: 48 } });
@@ -493,7 +499,7 @@ describe("per-endpoint accessors and the shared cache", () => {
 		expect(status).toEqual({ vo2MaxValue: 50 });
 		expect(readiness).toEqual({ score: 70 });
 		expect(net.callsTo("socialProfile")).toHaveLength(1);
-		for (const fragment of ["usersummary", "dailySleepData", "hrv-service", "bodyBattery", "activitylist", "weight-service", "spo2", "respiration", "maxmet", "trainingreadiness"]) {
+		for (const fragment of ["usersummary/daily", "usersummary/hydration", "dailySleepData", "hrv-service", "bodyBattery", "activitylist", "weight-service", "spo2", "respiration", "hydration", "maxmet", "trainingreadiness"]) {
 			expect(net.callsTo(fragment), fragment).toHaveLength(1);
 		}
 	});

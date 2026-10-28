@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0-beta.57
+
+### Added
+
+- **Hydration.** Two new extended metrics, **Water intake (ml)** and **Water intake goal (ml)**, are fetched from Garmin and written to the daily note and the history (Settings, Additional metrics, off by default). The side panel has a new **Hydration** card (Energy section, switchable and reorderable like the others): the day's water in litres, a bar against your goal (or your 7-day average without a goal), what is left in litres and 250 ml glasses, the 7-day trend and the year facts. Under the light bulb it says when the goal is reached, whether today is on pace for the goal spread over 7:00 to 22:00 (from noon), how much of the goal a past day reached, and when 3 of the last 5 days were dry.
+- **Hydration next to other cards.** When yesterday's logged water was under 75% of its goal (or of your usual intake), the HRV card names it as one possible cause of a low HRV and the resting heart rate card of a high resting heart rate, next to the existing causes.
+- Garmin's field names for the intake (`valueInML`, `goalInML`) could not be checked against documentation; the mapper reads both spellings and writes nothing when they are absent. The values stay in ml, also with imperial units.
+
 ## 0.12.0-beta.56
 
 ### Added

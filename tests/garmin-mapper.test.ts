@@ -9,6 +9,7 @@ import {
 	mapRespiration,
 	mapSleepData,
 	mapSpO2,
+	mapHydration,
 	mapTrainingReadiness,
 	mapTrainingStatus,
 	mapWeight,
@@ -252,6 +253,27 @@ describe("mapSpO2 and mapRespiration", () => {
 
 	it("maps respiration", () => {
 		expect(mapRespiration({ avgWakingRespirationValue: 14.2 }, all("respiration_rate"))).toEqual({ respiration_rate: 14.2 });
+	});
+});
+
+describe("mapHydration", () => {
+	it("maps the intake and the goal, rounded", () => {
+		expect(mapHydration({ valueInML: 1800.4, goalInML: 2500 }, all("hydration_ml", "hydration_goal_ml"))).toEqual({ hydration_ml: 1800, hydration_goal_ml: 2500 });
+	});
+
+	it("reads the spelling with a small l too", () => {
+		expect(mapHydration({ valueInMl: 900, goalInMl: 2000 }, all("hydration_ml", "hydration_goal_ml"))).toEqual({ hydration_ml: 900, hydration_goal_ml: 2000 });
+	});
+
+	it("writes only what is enabled", () => {
+		expect(mapHydration({ valueInML: 900, goalInML: 2000 }, all("hydration_ml"))).toEqual({ hydration_ml: 900 });
+		expect(mapHydration({ valueInML: 900, goalInML: 2000 }, all("hydration_goal_ml"))).toEqual({ hydration_goal_ml: 2000 });
+	});
+
+	it("treats a day without logged water as no reading, and ignores a missing goal", () => {
+		expect(mapHydration({ valueInML: 0, goalInML: 2000 }, all("hydration_ml", "hydration_goal_ml"))).toEqual({});
+		expect(mapHydration({}, all("hydration_ml", "hydration_goal_ml"))).toEqual({});
+		expect(mapHydration({ valueInML: 500 }, all("hydration_ml", "hydration_goal_ml"))).toEqual({ hydration_ml: 500 });
 	});
 });
 

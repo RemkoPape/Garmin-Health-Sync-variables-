@@ -228,6 +228,17 @@ export function mapSpO2(data: Record<string, unknown>, enabled: Set<string>): Re
 	return result;
 }
 
+/** Maps the day's water intake and the intake goal, both in ml. The goal is only kept next to an intake. */
+export function mapHydration(data: Record<string, unknown>, enabled: Set<string>): Record<string, number | string> {
+	const result: Record<string, number | string> = {};
+	const intake = Number(data["valueInML"] ?? data["valueInMl"]);
+	if (!(intake > 0)) return result;
+	if (enabled.has("hydration_ml")) result["hydration_ml"] = Math.round(intake);
+	const goal = Number(data["goalInML"] ?? data["goalInMl"]);
+	if (enabled.has("hydration_goal_ml") && goal > 0) result["hydration_goal_ml"] = Math.round(goal);
+	return result;
+}
+
 /** Maps respiration data */
 export function mapRespiration(data: Record<string, unknown>, enabled: Set<string>): Record<string, number | string> {
 	const result: Record<string, number | string> = {};

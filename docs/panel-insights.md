@@ -65,6 +65,7 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **who**: Bull FC et al. World Health Organization 2020 guidelines on physical activity and sedentary behaviour. *Br J Sports Med* 2020;54:1451-1462. [https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7719906/](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7719906/)
 - **orsama**: Orsama AL et al. Weight rhythms: weight increases during weekends and decreases during weekdays. *Obes Facts* 2014;7:36-47. [https://pubmed.ncbi.nlm.nih.gov/24504358/](https://pubmed.ncbi.nlm.nih.gov/24504358/)
 - **fda**: U.S. Food and Drug Administration. *Pulse oximeters* (accuracy and limitations; use readings as estimates and follow trends). [https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters](https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters)
+- **watso**: Watso JC, Farquhar WB. Hydration status and cardiovascular function. *Nutrients* 2019;11:1866. [https://doi.org/10.3390/nu11081866](https://doi.org/10.3390/nu11081866)
 - **garmin**: Garmin. *Body Battery energy monitoring* (heart rate variability, stress, sleep and activity; sleep charges, stress and strenuous activity drain). [https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
 
 ## Interpretations
@@ -181,6 +182,14 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Basis:** Raised resting heart rate with lowered HRV is the pattern wearable studies found around the onset of infection. It is a signal to watch, not a diagnosis.
 - **References:** [mishra](https://doi.org/10.1038/s41551-020-00640-6); [natarajan](https://doi.org/10.1038/s41746-020-00363-7); [buchheit](https://doi.org/10.3389/fphys.2014.00073)
 
+### hrv_low_hydration
+
+- **Card:** hrv
+- **Trigger:** HRV is more than 1 standard deviation below its 30 day mean and the logged water of the day before is under 75% of that day's goal (or of the 7-day average intake when no goal is logged).
+- **Text (English):** Yesterday you logged less than three quarters of your usual water. Too little fluid can raise heart rate and lower HRV, so drink well today and compare tomorrow morning.
+- **Basis:** Reduced body water raises heart rate and lowers stroke volume, and reviews link hydration status to cardiovascular function. It is offered as one possible cause next to the others, and the intake is only what the person logged.
+- **References:** [watso](https://doi.org/10.3390/nu11081866)
+
 ### hrv_low_streak
 
 - **Card:** hrv
@@ -228,6 +237,14 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Text (English):** A higher resting heart rate together with a lower HRV or faster breathing often marks the start of an illness. If you feel unwell, take a day off and watch the next mornings.
 - **Basis:** Elevated resting heart rate with changes in HRV and respiration is the pattern seen around illness onset in wearable data.
 - **References:** [mishra](https://doi.org/10.1038/s41551-020-00640-6); [natarajan](https://doi.org/10.1038/s41746-020-00363-7)
+
+### rhr_high_hydration
+
+- **Card:** resting_hr
+- **Trigger:** Resting heart rate is more than 1 standard deviation above its 30 day mean and the logged water of the day before is under 75% of that day's goal (or of the 7-day average intake when no goal is logged).
+- **Text (English):** Yesterday you logged less than three quarters of your usual water. When the body is short of fluid the heart beats faster to keep blood pressure up, which can lift the resting heart rate. Drink well today and compare tomorrow morning.
+- **Basis:** Reduced body water makes the heart beat faster to hold blood pressure, which can lift the resting heart rate. It is one possible cause next to the others, and the intake is only what the person logged.
+- **References:** [watso](https://doi.org/10.3390/nu11081866)
 
 ### rhr_low_fitness
 
@@ -492,6 +509,46 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Text (English):** A calm level.
 - **Basis:** Positive confirmation.
 - **References:** none (the rule is arithmetic on the user's own data or a plausibility statement worded as something to watch).
+
+### hydration_goal_good
+
+- **Card:** hydration
+- **Trigger:** The logged water of the day is at or above the goal of the day.
+- **Text (English):** You reached your water goal for the day.
+- **Basis:** Positive confirmation of the user's own goal.
+- **References:** none (the rule is arithmetic on the user's own data).
+
+### hydration_on_pace
+
+- **Card:** hydration
+- **Trigger:** The shown day is today, the goal is not reached yet, and the intake is not behind the pace (see hydration_behind_pace).
+- **Text (English):** You are on pace for your water goal today.
+- **Basis:** Positive confirmation: the intake follows the goal spread over the waking day (7:00 to 22:00).
+- **References:** none (the rule is arithmetic on the user's own data).
+
+### hydration_behind_pace
+
+- **Card:** hydration
+- **Trigger:** The shown day is today, it is 12:00 or later, and the intake is under 70% of the goal multiplied by the part of the waking day (7:00 to 22:00) that has passed.
+- **Text (English):** You are behind your pace for today: about {ml} ml, or {glasses} glasses of 250 ml, are left to your goal. Spreading them over the next hours is easier than catching up in the evening.
+- **Basis:** Drinking spread over the day is easier than catching up late; the amount left and the glasses (250 ml) are arithmetic on the user's own goal. The 70% margin only keeps a slightly late day from being flagged.
+- **References:** none (the pace is the card's own arithmetic, see the card explanation).
+
+### hydration_below_goal
+
+- **Card:** hydration
+- **Trigger:** The shown day is a past day and the logged water is under the goal.
+- **Text (English):** You logged {pct}% of your water goal.
+- **Basis:** States how much of the goal was logged; it may also be a missing log.
+- **References:** none (the rule is arithmetic on the user's own data).
+
+### hydration_low_streak
+
+- **Card:** hydration
+- **Trigger:** At least 3 of the 5 days before the shown day are under 75% of their goal (or of the 7-day average intake when no goal is logged).
+- **Text (English):** {n} of the last 5 days were below three quarters of your water goal or usual intake. Only logged drinks count, so a low value can also mean a missing log.
+- **Basis:** A repeated shortfall is a pattern, a single dry day is not. It is worded as something to check, because only logged drinks count.
+- **References:** none (the rule is arithmetic on the user's own data).
 
 ### steps_below_streak
 
