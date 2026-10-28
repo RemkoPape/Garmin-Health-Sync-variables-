@@ -5,6 +5,9 @@ import { getConsumer, getOAuth1, exchange, OAUTH_UA, type OAuth1Token, type OAut
 import { AuthStateMachine, type AuthState } from "./auth-state";
 import { withTimeout } from "../../timeout";
 import { describeShape } from "./payload-shape";
+
+/** The entries of the lifestyle log hold their amounts two lists deeper than the usual depth of the shape reaches. */
+const LIFESTYLE_SHAPE_DEPTH = 6;
 import {
 	collectCookies,
 	mobileLogin,
@@ -1087,7 +1090,7 @@ export class GarminApi {
 				log(`${key}: HTTP ${status}, ${shape}, ${describePayload(data)}, ${Date.now() - started}ms`);
 				log(`${key} ${describeHeaders(headers)}`);
 				// the structure of the answer, so a bug report shows what this watch sends: field names and types, no values
-				if (data != null) log(`${key} shape: ${describeShape(data)}`);
+				if (data != null) log(`${key} shape: ${describeShape(data, key === "lifestyle" ? LIFESTYLE_SHAPE_DEPTH : undefined)}`);
 				if (status >= 200 && status < 300) ok++;
 				if (status >= 200 && status < 300 && data != null) {
 					results[key] = this.transformResponse(key, data);

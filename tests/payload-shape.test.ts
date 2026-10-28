@@ -23,6 +23,7 @@ describe("describeShape", () => {
 		expect(describeShape({ a: { b: { c: { l: [{ x: 1 }] } } } })).toBe("{a: {b: {c: {l: [1]}}}}");
 		expect(describeShape({ a: { l: [{ x: 1 }] } })).toBe("{a: {l: [1]{x: int}}}");
 		expect(describeShape({ a: { b: { l: [{ x: 1 }] } } })).toBe("{a: {b: {l: [1]object(1)}}}");
+		expect(describeShape({ a: { b: { l: [{ x: 1 }] } } }, 6)).toBe("{a: {b: {l: [1]{x: int}}}}");
 	});
 
 	it("does not print a key that is not a field name: an id, a name, an address or a very long key", () => {
