@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.76
+
+### Added
+
+- **Sync button in the health panel.** A button with the sync symbol sits right of the pencil button in the top row and does the same as the command **Sync current note**: it syncs the open daily note, or yesterday when no daily note is open. Its label is the command's name in the plugin language.
+
 ## 0.12.0-beta.75
 
 ### Fixed

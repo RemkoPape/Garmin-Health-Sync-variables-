@@ -510,7 +510,7 @@ export default class HealthSyncPlugin extends Plugin {
 	}
 
 	/** Manual sync — context-dependent based on the open daily note */
-	private async manualSync(): Promise<void> {
+	async manualSync(): Promise<void> {
 		if (!this.garminProvider.isSessionValid()) {
 			new Notice(t("noticeLoginRequired", this.settings.language));
 			return;
