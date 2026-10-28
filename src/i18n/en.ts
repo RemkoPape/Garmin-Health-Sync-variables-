@@ -416,7 +416,7 @@ export const en = {
 	panelRechargedUsual: "+{charged} · usual +{usual}",
 	panelRechargedNoUsual: "+{charged}",
 	panelStressTitle: "Stress",
-	panelStressExplain: "Stress is the level from 0 to 100 that Garmin derives from heart rate variability, from calm to high. The grey tick is your average of the last 7 days.",
+	panelStressExplain: "Stress is the level from 0 to 100 that Garmin derives from heart rate variability, from calm to high. The grey tick is your average of the last 7 days. The line on the lower bar is your usual split between stressed and recovering minutes (average of the last 7 days).",
 	panelHydrationTitle: "Hydration",
 	panelHydrationExplain: "Hydration shows the water you logged for the day. The marker is your goal, or your average of the last 7 days when no goal is set. Only drinks you log count, so a day without a log shows no reading.",
 	panelHydrationGoal: "Goal",
@@ -507,10 +507,10 @@ export const en = {
 	whatsNew0120Item1Text: "Turn it on in the plugin settings (side panel), then open it from the ribbon or the command palette. Cards show recovery, sleep, energy, movement, fitness and training against your own usual range. Pick any past day with the date, and arrange or switch off cards.",
 	whatsNew0120Item2Title: "What your data suggests",
 	whatsNew0120Item2Text: "Tap the light bulb on a card to see what your own data suggests, with the reasons, and how the card is worked out. This is not medical advice.",
-	whatsNew0120Item3Title: "History that keeps your data",
-	whatsNew0120Item3Text: "The plugin can keep your days in small monthly history notes, so the panel also works for days without a daily note. Choose what happens to days without a note in the settings, and use the command that builds your history to fetch the years back. It is plain Markdown and syncs with your vault.",
-	whatsNew0120Item4Title: "Cleaner daily notes",
-	whatsNew0120Item4Text: "The new setting for the properties of daily notes can fold the properties of a daily note, or hide the Garmin ones that the panel already shows.",
+	whatsNew0120Item3Title: "Days without a daily note",
+	whatsNew0120Item3Text: "A new setting for days without a daily note lets you choose: create the note as before, keep the day in small monthly history files, or skip the day. With the history files the side panel also works for days that have no note, and the command that builds your history fetches the years back. The files are plain Markdown and sync with your vault.",
+	whatsNew0120Item4Title: "Declutter your properties",
+	whatsNew0120Item4Text: "Synced Garmin data can make the properties of a daily note very long. The new setting for the properties of daily notes can fold them, hide the Garmin properties that the side panel already shows, or do both, so only your own properties stay in view.",
 };
 
 export type TranslationKeys = keyof typeof en;

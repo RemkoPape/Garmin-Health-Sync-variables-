@@ -18,8 +18,8 @@ function frontmatter(name: string): Record<string, string> {
 }
 
 describe("AGENTS.md skill index", () => {
-	it("has the two release skills", () => {
-		expect(skills.sort()).toEqual(["release-beta", "release-stable"]);
+	it("has the two release skills and the screenshots skill", () => {
+		expect(skills.sort()).toEqual(["docs-screenshots", "release-beta", "release-stable"]);
 	});
 
 	it.each(skills)("%s has a matching name and a description that says when to use it", (name) => {

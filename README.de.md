@@ -145,6 +145,16 @@ Ein Tag, den ein früherer Backfill schon mit allen aktivierten Metriken geholt 
 
 Schalte **Seitenpanel** in den Plugin-Einstellungen ein und öffne es über das Ribbon-Symbol oder den Befehl **Gesundheitspanel öffnen**. Die Karten vergleichen heute mit deinem eigenen üblichen Bereich (die letzten 30 Tage) und ändern deine Notizen nie. Tippe auf das Datum, um einen Tag zu wählen, wechsle mit den Pfeilen um einen Tag und ordne die Karten mit dem Stift-Knopf per Ziehen an. Jede Karte hat in den Einstellungen einen Schalter, der auch sagt, welche Metriken dafür aktiviert sein sollten. Tippe auf die Glühbirne einer Karte für **Was deine Daten andeuten** (Gründe und was hilft, aus deinen eigenen Daten) und **So liest du das**. Das Panel ist keine medizinische Beratung. Mit deinem Geburtsjahr (nur das Jahr) in den Einstellungen bekommst du Herzfrequenzzonen und altersabhängige Ziele.
 
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="Bereitschaft und Erholung">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="Dieselben Karten im dunklen Theme">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="Was deine Daten nahelegen, unter der Glühbirne">
+<img src="docs/screenshots/panel-hydration.png" width="280" alt="Flüssigkeitskarte mit Erklärungen">
+<img src="docs/screenshots/panel-sleep.png" width="280" alt="Schlaf und Schlafphasen">
+<img src="docs/screenshots/panel-energy.png" width="280" alt="Body Battery, Stress und Flüssigkeit">
+<img src="docs/screenshots/panel-training.png" width="280" alt="Schritte, Belastungsbalance, Wochenbelastung und Einheiten">
+</p>
+
 ### Verlaufsnotizen und Garmin-Verlauf aufbauen
 
 Wenn **Tage ohne Daily Note** auf **In Verlaufsdateien speichern** steht, wird jeder geholte Tag zusätzlich in kleinen Monatsnotizen (`Garmin history/Garmin history 2026-10.md`, eine Zeile pro Tag) in deinem Daily-Notes-Ordner gespeichert. Sie bestehen aus reinem Markdown, werden also mit deinem Vault synchronisiert, und das Panel liest sie für Tage ohne Note. Der Befehl **Verlauf aus Daily Notes importieren** kopiert die Garmin-Werte deiner vorhandenen Notizen hinein. **Garmin-Verlauf aufbauen** holt die Tage bis zu einem gewählten Datum zurück (Standard fünf Jahre), die neuesten zuerst: Es zeigt, wie lange es dauert, lässt sich stoppen und macht dort weiter, wo es aufgehört hat, wartet und wiederholt, wenn Garmin nicht antwortet, und überspringt Tage, die es schon hat. Wenn du deinen Daily-Notes-Ordner änderst, ziehen die Verlaufsnotizen mit um.

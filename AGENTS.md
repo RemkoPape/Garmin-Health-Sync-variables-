@@ -94,6 +94,7 @@ npm run test:cov            # + v8 coverage; the gate is 100 % on all four metri
 npm run typecheck:tests     # tsc over src, tests, testUtils (tsconfig.test.json)
 npm run check:dead-code     # knip --production: code only a test reaches is reported, so delete it
 npm run lint:cloud-parity   # lint src/ with moment and @types/node hidden, as the review bot sees it
+npm run screenshots         # re-render docs/screenshots from the real panel code and synthetic data (skill: docs-screenshots); check:screenshots verifies without writing
 npm run check-release       # pre-release validator, REQUIRED before tagging: -- --tag X | --with-build | --strict
 ```
 
@@ -118,12 +119,13 @@ npm run check-release       # pre-release validator, REQUIRED before tagging: --
 
 ### Release rules (this project)
 
-Procedures live in project skills (`.claude/skills/`): **`release-beta`** for every release that goes out for testing, **`release-stable`** only when Daniel explicitly says to go stable. Load the skill before starting and follow it step by step.
+Procedures live in project skills (`.claude/skills/`): **`docs-screenshots`** to re-render the README images of the side panel, **`release-beta`** for every release that goes out for testing, **`release-stable`** only when Daniel explicitly says to go stable. Load the skill before starting and follow it step by step.
 
 | Trigger | Skill |
 |---|---|
 | A change is merged to `main` and needs testing; "release", "tag", "ship a beta" | `release-beta` |
 | Daniel **explicitly** says "go stable", "promote", "release for everyone" | `release-stable` |
+| A panel card or its look changed; a release touches the panel; "screenshots" | `docs-screenshots` |
 
 Always-on rules:
 

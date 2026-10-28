@@ -144,6 +144,16 @@ Garmin 可能会限制同一设备的重复登录尝试，此时插件会显示�
 
 在插件设置中开启 **侧边面板**，然后通过侧边栏图标或命令 **打开健康面板** 打开。卡片把今天与你自己的日常范围（最近 30 天）对比，绝不会修改你的笔记。点击日期可选择某一天，用箭头按天移动，用铅笔按钮拖动调整卡片顺序。每张卡片在设置中都有开关，并说明需要启用哪些指标。点击卡片上的灯泡可查看 **你的数据说明了什么**（基于你自己数据的原因和帮助）和 **如何解读**。面板不是医疗建议。在设置中添加出生年份（仅年份）后，可获得心率区间和按年龄设定的目标。
 
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="准备度与恢复">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="深色主题下的同样卡片">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="灯泡下方的数据提示">
+<img src="docs/screenshots/panel-hydration.png" width="280" alt="带说明的水分摄入卡片">
+<img src="docs/screenshots/panel-sleep.png" width="280" alt="睡眠与睡眠阶段">
+<img src="docs/screenshots/panel-energy.png" width="280" alt="身体电量、压力与水分摄入">
+<img src="docs/screenshots/panel-training.png" width="280" alt="步数、负荷平衡、每周负荷与训练">
+</p>
+
 ### 历史笔记与构建 Garmin 历史
 
 当 **没有每日笔记的日子** 设为 **保存到历史文件** 时，每个获取的日子还会保存到每日笔记文件夹内按月划分的小笔记中（`Garmin history/Garmin history 2026-10.md`，每天一行）。它们是纯 Markdown，所以会随 Vault 同步，面板会在没有笔记的日子读取它们。命令 **从每日笔记导入历史** 会把现有笔记中的 Garmin 数值复制进去。**构建 Garmin 历史** 会从最新的日子开始，向前获取到你选择的日期（默认五年）：它会显示所需时间，可以停止并从停下处继续，Garmin 无响应时会等待并重试，并跳过已有的日子。如果你更改每日笔记文件夹，历史笔记也会随之移动。

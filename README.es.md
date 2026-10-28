@@ -144,6 +144,16 @@ Un día que un relleno anterior ya obtuvo con todas tus métricas activadas se o
 
 Activa **Panel lateral** en los ajustes del plugin y ábrelo desde el icono de la cinta o con el comando **Abrir el panel de salud**. Las tarjetas comparan hoy con tu propio rango habitual (los últimos 30 días) y nunca modifican tus notas. Toca la fecha para elegir un día, usa las flechas para moverte un día y el botón del lápiz para ordenar las tarjetas arrastrándolas. Cada tarjeta tiene un interruptor en los ajustes que además indica qué métricas activar para ella. Toca la bombilla de una tarjeta para ver **Qué sugieren tus datos** (motivos y qué ayuda, a partir de tus propios datos) y **Cómo leerlo**. El panel no es consejo médico. Si añades tu año de nacimiento (solo el año) en los ajustes, obtienes zonas de frecuencia cardíaca y objetivos según la edad.
 
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="Preparación y recuperación">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="Las mismas tarjetas en un tema oscuro">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="Lo que sugieren tus datos, bajo la bombilla">
+<img src="docs/screenshots/panel-hydration.png" width="280" alt="Tarjeta de hidratación con sus explicaciones">
+<img src="docs/screenshots/panel-sleep.png" width="280" alt="Sueño y fases del sueño">
+<img src="docs/screenshots/panel-energy.png" width="280" alt="Body Battery, estrés e hidratación">
+<img src="docs/screenshots/panel-training.png" width="280" alt="Pasos, equilibrio de carga, carga semanal y sesiones">
+</p>
+
 ### Notas de historial y Crear el historial de Garmin
 
 Con **Días sin nota diaria** en **Guardar en archivos de historial**, cada día descargado se guarda también en pequeñas notas mensuales (`Garmin history/Garmin history 2026-10.md`, una línea por día) en tu carpeta de notas diarias. Son markdown simple, así que se sincronizan con tu vault, y el panel las lee para los días sin nota. El comando **Importar historial desde las notas diarias** copia en ellas los valores de Garmin de tus notas existentes. **Crear el historial de Garmin** descarga los días hasta una fecha que elijas (por defecto cinco años), empezando por los más recientes: muestra cuánto tardará, se puede detener y continúa donde se quedó, espera y reintenta si Garmin no responde, y omite los días que ya tiene. Si cambias tu carpeta de notas diarias, las notas de historial se mueven con ella.

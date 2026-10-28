@@ -146,6 +146,16 @@ A day that an earlier backfill already fetched (with all your enabled metrics) i
 
 Turn on **Side panel** in the plugin settings, then open it from the ribbon icon or the command **Open health panel**. The cards compare today with your own usual range (the last 30 days) and never change your notes. Tap the date to pick a day, use the arrows to move by a day, and the pencil button to arrange the cards by dragging. Every card has a switch in the settings that also says which metrics to enable for it. Tap the light bulb on a card for **What your data suggests** (reasons and what helps, taken from your own data) and **How to read this**. The panel is not medical advice. Adding your birth year (only the year) in the settings gives heart rate zones and age-based goals.
 
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="Readiness and recovery cards">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="The same cards in a dark theme">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="What your data suggests under the light bulb">
+<img src="docs/screenshots/panel-hydration.png" width="280" alt="Hydration card with its explanations">
+<img src="docs/screenshots/panel-sleep.png" width="280" alt="Sleep and sleep stages">
+<img src="docs/screenshots/panel-energy.png" width="280" alt="Body battery, stress and hydration">
+<img src="docs/screenshots/panel-training.png" width="280" alt="Steps, load balance, weekly load and sessions">
+</p>
+
 ### History notes and Build Garmin history
 
 With **Days without a daily note** set to **Keep in history files**, every fetched day is also stored in small monthly notes (`Garmin history/Garmin history 2026-10.md`, one line per day) in your daily notes folder. They are plain markdown, so they sync with your vault, and the panel reads them for days that have no note. The command **Import history from daily notes** copies the Garmin values of your existing notes into them. **Build Garmin history** fetches the days back to a date you choose (default five years), newest first: it shows the time it will take, can be stopped and continues where it stopped, waits and retries if Garmin does not answer, and skips days it already has. If you change your daily notes folder, the history notes move along with it.

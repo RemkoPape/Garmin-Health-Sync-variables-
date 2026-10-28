@@ -144,6 +144,16 @@ Un jour qu’un remplissage précédent a déjà récupéré avec toutes vos mé
 
 Activez **Panneau latéral** dans les paramètres du plugin, puis ouvrez-le avec l’icône du ruban ou la commande **Ouvrir le panneau santé**. Les cartes comparent aujourd’hui à votre propre plage habituelle (les 30 derniers jours) et ne modifient jamais vos notes. Touchez la date pour choisir un jour, utilisez les flèches pour avancer d’un jour et le bouton crayon pour réorganiser les cartes en les faisant glisser. Chaque carte a un interrupteur dans les paramètres qui indique aussi quelles métriques activer pour elle. Touchez l’ampoule d’une carte pour **Ce que suggèrent vos données** (raisons et ce qui aide, tirés de vos propres données) et **Comment lire ceci**. Le panneau n’est pas un avis médical. En ajoutant votre année de naissance (seulement l’année) dans les paramètres, vous obtenez des zones de fréquence cardiaque et des objectifs adaptés à l’âge.
 
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="Disponibilité et récupération">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="Les mêmes cartes en thème sombre">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="Ce que suggèrent vos données, sous l’ampoule">
+<img src="docs/screenshots/panel-hydration.png" width="280" alt="Carte d’hydratation et ses explications">
+<img src="docs/screenshots/panel-sleep.png" width="280" alt="Sommeil et phases du sommeil">
+<img src="docs/screenshots/panel-energy.png" width="280" alt="Body Battery, stress et hydratation">
+<img src="docs/screenshots/panel-training.png" width="280" alt="Pas, équilibre de charge, charge hebdomadaire et séances">
+</p>
+
 ### Notes d’historique et Construire l’historique Garmin
 
 Avec **Jours sans note quotidienne** sur **Garder dans les fichiers d’historique**, chaque jour récupéré est aussi enregistré dans de petites notes mensuelles (`Garmin history/Garmin history 2026-10.md`, une ligne par jour) dans votre dossier de notes quotidiennes. Ce sont de simples fichiers markdown, donc ils se synchronisent avec votre coffre, et le panneau les lit pour les jours sans note. La commande **Importer l’historique depuis les notes quotidiennes** y copie les valeurs Garmin de vos notes existantes. **Construire l’historique Garmin** récupère les jours jusqu’à une date de votre choix (cinq ans par défaut), les plus récents d’abord : elle indique le temps nécessaire, peut être arrêtée et reprend là où elle s’est arrêtée, attend et réessaie si Garmin ne répond pas, et ignore les jours déjà présents. Si vous changez de dossier de notes quotidiennes, les notes d’historique suivent.

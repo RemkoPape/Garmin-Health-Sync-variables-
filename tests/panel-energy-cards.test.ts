@@ -262,6 +262,23 @@ describe("stress card", () => {
 		expect(text(".ghs-split-label-recovering")).toBe("3 h 10 min recovering");
 	});
 
+	it("marks the usual split of the 7 days before on the split bar", async () => {
+		// usually 100 stressed and 300 recovering minutes: a quarter
+		const index = await indexOf((ago) => ({ stress: 31, stress_high: ago === 0 ? 200 : 100, recovery_high: ago === 0 ? 200 : 300 }), 8);
+		expect(computeStress(index, END).usualShare).toBe(0.25);
+		renderStress(root, computeStress(index, END), "en", false, noop);
+		expect((root.querySelector(".ghs-split-usual") as HTMLElement).style.getPropertyValue("--ghs-x")).toBe("25%");
+	});
+
+	it("has no usual split with too few days, with only one of the two values, or without any minutes", async () => {
+		expect(computeStress(await indexOf((ago) => ({ stress: 31, stress_high: 100, recovery_high: ago === 0 ? 200 : undefined }), 8), END).usualShare).toBeNull();
+		expect(computeStress(await indexOf((ago) => ({ stress: 31, stress_high: ago === 0 ? 200 : 100, ...(ago > 3 ? { recovery_high: 300 } : {}) }), 8), END).usualShare).toBeNull();
+		expect(computeStress(await indexOf((ago) => ({ stress: 31, stress_high: ago === 0 ? 5 : 0, recovery_high: ago === 0 ? 5 : 0 }), 8), END).usualShare).toBeNull();
+		const index = await indexOf((ago) => ({ stress: 31, ...(ago === 0 ? { stress_high: 65, recovery_high: 190 } : {}) }), 8);
+		renderStress(root, computeStress(index, END), "en", false, noop);
+		expect(root.querySelector(".ghs-split-usual")).toBeNull();
+	});
+
 	it("shows no split bar without both values or without any minutes", async () => {
 		const only = await indexOf((ago) => ({ stress: 31, ...(ago === 0 ? { stress_high: 65 } : {}) }), 8);
 		renderStress(root, computeStress(only, END), "en", false, noop);

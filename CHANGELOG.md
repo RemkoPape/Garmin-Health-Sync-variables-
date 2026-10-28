@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.60
+
+### Added
+
+- **Usual split on the Stress card.** A small vertical line on the bar of stressed against recovering minutes marks your usual split (average of the last 7 days, needs 5 days of both values), so a day can be read against your own norm.
+- **Screenshots of the side panel in the README** (all six languages), rendered from the real panel code and the real stylesheet with synthetic data, in a light and a dark theme. `npm run screenshots` renews them, `npm run check:screenshots` verifies the scenes, and the new `docs-screenshots` skill describes the procedure.
+
+### Changed
+
+- **The what's new window** says more about the setting for days without a daily note (create the note, keep the day in monthly history files, or skip it) and about the setting that folds or hides the Garmin properties of a daily note.
+
 ## 0.12.0-beta.59
 
 ### Fixed

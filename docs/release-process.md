@@ -30,6 +30,10 @@ A `-beta.N` manifest on `main` got the plugin delisted on 2026-09-18. Every guar
 5. Verify with `gh release view`, compare the sha256 of the asset `main.js` with a local build of the tagged commit.
 6. A published beta number is never reused; a fix gets the next number.
 
+## Regenerating the screenshots
+
+The README images of the side panel (`docs/screenshots/*.png`) are rendered, not captured: `npm run screenshots` builds them from the real panel code, the real `styles.css` and synthetic data (`testUtils/screenshots/`), and `npm run check:screenshots` verifies the scenes without writing. Run it when a card changes and before a release that touches the panel, look at every image, and commit them with the change. The procedure is in `.claude/skills/docs-screenshots/SKILL.md`.
+
 ## Stable flow
 
 Only on an explicit go-ahead, after the last beta's smoke test passed on phone and desktop. See `.claude/skills/release-stable/SKILL.md`: a `release/X.Y.Z` branch bumps the version, the **branch head** is tagged, `release.yml` publishes, `store-listing` is re-run and turns green, and only then the PR is merged with a merge commit (never squash: the tagged commit must stay reachable from `main`).
