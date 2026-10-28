@@ -237,6 +237,12 @@ describe("mapBodyBattery", () => {
 });
 
 describe("mapSpO2 and mapRespiration", () => {
+	it("reads the field Garmin really sends, `averageSpO2` with a capital O, then the night's own average, and ignores nulls", () => {
+		expect(mapSpO2({ averageSpO2: 95, avgSleepSpO2: 93 }, all("spo2"))).toEqual({ spo2: 95 });
+		expect(mapSpO2({ averageSpO2: null, avgSleepSpO2: 93 }, all("spo2"))).toEqual({ spo2: 93 });
+		expect(mapSpO2({ averageSpO2: null, avgSleepSpO2: null, lowestSpO2: null }, all("spo2"))).toEqual({});
+	});
+
 	it("reads the average from either SpO2 location", () => {
 		expect(mapSpO2({ averageSpo2: 96 }, all("spo2"))).toEqual({ spo2: 96 });
 		expect(mapSpO2({ allDaySpO2: { averageSpo2: 94 } }, all("spo2"))).toEqual({ spo2: 94 });

@@ -8,7 +8,7 @@
 /** Deepest level written; deeper values are shown as their kind (`object`, `array`). */
 const MAX_DEPTH = 4;
 /** Longest description of one response; the rest is cut. */
-const MAX_LENGTH = 1500;
+const MAX_LENGTH = 6000;
 /** The first elements of a list that are compared to find the fields they have together. */
 const SAMPLE_ELEMENTS = 3;
 /** A field name Garmin's schema uses: letters, digits and underscores. Anything else (an id used as a key, a name, an address) is not printed. */
