@@ -20,10 +20,19 @@ async function indexOf(frontmatter: (ago: number) => Record<string, unknown> | n
 }
 
 describe("percentileRank", () => {
-	it("is the share of values at or below", () => {
-		expect(percentileRank(3, [1, 2, 3, 4])).toBe(0.75);
+	it("is the share of values below plus half of those equal, so ties do not push a value to the top", () => {
+		expect(percentileRank(3, [1, 2, 3, 4])).toBe(0.625);
 		expect(percentileRank(0, [1, 2])).toBe(0);
 		expect(percentileRank(9, [1, 2])).toBe(1);
+		// a value that equals every other is in the middle of them, not the hardest of them
+		expect(percentileRank(140, [140, 140, 140, 140])).toBe(0.5);
+		expect(percentileRank(140, [140])).toBe(0.5);
+	});
+
+	it("puts a session that equals all the recent sessions at the middle step, not the hardest one", () => {
+		const history = Array.from({ length: 12 }, () => 140);
+		expect(intensityStep(session({ avgHr: 140 }), history)).toBe(2);
+		expect(sessionLoad(session({ avgHr: 140, minutes: 30 }), history)).toBe(30);
 	});
 });
 

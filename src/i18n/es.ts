@@ -293,6 +293,7 @@ export const es: Record<TranslationKeys, string> = {
 	panelTodayGarmin: "Preparación de Garmin",
 	panelTodayBridge: "Se muestra la preparación propia de Garmin hasta que tu puntuación tenga datos suficientes.",
 	panelTodayWaiting: "Faltan la VFC, la frecuencia cardíaca en reposo o el sueño de hoy. La puntuación aparece cuando se sincronizan.",
+	panelSleepDebtPartial: "La deuda de sueño se basa en {have} de {need} noches; una noche sin datos cuenta como sin deuda, así que la puntuación puede ser demasiado alta.",
 	insight_today_flag_hrv: "La VFC está por debajo de tu rango habitual.",
 	insight_today_flag_rhr: "La frecuencia en reposo está por encima de lo habitual.",
 	insight_today_flag_sleep: "Tu deuda de sueño de las últimas 7 noches es de {debt}.",

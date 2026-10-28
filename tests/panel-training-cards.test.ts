@@ -126,7 +126,8 @@ describe("load balance and weekly load with a birth year", () => {
 		const index = await indexOf((ago) => ({ running: `30min · Ø${ago < 7 ? 150 : 115} bpm` }));
 		const plain = computeLoad(index, END).ratio;
 		const zoned = computeLoad(index, END, born);
-		expect(plain).toBe(1); // no intensity history before 10 sessions ranks equally... all weights 1.0
+		// without a birth year the hardness is ranked among the sessions: the 150 bpm weeks rank above the 115 bpm weeks, so the ratio is above 1 without zones too
+		expect(plain).toBeCloseTo(1.27, 2);
 		expect(zoned.ratio).toBeGreaterThan(1.3);
 		expect(zoned.zones).toBe(true);
 		expect(computeLoad(index, END).zones).toBe(false);

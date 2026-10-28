@@ -294,6 +294,7 @@ export const de: Record<TranslationKeys, string> = {
 	panelTodayGarmin: "Garmin-Bereitschaft",
 	panelTodayBridge: "Garmins eigene Bereitschaft wird gezeigt, bis dein eigener Wert genug Daten hat.",
 	panelTodayWaiting: "Es fehlen noch HRV, Ruheherzfrequenz oder Schlaf von heute. Der Wert erscheint nach der Synchronisierung.",
+	panelSleepDebtPartial: "Die Schlafschuld beruht auf {have} von {need} Nächten; eine Nacht ohne Daten zählt als keine Schuld, der Wert kann daher zu hoch sein.",
 	insight_today_flag_hrv: "Die HRV liegt unter deinem üblichen Bereich.",
 	insight_today_flag_rhr: "Der Ruhepuls liegt über deinem Üblichen.",
 	insight_today_flag_sleep: "Dein Schlafdefizit der letzten 7 Nächte beträgt {debt}.",

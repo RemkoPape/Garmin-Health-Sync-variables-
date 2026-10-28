@@ -45,8 +45,9 @@ export function computeStages(index: DayIndex, date: string): StagesModel {
 	for (const spec of STAGES) {
 		const minutes = index.minutes(spec.key, date);
 		if (minutes === null) continue;
-		const b = baseline(windowValues(index, spec.key, date, WINDOW_DAYS, true), STAGES_MIN_NIGHTS, SD_FLOOR_MIN);
-		stages.push({ spec, minutes, baseline: b, deviation: b ? { z: zScore(minutes, b), minutes: Math.round(minutes - b.mean) } : null });
+		// a stage of 0 minutes is a watch that did not record it (older models send no REM, say), not a night without it: it is no reading for the usual amount, and no deviation is drawn from it
+		const b = baseline(windowValues(index, spec.key, date, WINDOW_DAYS, true).filter((m) => m > 0), STAGES_MIN_NIGHTS, SD_FLOOR_MIN);
+		stages.push({ spec, minutes, baseline: b, deviation: b && minutes > 0 ? { z: zScore(minutes, b), minutes: Math.round(minutes - b.mean) } : null });
 	}
 	return { insights: [], stages: stages.length === STAGES.length && stages.some((s) => s.minutes > 0) ? stages : null };
 }
@@ -62,7 +63,7 @@ export function renderStages(parent: HTMLElement, model: StagesModel, lang: stri
 			row.createSpan({ cls: "ghs-stage-label", text: t(s.spec.label, lang) });
 			const track = row.createDiv({ cls: "ghs-stage-track" });
 			// the personal mean sits in the middle; the track runs from 0 to twice the mean
-			const top = s.baseline ? s.baseline.mean * 2 : Math.max(s.minutes * 2, 1);
+			const top = s.baseline && s.baseline.mean > 0 ? s.baseline.mean * 2 : Math.max(s.minutes * 2, 1);
 			track.createDiv({ cls: `ghs-stage-fill ghs-stage-${s.spec.id}` }).setCssProps({ "--ghs-w": `${Math.min(100, (s.minutes / top) * 100)}%` });
 			if (s.baseline) track.createDiv({ cls: "ghs-stage-mean" });
 			const value = row.createSpan({ cls: "ghs-stage-value", text: formatMinutes(s.minutes) });
