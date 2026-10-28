@@ -85,6 +85,8 @@ export const INSIGHTS = {
 	stress_high_week: { card: "stress", kind: "watch" },
 	stress_calm: { card: "stress", kind: "good" },
 	stress_usual: { card: "stress", kind: "good" },
+	stress_above_week: { card: "stress", kind: "watch" },
+	stress_high_usual: { card: "stress", kind: "watch" },
 
 	hydration_goal_good: { card: "hydration", kind: "good" },
 	hydration_on_pace: { card: "hydration", kind: "good" },
@@ -95,12 +97,14 @@ export const INSIGHTS = {
 	hydration_weekday_low: { card: "hydration", kind: "watch" },
 
 	steps_below_streak: { card: "steps", kind: "watch" },
+	steps_to_go: { card: "steps", kind: "watch" },
 	steps_zone_good: { card: "steps", kind: "good" },
 	steps_in_zone: { card: "steps", kind: "good" },
 	steps_weekday_low: { card: "steps", kind: "watch" },
 
 	floors_below_streak: { card: "floors", kind: "watch" },
 	floors_zone_good: { card: "floors", kind: "good" },
+	floors_to_go: { card: "floors", kind: "watch" },
 
 	intensity_behind: { card: "intensity", kind: "watch" },
 	intensity_goal_good: { card: "intensity", kind: "good" },

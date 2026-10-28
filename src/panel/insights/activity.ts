@@ -1,7 +1,7 @@
 import { localDateString, shiftDate } from "../../dates";
 import { computeBody } from "../cards/body-card";
 import { computeIntensity } from "../cards/intensity-card";
-import { computeSteps } from "../cards/steps-card";
+import { computeSteps, STEPS_PER_MINUTE } from "../cards/steps-card";
 import { computeFloors } from "../cards/floors-card";
 import { weekdayPattern } from "../longview";
 import { computeVo2 } from "../cards/vo2-card";
@@ -24,8 +24,8 @@ export function stepsInsights(s: Signals): Insight[] {
 	if (steps >= base * 1.1) return [{ id: "steps_zone_good" }];
 	const out: Insight[] = [];
 	if (steps >= base) out.push({ id: "steps_in_zone", params: { base: String(Math.round(base)) } });
-	else if (!today) {
-		// an unfinished day is not set against whole days
+	else {
+		// the quiet stretch and the weekday pattern look at the days before: they hold on an unfinished day too
 		let quiet = 0;
 		for (let i = 1; i <= 5; i++) if ((s.z("steps", shiftDate(s.date, -i)) ?? 0) < QUIET_Z) quiet++;
 		if (quiet >= QUIET_STREAK) out.push({ id: "steps_below_streak", params: { n: String(quiet) } });
@@ -33,6 +33,11 @@ export function stepsInsights(s: Signals): Insight[] {
 		const pattern = weekdayPattern((d) => s.index.value("steps", d), s.date);
 		if (pattern && pattern.weekday <= pattern.others * QUIET_WEEKDAY_SHARE) {
 			out.push({ id: "steps_weekday_low", params: { dayOf: s.date, avg: String(Math.round(pattern.weekday)), pct: String(Math.round((1 - pattern.weekday / pattern.others) * 100)) } });
+		}
+		// today is not over: what is left to the usual is the number that helps, so the card never opens to nothing
+		if (out.length === 0 && today) {
+			const left = Math.ceil(base - steps);
+			out.push({ id: "steps_to_go", params: { left: String(left), min: String(Math.ceil(left / STEPS_PER_MINUTE)), base: String(Math.round(base)) } });
 		}
 	}
 	return out;
@@ -42,11 +47,11 @@ export function floorsInsights(s: Signals): Insight[] {
 	const { floors, zone } = computeFloors(s.index, s.date);
 	if (floors === null || zone === null) return [];
 	if (floors >= zone.low && floors > 0) return [{ id: "floors_zone_good" }];
-	// an unfinished day is not set against whole days
-	if (s.date === localDateString(new Date())) return [];
 	let quiet = 0;
 	for (let i = 1; i <= 5; i++) if ((s.index.value("floors", shiftDate(s.date, -i)) ?? zone.low) < zone.low * QUIET_FLOORS_SHARE) quiet++;
-	return quiet >= QUIET_STREAK ? [{ id: "floors_below_streak", params: { n: String(quiet) } }] : [];
+	if (quiet >= QUIET_STREAK) return [{ id: "floors_below_streak", params: { n: String(quiet) } }];
+	// today is not over: what is left to the start of the usual range is the number that helps; a day that is over says it on the card
+	return s.date === localDateString(new Date()) ? [{ id: "floors_to_go", params: { left: String(zone.low - floors), low: String(zone.low), high: String(zone.high) } }] : [];
 }
 
 export function intensityInsights(s: Signals): Insight[] {

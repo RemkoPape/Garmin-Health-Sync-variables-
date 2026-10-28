@@ -373,9 +373,9 @@ describe("stress", () => {
 		expect(ids(stressInsights(await stressed(130, 130)))).toEqual(["stress_usual"]);
 	});
 
-	it("says a level in between is in line with the week, is quiet when it is well above it, and calm for a low one", async () => {
+	it("says a level in between is in line with the week, that a high one is in line with a high week, and calm for a low one", async () => {
 		expect(stressInsights(await stress(40))).toEqual([{ id: "stress_usual", params: { level: "40", week: "35" } }]);
-		expect(stressInsights(await stress(60, 58))).toEqual([]);
+		expect(stressInsights(await stress(60, 58))).toEqual([{ id: "stress_high_usual", params: { level: "60", week: "58" } }]);
 		expect(ids(stressInsights(await stress(20)))).toEqual(["stress_calm"]);
 	});
 });
