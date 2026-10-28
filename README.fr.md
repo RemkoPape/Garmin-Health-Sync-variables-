@@ -2,7 +2,18 @@
 
 # Garmin Health Sync
 
-Synchronisez automatiquement les pas, le sommeil, la fréquence cardiaque, le stress, les activités et plus encore depuis Garmin Connect vers Obsidian Daily Notes — sous forme de propriétés frontmatter interrogeables avec Dataview.
+**Un compagnon pour vos notes quotidiennes.** Garmin Health Sync apporte les chiffres qui comptent de votre montre Garmin dans vos notes quotidiennes Obsidian et, si vous le souhaitez, montre où vous en êtes par rapport à votre propre normalité. Ce n’est pas une copie de Garmin Connect : le but est de vous aider à prendre les bonnes décisions pour la journée.
+
+**Deux façons de l’utiliser**
+
+- **Rester simple.** Connectez-vous et activez les mesures voulues. Elles sont écrites dans vos notes quotidiennes sous forme de propriétés interrogeables avec Dataview, et l’évaluation reste la vôtre.
+- **Ajouter des visuels à côté de vos notes.** Activez le **panneau latéral** dans les réglages pour des cartes sur la disponibilité, la récupération, le sommeil, l’énergie, le mouvement et l’entraînement, comparées à votre propre plage habituelle. L’ampoule de chaque carte indique ce que vos données suggèrent aujourd’hui. [Ce que montre chaque carte et comment elle est calculée](docs/panel-cards.md).
+
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="Cartes de disponibilité et de récupération">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="Ce que suggèrent vos données, sous l’ampoule">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="Les mêmes cartes dans un thème sombre">
+</p>
 
 > **Fonctionne sur ordinateur et sur mobile** (Windows, macOS, Linux, iOS, Android). Ce plugin utilise l’API interne de Garmin Connect ; il n’existe pas d’API tierce officielle. Vous vous connectez avec votre e-mail et votre mot de passe Garmin (et le code de vérification si vous utilisez la validation en deux étapes). Si Garmin bloque cette tentative, une connexion alternative par navigateur est proposée.
 

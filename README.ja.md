@@ -2,7 +2,18 @@
 
 # Garmin Health Sync
 
-Garmin Connect から歩数、睡眠、心拍数、ストレス、アクティビティなどを自動的に Obsidian Daily Notes に同期します。Dataview で検索可能な frontmatter プロパティとして記録されます。
+**デイリーノートの相棒。** Garmin Health Sync は、Garmin ウォッチの大切な数値を Obsidian のデイリーノートに取り込み、必要に応じて、あなた自身の普段の状態と比べた今日の調子を表示します。Garmin Connect のコピーではありません。目的は、その日の判断を的確に行う手助けをすることです。
+
+**2つの使い方**
+
+- **シンプルに使う。** サインインして、必要な指標をオンにします。指標は Dataview で検索できるプロパティとしてデイリーノートに書き込まれ、評価はあなた自身が行います。
+- **ノートの隣にビジュアルを加える。** 設定で**サイドパネル**をオンにすると、コンディション、回復、睡眠、エネルギー、活動、トレーニングのカードが、あなた自身の普段の範囲と比べて表示されます。各カードの電球は、今日のデータが示すことを教えてくれます。[各カードの内容と計算方法](docs/panel-cards.md)。
+
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="コンディションと回復のカード">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="電球の下に表示される、データが示すこと">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="ダークテーマでの同じカード">
+</p>
 
 > **デスクトップとモバイルで動作します**（Windows、macOS、Linux、iOS、Android）。このプラグインは Garmin Connect の内部APIを使用します。公式のサードパーティAPIはありません。Garmin のメールアドレスとパスワード（2段階認証を使っている場合は確認コードも）でサインインします。Garmin がその試行をブロックした場合は、ブラウザでのサインインを代替手段として利用できます。
 

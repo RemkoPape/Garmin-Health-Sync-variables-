@@ -2,7 +2,18 @@
 
 # Garmin Health Sync
 
-自动将步数、睡眠、心率、压力、运动等健康数据从 Garmin Connect 同步到 Obsidian Daily Notes —— 作为 frontmatter 属性，可通过 Dataview 查询。
+**你每日笔记的好帮手。** Garmin Health Sync 把 Garmin 手表上最重要的数据带进你的 Obsidian 每日笔记，并可按需展示你与自己日常水平相比的状态。它不是 Garmin Connect 的复制品：目标是帮助你为这一天做出正确的决定。
+
+**两种使用方式**
+
+- **保持简单。** 登录并开启你想要的指标。它们会作为可用 Dataview 查询的属性写入每日笔记，评估由你自己完成。
+- **在笔记旁添加可视化。** 在设置中开启**侧边面板**，即可看到关于准备度、恢复、睡眠、能量、活动和训练的卡片，并与你自己的日常范围对比。每张卡片上的灯泡会告诉你今天的数据提示了什么。[每张卡片显示什么、如何计算](docs/panel-cards.md)。
+
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="准备度和恢复卡片">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="灯泡下方：数据的启示">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="深色主题下的同一组卡片">
+</p>
 
 > **支持桌面端和移动端**（Windows、macOS、Linux、iOS、Android）。本插件使用 Garmin Connect 的内部 API；Garmin 没有提供官方第三方 API。你使用 Garmin 邮箱和密码登录（如启用两步验证，还需输入验证码）。如果 Garmin 阻止此次尝试，可使用备用的浏览器登录方式。
 
