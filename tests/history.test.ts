@@ -349,6 +349,16 @@ describe("history notes that lie elsewhere", () => {
 	});
 });
 
+describe("reading many months", () => {
+	it("looks at the vault once, not once per month", async () => {
+		const app = new App();
+		app.vault.seed("Daily/Garmin history/Garmin history 2026-10.md", serializeMonth("2026-10", new Map([["2026-10-22", { hrv: 40 }]])));
+		const look = vi.spyOn(app.vault, "getMarkdownFiles");
+		await store(app).warm("2025-10-01", "2026-10-31");
+		expect(look).toHaveBeenCalledTimes(1);
+	});
+});
+
 describe("two devices write the same month", () => {
 	it("merges into the month note another device created between the check and the create", async () => {
 		const app = new App();

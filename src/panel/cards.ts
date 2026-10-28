@@ -71,7 +71,15 @@ export function orderedCards(saved: string[]): PanelCard[] {
 }
 
 /** The interpretations of a card for the shown day. */
-const signals = (c: CardContext): Signals => new Signals(c.index, c.date, c.birthYear);
+/** The cards of one draw share one set of signals, so the sleep and load models are worked out once, not once per card. */
+const signalCache = new WeakMap<DayIndex, { version: number; date: string; birthYear: number | null; signals: Signals }>();
+const signals = (c: CardContext): Signals => {
+	const hit = signalCache.get(c.index);
+	if (hit && hit.version === c.index.version && hit.date === c.date && hit.birthYear === c.birthYear) return hit.signals;
+	const made = new Signals(c.index, c.date, c.birthYear);
+	signalCache.set(c.index, { version: c.index.version, date: c.date, birthYear: c.birthYear, signals: made });
+	return made;
+};
 
 const RANGE_INSIGHTS: Record<string, (s: Signals) => Insight[]> = {
 	hrv: hrvInsights,

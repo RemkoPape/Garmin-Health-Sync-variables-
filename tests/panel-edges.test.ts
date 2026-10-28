@@ -17,6 +17,7 @@ import { bodyInsights, floorsInsights, stepsInsights } from "../src/panel/insigh
 import { Signals } from "../src/panel/insights/signals";
 import { computeTrend } from "../src/panel/trend";
 import { en } from "../src/i18n/en";
+import { PANEL_CARDS } from "../src/panel/cards";
 
 const settings = { dailyNotePath: "", dailyNoteFormat: "YYYY-MM-DD" };
 const END = "2026-10-22"; // a Thursday
@@ -144,5 +145,44 @@ describe("body insights from two weigh-ins", () => {
 		expect(body.perWeek).not.toBeNull();
 		expect(body.entries).toBe(2);
 		expect(bodyInsights(new Signals(index, END, null))).toEqual([]);
+	});
+});
+
+describe("work that is shared between the cards of one draw", () => {
+	const context = (index: DayIndex) => ({ parent: document.createElement("div"), index, date: END, lang: "en", imperial: false, birthYear: null as number | null, explainOpen: false, onToggleExplain: () => undefined });
+
+	it("reads the sessions of a day once, until the index is touched or invalidated", async () => {
+		const app = new App();
+		await seedHistory(app, { end: END, days: 2, frontmatter: () => ({ trainings: [run] }) });
+		const index = new DayIndex(app as never, () => settings);
+		const first = index.sessions(END);
+		expect(index.sessions(END)).toBe(first);
+		const version = index.version;
+		index.touch();
+		expect(index.version).toBe(version + 1);
+		expect(index.sessions(END)).not.toBe(first);
+		const second = index.sessions(END);
+		index.invalidate();
+		expect(index.version).toBe(version + 2);
+		expect(index.sessions(END)).not.toBe(second);
+	});
+
+	it("works out the signals once for all the cards, and again after a change or for another day or birth year", async () => {
+		const index = await indexOf(() => ({ hrv: 60, resting_hr: 50, sleep_duration: "7h 30min", trainings: [run] }), 40);
+		const spy = vi.spyOn(Signals.prototype, "sleep");
+		const draw = (c: ReturnType<typeof context>): number => {
+			for (const card of PANEL_CARDS) card.render(c);
+			return new Set(spy.mock.contexts).size;
+		};
+		// a few cards make signals of their own inside their model (the Today card); without the shared ones each of the 19 cards would
+		const first = draw(context(index));
+		expect(first).toBeLessThan(PANEL_CARDS.length / 2);
+		const second = draw(context(index));
+		expect(second - first).toBeLessThan(first);
+		index.touch();
+		const afterTouch = draw(context(index));
+		expect(afterTouch).toBeGreaterThan(second);
+		expect(draw({ ...context(index), birthYear: 1990 })).toBeGreaterThan(afterTouch);
+		spy.mockRestore();
 	});
 });

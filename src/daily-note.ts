@@ -32,6 +32,17 @@ function escapeRegex(text: string): string {
  * "YYYY/YYYY-MM-DD" only matches when both years agree.
  */
 function dateFormatToRegex(format: string): RegExp {
+	const known = REGEX_CACHE.get(format);
+	if (known) return known;
+	const regex = buildDateFormatRegex(format);
+	REGEX_CACHE.set(format, regex);
+	return regex;
+}
+
+/** The compiled pattern of each format: the panel asks for it once per note of the vault at every rebuild. */
+const REGEX_CACHE = new Map<string, RegExp>();
+
+function buildDateFormatRegex(format: string): RegExp {
 	const seen = new Set<string>();
 	let pattern = "";
 

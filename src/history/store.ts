@@ -64,10 +64,12 @@ export class HistoryStore {
 	async warm(from: string, to: string): Promise<boolean> {
 		const generation = this.generation;
 		let found = false;
+		// one look at the vault for all the months, not one per month
+		const all = this.app.vault.getMarkdownFiles();
 		for (const month of monthsBetween(from, to)) {
 			if (this.cache.has(month) && !this.stale.has(month)) continue;
 			const days = new Map<string, DayRecord>();
-			for (const file of this.filesOf(month)) {
+			for (const file of this.filesOf(month, all)) {
 				found = true;
 				for (const [date, record] of parseMonth(await this.app.vault.cachedRead(file))) days.set(date, mergeRecord(days.get(date), record));
 			}
@@ -118,9 +120,9 @@ export class HistoryStore {
 	}
 
 	/** The notes of a month, the one in the history folder first. */
-	private filesOf(month: string): TFile[] {
+	private filesOf(month: string, all: TFile[] = this.app.vault.getMarkdownFiles()): TFile[] {
 		const home = `${this.folder()}/`;
-		const files = this.app.vault.getMarkdownFiles().filter((file) => monthOfName(file.name) === month);
+		const files = all.filter((file) => monthOfName(file.name) === month);
 		return files.sort((a, b) => Number(b.path.startsWith(home)) - Number(a.path.startsWith(home)) || a.path.length - b.path.length);
 	}
 
