@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.68
+
+### Changed
+
+- **The readiness score is less strict.** A day with nothing unusual now scores 60 (an ordinary day is moderate, not tired). HRV counts 10 and resting heart rate 7 per standard deviation, each held between -2 and 2 (the two move together, so a far-out pair was one signal counted twice), a sleep debt costs 4 points an hour for at most 3 hours, and the body battery term is limited to 8 points either way. While your usual range is young (fewer than 21 days of HRV and resting heart rate, for example with a new watch) all terms are scaled by how much of the range exists, so the score is pulled towards 60 instead of swinging: the same day that read 21 (poor) on 12 days of HRV now reads 42. The bands are poor under 30, low under 50, moderate under 70, high under 90, prime from 90, and the colours of the bar follow them.
+- **Activity names in your language.** The sessions card shows about 70 sports by name in English, German, Spanish, French, Japanese and Chinese ("Laufband", "Kajakfahren"); a sport without a name of its own is shown as readable text, as before. Names with the suffix Garmin adds to newer sports (`kayaking_v2`, `skate_skiing_ws`) read like the plain sport.
+- **More sports are classified.** Treadmill, indoor and street running, virtual rides, indoor cardio, stair climbing, paddling and the `_v2` and `_ws` variants now count as running, cycling, gym or water instead of "other", so their distance counts toward the weekly distance. Meditation, breathwork, stretching and mobility are recovery (left out of the load, as breathwork and meditation already were).
+- **Weekly distance of swimming** is tracked next to running, cycling, walking and outdoor.
+- What's new: a new item names the metrics that can be synced now (water intake and its goal, bedtime and wake-up time, stress and recovery minutes) and what they unlock.
+
 ## 0.12.0-beta.67
 
 ### Fixed

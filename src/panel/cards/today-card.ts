@@ -15,14 +15,14 @@ export const TODAY_RELIABLE_DAYS = 21;
 
 export type FlagId = "hrv" | "rhr" | "sleep" | "battery" | "stress" | "breathing" | "spo2" | "load";
 export type Verdict = "hard" | "planned" | "easy" | "rest";
-/** 0 poor (0-24), 1 low (25-49), 2 moderate (50-74), 3 high (75-94), 4 prime (95-100). */
+/** 0 poor (0-29), 1 low (30-49), 2 moderate (50-69), 3 high (70-89), 4 prime (90-100). */
 export type Band = 0 | 1 | 2 | 3 | 4;
 
 const BANDS: { upTo: number; name: TranslationKeys }[] = [
-	{ upTo: 25, name: "panelBandPoor" },
+	{ upTo: 30, name: "panelBandPoor" },
 	{ upTo: 50, name: "panelBandLow" },
-	{ upTo: 75, name: "panelBandModerate" },
-	{ upTo: 95, name: "panelBandHigh" },
+	{ upTo: 70, name: "panelBandModerate" },
+	{ upTo: 90, name: "panelBandHigh" },
 	{ upTo: Infinity, name: "panelBandPrime" },
 ];
 
@@ -53,14 +53,19 @@ export interface TodayModel {
 
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
+/** Where a day with no sign of strain or of a good recovery lands: the lower end of "moderate" would call every ordinary day tired. */
+const NEUTRAL_SCORE = 60;
+
 /**
- * Own readiness: 50 + 12 z(HRV) - 10 z(resting heart rate) - 6 h sleep debt (at most 4 h) + 0.25 (battery peak - usual), 0 to 100.
- * The two z terms are scaled by `trust`, which is below 1 while the usual range rests on fewer than 21 days: a young
- * range is noisy, so a far-out value should not push the score as hard.
+ * Own readiness: 60 + 10 z(HRV) - 7 z(resting heart rate) - 4 per hour of sleep debt (at most 3 h) + 0.25 (battery peak - usual,
+ * between -8 and +8), 0 to 100. The z values are held between -2 and 2: HRV and resting heart rate move together, so a
+ * far-out pair is one signal counted twice. Everything that depends on the usual range is scaled by `trust`, which
+ * is below 1 while that range rests on fewer than 21 days, so a young range pulls the score towards the neutral
+ * value instead of swinging it: a new watch with 12 days of HRV is the case this is for.
  */
 function scoreOf(hrvZ: number, rhrZ: number, debtMin: number, peakGap: number | null, trust: number): number {
-	const raw = 50 + trust * (12 * clamp(hrvZ, -2.5, 2.5) - 10 * clamp(rhrZ, -2.5, 2.5)) - 6 * Math.min(debtMin / 60, 4) + (peakGap === null ? 0 : 0.25 * peakGap);
-	return Math.round(clamp(raw, 0, 100));
+	const signal = 10 * clamp(hrvZ, -2, 2) - 7 * clamp(rhrZ, -2, 2) - 4 * Math.min(debtMin / 60, 3) + (peakGap === null ? 0 : clamp(0.25 * peakGap, -8, 8));
+	return Math.round(clamp(NEUTRAL_SCORE + trust * signal, 0, 100));
 }
 
 /** The verdict follows the band and the number of flags; a pair of raised breathing and resting heart rate means rest. A low band alone means rest only once the usual range is reliable. */

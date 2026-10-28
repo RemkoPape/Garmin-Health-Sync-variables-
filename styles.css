@@ -1212,7 +1212,7 @@
 }
 
 .ghs-range-track-readiness {
-	background: linear-gradient(to right, var(--color-red) 0%, var(--color-red) 25%, var(--color-orange) 25%, var(--color-orange) 50%, var(--color-yellow) 50%, var(--color-yellow) 75%, var(--color-green) 75%, var(--color-green) 95%, var(--color-cyan) 95%, var(--color-cyan) 100%);
+	background: linear-gradient(to right, var(--color-red) 0%, var(--color-red) 30%, var(--color-orange) 30%, var(--color-orange) 50%, var(--color-yellow) 50%, var(--color-yellow) 70%, var(--color-green) 70%, var(--color-green) 90%, var(--color-cyan) 90%, var(--color-cyan) 100%);
 }
 
 /* A warning on the card itself: what is off, in one line */

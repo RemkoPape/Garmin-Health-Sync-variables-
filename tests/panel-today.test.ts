@@ -35,82 +35,90 @@ const run = (ago: number, recent: number, earlier: number): Fm => ({ running: `$
 const high = { hrv: 80, resting_hr: 52 };
 
 describe("the readiness score", () => {
-	it("is 50 when HRV, resting heart rate and sleep are exactly as usual", async () => {
+	it("is 60 when HRV, resting heart rate and sleep are exactly as usual", async () => {
 		const m = computeToday(await index({ hrv: 60, resting_hr: 52 }), END, null);
-		expect(m.score).toBe(50);
+		expect(m.score).toBe(60);
 		expect(m.band).toBe(2);
 		expect(m.flags).toEqual([]);
 	});
 
-	it("adds 12 per standard deviation of HRV and subtracts 10 per standard deviation of resting heart rate", async () => {
-		expect(computeToday(await index({ hrv: 62, resting_hr: 52 }), END, null).score).toBe(62); // +1 sd
-		expect(computeToday(await index({ hrv: 60, resting_hr: 54 }), END, null).score).toBe(40); // +1 sd of resting heart rate
-		expect(computeToday(await index({ hrv: 62, resting_hr: 50 }), END, null).score).toBe(72);
+	it("adds 10 per standard deviation of HRV and subtracts 7 per standard deviation of resting heart rate", async () => {
+		expect(computeToday(await index({ hrv: 62, resting_hr: 52 }), END, null).score).toBe(70); // +1 sd
+		expect(computeToday(await index({ hrv: 60, resting_hr: 54 }), END, null).score).toBe(53); // +1 sd of resting heart rate
+		expect(computeToday(await index({ hrv: 62, resting_hr: 50 }), END, null).score).toBe(77);
 	});
 
-	it("clamps each z value at 2.5 standard deviations and the score at 0 and 100", async () => {
-		expect(computeToday(await index({ hrv: 90, resting_hr: 52 }), END, null).score).toBe(80); // 50 + 12 * 2.5
-		expect(computeToday(await index({ hrv: 90, resting_hr: 30 }), END, null).score).toBe(100); // 50 + 30 + 25, capped
-		expect(computeToday(await index({ hrv: 30, resting_hr: 90 }, () => ({ sleep_duration: "4h 0min" })), END, null).score).toBe(0);
+	it("holds each z value at 2 standard deviations and the score at 100", async () => {
+		expect(computeToday(await index({ hrv: 90, resting_hr: 52 }), END, null).score).toBe(80); // 60 + 10 * 2
+		expect(computeToday(await index({ hrv: 90, resting_hr: 30 }), END, null).score).toBe(94); // 60 + 20 + 14
+		const battery = (ago: number): Fm => ({ body_battery_max: alt(ago, 62, 58) });
+		expect(computeToday(await index({ hrv: 90, resting_hr: 30, body_battery_max: 100 }, battery), END, null).score).toBe(100); // 94 + 8, capped
+		// the worst a day can look still leaves a number: far out values, three hours of debt and a low battery
+		expect(computeToday(await index({ hrv: 30, resting_hr: 90, body_battery_max: 10 }, (ago) => ({ ...battery(ago), sleep_duration: "4h 0min" })), END, null).score).toBe(6);
 	});
 
-	it("subtracts 6 per hour of sleep debt, at most 4 hours of it", async () => {
-		// the last week 6 h 20 min after weeks of 7 h 30: 40 min short each of 7 nights = 280 min = 4.67 h -> capped at 4 -> -24
+	it("subtracts 4 per hour of sleep debt, at most 3 hours of it", async () => {
+		// the last week 6 h 20 min after weeks of 7 h 30: 40 min short each of 7 nights = 280 min = 4.67 h -> capped at 3 -> -12
 		const shorter = (night: string) => (ago: number): Fm => ({ sleep_duration: ago < 7 ? night : "7h 30min" });
 		const m = computeToday(await index({ hrv: 60, resting_hr: 52 }, shorter("6h 20min")), END, null);
-		expect(m.score).toBe(26);
+		expect(m.score).toBe(48);
 		expect(m.facts.debt).toBe(280);
-		// 6 h 50 min nights: 70 min of debt -> -7
-		expect(computeToday(await index({ hrv: 60, resting_hr: 52 }, shorter("6h 50min")), END, null).score).toBe(43);
+		// 6 h 50 min nights: 70 min of debt -> -4.67
+		expect(computeToday(await index({ hrv: 60, resting_hr: 52 }, shorter("6h 50min")), END, null).score).toBe(55);
 	});
 
 	it("counts the debt against the usual sleep, so a person who never reaches 7 hours does not owe it every day", async () => {
 		const m = computeToday(await index({ hrv: 60, resting_hr: 52 }, () => ({ sleep_duration: "6h 20min" })), END, null);
 		expect(m.facts.debt).toBe(0);
-		expect(m.score).toBe(50);
+		expect(m.score).toBe(60);
 		expect(m.flags).toEqual([]);
 	});
 
-	it("scales the HRV and resting heart rate terms by the days of range while it is young, and not at 21 days or more", async () => {
-		const far = { hrv: 54, resting_hr: 58 }; // far out of range: both z values clamp at 2.5, 12 x 2.5 + 10 x 2.5 = 55
+	it("pulls the score towards 60 by the days of range while it is young, and not at 21 days or more", async () => {
+		const far = { hrv: 54, resting_hr: 58 }; // far out of range: both z values are held at 2, 10 x 2 + 7 x 2 = 34
 		const young = computeToday(await index(far, () => ({}), 12), END, null);
 		expect(young.baselineDays).toBe(11);
-		expect(young.score).toBe(21); // 50 - 55 x 11 / 21
-		expect(computeToday(await index(far, () => ({}), 45), END, null).score).toBe(0); // 50 - 55, no less than 0
+		expect(young.score).toBe(42); // 60 - 34 x 11 / 21: a new watch with 12 days of HRV is not "poor"
+		expect(young.band).toBe(1);
+		expect(computeToday(await index(far, () => ({}), 45), END, null).score).toBe(26); // 60 - 34
 		expect(computeToday(await index(far, () => ({}), 22), END, null).baselineDays).toBe(21);
 	});
 
 	it("does not call for a day off from a low band alone while the range is young", async () => {
 		const far = { hrv: 54, resting_hr: 58 };
 		const young = computeToday(await index(far, () => ({}), 12), END, null);
-		expect(young.band).toBe(0);
+		expect(young.band).toBe(1);
 		expect(young.verdict).toBe("easy");
-		expect(computeToday(await index(far, () => ({}), 45), END, null).verdict).toBe("rest");
+		const settled = computeToday(await index(far, () => ({}), 45), END, null);
+		expect(settled.band).toBe(0);
+		expect(settled.verdict).toBe("rest");
 		// raised breathing with a high resting heart rate, or three flags, still mean rest
 		const sick = computeToday(await index({ ...far, respiration_rate: 19 }, (ago) => ({ respiration_rate: alt(ago, 13, 15.4) }), 12), END, null);
 		expect(sick.verdict).toBe("rest");
 	});
 
-	it("adds a quarter of how far the body battery peak is above or below the usual, and leaves it out without one", async () => {
+	it("adds a quarter of how far the body battery peak is above or below the usual, at most 8 either way, and leaves it out without one", async () => {
 		const battery = (ago: number): Fm => ({ body_battery_max: alt(ago, 62, 58) });
-		expect(computeToday(await index({ hrv: 60, resting_hr: 52, body_battery_max: 80 }, battery), END, null).score).toBe(55); // +20 * 0.25
-		expect(computeToday(await index({ hrv: 60, resting_hr: 52, body_battery_max: 40 }, battery), END, null).score).toBe(45);
-		expect(computeToday(await index({ hrv: 60, resting_hr: 52, body_battery_max: undefined }, battery), END, null).score).toBe(50); // no peak today
-		expect(computeToday(await index({ hrv: 60, resting_hr: 52 }), END, null).score).toBe(50);
+		expect(computeToday(await index({ hrv: 60, resting_hr: 52, body_battery_max: 80 }, battery), END, null).score).toBe(65); // +20 * 0.25
+		expect(computeToday(await index({ hrv: 60, resting_hr: 52, body_battery_max: 40 }, battery), END, null).score).toBe(55);
+		expect(computeToday(await index({ hrv: 60, resting_hr: 52, body_battery_max: 100 }, battery), END, null).score).toBe(68); // +40 would be +10
+		expect(computeToday(await index({ hrv: 60, resting_hr: 52, body_battery_max: 20 }, battery), END, null).score).toBe(52);
+		expect(computeToday(await index({ hrv: 60, resting_hr: 52, body_battery_max: undefined }, battery), END, null).score).toBe(60); // no peak today
+		expect(computeToday(await index({ hrv: 60, resting_hr: 52 }), END, null).score).toBe(60);
 	});
 
 	it.each([
-		[24, 0],
-		[25, 1],
+		[29, 0],
+		[30, 1],
 		[49, 1],
 		[50, 2],
-		[74, 2],
-		[75, 3],
-		[94, 3],
-		[95, 4],
+		[69, 2],
+		[70, 3],
+		[89, 3],
+		[90, 4],
 	])("puts a score of %s in band %s", async (score, band) => {
-		// up to 80 with HRV alone (2.5 standard deviations is the most it counts), beyond that with a lower resting heart rate
-		const today = score <= 80 ? { hrv: 60 + 2 * ((score - 50) / 12), resting_hr: 52 } : { hrv: 90, resting_hr: 52 - 2 * ((score - 80) / 10) };
+		// HRV alone between 40 and 80; below that with a higher resting heart rate, above with a lower one
+		const today = score >= 40 && score <= 80 ? { hrv: 60 + 2 * ((score - 60) / 10), resting_hr: 52 } : score < 40 ? { hrv: 56, resting_hr: 52 + 2 * ((40 - score) / 7) } : { hrv: 90, resting_hr: 52 - 2 * ((score - 80) / 7) };
 		const m = computeToday(await index(today), END, null);
 		expect(m.score).toBe(score);
 		expect(m.band).toBe(band);
@@ -186,7 +194,7 @@ describe("the verdict", () => {
 
 	it("is a day off for a poor or low band", async () => {
 		expect(await verdict({ hrv: 50, resting_hr: 60 })).toBe("rest");
-		expect(await verdict({ hrv: 57, resting_hr: 52 })).toBe("rest"); // score 32, low
+		expect(await verdict({ hrv: 57, resting_hr: 52 })).toBe("rest"); // score 45, low
 	});
 
 	it("is a day off with three flags, whatever the band", async () => {
@@ -246,7 +254,7 @@ describe("the Today card", () => {
 		render(rest);
 		expect(root.querySelector(".ghs-card-verdict-rest")).not.toBeNull();
 		expect(text(".ghs-verdict")).toBe(en.panelVerdictRest);
-		expect(text(".ghs-card-value")).toBe("0 Poor");
+		expect(text(".ghs-card-value")).toBe("26 Poor");
 		render(computeToday(await index({ hrv: 60, resting_hr: 52 }), END, null));
 		expect(root.querySelector(".ghs-card-verdict-planned")).not.toBeNull();
 		render(computeToday(await index({ hrv: 60, resting_hr: 52, stress: 50 }, () => ({ stress: 30 })), END, null));
