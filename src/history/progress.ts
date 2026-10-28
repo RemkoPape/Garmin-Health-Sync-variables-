@@ -1,6 +1,6 @@
 import { Notice } from "obsidian";
 import { t } from "../i18n/t";
-import type { BuildProgress, BuildResult } from "./builder";
+import type { BuildProgress, BuildResult } from "./backfill";
 
 /** "1 h 05 min", "12 min": plain units that read the same in every supported language. */
 export function formatDuration(ms: number): string {
@@ -77,18 +77,20 @@ export class BuildProgressUi extends ProgressNotice {
 		} else {
 			text = fill(t("historyProgress", this.lang)).replace("{eta}", formatDuration(progress.etaMs));
 		}
-		this.setText(text, t("historyStatusBar", this.lang).replace("{percent}", String(Math.round((progress.done / progress.total) * 100))));
+		this.setText(text, t("historyStatusBar", this.lang).replace("{percent}", String(Math.round((progress.done / Math.max(1, progress.total)) * 100))));
 	}
 
 	/** Removes the notice and the status bar item and says how it ended. */
 	finish(result: BuildResult): void {
 		this.dismiss();
-		const key = {
+		// a run that had nothing to fetch says so, instead of "0 days fetched"
+		const nothing = result.status === "done" && result.fetched === 0 && result.failed === 0;
+		const key = nothing ? "noticeBackfillNothing" : {
 			done: result.reachedStart || result.failed === 0 ? "historyDone" : "historyDoneWithErrors",
 			stopped: "historyStopped",
 			"gave-up": "historyGaveUp",
 			"login-required": "noticeLoginRequired",
-		}[result.status] as "historyDone" | "historyDoneWithErrors" | "historyStopped" | "historyGaveUp" | "noticeLoginRequired";
+		}[result.status] as "historyDone" | "historyDoneWithErrors" | "historyStopped" | "historyGaveUp" | "noticeLoginRequired" | "noticeBackfillNothing";
 		new Notice(
 			t(key, this.lang).replace("{fetched}", String(result.fetched)).replace("{skipped}", String(result.skipped)).replace("{failed}", String(result.failed)).replace("{date}", result.date),
 			15000,

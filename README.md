@@ -133,14 +133,14 @@ Open a Daily Note and run **Garmin Health Sync: Sync current note** from the Com
 
 ### Backfill historical data
 
-Have years of Garmin data? You can bulk-sync any date range:
+Have years of Garmin data? **Backfill health data** fetches any range of days:
 
-1. Open the Command Palette (Cmd/Ctrl+P)
-2. Search for **"Backfill health data"**
-3. Pick a start and end date
-4. The plugin fetches all data for that range with rate-limiting to avoid API throttling, and shows the day it is at and the time left
+1. Open the Command Palette (Cmd/Ctrl+P) and search for **"Backfill health data"**
+2. Pick a start and end date, or switch on **Until my data starts** to go back up to five years and stop when your data begins
+3. Choose what happens to days without a daily note (**Days without a daily note**): create the note, keep the day in history files, or skip it
+4. Switch on **Fetch complete days again** to overwrite days that are already there
 
-A day that an earlier backfill already fetched (with all your enabled metrics) is skipped, except the last 3 days, which may still change. **Backfill health data again (ignore what is already fetched)** fetches every day again and overwrites the values. What happens with a day that has no daily note follows **Days without a daily note**.
+The days are fetched newest first, with the rate limiting Garmin needs. A notice at the top shows the day, how many days are done and the time left, with a **Stop** button, and on a desktop the status bar shows the percentage. If you click the notice away, the command **Show the progress of the running backfill** (listed only while one runs) or a click on the status bar item brings it back. Only one backfill runs at a time. A stopped or interrupted backfill goes on after a restart, from where it stopped. Garmin failures are retried, and a day that an earlier backfill fetched (with all your enabled metrics) is skipped, except the last 3 days, which may still change.
 
 ### Health side panel
 
@@ -156,9 +156,9 @@ Turn on **Side panel** in the plugin settings, then open it from the ribbon icon
 <img src="docs/screenshots/panel-training.png" width="280" alt="Steps, load balance, weekly load and sessions">
 </p>
 
-### History notes and Build Garmin history
+### History notes
 
-With **Days without a daily note** set to **Keep in history files**, every fetched day is also stored in small monthly notes (`Garmin history/Garmin history 2026-10.md`, one line per day) in your daily notes folder. They are plain markdown, so they sync with your vault, and the panel reads them for days that have no note. The command **Import history from daily notes** copies the Garmin values of your existing notes into them. **Build Garmin history** fetches the days back to a date you choose (default five years), newest first: it shows the time it will take, can be stopped and continues where it stopped, waits and retries if Garmin does not answer, and skips days it already has. If you change your daily notes folder, the history notes move along with it.
+With **Days without a daily note** set to **Keep in history files**, every fetched day is also stored in small monthly notes (`Garmin history/Garmin history 2026-10.md`, one line per day) in your daily notes folder. They are plain markdown, so they sync with your vault, and the panel reads them for days that have no note. The command **Import history from daily notes** copies the Garmin values of your existing notes into them. The backfill can fill them back to the start of your data in one go (**Until my data starts**). If you change your daily notes folder, the history notes move along with it.
 
 ### Properties of daily notes
 

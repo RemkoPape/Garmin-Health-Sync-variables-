@@ -34,20 +34,18 @@ The command **Import history from daily notes** copies the Garmin values of the 
 
 With at least 60 days of values in the last year, the box under the light bulb of the HRV, resting heart rate, SpO2, breathing, sleep, steps and VO2 max cards adds a line with the year (days with data, average, lowest, highest) and, when each of the last 90 days and the 90 days before have at least 20 values, the average of both. These are plain figures from the data, not interpretations, so they have no text in `docs/panel-insights.md`. The usual range of a card still comes from the last 30 days only, because a new watch measures HRV and resting heart rate differently from an old one and a year-long baseline would mix the two.
 
-## Building the history back in time
+## Backfill
 
-The command **Build Garmin history** fetches the days from yesterday back to the date you choose (default five years) into the history notes.
+The one command **Backfill health data** fetches any range of days, newest first. Its dialog asks for the first and last day, **Until my data starts** (go back up to five years and stop where the data starts), what to do with days without a note (the setting **Days without a daily note**, for this run only) and **Fetch complete days again** (overwrite days that are already there).
 
-- Newest day first, so stopping early still leaves the most useful days. Days already in the history are skipped, so a stopped or failed run continues where it left off; nothing else is stored to resume.
-- Only the metrics you have enabled are fetched, one request group per metric group and day, spaced by the same delay as the backfill (about 3 s a day with the default metrics, about 10 s with all of them). The dialog shows the estimate before it starts.
-- A day without any data is remembered as empty once it is older than three days, so it is not asked for again. The run ends at the start of your data: after data was found, 120 days in a row without any.
-- A day that fails is retried after 30 s and 60 s. Three failed days in a row pause the run for 5 minutes, then 10, 20 and 30; after five pauses without a success it stops. A request for a new sign-in stops it at once. Whatever was fetched is saved in every case.
-- A running build shows a notice at the top with the day, the days done, the time left and a **Stop** button, and on a desktop a percentage in the status bar. The auto-sync waits while it runs; fetches never overlap.
-- A daily note that exists for a fetched day is updated too (never created).
-
-## Skipping and forcing
-
-The command **Backfill health data** (the date range) fetches only what is missing: a day older than a week that an earlier backfill fetched with all the metrics enabled now, or that the history notes already hold, is skipped. The last three days are always fetched again because the watch may sync late. The command **Backfill health data again (ignore what is already fetched)** fetches every day of the range again and overwrites their values.
+- Newest day first, so stopping early still leaves the most useful days. Only the metrics you have enabled are fetched, one request group per metric group and day, spaced by the recommended delay (about 3 s a day with the default metrics, about 10 s with all of them). The dialog shows the estimate before it starts.
+- What a day is skipped for: the history notes already hold it with every enabled metric, or an earlier run fetched it with them (the fetch log in `data.json`). The last three days are always fetched again, because the watch may still sync them. **Fetch complete days again** ignores both.
+- With **Skip the day** only days that have a note are fetched. With **Keep in history files** a day also goes into the history, and a note that exists is updated; with **Create the note** a missing note is made and no history file is written.
+- A day without any data is remembered as empty in the history once it is older than three days (only when the history is kept). **Until my data starts** ends after data was found and 120 days in a row had none.
+- A day that fails is retried after 30 s and 60 s. Three failed days in a row pause the run for 5 minutes, then 10, 20 and 30; after five pauses without a success it stops. A request for a new sign-in stops it at once. A day that could not be stored counts as failed and is left for the next run. Whatever was fetched is saved in every case.
+- A running backfill shows a notice at the top with the day, the days done, the time left and a **Stop** button, and on a desktop the percentage in the status bar. The notice can be clicked away; the command **Show the progress of the running backfill** (listed only while one runs) and a click on the status bar item bring it back.
+- Only one backfill runs at a time (a second one shows the running one), and the auto-sync waits while it runs; requests to Garmin never overlap.
+- The range that is left is saved every five fetched days. A backfill that was running when Obsidian closed goes on about ten seconds after the next start from where it stopped; stopping it or letting it finish ends it.
 
 ## Concurrency
 

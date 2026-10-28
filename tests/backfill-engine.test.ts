@@ -1,10 +1,11 @@
-// Why it matters: the history build runs for hours against a rate-limited service. It must go newest first,
+// Why it matters: a backfill runs for hours against a rate-limited service. It must go newest first,
 // never ask twice for a day it has, pace its requests, survive failures without hammering Garmin, stop when
 // asked, and leave everything it fetched in the files whatever way it ends.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { FakeProvider } from "../testUtils/fakeProvider";
-import { HistoryBuilder, EMPTY_RUN_STOP, type BuildProgress } from "../src/history/builder";
+import { Backfill, EMPTY_RUN_STOP, type BuildProgress } from "../src/history/backfill";
+import type { MissingNoteBehaviour } from "../src/settings";
 import { serializeMonth } from "../src/history/format";
 import { HistoryStore } from "../src/history/store";
 import { LoginRequiredError } from "../src/errors";
@@ -16,9 +17,12 @@ const ENABLED = ["steps", "hrv"];
 let app: App;
 let provider: FakeProvider;
 let store: HistoryStore;
-let notes: string[];
+let notes: { date: string; mayCreate: boolean }[];
 let progress: BuildProgress[];
-let builder: HistoryBuilder;
+let builder: Backfill;
+let fetchLog: Set<string>;
+let cursors: string[];
+let withNote: (date: string) => boolean;
 
 beforeEach(() => {
 	vi.useFakeTimers();
@@ -29,11 +33,27 @@ beforeEach(() => {
 	store = new HistoryStore(app as never, { dailyNotePath: "" });
 	notes = [];
 	progress = [];
+	fetchLog = new Set();
+	cursors = [];
+	withNote = () => true;
 	make();
 });
 
-function make(enabled = ENABLED): void {
-	builder = new HistoryBuilder({ provider, store, enabledMetrics: enabled, writeNote: async (date) => void notes.push(date), onProgress: (p) => progress.push(p) });
+function make(enabled = ENABLED, options: { behaviour?: MissingNoteBehaviour; force?: boolean; untilStart?: boolean } = {}): void {
+	builder = new Backfill({
+		provider,
+		store,
+		enabledMetrics: enabled,
+		behaviour: options.behaviour ?? "history",
+		force: options.force ?? false,
+		untilStart: options.untilStart ?? false,
+		hasNote: (date) => withNote(date),
+		wasFetched: (date) => fetchLog.has(date),
+		markFetched: (date) => void fetchLog.add(date),
+		writeNote: async (date, _data, mayCreate) => void notes.push({ date, mayCreate }),
+		onCursor: async (next) => void cursors.push(next),
+		onProgress: (p) => progress.push(p),
+	});
 }
 
 async function run(from: string, to: string) {
@@ -60,7 +80,7 @@ describe("the order and the pace", () => {
 			'2026-10-23 {"_m":["hrv","steps"],"steps":8000}',
 			'2026-10-24 {"_m":["hrv","steps"],"steps":8000}',
 		]);
-		expect(notes).toEqual(["2026-10-24", "2026-10-23", "2026-10-22"]);
+		expect(notes.map((n) => n.date)).toEqual(["2026-10-24", "2026-10-23", "2026-10-22"]);
 		expect(result).toEqual({ status: "done", fetched: 3, skipped: 0, failed: 0, date: "2026-10-22", reachedStart: false });
 	});
 
@@ -100,11 +120,11 @@ describe("the order and the pace", () => {
 
 describe("history notes in an earlier folder", () => {
 	it("are moved first, and their days are then not fetched again", async () => {
-		const month = serializeMonth("2026-10", new Map([["2026-10-24", { steps: 1, _m: ["hrv", "steps"] }]]));
+		const month = serializeMonth("2026-10", new Map([["2026-10-20", { steps: 1, _m: ["hrv", "steps"] }]]));
 		app.vault.seed("Old year/Garmin history/Garmin history 2026-10.md", month);
 		store = new HistoryStore(app as never, { dailyNotePath: "New year" });
 		make();
-		const result = await run("2026-10-24", "2026-10-24");
+		const result = await run("2026-10-20", "2026-10-20");
 		expect(app.vault.paths()).toEqual(["New year/Garmin history/Garmin history 2026-10.md"]);
 		expect(fetchedDates()).toEqual([]);
 		expect(result).toMatchObject({ skipped: 1, fetched: 0 });
@@ -113,17 +133,17 @@ describe("history notes in an earlier folder", () => {
 
 describe("days that are already there", () => {
 	it("skips a day that has the metrics, one that came from notes and one remembered as empty, without a request or a wait", async () => {
-		app.vault.seed(FILE, record({ "2026-10-24": { steps: 1, _m: ["hrv", "steps"] }, "2026-10-23": { steps: 2 }, "2026-10-22": { _m: ["hrv", "steps"] } }));
-		const result = await run("2026-10-22", "2026-10-24");
+		app.vault.seed(FILE, record({ "2026-10-20": { steps: 1, _m: ["hrv", "steps"] }, "2026-10-19": { steps: 2 }, "2026-10-18": { _m: ["hrv", "steps"] } }));
+		const result = await run("2026-10-18", "2026-10-20");
 		expect(fetchedDates()).toEqual([]);
 		expect(result).toMatchObject({ fetched: 0, skipped: 3, status: "done" });
 	});
 
 	it("asks again for a day whose record lacks a metric that is wanted now, and merges", async () => {
-		app.vault.seed(FILE, record({ "2026-10-24": { steps: 1, _m: ["steps"] } }));
-		await run("2026-10-24", "2026-10-24");
-		expect(fetchedDates()).toEqual(["2026-10-24"]);
-		expect(lines()).toEqual(['2026-10-24 {"_m":["hrv","steps"],"steps":8000}']);
+		app.vault.seed(FILE, record({ "2026-10-20": { steps: 1, _m: ["steps"] } }));
+		await run("2026-10-20", "2026-10-20");
+		expect(fetchedDates()).toEqual(["2026-10-20"]);
+		expect(lines()).toEqual(['2026-10-20 {"_m":["hrv","steps"],"steps":8000}']);
 	});
 });
 
@@ -139,6 +159,7 @@ describe("days without data", () => {
 	});
 
 	it("ends at the start of the data: 120 empty days in a row after the last day with data", async () => {
+		make(ENABLED, { untilStart: true });
 		const last = shiftDate("2026-10-24", -10);
 		provider.byDate.set(last, { metrics: { steps: 1 }, activities: {} });
 		const result = await run(shiftDate(last, -400), "2026-10-24");
@@ -149,21 +170,32 @@ describe("days without data", () => {
 	});
 
 	it("does not stop for empty days before any data was found", async () => {
+		make(ENABLED, { untilStart: true });
 		const result = await run(shiftDate("2026-10-24", -(EMPTY_RUN_STOP + 20)), "2026-10-24");
 		expect(result.reachedStart).toBe(false);
 		expect(result.fetched).toBe(EMPTY_RUN_STOP + 21);
 	});
 
+	it("goes on through a long stretch of empty days when it was not asked to look for the start of the data", async () => {
+		const last = shiftDate("2026-10-24", -10);
+		provider.byDate.set(last, { metrics: { steps: 1 }, activities: {} });
+		const result = await run(shiftDate(last, -(EMPTY_RUN_STOP + 5)), "2026-10-24");
+		expect(result.reachedStart).toBe(false);
+		expect(result.fetched).toBe(11 + EMPTY_RUN_STOP + 5);
+	});
+
 	it("counts days that were skipped as empty or full for the same rule", async () => {
+		make(ENABLED, { untilStart: true });
 		const known: Record<string, Record<string, unknown>> = {};
-		for (let i = 0; i < EMPTY_RUN_STOP; i++) known[shiftDate("2026-10-24", -i - 1)] = { _m: ["hrv", "steps"] };
-		known["2026-10-24"] = { steps: 5, _m: ["hrv", "steps"] };
+		for (let i = 0; i < EMPTY_RUN_STOP; i++) known[shiftDate("2026-10-21", -i - 1)] = { _m: ["hrv", "steps"] };
+		known["2026-10-21"] = { steps: 5, _m: ["hrv", "steps"] };
 		for (const month of new Set(Object.keys(known).map((d) => d.slice(0, 7)))) {
 			app.vault.seed(`Garmin history/Garmin history ${month}.md`, serializeMonth(month, new Map(Object.entries(known).filter(([d]) => d.startsWith(month)))));
 		}
 		const result = await run("2025-01-01", "2026-10-24");
-		expect(result).toMatchObject({ reachedStart: true, fetched: 0, skipped: EMPTY_RUN_STOP + 1 });
-		expect(fetchedDates()).toEqual([]);
+		// the last days are always fetched again, the older ones are skipped
+		expect(result).toMatchObject({ reachedStart: true, fetched: 3, skipped: EMPTY_RUN_STOP + 1 });
+		expect(fetchedDates()).toEqual(["2026-10-24", "2026-10-23", "2026-10-22"]);
 	});
 });
 
@@ -257,5 +289,80 @@ describe("stopping", () => {
 		const result = await run("2026-10-20", "2026-10-24");
 		expect(result).toMatchObject({ status: "stopped", fetched: 0, date: "2026-10-24" });
 		expect(fetchedDates()).toEqual([]);
+	});
+});
+
+describe("what happens to a day without a daily note", () => {
+	it("creates the note in 'create' and writes no history file", async () => {
+		make(ENABLED, { behaviour: "create" });
+		await run("2026-10-23", "2026-10-24");
+		expect(notes).toEqual([{ date: "2026-10-24", mayCreate: true }, { date: "2026-10-23", mayCreate: true }]);
+		expect(app.vault.paths()).toEqual([]);
+	});
+
+	it("keeps the day in the history and only updates a note that exists in 'history'", async () => {
+		await run("2026-10-24", "2026-10-24");
+		expect(notes).toEqual([{ date: "2026-10-24", mayCreate: false }]);
+		expect(lines()).toHaveLength(1);
+	});
+
+	it("fetches only the days that have a note in 'skip', and does not count the others", async () => {
+		make(ENABLED, { behaviour: "skip" });
+		withNote = (date) => date !== "2026-10-23";
+		const result = await run("2026-10-22", "2026-10-24");
+		expect(fetchedDates()).toEqual(["2026-10-24", "2026-10-22"]);
+		expect(result).toMatchObject({ fetched: 2, skipped: 0 });
+		expect(progress[0]).toMatchObject({ total: 2 });
+		expect(notes.every((n) => n.mayCreate)).toBe(true);
+		expect(app.vault.paths()).toEqual([]);
+	});
+
+	it("leaves the empty days of 'create' and 'skip' unmarked, because there is no history file to hold the mark", async () => {
+		provider.defaultData = { metrics: {}, activities: {} };
+		make(ENABLED, { behaviour: "create" });
+		await run("2026-10-18", "2026-10-19");
+		expect(app.vault.paths()).toEqual([]);
+	});
+});
+
+describe("days an earlier run fetched", () => {
+	beforeEach(() => make(ENABLED, { behaviour: "create" }));
+
+	it("are skipped through the fetch log, and the run remembers the days it fetched, but not the last three", async () => {
+		fetchLog.add("2026-10-19");
+		const result = await run("2026-10-18", "2026-10-24");
+		expect(fetchedDates()).toEqual(["2026-10-24", "2026-10-23", "2026-10-22", "2026-10-21", "2026-10-20", "2026-10-18"]);
+		expect(result).toMatchObject({ fetched: 6, skipped: 1 });
+		expect([...fetchLog].sort()).toEqual(["2026-10-18", "2026-10-19", "2026-10-20", "2026-10-21"]);
+	});
+
+	it("are fetched again when the run is told to force it, even those complete in the history", async () => {
+		make(ENABLED, { behaviour: "history", force: true });
+		app.vault.seed(FILE, record({ "2026-10-20": { steps: 1, _m: ["hrv", "steps"] } }));
+		fetchLog.add("2026-10-19");
+		await run("2026-10-19", "2026-10-20");
+		expect(fetchedDates()).toEqual(["2026-10-20", "2026-10-19"]);
+	});
+
+	it("count only the days that are fetched in the progress: the total, the days done and the time left", async () => {
+		fetchLog.add("2026-10-19");
+		fetchLog.add("2026-10-18");
+		await run("2026-10-17", "2026-10-20");
+		expect(progress[0]).toMatchObject({ done: 0, total: 2 });
+		expect(progress.at(-1)).toMatchObject({ done: 2, total: 2, skipped: 2 });
+	});
+
+	it("report a run with nothing to fetch without dividing by nothing", async () => {
+		fetchLog.add("2026-10-19");
+		const result = await run("2026-10-19", "2026-10-19");
+		expect(result).toMatchObject({ fetched: 0, skipped: 1, status: "done" });
+		expect(progress.at(-1)).toMatchObject({ done: 0, total: 0, etaMs: null });
+	});
+});
+
+describe("the place it has reached", () => {
+	it("is reported every fifth fetched day with the next day to do", async () => {
+		await run("2026-10-10", "2026-10-24");
+		expect(cursors).toEqual(["2026-10-19", "2026-10-14", "2026-10-09"]);
 	});
 });

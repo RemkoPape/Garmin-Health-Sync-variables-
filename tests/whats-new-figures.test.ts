@@ -42,14 +42,15 @@ describe("what's new figures", () => {
 
 	it("shows the notice of a running backfill with its stop button and the status bar text", () => {
 		const fig = draw("backfill");
-		expect(fig.querySelector(".ghs-fig-notice div")?.textContent).toBe("Backfill running: day 3 of 8 (2026-10-14) · about 4 min left");
+		expect(fig.querySelector(".ghs-fig-notice div")?.textContent).toBe("Backfill · 2026-10-14 · 3 of 8 days · about 4 min left");
 		expect(fig.querySelector(".ghs-fig-notice button")?.textContent).toBe(en.historyStop);
-		expect(fig.querySelector(".ghs-fig-statusbar")?.textContent).toBe("Backfill 3/8");
+		expect(fig.querySelector(".ghs-fig-statusbar")?.textContent).toBe("Backfill 38%");
 	});
 
-	it("lists the commands that are new since the last stable release, named as in the palette", () => {
-		expect(Array.from(draw("commands").querySelectorAll(".ghs-fig-command")).map((c) => c.textContent)).toEqual([en.commandOpenPanel, en.commandBuildHistory, en.commandImportHistory, en.commandBackfillForce, en.commandShowProgress]);
-		expect(draw("commands", "de").querySelector(".ghs-fig-command")?.textContent).toBe(de.commandOpenPanel);
+	it("lists the commands that are new since the last stable release, named as in the palette, each with what it does", () => {
+		expect(Array.from(draw("commands").querySelectorAll(".ghs-fig-command-name")).map((c) => c.textContent)).toEqual([en.commandOpenPanel, en.commandBackfill, en.commandImportHistory, en.commandShowProgress]);
+		expect(Array.from(draw("commands").querySelectorAll(".ghs-fig-command-what")).map((c) => c.textContent)).toEqual([en.whatsNewCmdOpenPanel, en.whatsNewCmdBackfill, en.whatsNewCmdImportHistory, en.whatsNewCmdShowProgress]);
+		expect(draw("commands", "de").querySelector(".ghs-fig-command-name")?.textContent).toBe(de.commandOpenPanel);
 	});
 
 	it("shows an open light bulb with what the data suggests", () => {

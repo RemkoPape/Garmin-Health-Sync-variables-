@@ -80,16 +80,18 @@ function propertiesFigure(fig: HTMLElement, lang: string): void {
 /** What a running backfill shows: the notice at the top with its text and Stop button, and the status bar item. */
 function backfillFigure(fig: HTMLElement, lang: string): void {
 	const notice = fig.createDiv({ cls: "ghs-fig-notice" });
-	const text = t("noticeBackfillProgress", lang).replace("{n}", "3").replace("{total}", "8").replace("{date}", "2026-10-14").replace("{eta}", "4 min");
+	const text = t("historyProgress", lang).replace("{date}", "2026-10-14").replace("{done}", "3").replace("{total}", "8").replace("{eta}", "4 min");
 	notice.createDiv({ text });
 	notice.createEl("button", { text: t("historyStop", lang) });
-	fig.createDiv({ cls: "ghs-fig-statusbar", text: t("backfillStatusBar", lang).replace("{n}", "3").replace("{total}", "8") });
+	fig.createDiv({ cls: "ghs-fig-statusbar", text: t("historyStatusBar", lang).replace("{percent}", "38") });
 }
 
-/** The commands that are new since the last stable release, as the command palette lists them. */
+/** The commands that are new since the last stable release, as the command palette lists them, each with what it does. */
 function commandsFigure(fig: HTMLElement, lang: string): void {
-	for (const key of ["commandOpenPanel", "commandBuildHistory", "commandImportHistory", "commandBackfillForce", "commandShowProgress"] as const) {
-		fig.createDiv({ cls: "ghs-fig-command", text: t(key, lang) });
+	for (const [name, what] of [["commandOpenPanel", "whatsNewCmdOpenPanel"], ["commandBackfill", "whatsNewCmdBackfill"], ["commandImportHistory", "whatsNewCmdImportHistory"], ["commandShowProgress", "whatsNewCmdShowProgress"]] as const) {
+		const row = fig.createDiv({ cls: "ghs-fig-command" });
+		row.createDiv({ cls: "ghs-fig-command-name", text: t(name, lang) });
+		row.createDiv({ cls: "ghs-fig-command-what", text: t(what, lang) });
 	}
 }
 
