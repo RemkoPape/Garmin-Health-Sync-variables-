@@ -48,15 +48,18 @@ describe("the Habits card", () => {
 		expect(parent.querySelector(".ghs-habit")).toBeNull();
 	});
 
-	it("shows one compact row per habit: the day's status, the days logged, the run and a strip", async () => {
+	it("shows one compact row per habit: the day's status, the week, the run and a strip or columns", async () => {
 		const parent = await render(80, (ago) => ({ lifestyle_alcohol: ago === 0 ? 0 : on(ago) ? 1 : 0, lifestyle_coffee: ago < 4 ? (ago === 0 ? 5 : 1) : 0, hrv: 50, resting_hr: 55 }));
 		const rows = Array.from(parent.querySelectorAll(".ghs-habit"));
 		expect(rows.map((r) => text(r.querySelector(".ghs-habit-name")).replace(/\s+/g, " ").trim()).sort()).toEqual(["✓ Late caffeine ×5", "✗ Alcohol"]);
 		const coffee = rows.find((r) => text(r).includes("Late caffeine"))!;
-		expect(text(coffee.querySelector(".ghs-habit-note"))).toBe("80 logged · 4 in a row");
+		expect(text(coffee.querySelector(".ghs-habit-note"))).toBe("Ø 1.1 a day ↑ · 4 in a row");
+		expect(text(rows.find((r) => text(r).includes("Alcohol"))!.querySelector(".ghs-habit-note"))).toMatch(/^\d of 7 days/);
+		expect(coffee.querySelectorAll(".ghs-habit-col")).toHaveLength(14);
+		expect(coffee.querySelectorAll(".ghs-habit-strip")).toHaveLength(0);
 		expect(coffee.querySelector(".ghs-habit-yes")).not.toBeNull();
 		expect(rows.find((r) => text(r).includes("Alcohol"))!.querySelector(".ghs-habit-no")).not.toBeNull();
-		expect(parent.querySelectorAll(".ghs-habit-strip .ghs-habit-dot")).toHaveLength(28);
+		expect(parent.querySelectorAll(".ghs-habit-strip .ghs-habit-dot")).toHaveLength(14);
 		expect(parent.querySelectorAll(".ghs-habit-legend .ghs-habit-dot")).toHaveLength(3);
 		expect(parent.querySelector(".ghs-habit-tag")).toBeNull();
 	});
@@ -98,7 +101,8 @@ describe("the Habits card", () => {
 	it("says what it needs when there are too few days to compare, with the days it has", async () => {
 		const parent = await render(30, (ago) => ({ lifestyle_alcohol: ago < 5 ? ago % 2 : 0, hrv: 50, resting_hr: 55 }), { habits: { lifestyle_alcohol: NAMES.lifestyle_alcohol } as never });
 		const row = parent.querySelector(".ghs-habit")!;
-		expect(text(row)).toContain(en.panelHabitsProgress.replace(/\{min\}/g, "8").replace("{n}", "2").replace("{m}", "8"));
+		expect(row.querySelector(".ghs-habit-progress")!.getAttribute("aria-label")).toBe("2/8 · 8/8");
+		expect(text(row)).not.toContain("Compare");
 		expect(row.querySelector(".ghs-habit-effect")).toBeNull();
 	});
 
@@ -123,13 +127,44 @@ describe("what the habits say with little data", () => {
 		const parent = await render(40, (ago) => ({ lifestyle_alcohol: ago % 2, lifestyle_coffee: ago < 3 ? 3 : ago < 7 ? 2 : 0 }), { open: true });
 		const items = Array.from(parent.querySelectorAll(".ghs-fact")).map(text);
 		expect(items).toContain("Alcohol: logged on 40 of the last 90 days, 20 with the habit and 20 as no.");
-		expect(items).toContain("Late caffeine: 2.4 on average on the 7 days of the last 7 on which you logged it, 17 in total.");
-		expect(items.some((t) => t.startsWith("Alcohol:") && t.includes("on average"))).toBe(false);
+		expect(items).toContain("Late caffeine: 2.4 a day on average over the last 7 days, 17 in total.");
+		expect(items).toContain("Late caffeine: 0 a day in the 4 weeks before.");
+		expect(items.some((t) => t.startsWith("Alcohol:") && t.includes("a day"))).toBe(false);
+		expect(items).toContain("Alcohol: the comparison with the night after starts at 8 days with and 8 without the habit, 20 and 19 so far.");
 	});
 
 	it("tells a habit that is only ever logged as yes what to log", async () => {
 		const parent = await render(40, () => ({ lifestyle_alcohol: 1, hrv: 50 }), { open: true });
 		expect(Array.from(parent.querySelectorAll(".ghs-insight-watch")).map(text)).toContain("Alcohol: only 0 days logged as no so far. Log a no on the days you skip it, so the nights after it can be compared.");
+	});
+});
+
+describe("a habit without an entry in the last 7 days", () => {
+	it("shows its strip and no week", async () => {
+		const parent = await render(60, (ago) => (ago === 10 ? { lifestyle_alcohol: 1 } : {}), { habits: { lifestyle_alcohol: NAMES.lifestyle_alcohol } as never });
+		expect(text(parent.querySelector(".ghs-habit-note"))).toBe("");
+		expect(parent.querySelectorAll(".ghs-habit-strip .ghs-habit-dot-yes")).toHaveLength(1);
+	});
+});
+
+describe("the columns of a counted habit", () => {
+	it("scale to the highest day, show a no as a low column and a missing entry as an outline, and mark a fall against the weeks before", async () => {
+		const parent = await render(60, (ago) => (ago === 0 ? { lifestyle_coffee: 4 } : ago === 1 ? { lifestyle_coffee: 2 } : ago === 2 ? { lifestyle_coffee: 0 } : ago >= 7 && ago < 20 ? { lifestyle_coffee: 6 } : {}), { habits: { lifestyle_coffee: NAMES.lifestyle_coffee } as never });
+		const cols = Array.from(parent.querySelectorAll<HTMLElement>(".ghs-habit-col"));
+		expect(cols).toHaveLength(14);
+		expect(cols[0]!.getAttribute("style")).toContain("100%");
+		expect(cols[13]!.getAttribute("style")).toContain("66.6");
+		expect(cols[12]!.getAttribute("style")).toContain("33.3");
+		expect(cols[11]!.classList.contains("ghs-habit-col-zero")).toBe(true);
+		expect(cols[10]!.classList.contains("ghs-habit-col-unknown")).toBe(true);
+		expect(text(parent.querySelector(".ghs-habit-note"))).toContain("Ø 2 a day ↓");
+	});
+
+	it("shows no arrow while the week is about as usual, and none without a usual week", async () => {
+		const same = await render(60, (ago) => (ago < 20 ? { lifestyle_coffee: 3 } : {}), { habits: { lifestyle_coffee: NAMES.lifestyle_coffee } as never });
+		expect(text(same.querySelector(".ghs-habit-note"))).toBe("Ø 3 a day · 20 in a row");
+		const fresh = await render(60, (ago) => (ago < 3 ? { lifestyle_coffee: 3 } : {}), { habits: { lifestyle_coffee: NAMES.lifestyle_coffee } as never });
+		expect(text(fresh.querySelector(".ghs-habit-note"))).toBe("Ø 3 a day · 3 in a row");
 	});
 });
 

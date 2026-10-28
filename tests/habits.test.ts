@@ -115,7 +115,10 @@ describe("computeHabits", () => {
 		const row = computeHabits(i, END, NAMES)[0]!;
 		expect(row.logged).toBe(6);
 		expect(row.streak).toBe(3);
-		expect(row.week).toEqual({ days: 5, total: 8, mean: 1.6 });
+		expect(row.week).toEqual({ entries: 6, days: 5, total: 8, mean: 8 / 6 });
+		expect(row.usual).toBeNull();
+		expect(row.daily).toHaveLength(14);
+		expect(row.daily.slice(-6)).toEqual([1, 1, 0, 3, 1, 2]);
 	});
 
 	it("does not break the run before the shown day has an entry, and ends it at a no or a gap", async () => {
@@ -124,7 +127,15 @@ describe("computeHabits", () => {
 		expect(open.streak).toBe(4);
 		const broken = computeHabits(await index(40, (ago) => (ago === 2 ? { lifestyle_alcohol: 0 } : ago < 5 ? { lifestyle_alcohol: 1 } : {})), END, NAMES)[0]!;
 		expect(broken.streak).toBe(2);
-		expect(computeHabits(await index(40, (ago) => (ago === 0 ? { lifestyle_alcohol: 0 } : {})), END, NAMES)[0]!.week).toBeNull();
+		expect(computeHabits(await index(40, (ago) => (ago === 0 ? { lifestyle_alcohol: 0 } : {})), END, NAMES)[0]!.week).toEqual({ entries: 1, days: 0, total: 0, mean: 0 });
+		expect(computeHabits(await index(40, (ago) => (ago === 20 ? { lifestyle_alcohol: 1 } : {})), END, NAMES)[0]!.week).toBeNull();
+	});
+
+	it("takes the mean of the four weeks before the last 7 days as the usual one, from 5 days with an entry", async () => {
+		const few = computeHabits(await index(60, (ago) => (ago >= 7 && ago < 11 ? { lifestyle_coffee: 4 } : ago < 3 ? { lifestyle_coffee: 1 } : {})), END, NAMES);
+		expect(few[0]!.usual).toBeNull();
+		const rows = computeHabits(await index(60, (ago) => (ago >= 7 && ago < 12 ? { lifestyle_coffee: ago === 7 ? 6 : 4 } : ago < 3 ? { lifestyle_coffee: 1 } : {})), END, NAMES);
+		expect(rows[0]!.usual).toBeCloseTo(4.4);
 	});
 
 	it("drops a habit Garmin stopped listing, and keeps all while it is not known when they were last listed", async () => {

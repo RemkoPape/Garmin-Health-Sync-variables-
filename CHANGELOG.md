@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.83
+
+### Changed
+
+- **Habits card: less text, more picture.** The paragraph under every habit is gone. A counted habit (coffee) shows small columns of the amount of the last 14 days and the mean a day of the last 7 days (`Ø 3.4 a day`, with an arrow when it is clearly above or below the 4 weeks before). A yes or no habit shows "4 of 7 days" next to its dots. While a comparison with the night after cannot be made yet, a thin bar shows how close it is. The words (days logged, what the comparison needs, the mean and total) moved under the light bulb.
+
 ## 0.12.0-beta.82
 
 ### Fixed
