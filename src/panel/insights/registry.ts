@@ -91,6 +91,8 @@ export const INSIGHTS = {
 	hydration_behind_pace: { card: "hydration", kind: "watch" },
 	hydration_below_goal: { card: "hydration", kind: "watch" },
 	hydration_low_streak: { card: "hydration", kind: "watch" },
+	hydration_training_day: { card: "hydration", kind: "watch" },
+	hydration_weekday_low: { card: "hydration", kind: "watch" },
 
 	steps_below_streak: { card: "steps", kind: "watch" },
 	steps_zone_good: { card: "steps", kind: "good" },

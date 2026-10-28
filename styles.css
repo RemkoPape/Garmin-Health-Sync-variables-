@@ -243,6 +243,10 @@
 }
 
 /* A figure that matters as much as the value (the sleep score): the colour and weight of the value */
+.ghs-unit-case {
+	text-transform: none;
+}
+
 .ghs-unit-strong {
 	color: var(--text-normal);
 	font-size: inherit;
@@ -903,6 +907,8 @@
 /* Hydration has one label, kept left of its tick so it never runs off the card */
 .ghs-weekly.ghs-hydration-bar .ghs-tick-label:last-of-type {
 	transform: translateX(-100%);
+	text-transform: none;
+	white-space: nowrap;
 }
 
 /* Sleep timeline: when each night happened, not only how long it was */

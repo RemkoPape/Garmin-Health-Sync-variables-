@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.59
+
+### Fixed
+
+- **Hydration card chart.** The goal label wrapped ("goal 2.5" and "L" on two lines, over the line below), and the litre unit was set in lower case, which looked like a bar. The label stays on one line and litres keep their capital L.
+
+### Added
+
+- **More under the light bulb of Hydration.** The goal in glasses and your usual daily intake are listed. A day with 45 minutes of training or more that is still under the goal says to treat the goal as the minimum, and a weekday on which you usually log 25% less than on other days is named, as for the steps.
+- **HRV and Resting heart rate list Water intake** as a metric that adds detail, so the settings tell you to turn it on to unlock the dry-day cause.
+
 ## 0.12.0-beta.58
 
 ### Added

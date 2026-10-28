@@ -5,6 +5,7 @@ import type { DayIndex } from "../index";
 import { average } from "../stats";
 import { computeTrend, type Trend } from "../trend";
 import { longFacts, longView, type LongView } from "../longview";
+import { minutesBetween } from "../load";
 import { renderCard } from "./shell";
 import type { Insight } from "../insights/registry";
 
@@ -32,6 +33,8 @@ export interface HydrationModel {
 	/** The part of the goal that is due by now when the intake is spread over the waking day, today only. */
 	pace: number | null;
 	long: LongView | null;
+	/** Minutes of training on the day (recovery sessions left out). */
+	trained: number;
 }
 
 /** The part of the waking day (7:00 to 22:00) that has passed at `now`, 0 to 1. */
@@ -65,16 +68,25 @@ export function computeHydration(index: DayIndex, date: string): HydrationModel 
 		today,
 		pace: today && goal !== null ? goal * dayFraction(now) : null,
 		long: longView((d) => index.value("hydration_ml", d), date),
+		trained: minutesBetween(index, date, date),
 	};
 }
 
 /** Litres with one decimal ("1.8 L"). */
 export const litres = (ml: number, lang: string): string => `${formatNumber(ml / 1000, lang, 1)} L`;
 
+/** The numbers of the card that are too much for the card: the goal in glasses and the usual intake. */
+function hydrationFacts(model: HydrationModel, lang: string): string[] {
+	const facts: string[] = [];
+	if (model.goal !== null) facts.push(t("panelHydrationFactGoal", lang).replace("{amount}", litres(model.goal, lang)).replace("{glasses}", String(Math.round(model.goal / GLASS_ML))));
+	if (model.usual !== null) facts.push(t("panelHydrationFactUsual", lang).replace("{amount}", litres(model.usual, lang)));
+	return [...facts, ...longFacts(model.long, (n) => litres(n, lang), lang)];
+}
+
 export function renderHydration(parent: HTMLElement, model: HydrationModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
 	const { intake } = model;
 	const value = intake === null ? null : formatNumber(intake / 1000, lang, 1);
-	renderCard(parent, { title: t("panelHydrationTitle", lang), value, unit: "L", explain: t("panelHydrationExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights, facts: longFacts(model.long, (n) => litres(n, lang), lang), trend: { trend: model.trend, format: (n) => litres(n, lang) } }, (card) => {
+	renderCard(parent, { title: t("panelHydrationTitle", lang), value, unit: "L", unitKeepCase: true, explain: t("panelHydrationExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights, facts: hydrationFacts(model, lang), trend: { trend: model.trend, format: (n) => litres(n, lang) } }, (card) => {
 		const mark = model.goal ?? model.usual;
 		if (intake === null || mark === null) return;
 		const domain = Math.max(mark * 1.25, intake * 1.05);

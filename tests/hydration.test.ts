@@ -118,7 +118,10 @@ describe("the hydration card", () => {
 		const idx = await indexOf((ago) => ({ hydration_ml: ago === 0 ? 3000 : 2000 + (ago % 5) * 100, hydration_goal_ml: 2500 }), 120);
 		root.empty();
 		renderHydration(root, { ...computeHydration(idx, END), insights: [] }, "en", true, noop);
-		expect(text(".ghs-fact")).toContain(" L");
+		const facts = Array.from(root.querySelectorAll(".ghs-fact")).map((e) => e.textContent);
+		expect(facts[0]).toBe("Your goal is 2.5 L, about 10 glasses of 250 ml.");
+		expect(facts[1]).toBe("You usually log 2.2 L a day (average of the last 7 days).");
+		expect(facts.slice(2).join(" ")).toContain(" L");
 		expect(root.querySelector(".ghs-trend")?.textContent ?? "").toContain(" L");
 	});
 
@@ -177,10 +180,30 @@ describe("hydration interpretations", () => {
 		expect(ids(hydrationInsights(await signals(gaps)))).toEqual(["hydration_goal_good"]);
 	});
 
+	it("names a day of training as a reason to drink more than the goal", async () => {
+		at(15, "2026-10-25");
+		const trained = (ago: number): Fm => ({ ...water(1250)(ago), ...(ago === 0 ? { running: "50min" } : {}) });
+		expect(hydrationInsights(await signals(trained)).map((i) => i.id)).toEqual(["hydration_below_goal", "hydration_training_day"]);
+		expect(hydrationInsights(await signals(trained))[1]!.params).toEqual({ min: "50" });
+		const short = (ago: number): Fm => ({ ...water(1250)(ago), ...(ago === 0 ? { running: "30min" } : {}) });
+		expect(ids(hydrationInsights(await signals(short)))).toEqual(["hydration_below_goal"]);
+		const reached = (ago: number): Fm => ({ ...water(2600)(ago), ...(ago === 0 ? { running: "50min" } : {}) });
+		expect(ids(hydrationInsights(await signals(reached)))).toEqual(["hydration_goal_good"]);
+	});
+
+	it("names a weekday on which you usually drink little", async () => {
+		at(15, "2026-10-25");
+		// END is a Thursday: every 7th day before it drinks far less
+		const thursdays = (ago: number): Fm => ({ hydration_goal_ml: 2500, hydration_ml: ago === 0 ? 2600 : ago % 7 === 0 ? 1000 : 2400 });
+		const found = hydrationInsights(await signals(thursdays, 200)).find((i) => i.id === "hydration_weekday_low")!;
+		expect(found.params).toMatchObject({ dayOf: END, avg: "1000", pct: "58" });
+		expect(insightText(found, "en")).toContain("On Thursdays you usually log 1000 ml, 58 percent less");
+	});
+
 	it("has a text and a kind for every id", () => {
-		for (const id of ["hydration_goal_good", "hydration_on_pace", "hydration_behind_pace", "hydration_below_goal", "hydration_low_streak", "hrv_low_hydration", "rhr_high_hydration"] as const) {
+		for (const id of ["hydration_goal_good", "hydration_on_pace", "hydration_behind_pace", "hydration_below_goal", "hydration_low_streak", "hydration_training_day", "hydration_weekday_low", "hrv_low_hydration", "rhr_high_hydration"] as const) {
 			expect(INSIGHTS[id].kind).toBeTruthy();
-			expect(insightText({ id, params: { ml: "1", glasses: "1", pct: "1", n: "3" } }, "en")).not.toMatch(/\{/);
+			expect(insightText({ id, params: { ml: "1", glasses: "1", pct: "1", n: "3", min: "50", avg: "1", dayOf: END } }, "en")).not.toMatch(/\{/);
 		}
 	});
 });
