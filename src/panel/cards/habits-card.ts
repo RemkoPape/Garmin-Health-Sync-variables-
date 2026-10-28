@@ -1,5 +1,6 @@
 import { t } from "../../i18n/t";
 import { formatNumber, formatSigned } from "../format";
+import type { HabitInfo } from "../../providers/garmin/lifestyle";
 import type { DayIndex } from "../index";
 import { MIN_GROUP, computeHabits, type Dot, type Effect, type HabitRow, type Measure } from "../habits";
 import type { Insight } from "../insights/registry";
@@ -11,7 +12,7 @@ export interface HabitsModel {
 	habits: HabitRow[];
 }
 
-export function computeHabitsCard(index: DayIndex, date: string, names: Record<string, { name: string; kind: "check" | "count" }>): HabitsModel {
+export function computeHabitsCard(index: DayIndex, date: string, names: Record<string, HabitInfo>): HabitsModel {
 	return { insights: [], habits: computeHabits(index, date, names) };
 }
 

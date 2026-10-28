@@ -73,11 +73,19 @@ describe("the habits of the lifestyle log", () => {
 		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: HABITS };
 		const s = settings();
 		await sync.syncDate(DATE, s);
-		expect(s.lifestyleHabits).toEqual({ lifestyle_alcohol: { name: "Alcohol", kind: "check" }, lifestyle_late_caffeine: { name: "Late caffeine", kind: "count" } });
+		expect(s.lifestyleHabits).toEqual({ lifestyle_alcohol: { name: "Alcohol", kind: "check", last: DATE }, lifestyle_late_caffeine: { name: "Late caffeine", kind: "count", last: DATE } });
 		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: [{ key: "lifestyle_alcohol", name: "Alcohol (any)", kind: "check" }] };
 		await sync.syncDate(DATE, s);
 		expect(s.lifestyleHabits["lifestyle_alcohol"]!.name).toBe("Alcohol (any)");
 		expect(Object.keys(s.lifestyleHabits)).toHaveLength(2);
+	});
+
+	it("remember the latest day Garmin listed them on, whatever order the days come in", async () => {
+		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: HABITS };
+		const s = settings();
+		await sync.syncDate("2026-10-24", s);
+		await sync.syncDate("2026-10-20", s);
+		expect(s.lifestyleHabits["lifestyle_alcohol"]!.last).toBe("2026-10-24");
 	});
 
 	it("are remembered from the days of a backfill too", async () => {

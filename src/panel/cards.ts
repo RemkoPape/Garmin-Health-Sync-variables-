@@ -13,6 +13,7 @@ import { computeSteps, renderSteps } from "./cards/steps-card";
 import { computeStress, renderStress } from "./cards/stress-card";
 import { computeVo2, renderVo2 } from "./cards/vo2-card";
 import { computeWeekly, renderWeekly } from "./cards/weekly-card";
+import type { HabitInfo } from "../providers/garmin/lifestyle";
 import type { DayIndex } from "./index";
 import { bodyInsights, floorsInsights, intensityInsights, stepsInsights, vo2Insights } from "./insights/activity";
 import { batteryInsights, stressInsights } from "./insights/energy";
@@ -39,7 +40,7 @@ export interface CardContext {
 	/** From the settings, for the heart rate zones. */
 	birthYear: number | null;
 	/** The habits of the lifestyle log Garmin has sent: their names and kinds. */
-	habits: Record<string, { name: string; kind: "check" | "count" }>;
+	habits: Record<string, HabitInfo>;
 	explainOpen: boolean;
 	onToggleExplain: () => void;
 }

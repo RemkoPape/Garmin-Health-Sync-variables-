@@ -9,7 +9,7 @@ import { computeHabits, ACTIVE_DAYS, MIN_GROUP } from "../src/panel/habits";
 
 const END = "2026-10-22";
 const settings = { dailyNotePath: "", dailyNoteFormat: "YYYY-MM-DD" };
-const NAMES = { lifestyle_alcohol: { name: "Alcohol", kind: "check" as const }, lifestyle_coffee: { name: "Late caffeine", kind: "count" as const } };
+const NAMES = { lifestyle_alcohol: { name: "Alcohol", kind: "check" as const, last: END }, lifestyle_coffee: { name: "Late caffeine", kind: "count" as const, last: END } };
 const noise = (i: number): number => (((i * 37) % 11) - 5) * 0.3;
 /** Mixed yes and no days, the same for every test. */
 const habitOn = (ago: number): boolean => {
@@ -100,7 +100,7 @@ describe("computeHabits", () => {
 	});
 
 	it("treats a counted habit as yes above 0 and sorts the habits with a pattern first, then by name", async () => {
-		const names = { ...NAMES, lifestyle_b: { name: "B plain", kind: "check" as const }, lifestyle_a: { name: "A plain", kind: "check" as const } };
+		const names = { ...NAMES, lifestyle_b: { name: "B plain", kind: "check" as const, last: END }, lifestyle_a: { name: "A plain", kind: "check" as const, last: END } };
 		const i = await index(80, (ago) => ({ lifestyle_coffee: habitOn(ago) ? 2 : 0, lifestyle_alcohol: ago % 2, lifestyle_a: ago % 2, lifestyle_b: ago % 2, hrv: 50 + (habitOn(ago + 1) ? 8 : 0) + noise(ago) }));
 		const rows = computeHabits(i, END, names);
 		expect(rows.map((r) => r.name)).toEqual(["Late caffeine", "A plain", "Alcohol", "B plain"]);
@@ -125,6 +125,14 @@ describe("computeHabits", () => {
 		const broken = computeHabits(await index(40, (ago) => (ago === 2 ? { lifestyle_alcohol: 0 } : ago < 5 ? { lifestyle_alcohol: 1 } : {})), END, NAMES)[0]!;
 		expect(broken.streak).toBe(2);
 		expect(computeHabits(await index(40, (ago) => (ago === 0 ? { lifestyle_alcohol: 0 } : {})), END, NAMES)[0]!.week).toBeNull();
+	});
+
+	it("drops a habit Garmin stopped listing, and keeps all while it is not known when they were last listed", async () => {
+		const i = await index(40, () => ({ lifestyle_alcohol: 1, lifestyle_coffee: 2 }));
+		const names = (alcoholLast: string, coffeeLast: string) => ({ lifestyle_alcohol: { name: "Alcohol", kind: "check" as const, last: alcoholLast }, lifestyle_coffee: { name: "Late caffeine", kind: "count" as const, last: coffeeLast } });
+		expect(computeHabits(i, END, names("2026-10-10", END)).map((r) => r.name)).toEqual(["Late caffeine"]);
+		expect(computeHabits(i, END, names("", "")).map((r) => r.name).sort()).toEqual(["Alcohol", "Late caffeine"]);
+		expect(computeHabits(i, END, names("", END)).map((r) => r.name)).toEqual(["Late caffeine"]);
 	});
 
 	it("gives no habits for an empty log", async () => {

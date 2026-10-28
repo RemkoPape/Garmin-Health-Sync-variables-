@@ -13,7 +13,7 @@ import { habitInsights } from "../src/panel/insights/lifestyle";
 
 const END = "2026-10-22";
 const settings = { dailyNotePath: "", dailyNoteFormat: "YYYY-MM-DD" };
-const NAMES = { lifestyle_alcohol: { name: "Alcohol", kind: "check" as const }, lifestyle_coffee: { name: "Late caffeine", kind: "count" as const } };
+const NAMES = { lifestyle_alcohol: { name: "Alcohol", kind: "check" as const, last: END }, lifestyle_coffee: { name: "Late caffeine", kind: "count" as const, last: END } };
 const noise = (i: number): number => (((i * 37) % 11) - 5) * 0.3;
 const on = (ago: number): boolean => {
 	let x = Math.imul(ago + 1, 0x9e3779b1);
