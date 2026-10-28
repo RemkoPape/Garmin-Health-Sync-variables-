@@ -224,7 +224,9 @@ export function mapSpO2(data: Record<string, unknown>, enabled: Set<string>): Re
 	const result: Record<string, number | string> = {};
 	if (!enabled.has("spo2")) return result;
 
-	const avg = data["averageSpo2"] ?? get(data, "allDaySpO2.averageSpo2");
+	// Garmin writes the field `averageSpO2` (capital O), seen in a real answer of an iPhone sync; the night's own average is `avgSleepSpO2`.
+	// The spellings the first versions guessed stay, in case another region or firmware sends them.
+	const avg = data["averageSpO2"] ?? data["avgSleepSpO2"] ?? data["averageSpo2"] ?? get(data, "allDaySpO2.averageSpo2");
 	if (avg != null && Number(avg) > 0) result["spo2"] = Number(avg);
 
 	return result;

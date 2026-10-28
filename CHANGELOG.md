@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.75
+
+### Fixed
+
+- **Blood oxygen (SpO2) could never be written.** The mapper read the field `averageSpo2`; the diagnostics of a real iPhone sync show Garmin sends `averageSpO2` (capital O). It now reads `averageSpO2`, then `avgSleepSpO2` (the night's own average), and keeps the earlier spellings. The SpO2 card and its readiness flag had no data from the sync before this. A day where Garmin sends only nulls (a watch that did not measure) still writes nothing.
+- **Diagnostics are cut later:** each answer's structure is shown up to 6000 characters (was 1500), so the large daily summary and sleep answers are complete.
+
+### Tests
+
+- `tests/garmin-contract.test.ts` pins every mapper against the structure of real answers (field names and types copied from that report, values invented): daily summary, SpO2 with and without readings, water intake with and without a log, breathing, body battery, weight without a weigh-in, and sleep. New shapes from bug reports belong there.
+
 ## 0.12.0-beta.74
 
 ### Added

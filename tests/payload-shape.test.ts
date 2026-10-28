@@ -38,9 +38,9 @@ describe("describeShape", () => {
 	});
 
 	it("is cut at a fixed length", () => {
-		const big = Object.fromEntries(Array.from({ length: 400 }, (_, i) => [`field${i}`, i]));
+		const big = Object.fromEntries(Array.from({ length: 1500 }, (_, i) => [`field${i}`, i]));
 		const shape = describeShape(big);
-		expect(shape.length).toBeLessThanOrEqual(1501);
+		expect(shape.length).toBeLessThanOrEqual(6001);
 		expect(shape.endsWith("…")).toBe(true);
 	});
 });
