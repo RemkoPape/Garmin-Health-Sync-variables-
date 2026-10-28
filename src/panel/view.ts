@@ -1,6 +1,6 @@
 import { ItemView, TFile, WorkspaceLeaf, setIcon, type TAbstractFile } from "obsidian";
 import type HealthSyncPlugin from "../main";
-import { dateFromDailyNote } from "../daily-note";
+import { dateFromDailyNote, dateFromNotePath } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
 import { SECTION_TITLES, orderedCards, type SectionId } from "./cards";
@@ -84,7 +84,7 @@ export class HealthPanelView extends ItemView {
 			const base = typeof oldPath === "string" ? oldPath.slice(oldPath.lastIndexOf("/") + 1) : "";
 			const wasHistory = base !== "" && this.history.isHistoryFile({ name: base } as TAbstractFile);
 			if (wasHistory) this.history.invalidate();
-			if (wasHistory || (base !== "" && dateFromDailyNote({ path: oldPath, basename: base.replace(/\.md$/i, "") } as TFile, this.plugin.settings) !== null)) changed();
+			if (wasHistory || (base !== "" && dateFromNotePath(oldPath, base.replace(/\.md$/i, ""), this.plugin.settings) !== null)) changed();
 			else changed(file);
 		}));
 		this.render();
