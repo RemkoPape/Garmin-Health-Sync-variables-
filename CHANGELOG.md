@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.81
+
+### Changed
+
+- **Habits card is compact.** One row per habit instead of tags plus a block per habit: its name with what the shown day has (✓, ✗, "×5" for a counted habit), how many days are logged, the run of days in a row, and the strip of the last 14 days. The two bars (HRV and resting pulse) appear once there are 8 days with and 8 days without the habit; until then one line says how far it is ("3 of 8 days with, 7 of 8 without").
+- **Counts under the light bulb.** The light bulb lists the numbers behind every habit (days logged, with the habit, as no) and, for a counted habit, the average and total of the last 7 days.
+
+### Added
+
+- **A hint for a habit that is only ever logged as yes.** Garmin only has a "no" when you log one, and days without an entry are not counted as "no". When a habit has at least 8 days with it and fewer than 3 logged as no, the light bulb says to log a no on the days you skip it, so the nights after it can be compared.
+
 ## 0.12.0-beta.80
 
 ### Changed

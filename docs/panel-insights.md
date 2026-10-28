@@ -809,6 +809,14 @@ See also: [panel-cards.md](panel-cards.md) (what each card shows and how it is c
 - **Basis:** As above. Worded as a pattern to look at, not as a cause.
 - **References:** none (the rule is arithmetic on the user's own data).
 
+### lifestyle_no_days
+
+- **Card:** habits
+- **Trigger:** A habit has at least 8 days logged with it and fewer than 3 days logged as "no" within the last 90 days.
+- **Text (English):** {habit}: only {n} days logged as no so far. Log a no on the days you skip it, so the nights after it can be compared.
+- **Basis:** A comparison needs days with and days without the habit. Days without an entry are not counted as "no", because a missing entry does not say that the habit was not done, so the other half has to be logged.
+- **References:** none (a rule about what the comparison needs).
+
 ### sleep_short_plain
 
 - **Card:** sleep

@@ -48,6 +48,12 @@ export interface HabitRow {
 	without: number;
 	/** What the habit was on the shown day: null when it was not logged. */
 	today: number | null;
+	/** Days with the habit in a row up to the shown day (up to the day before when the shown day has no entry yet). */
+	streak: number;
+	/** Days of the last 90 with an entry, yes or no. */
+	logged: number;
+	/** On the days of the last 7 on which the habit was done: how many days, the amount in total (a counted habit) and the mean per day. */
+	week: { days: number; total: number; mean: number } | null;
 	hrv: Effect | null;
 	resting_hr: Effect | null;
 }
@@ -112,7 +118,23 @@ export function computeHabits(index: DayIndex, date: string, names: Record<strin
 			const v = index.value(key, shiftDate(date, -i));
 			strip.push(v === null ? "unknown" : v > 0 ? "yes" : "no");
 		}
-		rows.push({ key, name: habit.name, kind: habit.kind, strip, with: withDays, without: withoutDays, today: index.value(key, date), hrv: effectOf(index, "hrv", days, date), resting_hr: effectOf(index, "resting_hr", days, date) });
+		const today = index.value(key, date);
+		let streak = 0;
+		for (let i = today === null ? 1 : 0; i <= EFFECT_DAYS; i++) {
+			const v = index.value(key, shiftDate(date, -i));
+			if (v === null || v <= 0) break;
+			streak++;
+		}
+		let weekDays = 0;
+		let weekTotal = 0;
+		for (let i = 0; i < 7; i++) {
+			const v = index.value(key, shiftDate(date, -i));
+			if (v !== null && v > 0) {
+				weekDays++;
+				weekTotal += v;
+			}
+		}
+		rows.push({ key, name: habit.name, kind: habit.kind, strip, with: withDays, without: withoutDays, today, streak, logged: withDays + withoutDays + (today === null ? 0 : 1), week: weekDays === 0 ? null : { days: weekDays, total: weekTotal, mean: weekTotal / weekDays }, hrv: effectOf(index, "hrv", days, date), resting_hr: effectOf(index, "resting_hr", days, date) });
 	}
 	// habits with a pattern first, the strongest on top; the rest by name
 	const strength = (r: HabitRow): number => Math.max(...[r.hrv, r.resting_hr].map((e) => (e?.clear ? Math.abs(e.t) : 0)));

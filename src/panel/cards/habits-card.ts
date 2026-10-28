@@ -33,38 +33,46 @@ function strip(parent: HTMLElement, dots: Dot[]): void {
 	for (const dot of dots) el.createSpan({ cls: `ghs-habit-dot ghs-habit-dot-${dot}` });
 }
 
+/** The line that says where a habit stands: days logged and the run of days with it. */
+function meta(row: HabitRow, lang: string): string {
+	const parts = [t("panelHabitsDays", lang).replace("{n}", String(row.logged))];
+	if (row.streak >= 2) parts.push(t("panelHabitsStreak", lang).replace("{n}", String(row.streak)));
+	return parts.join(" · ");
+}
+
 function habitRow(parent: HTMLElement, row: HabitRow, lang: string): void {
 	const el = parent.createDiv({ cls: "ghs-habit" });
 	const head = el.createDiv({ cls: "ghs-habit-head" });
-	head.createSpan({ cls: "ghs-habit-name", text: row.name });
-	head.createSpan({ cls: "ghs-habit-note", text: t("panelHabitsCounts", lang).replace("{n}", String(row.with)).replace("{m}", String(row.without)) });
+	const name = head.createSpan({ cls: "ghs-habit-name" });
+	// what the day has: a tick, a cross, or nothing before it was logged; a counted habit shows its amount
+	if (row.today !== null) name.createSpan({ cls: row.today > 0 ? "ghs-habit-yes" : "ghs-habit-no", text: row.today > 0 ? "✓ " : "✗ " });
+	name.createSpan({ text: row.name });
+	if (row.kind === "count" && row.today !== null && row.today > 0) name.createEl("b", { text: ` ×${formatNumber(row.today, lang, 0)}` });
+	head.createSpan({ cls: "ghs-habit-note", text: meta(row, lang) });
 	strip(el, row.strip);
 	if (row.hrv === null && row.resting_hr === null) {
-		el.addClass("ghs-habit-thin");
-		el.createDiv({ cls: "ghs-habit-note", text: t("panelHabitsThin", lang).replace(/\{min\}/g, String(MIN_GROUP)).replace("{n}", String(row.with)).replace("{m}", String(row.without)) });
+		el.createDiv({ cls: "ghs-habit-note", text: t("panelHabitsProgress", lang).replace(/\{min\}/g, String(MIN_GROUP)).replace("{n}", String(Math.min(row.with, MIN_GROUP))).replace("{m}", String(Math.min(row.without, MIN_GROUP))) });
 		return;
 	}
 	if (row.hrv) effectRow(el, t("panelHabitsHrv", lang), "hrv", row.hrv, lang);
 	if (row.resting_hr) effectRow(el, t("panelHabitsRhr", lang), "resting_hr", row.resting_hr, lang);
 }
 
+/** What does not fit on the card: the counts behind every habit. */
+function facts(habits: HabitRow[], lang: string): string[] {
+	const out: string[] = [];
+	for (const h of habits) {
+		out.push(t("panelHabitsFactDays", lang).replace("{habit}", h.name).replace("{n}", String(h.logged)).replace("{yes}", String(h.with + (h.today !== null && h.today > 0 ? 1 : 0))).replace("{no}", String(h.without + (h.today === 0 ? 1 : 0))));
+		if (h.kind === "count" && h.week) out.push(t("panelHabitsFactWeek", lang).replace("{habit}", h.name).replace("{mean}", formatNumber(h.week.mean, lang, 1)).replace("{total}", formatNumber(h.week.total, lang, 0)).replace("{days}", String(h.week.days)));
+	}
+	return out;
+}
+
 export function renderHabits(parent: HTMLElement, model: HabitsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
-	renderCard(parent, { title: t("panelHabitsTitle", lang), value: undefined, explain: t("panelHabitsExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
+	renderCard(parent, { title: t("panelHabitsTitle", lang), value: undefined, explain: t("panelHabitsExplain", lang), facts: facts(model.habits, lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
 		if (model.habits.length === 0) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelHabitsEmpty", lang) });
 			return;
-		}
-		card.createDiv({ cls: "ghs-habit-note", text: t("panelHabitsSub", lang) });
-		const logged = model.habits.filter((h) => h.today !== null);
-		if (logged.length > 0) {
-			const tags = card.createDiv({ cls: "ghs-habit-tags" });
-			for (const h of logged) {
-				const on = h.today! > 0;
-				const tag = tags.createSpan({ cls: "ghs-habit-tag" });
-				tag.createSpan({ cls: on ? "ghs-habit-yes" : "ghs-habit-no", text: on ? "✓" : "✗" });
-				tag.createSpan({ text: ` ${h.name}` });
-				if (h.kind === "count" && on) tag.createEl("b", { text: ` ×${formatNumber(h.today!, lang, 0)}` });
-			}
 		}
 		for (const h of model.habits) habitRow(card, h, lang);
 		const legend = card.createDiv({ cls: "ghs-habit-legend" });
@@ -73,6 +81,6 @@ export function renderHabits(parent: HTMLElement, model: HabitsModel, lang: stri
 			item.createSpan({ cls: `ghs-habit-dot ghs-habit-dot-${dot}` });
 			item.createSpan({ text: ` ${t(key, lang)}` });
 		}
-		legend.createSpan({ text: t("panelHabitsBarsHint", lang) });
+		if (model.habits.some((h) => h.hrv || h.resting_hr)) legend.createSpan({ text: t("panelHabitsBarsHint", lang) });
 	});
 }

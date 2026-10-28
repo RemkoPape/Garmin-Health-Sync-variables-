@@ -108,6 +108,25 @@ describe("computeHabits", () => {
 		expect(rows[0]!.hrv!.clear).toBe(true);
 	});
 
+	it("counts the days logged, the run of days with the habit and the last week of a counted habit", async () => {
+		// ago 0..2 yes (2, 1, 3), ago 3 no, ago 4 and 5 yes, the rest has no entry
+		const values: Record<number, number> = { 0: 2, 1: 1, 2: 3, 3: 0, 4: 1, 5: 1 };
+		const i = await index(40, (ago) => (ago in values ? { lifestyle_coffee: values[ago] } : {}));
+		const row = computeHabits(i, END, NAMES)[0]!;
+		expect(row.logged).toBe(6);
+		expect(row.streak).toBe(3);
+		expect(row.week).toEqual({ days: 5, total: 8, mean: 1.6 });
+	});
+
+	it("does not break the run before the shown day has an entry, and ends it at a no or a gap", async () => {
+		const open = computeHabits(await index(40, (ago) => (ago >= 1 && ago <= 4 ? { lifestyle_alcohol: 1 } : {})), END, NAMES)[0]!;
+		expect(open.today).toBeNull();
+		expect(open.streak).toBe(4);
+		const broken = computeHabits(await index(40, (ago) => (ago === 2 ? { lifestyle_alcohol: 0 } : ago < 5 ? { lifestyle_alcohol: 1 } : {})), END, NAMES)[0]!;
+		expect(broken.streak).toBe(2);
+		expect(computeHabits(await index(40, (ago) => (ago === 0 ? { lifestyle_alcohol: 0 } : {})), END, NAMES)[0]!.week).toBeNull();
+	});
+
 	it("gives no habits for an empty log", async () => {
 		expect(computeHabits(await index(30, () => ({ hrv: 50 })), END, NAMES)).toEqual([]);
 		expect(computeHabits(await index(30, () => ({ lifestyle_alcohol: 1 })), END, {})).toEqual([]);

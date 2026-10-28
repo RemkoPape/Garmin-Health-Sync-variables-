@@ -100,6 +100,7 @@ export const INSIGHTS = {
 	lifestyle_hrv_down: { card: "habits", kind: "watch" },
 	lifestyle_rhr_down: { card: "habits", kind: "good" },
 	lifestyle_rhr_up: { card: "habits", kind: "watch" },
+	lifestyle_no_days: { card: "habits", kind: "watch" },
 
 	steps_below_streak: { card: "steps", kind: "watch" },
 	steps_to_go: { card: "steps", kind: "watch" },

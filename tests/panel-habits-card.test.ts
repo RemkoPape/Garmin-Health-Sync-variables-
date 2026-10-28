@@ -48,16 +48,17 @@ describe("the Habits card", () => {
 		expect(parent.querySelector(".ghs-habit")).toBeNull();
 	});
 
-	it("shows the day's habits as tags, a counted one with its amount, and a row with a strip for every habit", async () => {
-		const parent = await render(80, (ago) => ({ lifestyle_alcohol: ago === 0 ? 0 : on(ago) ? 1 : 0, lifestyle_coffee: ago === 0 ? 2 : on(ago) ? 1 : 0, hrv: 50, resting_hr: 55 }));
-		const tags = Array.from(parent.querySelectorAll(".ghs-habit-tag")).map(text);
-		expect(tags.map((t) => t.replace(/\s+/g, " ").trim())).toEqual(["✗ Alcohol", "✓ Late caffeine ×2"]);
-		expect(parent.querySelectorAll(".ghs-habit-tag .ghs-habit-no")).toHaveLength(1);
-		expect(parent.querySelectorAll(".ghs-habit-tag .ghs-habit-yes")).toHaveLength(1);
-		expect(Array.from(parent.querySelectorAll(".ghs-habit-name")).map(text).sort()).toEqual(["Alcohol", "Late caffeine"]);
+	it("shows one compact row per habit: the day's status, the days logged, the run and a strip", async () => {
+		const parent = await render(80, (ago) => ({ lifestyle_alcohol: ago === 0 ? 0 : on(ago) ? 1 : 0, lifestyle_coffee: ago < 4 ? (ago === 0 ? 5 : 1) : 0, hrv: 50, resting_hr: 55 }));
+		const rows = Array.from(parent.querySelectorAll(".ghs-habit"));
+		expect(rows.map((r) => text(r.querySelector(".ghs-habit-name")).replace(/\s+/g, " ").trim()).sort()).toEqual(["✓ Late caffeine ×5", "✗ Alcohol"]);
+		const coffee = rows.find((r) => text(r).includes("Late caffeine"))!;
+		expect(text(coffee.querySelector(".ghs-habit-note"))).toBe("80 logged · 4 in a row");
+		expect(coffee.querySelector(".ghs-habit-yes")).not.toBeNull();
+		expect(rows.find((r) => text(r).includes("Alcohol"))!.querySelector(".ghs-habit-no")).not.toBeNull();
 		expect(parent.querySelectorAll(".ghs-habit-strip .ghs-habit-dot")).toHaveLength(28);
 		expect(parent.querySelectorAll(".ghs-habit-legend .ghs-habit-dot")).toHaveLength(3);
-		expect(text(parent.querySelector(".ghs-habit-legend"))).toContain(en.panelHabitsBarsHint);
+		expect(parent.querySelector(".ghs-habit-tag")).toBeNull();
 	});
 
 	it("draws a clear better night green to the right and a clear worse one orange to the left", async () => {
@@ -81,10 +82,11 @@ describe("the Habits card", () => {
 		expect(Array.from(noHrv.querySelectorAll(".ghs-habit-effect-label")).map(text)).toEqual([en.panelHabitsRhr]);
 	});
 
-	it("shows no tags for a day on which nothing was logged", async () => {
-		const parent = await render(80, (ago) => (ago === 0 ? { hrv: 50 } : { lifestyle_alcohol: on(ago) ? 1 : 0, hrv: 50 }));
-		expect(parent.querySelector(".ghs-habit-tags")).toBeNull();
-		expect(parent.querySelector(".ghs-habit")).not.toBeNull();
+	it("shows no tick or cross for a day on which nothing was logged, and keeps the run of the days before", async () => {
+		const parent = await render(80, (ago) => (ago === 0 ? { hrv: 50 } : { lifestyle_alcohol: ago <= 3 ? 1 : ago === 4 ? 0 : on(ago) ? 1 : 0, hrv: 50 }));
+		const row = parent.querySelector(".ghs-habit")!;
+		expect(row.querySelector(".ghs-habit-yes, .ghs-habit-no")).toBeNull();
+		expect(text(row.querySelector(".ghs-habit-note"))).toContain("3 in a row");
 	});
 
 	it("shows a difference that is not clear in grey", async () => {
@@ -96,24 +98,38 @@ describe("the Habits card", () => {
 	it("says what it needs when there are too few days to compare, with the days it has", async () => {
 		const parent = await render(30, (ago) => ({ lifestyle_alcohol: ago < 5 ? ago % 2 : 0, hrv: 50, resting_hr: 55 }), { habits: { lifestyle_alcohol: NAMES.lifestyle_alcohol } as never });
 		const row = parent.querySelector(".ghs-habit")!;
-		expect(row.classList.contains("ghs-habit-thin")).toBe(true);
-		expect(text(row)).toContain(en.panelHabitsThin.replace(/\{min\}/g, "8").replace("{n}", "2").replace("{m}", "27"));
+		expect(text(row)).toContain(en.panelHabitsProgress.replace(/\{min\}/g, "8").replace("{n}", "2").replace("{m}", "8"));
 		expect(row.querySelector(".ghs-habit-effect")).toBeNull();
 	});
 
 	it("is shown in the plugin language", async () => {
-		const parent = await render(80, () => ({ lifestyle_alcohol: 1, hrv: 50 }), { lang: "de" });
+		const parent = await render(80, (ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, hrv: 50 + noise(ago * 7) }), { lang: "de" });
 		expect(text(parent.querySelector(".ghs-card-title"))).toBe(de.panelHabitsTitle);
 		expect(text(parent.querySelector(".ghs-habit-legend"))).toContain(de.panelHabitsBarsHint);
 	});
 
 	it("names the clear patterns under the light bulb, the strongest first and at most three", async () => {
 		const parent = await render(80, (ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, lifestyle_coffee: on(ago) ? 2 : 0, hrv: 50 - (on(ago + 1) ? 8 : 0) + noise(ago), resting_hr: 55 + (on(ago + 1) ? 3 : 0) + noise(ago + 3) * 0.5 }), { open: true });
-		const items = Array.from(parent.querySelectorAll(".ghs-insight-item")).map(text);
+		const items = Array.from(parent.querySelectorAll(".ghs-insight-watch, .ghs-insight-good")).map(text);
 		expect(items).toHaveLength(3);
 		expect(items.every((t) => /^After (Alcohol|Late caffeine) your (HRV is \d+ ms lower|resting heart rate is \d+ bpm higher) than after days without it \(\d+ days against \d+\)\.$/.test(t))).toBe(true);
 		expect(parent.querySelectorAll(".ghs-insight-watch")).toHaveLength(3);
 		expect(text(parent.querySelector(".ghs-explain"))).toBe(en.panelHabitsExplain);
+	});
+});
+
+describe("what the habits say with little data", () => {
+	it("lists the counts behind every habit and the weekly average of a counted one under the light bulb", async () => {
+		const parent = await render(40, (ago) => ({ lifestyle_alcohol: ago % 2, lifestyle_coffee: ago < 3 ? 3 : ago < 7 ? 2 : 0 }), { open: true });
+		const items = Array.from(parent.querySelectorAll(".ghs-fact")).map(text);
+		expect(items).toContain("Alcohol: logged on 40 of the last 90 days, 20 with the habit and 20 as no.");
+		expect(items).toContain("Late caffeine: 2.4 on average on the 7 days of the last 7 on which you logged it, 17 in total.");
+		expect(items.some((t) => t.startsWith("Alcohol:") && t.includes("on average"))).toBe(false);
+	});
+
+	it("tells a habit that is only ever logged as yes what to log", async () => {
+		const parent = await render(40, () => ({ lifestyle_alcohol: 1, hrv: 50 }), { open: true });
+		expect(Array.from(parent.querySelectorAll(".ghs-insight-watch")).map(text)).toContain("Alcohol: only 0 days logged as no so far. Log a no on the days you skip it, so the nights after it can be compared.");
 	});
 });
 
