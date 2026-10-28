@@ -346,8 +346,8 @@ describe("the lifestyle log", () => {
 		route({ lifestyle: LOG });
 		await provider.fetchData(DATE, ["lifestyle_log"]);
 		const log = provider.getSyncDiagnostics();
-		// entries with and without a count differ, so both shapes are listed; the list under `details` is cut at the depth limit
-		expect(log).toContain("lifestyle shape: {dailyLogsReport: [3]{behaviourId: int, name: string, measurementType: string, logStatus: string}|{behaviourId: int, name: string, measurementType: string, logStatus: string, details: [1]object(2)}}");
+		// entries with and without a count differ, so both shapes are listed; the lifestyle answer is shown two levels deeper than the others
+		expect(log).toContain("lifestyle shape: {dailyLogsReport: [3]{behaviourId: int, name: string, measurementType: string, logStatus: string}|{behaviourId: int, name: string, measurementType: string, logStatus: string, details: [1]{subTypeName: string, amount: int}}}");
 		expect(log).toContain("mapper lifestyle: mapped 3 field(s): lifestyle_light_exercise, lifestyle_alcohol, lifestyle_late_caffeine");
 		for (const secret of ["Alcohol", "Late caffeine", "Coffee"]) expect(log, secret).not.toContain(secret);
 	});

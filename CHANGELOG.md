@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.80
+
+### Changed
+
+- **Copy diagnostics shows the lifestyle answer two levels deeper.** A real report showed the structure of the entries (habit id, name, type, status, category, sleep-related flag) but cut the list under `details` at one field. The lifestyle shape now reaches the amounts, so the next report tells exactly how a counted habit (cups, drinks) is sent.
+
 ## 0.12.0-beta.79
 
 ### Added
