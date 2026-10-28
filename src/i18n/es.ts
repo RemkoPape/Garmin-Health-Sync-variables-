@@ -511,6 +511,8 @@ export const es: Record<TranslationKeys, string> = {
 	whatsNew0120Item6Text: "Abre la paleta de comandos para ver lo que ha llegado desde la última versión estable:",
 	whatsNew0120Item7Title: "Más métricas para sincronizar",
 	whatsNew0120Item7Text: "Ahora se pueden sincronizar la ingesta de agua y su objetivo, la hora de acostarse y de despertarse, y los minutos con estrés y en recuperación. Están desactivadas de forma predeterminada: actívalas en los ajustes junto con las demás métricas adicionales. La ingesta de agua tiene su propia tarjeta y añade pistas a las tarjetas de VFC y de frecuencia cardíaca en reposo, la hora de acostarse y de despertarse aparecen en la tarjeta de sueño, y la tarjeta de estrés compara un día con tu reparto habitual.",
+	whatsNew0120Item8Title: "Próximamente",
+	whatsNew0120Item8Text: "La próxima gran versión intentará integrar la API oficial de Garmin que se anunció recientemente.",
 	whatsNewCmdOpenPanel: "Abre el panel lateral con tus tarjetas de salud.",
 	whatsNewCmdBackfill: "Obtiene un rango de días de Garmin, hasta el inicio de tus datos, con un aviso que muestra el progreso.",
 	whatsNewCmdImportHistory: "Copia los valores de Garmin de tus notas diarias a los archivos de historial, sin consultar a Garmin.",

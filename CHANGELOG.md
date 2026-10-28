@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0-beta.70
+
+### Added
+
+- **A reference for every card:** `docs/panel-cards.md` says for each of the 18 cards what it shows, which daily decision it helps with, how it is calculated (windows, minimum days, thresholds), how it is drawn, which metrics it needs and which interpretations sit under its light bulb. A test keeps the page in step with the card registry. It is linked from the README and from `docs/panel-insights.md`.
+- **What's new ends with "Coming soon":** the next big release will attempt to integrate the official Garmin API that was recently announced (all six languages).
+- **Credits:** the README (all six languages) and the new `NOTICE.md` thank the community plugins Fold Properties By Default (Tommy Bergeron, MIT) and Extended Properties (electroluminescent, MIT) for the ideas behind **Properties of daily notes**. Their licences were checked: no code was copied, so the MIT notice requirement does not apply; the credit is given as thanks.
+
+### Changed
+
+- **The README states what the plugin is for:** a companion for your daily notes that helps you decide well for the day, not a copy of Garmin Connect, with two ways to use it (sign in and switch on the metrics you want, or add the side panel). The first screen shows the readiness cards, the light bulb and the dark theme; the other screenshots follow in the panel section.
+- The translated READMEs gain the feature bullets they lacked (wait-for-note mode, property prefix); a test now compares their sections, bullets and images with the English README.
+- docs/release-process.md: a release may end with a short "coming soon" item.
+
 ## 0.12.0-beta.69
 
 ### Fixed

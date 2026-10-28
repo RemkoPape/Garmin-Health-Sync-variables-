@@ -511,6 +511,8 @@ export const fr: Record<TranslationKeys, string> = {
 	whatsNew0120Item6Text: "Ouvrez la palette de commandes pour voir ce qui est arrivé depuis la dernière version stable :",
 	whatsNew0120Item7Title: "Plus de mesures à synchroniser",
 	whatsNew0120Item7Text: "L’apport en eau et son objectif, l’heure du coucher et du réveil, ainsi que les minutes de stress et de récupération peuvent maintenant être synchronisés. Ils sont désactivés par défaut : activez-les dans les réglages avec les autres mesures supplémentaires. L’apport en eau a sa propre carte et ajoute des conseils aux cartes VFC et fréquence cardiaque au repos, l’heure du coucher et du réveil apparaissent sur la carte du sommeil, et la carte du stress compare une journée à votre répartition habituelle.",
+	whatsNew0120Item8Title: "Bientôt",
+	whatsNew0120Item8Text: "La prochaine grande version tentera d’intégrer l’API officielle de Garmin annoncée récemment.",
 	whatsNewCmdOpenPanel: "Ouvre le panneau latéral avec vos cartes de santé.",
 	whatsNewCmdBackfill: "Récupère une période depuis Garmin, jusqu’au début de vos données, avec une notification qui montre la progression.",
 	whatsNewCmdImportHistory: "Copie les valeurs Garmin de vos notes quotidiennes dans les fichiers d’historique, sans interroger Garmin.",

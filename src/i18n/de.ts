@@ -512,6 +512,8 @@ export const de: Record<TranslationKeys, string> = {
 	whatsNew0120Item6Text: "Öffne die Befehlspalette, um zu sehen, was seit der letzten stabilen Version dazugekommen ist:",
 	whatsNew0120Item7Title: "Mehr Messwerte zum Synchronisieren",
 	whatsNew0120Item7Text: "Wasseraufnahme samt Ziel, Schlafens- und Aufwachzeit sowie die Minuten mit Stress und Erholung lassen sich jetzt synchronisieren. Sie sind standardmäßig aus: Schalte sie in den Einstellungen bei den weiteren Messwerten ein. Die Wasseraufnahme bekommt eine eigene Karte und ergänzt Hinweise bei HRV und Ruheherzfrequenz, Schlafens- und Aufwachzeit erscheinen auf der Schlafkarte, und die Stresskarte vergleicht einen Tag mit deiner üblichen Verteilung.",
+	whatsNew0120Item8Title: "Demnächst",
+	whatsNew0120Item8Text: "Die nächste große Version wird versuchen, die kürzlich angekündigte offizielle Garmin-API einzubinden.",
 	whatsNewCmdOpenPanel: "Öffnet das Seitenpanel mit deinen Gesundheitskarten.",
 	whatsNewCmdBackfill: "Holt einen Zeitraum von Garmin, bis zum Beginn deiner Daten, mit einer Meldung, die den Fortschritt zeigt.",
 	whatsNewCmdImportHistory: "Kopiert die Garmin-Werte deiner Daily Notes in die Verlaufsdateien, ohne Garmin anzufragen.",

@@ -155,12 +155,9 @@ The days are fetched newest first, with the rate limiting Garmin needs. A notice
 
 ### Health side panel
 
-Turn on **Side panel** in the plugin settings, then open it from the ribbon icon or the command **Open health panel**. The cards compare today with your own usual range (the last 30 days) and never change your notes. Tap the date to pick a day, use the arrows to move by a day, and the pencil button to arrange the cards by dragging. Every card has a switch in the settings that also says which metrics to enable for it. Tap the light bulb on a card for **What your data suggests** (reasons and what helps, taken from your own data) and **How to read this**. The panel is not medical advice. Adding your birth year (only the year) in the settings gives heart rate zones and age-based goals.
+Turn on **Side panel** in the plugin settings, then open it from the ribbon icon or the command **Open health panel**. The cards compare today with your own usual range (the last 30 days) and never change your notes. Tap the date to pick a day, use the arrows to move by a day, and the pencil button to arrange the cards by dragging. Every card has a switch in the settings that also says which metrics to enable for it. Tap the light bulb on a card for **What your data suggests** (reasons and what helps, taken from your own data) and **How to read this**. The panel is not medical advice. Adding your birth year (only the year) in the settings gives heart rate zones and age-based goals. See [what every card shows and how it is worked out](docs/panel-cards.md).
 
 <p>
-<img src="docs/screenshots/panel-today.png" width="280" alt="Readiness and recovery cards">
-<img src="docs/screenshots/panel-today-dark.png" width="280" alt="The same cards in a dark theme">
-<img src="docs/screenshots/panel-insights.png" width="280" alt="What your data suggests under the light bulb">
 <img src="docs/screenshots/panel-hydration.png" width="280" alt="Hydration card with its explanations">
 <img src="docs/screenshots/panel-sleep.png" width="280" alt="Sleep and sleep stages">
 <img src="docs/screenshots/panel-energy.png" width="280" alt="Body battery, stress and hydration">
@@ -173,7 +170,7 @@ With **Days without a daily note** set to **Keep in history files**, every fetch
 
 ### Properties of daily notes
 
-The setting **Properties of daily notes** can fold the properties block of a daily note when it opens, hide the properties the plugin wrote (the panel shows them), or both. Nothing is deleted from a note.
+The setting **Properties of daily notes** can fold the properties block of a daily note when it opens, hide the properties the plugin wrote (the panel shows them), or both. Nothing is deleted from a note. Folding and hiding follow the ideas of the community plugins [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) and [Extended Properties](https://obsidian.md/plugins?id=extended-properties); see Credits.
 
 ## Activity Key Normalization
 
@@ -232,3 +229,5 @@ npm run build  # production build
 ## Credits
 
 Originally created by [fcandi](https://github.com/fcandi). Maintained and developed further by [davadev](https://github.com/davadev).
+
+The handling of properties in daily notes (folding the properties block, hiding the properties the side panel shows) was inspired by the community plugins [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) by Tommy Bergeron and [Extended Properties](https://obsidian.md/plugins?id=extended-properties) by electroluminescent (both MIT licensed). No code was copied; see [NOTICE.md](NOTICE.md).

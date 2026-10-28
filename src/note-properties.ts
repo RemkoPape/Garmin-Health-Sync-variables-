@@ -4,8 +4,9 @@ import type { App, TAbstractFile, TFile } from "obsidian";
  * What a daily note does with its properties block (the "Properties of daily notes" setting): nothing, fold it when
  * the note opens, or hide the rows the sync wrote (the side panel shows them) so only the user's own properties stay in view.
  *
- * Folding works like the plugin "Fold properties by default" (MIT, Tommy Bergeron): Obsidian builds the properties
- * block a moment after the note opens, so look for it a few times, then run Obsidian's own "Toggle fold
+ * Folding works like the plugin "Fold properties by default" (MIT, Tommy Bergeron), and hiding the properties the
+ * panel shows is in the spirit of "Extended Properties" (MIT, electroluminescent); no code of either is used (see
+ * NOTICE.md). Obsidian builds the properties block a moment after the note opens, so look for it a few times, then run Obsidian's own "Toggle fold
  * properties" command if the block is still open. Hiding marks the rows (`data-property-key`) with a class and
  * watches the block, because Obsidian rebuilds rows when a value changes, which a sync does.
  */

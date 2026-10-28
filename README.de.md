@@ -30,6 +30,7 @@
 - **Unterordner-Unterstützung** — findet bestehende Daily Notes in verschachtelten Ordnern (z.B. `Journal/2024-07/`) und legt datumsbasierte Unterordner an, wenn das Dateinamen-Format ein `/` enthält (z.B. `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Automatische Spracherkennung** — die UI-Sprache wird aus deiner Obsidian-Sprache übernommen (EN, DE, ZH, JA, ES, FR)
 - **Optionale strukturierte Daten** — maschinenlesbares `trainings`-Feld für erweiterte Dataview-Abfragen
+- **Property-Präfix** — fügt optional allen Frontmatter-Properties das Präfix `ohs_` hinzu, um Namenskonflikte mit anderen Plugins zu vermeiden
 - **Gesundheits-Seitenpanel** — optionale rechte Seitenleiste mit Karten für Erholung, Schlaf, Energie, Bewegung, Fitness und Training im Vergleich zu deinem eigenen üblichen Bereich; tippe auf die Glühbirne einer Karte, um zu sehen, was deine Daten nahelegen und wie sie berechnet ist; einschalten unter **Einstellungen → Garmin Health Sync → Seitenpanel**
 - **Verlaufsnotizen** — optional jeden geholten Tag in kleinen Monatsnotizen in Markdown speichern, damit das Panel auch für Tage ohne Daily Note funktioniert und die Daten mit deinem Vault synchronisiert werden
 - **Eigenschaften der Daily Notes** — den Eigenschaftenblock beim Öffnen einklappen oder die Garmin-Eigenschaften ausblenden, die das Panel schon zeigt
@@ -154,12 +155,9 @@ Die Tage werden vom neuesten an geholt, mit der Drosselung, die Garmin braucht. 
 
 ### Gesundheits-Seitenpanel
 
-Schalte **Seitenpanel** in den Plugin-Einstellungen ein und öffne es über das Ribbon-Symbol oder den Befehl **Gesundheitspanel öffnen**. Die Karten vergleichen heute mit deinem eigenen üblichen Bereich (die letzten 30 Tage) und ändern deine Notizen nie. Tippe auf das Datum, um einen Tag zu wählen, wechsle mit den Pfeilen um einen Tag und ordne die Karten mit dem Stift-Knopf per Ziehen an. Jede Karte hat in den Einstellungen einen Schalter, der auch sagt, welche Metriken dafür aktiviert sein sollten. Tippe auf die Glühbirne einer Karte für **Was deine Daten andeuten** (Gründe und was hilft, aus deinen eigenen Daten) und **So liest du das**. Das Panel ist keine medizinische Beratung. Mit deinem Geburtsjahr (nur das Jahr) in den Einstellungen bekommst du Herzfrequenzzonen und altersabhängige Ziele.
+Schalte **Seitenpanel** in den Plugin-Einstellungen ein und öffne es über das Ribbon-Symbol oder den Befehl **Gesundheitspanel öffnen**. Die Karten vergleichen heute mit deinem eigenen üblichen Bereich (die letzten 30 Tage) und ändern deine Notizen nie. Tippe auf das Datum, um einen Tag zu wählen, wechsle mit den Pfeilen um einen Tag und ordne die Karten mit dem Stift-Knopf per Ziehen an. Jede Karte hat in den Einstellungen einen Schalter, der auch sagt, welche Metriken dafür aktiviert sein sollten. Tippe auf die Glühbirne einer Karte für **Was deine Daten andeuten** (Gründe und was hilft, aus deinen eigenen Daten) und **So liest du das**. Das Panel ist keine medizinische Beratung. Mit deinem Geburtsjahr (nur das Jahr) in den Einstellungen bekommst du Herzfrequenzzonen und altersabhängige Ziele. Siehe [was jede Karte zeigt und wie sie berechnet wird](docs/panel-cards.md).
 
 <p>
-<img src="docs/screenshots/panel-today.png" width="280" alt="Bereitschaft und Erholung">
-<img src="docs/screenshots/panel-today-dark.png" width="280" alt="Dieselben Karten im dunklen Theme">
-<img src="docs/screenshots/panel-insights.png" width="280" alt="Was deine Daten nahelegen, unter der Glühbirne">
 <img src="docs/screenshots/panel-hydration.png" width="280" alt="Flüssigkeitskarte mit Erklärungen">
 <img src="docs/screenshots/panel-sleep.png" width="280" alt="Schlaf und Schlafphasen">
 <img src="docs/screenshots/panel-energy.png" width="280" alt="Body Battery, Stress und Flüssigkeit">
@@ -172,7 +170,7 @@ Steht **Tage ohne Daily Note** auf **In Verlaufsdateien speichern**, wird jeder 
 
 ### Eigenschaften der Daily Notes
 
-Die Einstellung **Eigenschaften der Daily Notes** kann den Eigenschaftenblock einer Daily Note beim Öffnen einklappen, die vom Plugin geschriebenen Eigenschaften ausblenden (das Panel zeigt sie) oder beides. Aus einer Notiz wird nichts gelöscht.
+Die Einstellung **Eigenschaften der Daily Notes** kann den Eigenschaftenblock einer Daily Note beim Öffnen einklappen, die vom Plugin geschriebenen Eigenschaften ausblenden (das Panel zeigt sie) oder beides. Aus einer Notiz wird nichts gelöscht. Das Einklappen und Ausblenden folgt den Ideen der Community-Plugins [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) und [Extended Properties](https://obsidian.md/plugins?id=extended-properties); siehe Credits.
 
 ## Normalisierung der Aktivitäts-Keys
 
@@ -231,3 +229,5 @@ npm run build  # Produktions-Build
 ## Credits
 
 Ursprünglich von [fcandi](https://github.com/fcandi) erstellt. Weiterentwickelt und gepflegt von [davadev](https://github.com/davadev).
+
+Der Umgang mit Properties in Daily Notes (Eigenschaftenblock einklappen, vom Seitenpanel gezeigte Properties ausblenden) wurde von den Community-Plugins [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) von Tommy Bergeron und [Extended Properties](https://obsidian.md/plugins?id=extended-properties) von electroluminescent inspiriert (beide MIT-lizenziert). Es wurde kein Code übernommen; siehe [NOTICE.md](NOTICE.md).
