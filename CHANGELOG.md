@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.0-beta.71
+
+### Fixed
+
+- **A new watch no longer makes half the window "outliers".** The outlier rule of beta.69 left out values far from the median; with 15 days from the old watch and 15 from the new one, one of the two groups could have been dropped from the usual range. Now nothing is left out when that would be a quarter or more of the values, because then the days are of two kinds, not freak readings. A handful of freak values (up to a quarter) is still left out.
+- **A frontmatter patch is checked before it is written.** The in-place change of beta.67 now has to read back as exactly the merged properties; otherwise (an alias whose anchor sat on the value that changes, an anchor that would point somewhere else) the block is written anew as before. A note with the same key twice is still left alone, backed up and reported.
+- **A number typed into a text property** (`steps: "8000"`) is read as the number; text such as "62 ms" is still no value.
+- **Ranking among no heart rates** gives the middle instead of NaN.
+- **Activity names** of a key typed by hand ("Kayaking", "Mountain Biking") read like the key the sync writes.
+
+### Tests
+
+New regression tests for the boundaries of the outlier rule (exactly 5 spreads, identical values, a spread of 0, negative values, fewer than 8 values, a watch change), seeded random lists for the usual range, ties and rank bounds, exactly 5 days with both HRV and resting heart rate, stale pairs, frontmatter keys with duplicate lines, comments, tabs, Unicode, null values, type changes, regex characters and the prefix next to the plain key, backfill batches that fail in the middle of a run or at the change of the month, a stop during a write, and a failed endpoint together with fetching complete days again.
+
 ## 0.12.0-beta.70
 
 ### Added

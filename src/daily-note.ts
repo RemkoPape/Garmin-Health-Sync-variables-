@@ -464,14 +464,15 @@ function extractFrontmatter(rawContent: string): FrontmatterParse {
 /**
  * Changes the frontmatter text in place: new keys are appended after the last line, and the value of an existing
  * single-line scalar is replaced on its own line. Everything else the user wrote stays byte for byte. Returns null
- * when the change cannot be made that way (a list value, a multi-line value, a key that is not found once), and the
- * caller then writes the block anew.
+ * when the change cannot be made that way (a list value, a multi-line value, a key that is not found once) or when the
+ * result does not read back as the merged properties, and the caller then writes the block anew.
  */
 function patchHeader(
 	rawHeader: string,
 	existing: Record<string, unknown>,
 	properties: Record<string, unknown>,
-	lineEnding: string
+	lineEnding: string,
+	merged: Record<string, unknown>
 ): string | null {
 	const lines = rawHeader.split(/\r?\n/);
 	const added: Record<string, unknown> = {};
@@ -492,7 +493,14 @@ function patchHeader(
 		lines[at] = stringifyYaml({ [key]: value }).replace(/\r?\n+$/, "");
 	}
 	if (Object.keys(added).length > 0) lines.push(...stringifyYaml(added).replace(/\r?\n+$/, "").split("\n"));
-	return lines.join(lineEnding);
+	const text = lines.join(lineEnding);
+	// the patch is only trusted when the block reads back as exactly the merged properties (a key found on the wrong line, a value that
+	// was only part of a longer text): otherwise the caller writes the block anew
+	try {
+		return isDeepEqual(parseYaml(text), merged) ? text : null;
+	} catch {
+		return null;
+	}
 }
 
 /** Re-assembles the file content with the merged frontmatter. */
@@ -504,7 +512,7 @@ function renderWithFrontmatter(
 	const lineEnding = parsed.lineEnding;
 	// What the user wrote (comments, quoting, flow lists, blank lines) stays as it is when the change can be made in place
 	if (parsed.kind === "present" && parsed.rawHeader !== "") {
-		const patched = patchHeader(parsed.rawHeader, parsed.data, properties, lineEnding);
+		const patched = patchHeader(parsed.rawHeader, parsed.data, properties, lineEnding, merged);
 		if (patched !== null) return `${parsed.bom}---${lineEnding}${patched}${lineEnding}---${lineEnding}${parsed.body}`;
 	}
 	let yaml = stringifyYaml(merged);
