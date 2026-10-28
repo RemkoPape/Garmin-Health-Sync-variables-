@@ -1,3 +1,4 @@
+import type { HabitInfo } from "./providers/garmin/lifestyle";
 import {
 	App,
 	PluginSettingTab,
@@ -50,7 +51,7 @@ export interface HealthSyncSettings {
 	dailyNoteTemplate: string;
 	enabledMetrics: Record<string, boolean>;
 	/** The habits of the lifestyle log Garmin has sent so far, by their key: the names and kinds the panel shows. Bookkeeping, no setting. */
-	lifestyleHabits: Record<string, { name: string; kind: "check" | "count" }>;
+	lifestyleHabits: Record<string, HabitInfo>;
 	lastSyncTimes: Record<string, number>; // Date → last sync timestamp (epoch ms)
 	fetchLog: Record<string, number>; // Backfilled day → index of the metrics requested for it in fetchSets
 	fetchSets: string[][]; // The distinct sets of metrics the backfill requested

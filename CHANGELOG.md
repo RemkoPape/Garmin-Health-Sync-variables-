@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.82
+
+### Fixed
+
+- **A habit you dropped in Garmin Connect is gone from the Habits card.** Garmin lists every habit that is set up in the app on every day, touched or not. The plugin now remembers the latest day each habit was listed on, and a habit that is no longer listed (deleted or replaced in the app, for example because it is tracked differently now) is hidden at once, instead of staying for 30 days after its last entry. Habits from before this beta show all until the next sync fills in the date; the 30-day rule stays as well.
+
 ## 0.12.0-beta.81
 
 ### Changed

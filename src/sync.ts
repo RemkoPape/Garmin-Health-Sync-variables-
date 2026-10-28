@@ -12,8 +12,11 @@ import { convertToImperial } from "./units";
 import { isLoginRequiredError } from "./errors";
 
 /** Remembers the habits of the lifestyle log Garmin sent, so the settings can list them; a habit is only ever added or renamed here. */
-export function registerHabits(settings: HealthSyncSettings, data: HealthData): void {
-	for (const habit of data.habits ?? []) settings.lifestyleHabits[habit.key] = { name: habit.name, kind: habit.kind };
+export function registerHabits(settings: HealthSyncSettings, data: HealthData, date: string): void {
+	for (const habit of data.habits ?? []) {
+		const last = settings.lifestyleHabits[habit.key]?.last ?? "";
+		settings.lifestyleHabits[habit.key] = { name: habit.name, kind: habit.kind, last: date > last ? date : last };
+	}
 }
 
 /**
@@ -142,7 +145,7 @@ export class SyncManager {
 
 			// Fetch data
 			const data = await this.provider.fetchData(date, enabledMetrics);
-			registerHabits(settings, data);
+			registerHabits(settings, data, date);
 
 			const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
 			if (!hasData) {
@@ -201,7 +204,7 @@ export class SyncManager {
 			wasFetched: (date) => isFetched(settings, date, enabledMetrics),
 			markFetched: (date) => markFetched(settings, date, enabledMetrics),
 			writeNote: (date, data, mayCreate) => this.writeDay(date, data, settings, mayCreate),
-			onFetched: (data) => registerHabits(settings, data),
+			onFetched: (date, data) => registerHabits(settings, data, date),
 			onCursor: options.onCursor,
 			onProgress: (progress) => ui.update(progress),
 		});

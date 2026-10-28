@@ -65,7 +65,7 @@ interface BackfillOptions {
 	/** Writes the day into its daily note; with `mayCreate` the note is made when it is missing. */
 	writeNote: (date: string, data: HealthData, mayCreate: boolean) => Promise<void>;
 	/** Called with every day that was fetched, before it is stored. */
-	onFetched?: (data: HealthData) => void;
+	onFetched?: (date: string, data: HealthData) => void;
 	/** Called every few days with the next day to do, so a restart can go on from there. */
 	onCursor?: (next: string) => Promise<void>;
 	onProgress: (progress: BuildProgress) => void;
@@ -266,7 +266,7 @@ export class Backfill {
 		for (let attempt = 0; ; attempt++) {
 			try {
 				const data = await provider.fetchData(date, enabledMetrics);
-				this.options.onFetched?.(data);
+				this.options.onFetched?.(date, data);
 				return data;
 			} catch (error) {
 				if (isLoginRequiredError(error)) return "login-required";

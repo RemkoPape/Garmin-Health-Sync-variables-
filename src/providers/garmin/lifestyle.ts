@@ -4,6 +4,13 @@ export const LIFESTYLE_PREFIX = "lifestyle_";
 /** A habit of the lifestyle log: a yes or no, or a count (cups, drinks). */
 export type HabitKind = "check" | "count";
 
+/** What the plugin remembers of a habit: its name, its kind, and the latest day on which Garmin listed it ("" before that is known). Garmin lists every habit that is set up in the app on every day, touched or not, so a habit that stops being listed has been dropped there. */
+export interface HabitInfo {
+	name: string;
+	kind: HabitKind;
+	last: string;
+}
+
 export interface Habit {
 	/** The key of the habit in notes and history. */
 	key: string;

@@ -1,5 +1,6 @@
 import { shiftDate } from "../dates";
 import type { DayIndex } from "./index";
+import type { HabitInfo } from "../providers/garmin/lifestyle";
 import { baseline, windowValues } from "./stats";
 
 /** Habits with a logged value on one of this many days up to the shown day are listed; a habit that is not logged any more drops off the card. */
@@ -96,9 +97,12 @@ function effectOf(index: DayIndex, measure: Measure, days: { day: string; on: bo
  * on which a habit was not logged are left out: an entry that is missing does not say that it was not done. The most
  * recent day compared is the day before the shown one, so a night that has not happened yet never counts.
  */
-export function computeHabits(index: DayIndex, date: string, names: Record<string, { name: string; kind: "check" | "count" }>): HabitRow[] {
+export function computeHabits(index: DayIndex, date: string, names: Record<string, HabitInfo>): HabitRow[] {
 	const rows: HabitRow[] = [];
+	// Garmin lists every habit that is set up in the app on every day, so a habit that was last listed before the others has been dropped there
+	const newest = Object.values(names).reduce((latest, h) => (h.last > latest ? h.last : latest), "");
 	for (const [key, habit] of Object.entries(names)) {
+		if (habit.last < newest) continue;
 		let active = false;
 		for (let i = 0; i < ACTIVE_DAYS && !active; i++) active = index.value(key, shiftDate(date, -i)) !== null;
 		if (!active) continue;
