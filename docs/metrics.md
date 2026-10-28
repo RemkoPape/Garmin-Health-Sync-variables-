@@ -37,9 +37,16 @@ A metric a watch does not produce is simply not written for that day: an empty a
 | `training_status` | Garmin's training status | text, `PRODUCTIVE_2` | off | training status | [load](panel-cards.md#load) |
 | `weight_kg` | Weight (kg in the note and the history; lbs in imperial notes) | kg | off | weight | [body](panel-cards.md#body) |
 | `body_fat_pct` | Body fat | % | off | weight | [body](panel-cards.md#body) |
+| `lifestyle_log` | The switch of the lifestyle log: the habits you log in Garmin Connect (see below) | none itself | off | lifestyle log | none yet |
 | `stress_high` | Minutes of medium and high stress | minutes | off | daily summary | [stress](panel-cards.md#stress) |
 | `recovery_high` | Minutes of rest (stress 0 to 25) | minutes | off | daily summary | [stress](panel-cards.md#stress) |
 
 The Load, Weekly load and Sessions cards use the workouts, which are always synced and need no switch. The machine-readable `trainings` list is a separate setting (**Machine-readable trainings**, see [settings.md](settings.md#notes-and-properties)).
 
 See also: [what each card does with them](panel-cards.md), [the settings](settings.md), [the history notes](history.md), [the README](../README.md).
+
+## Lifestyle log (habits)
+
+With **Lifestyle log (habits)** on, the habits you log in Garmin Connect are read (one more request per day). After the first sync they are listed under **Additional metrics**, each with its own switch, off until you choose it. Only a habit you switch on is written to the daily note, as `lifestyle_<name>` (`lifestyle_late_caffeine`), and kept in the [history notes](history.md). A yes or no habit is `1` or `0`; a counted habit (cups, drinks) is the amount. A habit you did not touch that day is not written at all, so an empty day is never read as "no". The names of the habits are kept in the plugin settings. A habit you rename in Garmin Connect gets a new key.
+
+The structure of Garmin's answer is not documented; **Copy diagnostics** shows it (field names and types, never values), so a report tells what Garmin really sends.

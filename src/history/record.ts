@@ -1,5 +1,6 @@
 import { METRICS } from "../metrics";
 import type { HealthData } from "../providers/provider";
+import { LIFESTYLE_PREFIX } from "../providers/garmin/lifestyle";
 import { isActivityEntry } from "../panel/sessions";
 import { FETCHED_KEY, type DayRecord } from "./format";
 
@@ -28,7 +29,7 @@ export function recordFromNote(frontmatter: Record<string, unknown>): DayRecord 
 	const record: DayRecord = {};
 	for (const [rawKey, value] of Object.entries(frontmatter)) {
 		const key = rawKey.startsWith(PREFIX) ? rawKey.slice(PREFIX.length) : rawKey;
-		const data = METRIC_KEYS.has(key) || IMPERIAL_KEYS.has(key) ? typeof value === "number" || typeof value === "string" : key === "trainings" ? Array.isArray(value) : isActivityEntry(key, value);
+		const data = METRIC_KEYS.has(key) || IMPERIAL_KEYS.has(key) ? typeof value === "number" || typeof value === "string" : key.startsWith(LIFESTYLE_PREFIX) ? typeof value === "number" : key === "trainings" ? Array.isArray(value) : isActivityEntry(key, value);
 		if (data) record[key] = value;
 	}
 	return Object.keys(record).length === 0 ? null : record;

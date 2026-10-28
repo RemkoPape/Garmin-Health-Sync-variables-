@@ -64,6 +64,8 @@ interface BackfillOptions {
 	markFetched: (date: string) => void;
 	/** Writes the day into its daily note; with `mayCreate` the note is made when it is missing. */
 	writeNote: (date: string, data: HealthData, mayCreate: boolean) => Promise<void>;
+	/** Called with every day that was fetched, before it is stored. */
+	onFetched?: (data: HealthData) => void;
 	/** Called every few days with the next day to do, so a restart can go on from there. */
 	onCursor?: (next: string) => Promise<void>;
 	onProgress: (progress: BuildProgress) => void;
@@ -263,7 +265,9 @@ export class Backfill {
 		const { provider } = this.options;
 		for (let attempt = 0; ; attempt++) {
 			try {
-				return await provider.fetchData(date, enabledMetrics);
+				const data = await provider.fetchData(date, enabledMetrics);
+				this.options.onFetched?.(data);
+				return data;
 			} catch (error) {
 				if (isLoginRequiredError(error)) return "login-required";
 				console.warn(`Garmin Health Sync: history fetch failed for ${date}`, error);

@@ -49,6 +49,8 @@ export interface HealthSyncSettings {
 	dailyNoteFormat: string;
 	dailyNoteTemplate: string;
 	enabledMetrics: Record<string, boolean>;
+	/** The habits of the lifestyle log Garmin has sent so far, by their key; the ones that are on are in `enabledMetrics` too. */
+	lifestyleHabits: Record<string, { name: string; kind: "check" | "count" }>;
 	lastSyncTimes: Record<string, number>; // Date → last sync timestamp (epoch ms)
 	fetchLog: Record<string, number>; // Backfilled day → index of the metrics requested for it in fetchSets
 	fetchSets: string[][]; // The distinct sets of metrics the backfill requested
@@ -76,6 +78,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	dailyNoteFormat: "YYYY-MM-DD",
 	dailyNoteTemplate: "",
 	enabledMetrics: getDefaultEnabledMetrics(),
+	lifestyleHabits: {},
 	lastSyncTimes: {},
 	fetchLog: {},
 	fetchSets: [],
@@ -263,6 +266,7 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 						type: "group",
 						items: this.metricToggleDefinitions("extended", lang),
 					},
+					...(this.plugin.settings.enabledMetrics["lifestyle_log"] ? [{ type: "group" as const, heading: t("settingsLifestyleHeading", lang), items: this.lifestyleDefinitions(lang) }] : []),
 				],
 			},
 		];
@@ -370,6 +374,17 @@ export class HealthSyncSettingTab extends PluginSettingTab {
 			this.update();
 			this.plugin.refreshPanels();
 		}
+	}
+
+	/** The habits Garmin has sent, one switch each (off until chosen), under a note on what is kept. */
+	private lifestyleDefinitions(lang: string): SettingDefinition[] {
+		const habits = Object.entries(this.plugin.settings.lifestyleHabits).sort((a, b) => a[1].name.localeCompare(b[1].name));
+		const items: SettingDefinition[] = [{ name: t("settingsLifestylePrivacy", lang), desc: t("settingsLifestylePrivacyDesc", lang) }];
+		if (habits.length === 0) items.push({ name: t("settingsLifestyleNone", lang), desc: t("settingsLifestyleNoneDesc", lang) });
+		for (const [key, habit] of habits) {
+			items.push({ name: habit.name, desc: t(habit.kind === "count" ? "lifestyleKindCount" : "lifestyleKindCheck", lang), control: { type: "toggle", key: `${METRIC_KEY_PREFIX}${key}` } });
+		}
+		return items;
 	}
 
 	private metricToggleDefinitions(

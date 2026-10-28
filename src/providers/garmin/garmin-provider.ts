@@ -3,6 +3,7 @@ import type { ServerRegion } from "../../settings";
 import { GarminApi, getRequiredEndpoints, calculateBatchDelay, type CredentialLoginOutcome } from "./garmin-api";
 import type { OAuth1Token, OAuth2Token } from "./garmin-oauth";
 import type { AuthState } from "./auth-state";
+import { mapLifestyle, parseHabits } from "./lifestyle";
 import { LoginRequiredError, isLoginRequiredError, isSyncFetchError } from "../../errors";
 import {
 	mapDailySummary,
@@ -213,6 +214,15 @@ export class GarminProvider implements HealthProvider {
 			group("trainingStatus", "Training Status", this.api.fetchTrainingStatus(date), data => mapTrainingStatus(data, enabled));
 		}
 
+		// the lifestyle log: the habits the user chose are mapped, all of them are reported so the settings can offer them
+		let habits: HealthData["habits"];
+		if (enabled.has("lifestyle_log")) {
+			group("lifestyle", "Lifestyle log", this.api.fetchLifestyle(date), data => {
+				habits = parseHabits(data).map(({ key, name, kind }) => ({ key, name, kind }));
+				return mapLifestyle(data, enabled);
+			});
+		}
+
 		// Activities
 		let activities: Record<string, string> = {};
 		let trainings: import("../provider").TrainingEntry[] = [];
@@ -235,6 +245,6 @@ export class GarminProvider implements HealthProvider {
 			await this.api.probeRequestVariants(date);
 		}
 
-		return { metrics, activities, trainings, startLocation, failedEndpoints: this.api.failedEndpoints() };
+		return { metrics, activities, trainings, startLocation, habits, failedEndpoints: this.api.failedEndpoints() };
 	}
 }

@@ -685,6 +685,10 @@ export default class HealthSyncPlugin extends Plugin {
 		// structuredClone: older iOS WebViews lack it and esbuild does not polyfill it.)
 		const defaults = DEFAULT_SETTINGS.enabledMetrics;
 		this.settings.enabledMetrics = { ...(saved?.enabledMetrics ?? defaults) };
+		this.settings.lifestyleHabits = {};
+		for (const [key, habit] of Object.entries(saved?.lifestyleHabits ?? {})) {
+			if (key.startsWith("lifestyle_") && typeof habit?.name === "string") this.settings.lifestyleHabits[key] = { name: habit.name, kind: habit.kind === "count" ? "count" : "check" };
+		}
 		this.settings.lastSyncTimes = { ...(saved?.lastSyncTimes ?? {}) };
 		this.settings.fetchLog = { ...(saved?.fetchLog ?? {}) };
 		this.settings.fetchSets = (saved?.fetchSets ?? []).map((set) => [...set]);

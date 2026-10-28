@@ -161,6 +161,7 @@ function getEndpoints(apiBase: string): Record<string, (displayName: string, dat
 		hydration: (_, date) => `${apiBase}/usersummary-service/usersummary/hydration/daily/${date}`,
 		trainingStatus: (_, date) => `${apiBase}/metrics-service/metrics/maxmet/daily/${date}/${date}`,
 		trainingReadiness: (_, date) => `${apiBase}/metrics-service/metrics/trainingreadiness/${date}`,
+		lifestyle: (_, date) => `${apiBase}/lifestylelogging-service/dailyLog/${date}`,
 	};
 }
 
@@ -177,6 +178,7 @@ const ENDPOINT_METRIC_MAP: Record<string, string[]> = {
 	hydration: ["hydration_ml", "hydration_goal_ml"],
 	trainingStatus: ["training_status", "vo2_max"],
 	trainingReadiness: ["training_readiness"],
+	lifestyle: ["lifestyle_log"],
 };
 
 /** Determines which endpoints are required for the enabled metrics */
@@ -1176,6 +1178,11 @@ export class GarminApi {
 	async fetchHydration(date: string): Promise<Record<string, unknown>> {
 		const data = await this.getCachedOrFetch(date);
 		return (data.hydration || {}) as Record<string, unknown>;
+	}
+
+	async fetchLifestyle(date: string): Promise<Record<string, unknown>> {
+		const data = await this.getCachedOrFetch(date);
+		return (data.lifestyle || {}) as Record<string, unknown>;
 	}
 
 	// --- Cache + lock: navigate only once per date ---

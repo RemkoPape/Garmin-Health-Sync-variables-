@@ -27,6 +27,7 @@ function route(replies: Record<string, Reply> = {}): void {
 		["hydration", /hydration/, { body: { valueInML: 1800, goalInML: 2500 } }],
 		["trainingStatus", /maxmet/, { body: { vo2MaxValue: 50, trainingStatusPhrase: "PRODUCTIVE" } }],
 		["trainingReadiness", /trainingreadiness/, { body: [{ score: 70 }] }],
+		["lifestyle", /lifestylelogging/, { body: { dailyLogsReport: [] } }],
 	];
 	for (const [key, re, def] of table) net.on(re, replies[key] ?? def);
 }
@@ -309,7 +310,47 @@ describe("the stress and recovery minutes (issue 31)", () => {
 		const { METRICS } = await import("../src/metrics");
 		const keys = METRICS.map((m) => m.key);
 		const data = await provider.fetchData(DATE, keys);
-		expect(keys.filter((k) => !(k in data.metrics))).toEqual([]);
+		// lifestyle_log is the switch of the habits, not a value: the habits themselves are keys of their own (tests/lifestyle.test.ts)
+		expect(keys.filter((k) => k !== "lifestyle_log" && !(k in data.metrics))).toEqual([]);
+	});
+});
+
+describe("the lifestyle log", () => {
+	const LOG = { body: { dailyLogsReport: [
+		{ behaviourId: 2, name: "Light exercise", measurementType: "NONE", logStatus: "YES" },
+		{ behaviourId: 3, name: "Alcohol", measurementType: "NONE", logStatus: "NO" },
+		{ behaviourId: 5, name: "Late caffeine", measurementType: "QUANTITY", logStatus: "YES", details: [{ subTypeName: "Coffee", amount: 2 }] },
+	] } };
+
+	it("asks for the log only when the switch is on, and maps the habits that were chosen", async () => {
+		route({ lifestyle: LOG });
+		const off = await provider.fetchData(DATE, ["steps", "lifestyle_light_exercise"]);
+		expect(off.habits).toBeUndefined();
+		expect(endpointsCalled()).not.toContain("lifestylelogging-service");
+		const on = await provider.fetchData(DATE, ["lifestyle_log", "lifestyle_light_exercise", "lifestyle_late_caffeine"]);
+		expect(on.metrics).toEqual({ lifestyle_light_exercise: 1, lifestyle_late_caffeine: 2 });
+		expect(endpointsCalled()).toContain("lifestylelogging-service");
+	});
+
+	it("reports every habit Garmin sent, chosen or not, so the settings can list them", async () => {
+		route({ lifestyle: LOG });
+		const data = await provider.fetchData(DATE, ["lifestyle_log"]);
+		expect(data.metrics).toEqual({});
+		expect(data.habits).toEqual([
+			{ key: "lifestyle_light_exercise", name: "Light exercise", kind: "check" },
+			{ key: "lifestyle_alcohol", name: "Alcohol", kind: "check" },
+			{ key: "lifestyle_late_caffeine", name: "Late caffeine", kind: "count" },
+		]);
+	});
+
+	it("shows the structure of the answer and what was mapped in the diagnostics, without a habit name or value", async () => {
+		route({ lifestyle: LOG });
+		await provider.fetchData(DATE, ["lifestyle_log", "lifestyle_late_caffeine"]);
+		const log = provider.getSyncDiagnostics();
+		// entries with and without a count differ, so both shapes are listed; the list under `details` is cut at the depth limit
+		expect(log).toContain("lifestyle shape: {dailyLogsReport: [3]{behaviourId: int, name: string, measurementType: string, logStatus: string}|{behaviourId: int, name: string, measurementType: string, logStatus: string, details: [1]object(2)}}");
+		expect(log).toContain("mapper lifestyle: mapped 1 field(s): lifestyle_late_caffeine");
+		for (const secret of ["Alcohol", "Late caffeine", "Coffee"]) expect(log, secret).not.toContain(secret);
 	});
 });
 

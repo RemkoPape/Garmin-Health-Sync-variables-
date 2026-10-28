@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.78
+
+### Added
+
+- **Lifestyle log (habits), first step.** A new switch **Lifestyle log (habits)** under **Additional metrics** (off by default) reads the habits you log in Garmin Connect, one more request per day. After a sync the habits are listed under the switch, each with its own switch, off until you choose it. Only a habit you switch on is written to the daily note as `lifestyle_<name>` (`1` or `0` for yes or no, the amount for a counted habit) and kept in the history notes. A habit you did not touch that day is not written at all, so an empty day is never read as "no". The names of the habits are kept in the plugin settings, see [Lifestyle log in metrics.md](docs/metrics.md#lifestyle-log-habits).
+- **Copy diagnostics shows the structure of the lifestyle answer** (`lifestyle shape: ...`, field names and types, never a habit name or a value) and which habit keys were written. Garmin does not document this answer: please send a report from a day on which you logged something, then the habits card (comparing each habit with the HRV and resting heart rate of the night after it) is built on the real structure.
+
+### Not yet
+
+- The card and the comparison with HRV and resting heart rate come in the next beta; a mock-up is on the branch `mockup/habits-card`.
+
 ## 0.12.0-beta.77
 
 ### Fixed

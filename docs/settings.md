@@ -28,6 +28,7 @@ All settings are under **Settings → Community plugins → Garmin Health Sync**
 ## Metrics
 
 - **Standard metrics** (steps, sleep duration, sleep score, resting heart rate, HRV, stress) are on by default.
+- **Lifestyle log (habits)** reads the habits you log in Garmin Connect; each habit then has a switch of its own and only the ones you switch on are written to your notes (see [the lifestyle log](metrics.md#lifestyle-log-habits)).
 - **Additional metrics** are off by default; each has a switch. The full list with formats and the cards that use each is in [metrics.md](metrics.md).
 
 ## Side panel
