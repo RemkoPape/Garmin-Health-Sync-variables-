@@ -17,6 +17,8 @@ const MIN_T = 2.5;
 const MIN_SHIFT = 0.3;
 /** The smallest spread per measure, so a very steady person does not get razor-thin limits (as in the other cards). */
 const SD_FLOOR = { hrv: 2, resting_hr: 1.5 };
+/** The mean of the weeks before needs this many days with an entry. */
+const MIN_USUAL_ENTRIES = 5;
 /** The days of the dot strip. */
 export const STRIP_DAYS = 14;
 
@@ -53,8 +55,12 @@ export interface HabitRow {
 	streak: number;
 	/** Days of the last 90 with an entry, yes or no. */
 	logged: number;
-	/** On the days of the last 7 on which the habit was done: how many days, the amount in total (a counted habit) and the mean per day. */
-	week: { days: number; total: number; mean: number } | null;
+	/** The last 7 days: the days with an entry, the days the habit was done, the amount in total and the mean per day with an entry. Null without an entry. */
+	week: { entries: number; days: number; total: number; mean: number } | null;
+	/** The mean per day with an entry of the 4 weeks before those 7 days, from 5 days with an entry. */
+	usual: number | null;
+	/** The amount of each of the last 14 days (null: no entry), oldest first. */
+	daily: (number | null)[];
 	hrv: Effect | null;
 	resting_hr: Effect | null;
 }
@@ -129,16 +135,27 @@ export function computeHabits(index: DayIndex, date: string, names: Record<strin
 			if (v === null || v <= 0) break;
 			streak++;
 		}
+		let weekEntries = 0;
 		let weekDays = 0;
 		let weekTotal = 0;
 		for (let i = 0; i < 7; i++) {
 			const v = index.value(key, shiftDate(date, -i));
-			if (v !== null && v > 0) {
-				weekDays++;
-				weekTotal += v;
-			}
+			if (v === null) continue;
+			weekEntries++;
+			weekTotal += v;
+			if (v > 0) weekDays++;
 		}
-		rows.push({ key, name: habit.name, kind: habit.kind, strip, with: withDays, without: withoutDays, today, streak, logged: withDays + withoutDays + (today === null ? 0 : 1), week: weekDays === 0 ? null : { days: weekDays, total: weekTotal, mean: weekTotal / weekDays }, hrv: effectOf(index, "hrv", days, date), resting_hr: effectOf(index, "resting_hr", days, date) });
+		let beforeEntries = 0;
+		let beforeTotal = 0;
+		for (let i = 7; i < 7 + USUAL_DAYS; i++) {
+			const v = index.value(key, shiftDate(date, -i));
+			if (v === null) continue;
+			beforeEntries++;
+			beforeTotal += v;
+		}
+		const daily: (number | null)[] = [];
+		for (let i = STRIP_DAYS - 1; i >= 0; i--) daily.push(index.value(key, shiftDate(date, -i)));
+		rows.push({ key, name: habit.name, kind: habit.kind, strip, with: withDays, without: withoutDays, today, streak, logged: withDays + withoutDays + (today === null ? 0 : 1), week: weekEntries === 0 ? null : { entries: weekEntries, days: weekDays, total: weekTotal, mean: weekTotal / weekEntries }, usual: beforeEntries >= MIN_USUAL_ENTRIES ? beforeTotal / beforeEntries : null, daily, hrv: effectOf(index, "hrv", days, date), resting_hr: effectOf(index, "resting_hr", days, date) });
 	}
 	// habits with a pattern first, the strongest on top; the rest by name
 	const strength = (r: HabitRow): number => Math.max(...[r.hrv, r.resting_hr].map((e) => (e?.clear ? Math.abs(e.t) : 0)));

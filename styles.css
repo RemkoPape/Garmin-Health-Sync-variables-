@@ -1558,3 +1558,44 @@
 	padding-top: var(--size-4-2);
 	border-top: 1px solid var(--background-modifier-border);
 }
+
+/* A counted habit: the amount of each day as a small column */
+.ghs-habit-columns {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--size-2-2);
+	height: 22px;
+}
+
+.ghs-habit-col {
+	display: block;
+	box-sizing: border-box;
+	width: 10px;
+	height: var(--ghs-h, 3px);
+	border-radius: 2px;
+	background: var(--text-normal);
+}
+
+.ghs-habit-col-zero {
+	background: var(--text-muted);
+}
+
+.ghs-habit-col-unknown {
+	height: 3px;
+	border: 1px dashed var(--text-faint);
+	background: transparent;
+}
+
+/* How close the comparison is to the days it needs */
+.ghs-habit-progress {
+	height: 3px;
+	border-radius: 2px;
+	background: var(--background-modifier-border);
+}
+
+.ghs-habit-progress-fill {
+	width: var(--ghs-w, 0);
+	height: 100%;
+	border-radius: 2px;
+	background: var(--text-faint);
+}

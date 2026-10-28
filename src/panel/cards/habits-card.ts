@@ -34,11 +34,35 @@ function strip(parent: HTMLElement, dots: Dot[]): void {
 	for (const dot of dots) el.createSpan({ cls: `ghs-habit-dot ghs-habit-dot-${dot}` });
 }
 
-/** The line that says where a habit stands: days logged and the run of days with it. */
+/** A week's mean this much above or below the weeks before gets an arrow. */
+const TREND_SHARE = 0.15;
+
+/** How the week stands: the mean a day of a counted habit (with an arrow against the weeks before), the days of the week for a yes or no habit, and the run of days with it. */
 function meta(row: HabitRow, lang: string): string {
-	const parts = [t("panelHabitsDays", lang).replace("{n}", String(row.logged))];
+	const parts: string[] = [];
+	if (row.kind === "count" && row.week) {
+		const arrow = row.usual === null ? "" : row.week.mean >= row.usual * (1 + TREND_SHARE) ? " ↑" : row.week.mean <= row.usual * (1 - TREND_SHARE) ? " ↓" : "";
+		parts.push(`${t("panelHabitsMean", lang).replace("{mean}", formatNumber(row.week.mean, lang, 1))}${arrow}`);
+	} else if (row.week) parts.push(t("panelHabitsWeekDays", lang).replace("{n}", String(row.week.days)));
 	if (row.streak >= 2) parts.push(t("panelHabitsStreak", lang).replace("{n}", String(row.streak)));
 	return parts.join(" · ");
+}
+
+/** The amount of each of the last days as small columns, for a counted habit. */
+function columns(parent: HTMLElement, daily: (number | null)[]): void {
+	const top = Math.max(1, ...daily.map((v) => v ?? 0));
+	const el = parent.createDiv({ cls: "ghs-habit-columns" });
+	for (const v of daily) {
+		const col = el.createSpan({ cls: `ghs-habit-col${v === null ? " ghs-habit-col-unknown" : v === 0 ? " ghs-habit-col-zero" : ""}` });
+		if (v !== null && v > 0) col.setCssProps({ "--ghs-h": `${Math.max(12, (v / top) * 100)}%` });
+	}
+}
+
+/** How close the comparison is to the days it needs, as a thin bar. */
+function progress(parent: HTMLElement, row: HabitRow): void {
+	const share = (Math.min(row.with, MIN_GROUP) + Math.min(row.without, MIN_GROUP)) / (2 * MIN_GROUP);
+	const bar = parent.createDiv({ cls: "ghs-habit-progress", attr: { role: "img", "aria-label": `${Math.min(row.with, MIN_GROUP)}/${MIN_GROUP} · ${Math.min(row.without, MIN_GROUP)}/${MIN_GROUP}` } });
+	bar.createDiv({ cls: "ghs-habit-progress-fill" }).setCssProps({ "--ghs-w": `${share * 100}%` });
 }
 
 function habitRow(parent: HTMLElement, row: HabitRow, lang: string): void {
@@ -50,9 +74,10 @@ function habitRow(parent: HTMLElement, row: HabitRow, lang: string): void {
 	name.createSpan({ text: row.name });
 	if (row.kind === "count" && row.today !== null && row.today > 0) name.createEl("b", { text: ` ×${formatNumber(row.today, lang, 0)}` });
 	head.createSpan({ cls: "ghs-habit-note", text: meta(row, lang) });
-	strip(el, row.strip);
+	if (row.kind === "count") columns(el, row.daily);
+	else strip(el, row.strip);
 	if (row.hrv === null && row.resting_hr === null) {
-		el.createDiv({ cls: "ghs-habit-note", text: t("panelHabitsProgress", lang).replace(/\{min\}/g, String(MIN_GROUP)).replace("{n}", String(Math.min(row.with, MIN_GROUP))).replace("{m}", String(Math.min(row.without, MIN_GROUP))) });
+		progress(el, row);
 		return;
 	}
 	if (row.hrv) effectRow(el, t("panelHabitsHrv", lang), "hrv", row.hrv, lang);
@@ -64,7 +89,11 @@ function facts(habits: HabitRow[], lang: string): string[] {
 	const out: string[] = [];
 	for (const h of habits) {
 		out.push(t("panelHabitsFactDays", lang).replace("{habit}", h.name).replace("{n}", String(h.logged)).replace("{yes}", String(h.with + (h.today !== null && h.today > 0 ? 1 : 0))).replace("{no}", String(h.without + (h.today === 0 ? 1 : 0))));
-		if (h.kind === "count" && h.week) out.push(t("panelHabitsFactWeek", lang).replace("{habit}", h.name).replace("{mean}", formatNumber(h.week.mean, lang, 1)).replace("{total}", formatNumber(h.week.total, lang, 0)).replace("{days}", String(h.week.days)));
+		if (h.kind === "count" && h.week) {
+			out.push(t("panelHabitsFactWeek", lang).replace("{habit}", h.name).replace("{mean}", formatNumber(h.week.mean, lang, 1)).replace("{total}", formatNumber(h.week.total, lang, 0)));
+			if (h.usual !== null) out.push(t("panelHabitsFactUsual", lang).replace("{habit}", h.name).replace("{usual}", formatNumber(h.usual, lang, 1)));
+		}
+		if (h.hrv === null && h.resting_hr === null) out.push(t("panelHabitsProgress", lang).replace("{habit}", h.name).replace(/\{min\}/g, String(MIN_GROUP)).replace("{n}", String(h.with)).replace("{m}", String(h.without)));
 	}
 	return out;
 }
