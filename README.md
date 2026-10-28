@@ -17,13 +17,23 @@
 
 > **Works on desktop and mobile** (Windows, macOS, Linux, iOS, Android). This plugin uses Garmin Connect's internal API — there is no official third-party API available. You sign in with your Garmin email and password (plus the verification code if you use two-step verification). If Garmin blocks that attempt, an alternative browser sign-in is available.
 
+## Documentation
+
+- [Settings](docs/settings.md) — every setting
+- [Metrics](docs/metrics.md) — every property written to your notes
+- [Side panel cards](docs/panel-cards.md) — what each card shows, which daily decision it helps with and how it is calculated
+- [Interpretations under the light bulb](docs/panel-insights.md) — when each statement appears and what it rests on
+- [History notes and backfill](docs/history.md) — how the history is kept and built
+- [Troubleshooting](docs/troubleshooting.md) — sign-in, missing metrics, the panel, notes and backfill
+- [Changelog](CHANGELOG.md) — what changed in each release
+
 ## Features
 
 - **Auto-sync on startup** — checks the last 7 days and fills in any missing health data
 - **Wait-for-note mode** — optionally let auto-sync wait until another tool (Templater, Calendar, an external sync) creates the daily note, instead of creating it itself
 - **Manual sync** — sync any open Daily Note via command palette
 - **Backfill** — bulk-sync a date range (e.g. the last 3 months)
-- **20+ metrics** — steps, sleep score, HRV, stress, body battery, SpO2, weight, and more
+- **30+ metrics** — steps, sleep score, HRV, stress, body battery, SpO2, weight, and more
 - **Activity tracking** — each workout appears as a human-readable summary
 - **Workout location** — reverse-geocoded place name from your first GPS activity
 - **Smart detection** — automatically picks up your Daily Notes path and format from Periodic Notes or the core Daily Notes plugin
@@ -193,17 +203,20 @@ Each activity is assigned a category:
 
 | Category | Examples |
 |---|---|
-| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking |
-| `running` | running, trail_running, treadmill, ultra_run |
+| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking, virtual_ride |
+| `running` | running, trail_running, treadmill_running, indoor_running, ultra_run |
 | `walking` | walking, indoor_walking |
 | `outdoor` | hiking, mountaineering, rock_climbing, bouldering |
-| `swimming` | swimming, pool_swimming, open_water_swimming |
+| `swimming` | swimming, lap_swimming, pool_swimming, open_water_swimming |
 | `winter` | skiing, backcountry_skiing, cross_country_skiing, snowboarding |
-| `water` | sup, rowing, kayaking, surfing, sailing |
-| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit |
+| `water` | sup, rowing, kayaking, paddling, surfing, sailing |
+| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit, indoor_cardio |
 | `racket` | tennis, badminton, squash, table_tennis, pickleball |
 | `team` | soccer, basketball, volleyball, rugby |
-| `other` | golf, meditation, multi_sport |
+| `recovery` | breathwork, meditation, stretching, mobility (left out of the load) |
+| `other` | golf, multi_sport, triathlon |
+
+Newer sports carry a suffix from Garmin (`kayaking_v2`, `skate_skiing_ws`); it is dropped for the name and the category, so they count like the plain sport. Sessions are shown with the sport's name in your plugin language; a sport that is not listed here is shown as readable text and counts as `other`. The weekly load card tracks the distance of running, cycling, walking, outdoor sports and swimming.
 
 ## Data & Privacy
 

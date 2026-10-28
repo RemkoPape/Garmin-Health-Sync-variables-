@@ -69,6 +69,8 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **sawka**: Sawka MN et al. American College of Sports Medicine position stand. Exercise and fluid replacement. *Med Sci Sports Exerc* 2007;39:377-390. [https://pubmed.ncbi.nlm.nih.gov/17277604/](https://pubmed.ncbi.nlm.nih.gov/17277604/)
 - **garmin**: Garmin. *Body Battery energy monitoring* (heart rate variability, stress, sleep and activity; sleep charges, stress and strenuous activity drain). [https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
 
+See also: [panel-cards.md](panel-cards.md) (what each card shows and how it is calculated), [metrics.md](metrics.md), [settings.md](settings.md), [troubleshooting.md](troubleshooting.md#the-side-panel).
+
 ## Interpretations
 
 ### today_flag_hrv

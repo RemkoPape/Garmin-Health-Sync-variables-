@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.0-beta.73
+
+### Added
+
+- **New docs pages, all linked from the README and from each other:** `docs/metrics.md` (every property written to your notes: key, format, default, request group and the cards that use it), `docs/settings.md` (every setting and command), `docs/troubleshooting.md` (sign-in, a metric that is missing or starts late, the side panel, notes and files, backfill) and `docs/README.md` (the index). Every docs page ends with "See also" links, the README has a **Documentation** section in all six languages, and the README links point at the matching sections.
+- **Tests keep the docs honest:** every relative link, image and heading anchor in the README files and the docs must resolve; `docs/metrics.md` must have a row for every metric (on or off by default as in the code, linked to the cards that use it); the README feature count cannot exceed the metrics in the code.
+
+### Changed
+
+- **README, six languages:** "30+ metrics" (it said 20+; there are 31), and the activity tables follow the code: `treadmill_running`, `indoor_running`, `virtual_ride`, `lap_swimming`, `paddling`, `indoor_cardio`, `triathlon`, the new `recovery` category (breathwork, meditation, stretching, mobility), the `_v2` and `_ws` suffixes, the names shown in your language and the weekly distance of swimming.
+- **`docs/panel-cards.md`:** the Steps and Floors light bulb lines describe the to-go texts and no longer say "not shown for an unfinished day", which stopped being true in beta.72.
+- **AGENTS.md and the docs-screenshots skill** state the docs rules: a card needs its section, a metric its row, a setting its line, links must resolve, the three hero images sit at the top of every README.
+
 ## 0.12.0-beta.72
 
 ### Fixed

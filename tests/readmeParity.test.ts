@@ -10,10 +10,11 @@ const translations = ["de", "es", "fr", "ja", "zh"].map((l) => [l, read(`README.
 
 const headings = (text: string, mark: string): number => text.split("\n").filter((l) => l.startsWith(`${mark} `)).length;
 const images = (text: string): string[] => [...text.matchAll(/<img src="([^"]+)"/g)].map((m) => m[1]!);
+/** The bullets of the Features section: the section after the Documentation list, before the next one. */
 const features = (text: string): number => {
-	const start = text.indexOf("\n- ");
-	const end = text.indexOf("\n## ", start);
-	return text.slice(start, end).split("\n").filter((l) => l.startsWith("- **")).length;
+	const headingStarts = [...text.matchAll(/^## /gm)].map((m) => m.index!);
+	const section = text.slice(headingStarts[1], headingStarts[2]);
+	return section.split("\n").filter((l) => l.startsWith("- **")).length;
 };
 
 describe("the translated READMEs", () => {

@@ -17,13 +17,23 @@
 
 > **Funciona en escritorio y en móvil** (Windows, macOS, Linux, iOS, Android). Este plugin utiliza la API interna de Garmin Connect; no existe una API oficial de terceros. Inicias sesión con tu correo y contraseña de Garmin (y el código de verificación si usas la verificación en dos pasos). Si Garmin bloquea ese intento, hay un inicio de sesión alternativo en el navegador.
 
+## Documentación
+
+- [Ajustes](docs/settings.md) — cada ajuste
+- [Métricas](docs/metrics.md) — cada propiedad que se escribe en tus notas
+- [Tarjetas del panel lateral](docs/panel-cards.md) — qué muestra cada tarjeta, con qué decisión diaria ayuda y cómo se calcula
+- [Interpretaciones bajo la bombilla](docs/panel-insights.md) — cuándo aparece cada afirmación y en qué se basa
+- [Notas de historial y rellenado](docs/history.md) — cómo se guarda y se construye el historial
+- [Solución de problemas](docs/troubleshooting.md) — inicio de sesión, métricas que faltan, el panel, las notas y el rellenado
+- [Registro de cambios](CHANGELOG.md) — qué cambió en cada versión
+
 ## Características
 
 - **Sincronización automática al iniciar** — comprueba los últimos 7 días y completa los datos de salud faltantes
 - **Modo de espera de nota** — opcionalmente deja que la sincronización automática espere a que otra herramienta (Templater, Calendar, una sincronización externa) cree la Daily Note, en lugar de crearla ella misma
 - **Sincronización manual** — sincroniza cualquier Daily Note abierta mediante la paleta de comandos
 - **Rellenado retroactivo** — sincronización masiva de un rango de fechas (p. ej., los últimos 3 meses)
-- **Más de 20 métricas** — pasos, puntuación de sueño, HRV, estrés, Body Battery, SpO2, peso y más
+- **Más de 30 métricas** — pasos, puntuación de sueño, HRV, estrés, Body Battery, SpO2, peso y más
 - **Seguimiento de actividades** — cada entrenamiento aparece como un resumen legible
 - **Ubicación del entrenamiento** — nombre del lugar obtenido por geocodificación inversa de tu primera actividad con GPS
 - **Detección inteligente** — detecta automáticamente la ruta y el formato de tus Daily Notes desde Periodic Notes o el plugin nativo de Daily Notes
@@ -193,17 +203,20 @@ A cada actividad se le asigna una categoría:
 
 | Categoría | Ejemplos |
 |---|---|
-| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking |
-| `running` | running, trail_running, treadmill, ultra_run |
+| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking, virtual_ride |
+| `running` | running, trail_running, treadmill_running, indoor_running, ultra_run |
 | `walking` | walking, indoor_walking |
 | `outdoor` | hiking, mountaineering, rock_climbing, bouldering |
-| `swimming` | swimming, pool_swimming, open_water_swimming |
+| `swimming` | swimming, lap_swimming, pool_swimming, open_water_swimming |
 | `winter` | skiing, backcountry_skiing, cross_country_skiing, snowboarding |
-| `water` | sup, rowing, kayaking, surfing, sailing |
-| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit |
+| `water` | sup, rowing, kayaking, paddling, surfing, sailing |
+| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit, indoor_cardio |
 | `racket` | tennis, badminton, squash, table_tennis, pickleball |
 | `team` | soccer, basketball, volleyball, rugby |
-| `other` | golf, meditation, multi_sport |
+| `recovery` | breathwork, meditation, stretching, mobility (no cuentan para la carga) |
+| `other` | golf, multi_sport, triathlon |
+
+Los deportes más nuevos llevan un sufijo de Garmin (`kayaking_v2`, `skate_skiing_ws`); se omite para el nombre y la categoría, así que cuentan como el deporte sin sufijo. Las sesiones muestran el nombre del deporte en el idioma del plugin; un deporte que no figura aquí se muestra como texto legible y cuenta como `other`. La tarjeta de carga semanal registra la distancia de correr, ciclismo, caminar, deportes al aire libre y natación.
 
 ## Datos y privacidad
 

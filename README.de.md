@@ -17,13 +17,23 @@
 
 > **Funktioniert auf Desktop und Mobilgeräten** (Windows, macOS, Linux, iOS, Android). Dieses Plugin nutzt Garmins interne API — es gibt keine offizielle Drittanbieter-API. Du meldest dich mit deiner Garmin-E-Mail und deinem Passwort an (bei Bestätigung in zwei Schritten zusätzlich mit dem Bestätigungscode). Blockiert Garmin diesen Versuch, steht eine alternative Browser-Anmeldung zur Verfügung.
 
+## Dokumentation
+
+- [Einstellungen](docs/settings.md) — jede Einstellung
+- [Messwerte](docs/metrics.md) — jede Property, die in deine Notizen geschrieben wird
+- [Karten des Seitenpanels](docs/panel-cards.md) — was jede Karte zeigt, bei welcher Tagesentscheidung sie hilft und wie sie berechnet wird
+- [Deutungen unter der Glühbirne](docs/panel-insights.md) — wann jede Aussage erscheint und worauf sie beruht
+- [Verlaufsnotizen und Backfill](docs/history.md) — wie der Verlauf geführt und aufgebaut wird
+- [Fehlersuche](docs/troubleshooting.md) — Anmeldung, fehlende Messwerte, Panel, Notizen und Backfill
+- [Änderungsprotokoll](CHANGELOG.md) — was sich in jeder Version geändert hat
+
 ## Funktionen
 
 - **Auto-Sync beim Start** — prüft die letzten 7 Tage und ergänzt fehlende Gesundheitsdaten
 - **Auf-Note-warten-Modus** — der Auto-Sync kann optional warten, bis ein anderes Tool (Templater, Calendar, ein externer Sync) die Daily Note anlegt, statt sie selbst zu erstellen
 - **Manueller Sync** — synchronisiere jede geöffnete Daily Note über die Befehlspalette
 - **Backfill** — Massen-Sync eines Zeitraums (z.B. die letzten 3 Monate)
-- **20+ Metriken** — Schritte, Schlaf-Score, HRV, Stress, Body Battery, SpO2, Gewicht und mehr
+- **30+ Metriken** — Schritte, Schlaf-Score, HRV, Stress, Body Battery, SpO2, Gewicht und mehr
 - **Aktivitäts-Tracking** — jedes Workout erscheint als gut lesbare Zusammenfassung
 - **Workout-Standort** — per Reverse-Geocoding ermittelter Ortsname deiner ersten GPS-Aktivität
 - **Intelligente Erkennung** — erkennt automatisch deinen Daily-Notes-Pfad und das Format aus Periodic Notes oder dem eingebauten Daily Notes Plugin
@@ -193,17 +203,20 @@ Jeder Aktivität wird eine Kategorie zugewiesen:
 
 | Kategorie | Beispiele |
 |---|---|
-| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking |
-| `running` | running, trail_running, treadmill, ultra_run |
+| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking, virtual_ride |
+| `running` | running, trail_running, treadmill_running, indoor_running, ultra_run |
 | `walking` | walking, indoor_walking |
 | `outdoor` | hiking, mountaineering, rock_climbing, bouldering |
-| `swimming` | swimming, pool_swimming, open_water_swimming |
+| `swimming` | swimming, lap_swimming, pool_swimming, open_water_swimming |
 | `winter` | skiing, backcountry_skiing, cross_country_skiing, snowboarding |
-| `water` | sup, rowing, kayaking, surfing, sailing |
-| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit |
+| `water` | sup, rowing, kayaking, paddling, surfing, sailing |
+| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit, indoor_cardio |
 | `racket` | tennis, badminton, squash, table_tennis, pickleball |
 | `team` | soccer, basketball, volleyball, rugby |
-| `other` | golf, meditation, multi_sport |
+| `recovery` | breathwork, meditation, stretching, mobility (zählen nicht zur Last) |
+| `other` | golf, multi_sport, triathlon |
+
+Neuere Sportarten tragen von Garmin ein Suffix (`kayaking_v2`, `skate_skiing_ws`); es wird für Name und Kategorie weggelassen, sie zählen also wie die einfache Sportart. Sitzungen zeigen den Namen der Sportart in der Plugin-Sprache; eine hier nicht aufgeführte Sportart erscheint als lesbarer Text und zählt als `other`. Die Wochenlast-Karte erfasst die Strecke von Laufen, Radfahren, Gehen, Outdoor-Sport und Schwimmen.
 
 ## Datenschutz
 

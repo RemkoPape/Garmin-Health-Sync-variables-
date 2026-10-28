@@ -17,7 +17,7 @@ The light bulb on every card opens two boxes: **What your data suggests** (at mo
 
 ## The cards
 
-In panel order. "Needs" names the metrics to switch on in the settings; **extra** ones are optional and add detail or hints. The Load, Weekly load and Sessions cards use the workouts that are always synced.
+In panel order. "Needs" names the metrics to switch on in the settings (every metric is described in [metrics.md](metrics.md), every setting in [settings.md](settings.md)); **extra** ones are optional and add detail or hints. The Load, Weekly load and Sessions cards use the workouts that are always synced.
 
 ### today
 - **What it shows:** your readiness for today as a score from 0 to 100 with its band (poor, low, moderate, high, prime), a verdict (train hard, train as planned, go easy, day off), Garmin's own readiness next to it when the watch provides it, and a note when the score rests on a young range.
@@ -105,7 +105,7 @@ In panel order. "Needs" names the metrics to switch on in the settings; **extra*
 - **How it is calculated:** your zone is the mean of the 7 days before up to 10 % above it, from 5 days. Being above the zone is never a warning. Walking time assumes 100 steps a minute.
 - **How it is drawn:** a bar from 0 to 1.6 times your usual with the zone marked and a dot that is green inside or above and amber below; a foot line of the steps and minutes to the top of the zone.
 - **Needs:** `steps`; extra: `distance_km`, `calories_active`, `calories_total`.
-- **Light bulb:** `steps_*` (below the usual for days, zone reached, weekday pattern). Not shown for an unfinished day.
+- **Light bulb:** `steps_*` (zone reached, below the usual for days, a quiet weekday, and on today how many steps and minutes of walking are left to the usual).
 
 ### intensity
 - **What it shows:** the week's intensity minutes by day against the weekly goal.
@@ -121,7 +121,7 @@ In panel order. "Needs" names the metrics to switch on in the settings; **extra*
 - **How it is calculated:** like steps: the zone is the mean of the 7 days before (from 5 days) up to 10 % above it, in whole floors. No zone when the average is zero.
 - **How it is drawn:** one block per floor, filled up to today and shaded up to the top of the zone.
 - **Needs:** `floors`.
-- **Light bulb:** `floors_*`. Not shown for an unfinished day.
+- **Light bulb:** `floors_*` (zone reached, below the usual for days, and on today how many floors are left to the start of the usual range).
 
 ### vo2
 - **What it shows:** Garmin's estimate of cardio fitness (VO2 max) and how it moved over 12 weeks.
@@ -162,3 +162,5 @@ In panel order. "Needs" names the metrics to switch on in the settings; **extra*
 - **How it is drawn:** one tile per session with a coloured border; recovery sessions have a dashed border.
 - **Needs:** workouts (always synced).
 - **Light bulb:** `sessions_*` (all hard, mostly easy, balanced).
+
+See also: [the interpretations under the light bulb](panel-insights.md), [the metrics](metrics.md), [the settings](settings.md), [the history notes](history.md), [troubleshooting](troubleshooting.md), [the README](../README.md).

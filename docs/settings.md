@@ -1,0 +1,39 @@
+# Settings
+
+All settings are under **Settings → Community plugins → Garmin Health Sync**. This page lists every one of them and points to the page that explains it further.
+
+## Connection
+
+- **Garmin Connect:** sign in with your Garmin email and password (and the verification code if you use two-step verification), or **Sign in via browser** if Garmin blocks that attempt. **Logout** clears the sign-in tokens on this device. Tokens are kept in Obsidian's secret storage and are not synced to your other devices, so each device signs in separately. See [Signing in in the README](../README.md#signing-in) and [Troubleshooting](troubleshooting.md#signing-in).
+- **Server region:** choose China if your account is registered at garmin.cn.
+- **Copy diagnostics:** copies technical details of the last sign-in or sync (data type names, HTTP status codes, sizes, timings; no password, tokens, account data or health values) for a bug report.
+
+## Syncing
+
+- **Auto-sync health data:** on startup, when you open today's or yesterday's daily note and when you return to the app, the plugin syncs the last 7 days. It waits while a backfill runs. See [Auto-sync](../README.md#auto-sync).
+- **Days without a daily note:** what happens to a day that has no daily note, in the auto-sync and the backfill: **Create the note**, **Keep in history files** (no note is made, the day goes into the [history notes](history.md)), or **Skip the day** (the day is not fetched; auto-sync waits until a real note exists).
+- **Commands** (Command Palette): **Sync current note**, **Backfill health data**, **Show the progress of the running backfill** (only while one runs), **Import history from daily notes**, **Open health panel**, **Show what's new** and the browser sign-in. The backfill is described in [history.md](history.md#backfill).
+
+## Notes and properties
+
+- **Daily notes path** and **Daily note format:** where your daily notes live and how they are named, in [moment.js](https://momentjs.com/docs/#/displaying/format/) syntax; they are filled in from Periodic Notes or the core Daily Notes plugin when those are set up. See [Where notes are stored](../README.md#where-notes-are-stored).
+- **New note template:** the content a new daily note starts with (empty for a blank note).
+- **Property prefix:** writes every property with the prefix `ohs_`. See [metrics.md](metrics.md).
+- **Workout location:** adds the place name of your first GPS workout, found by sending its coordinates to Nominatim (OpenStreetMap). See [Data & Privacy](../README.md#data--privacy).
+- **Machine-readable trainings:** adds the structured `trainings` list for Dataview. See [Trainings in the README](../README.md#trainings-optional-machine-readable).
+- **Properties of daily notes:** leave as they are, fold the properties block when a note opens, hide the properties the sync wrote (the panel shows them), or both. Nothing is deleted from a note. See [NOTICE.md](../NOTICE.md) for the plugins this was inspired by.
+- **Unit system:** metric or imperial for distance and weight.
+- **Language:** the plugin language (English, German, Spanish, French, Japanese, Chinese); it follows your Obsidian language until you choose one.
+
+## Metrics
+
+- **Standard metrics** (steps, sleep duration, sleep score, resting heart rate, HRV, stress) are on by default.
+- **Additional metrics** are off by default; each has a switch. The full list with formats and the cards that use each is in [metrics.md](metrics.md).
+
+## Side panel
+
+- **Show the health panel:** adds the panel to the right sidebar; it reads your daily notes and never changes them. Open it from the ribbon icon or the command **Open health panel**.
+- **Birth year:** only the year. It gives heart rate zones for sessions, age-based sleep need and activity goals.
+- **One switch per card:** each says which metrics the card needs and which only add detail. What each card shows and how it is calculated: [panel-cards.md](panel-cards.md); what the light bulb says: [panel-insights.md](panel-insights.md).
+
+See also: [metrics](metrics.md), [history notes](history.md), [troubleshooting](troubleshooting.md), [the README](../README.md).

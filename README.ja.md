@@ -17,13 +17,23 @@
 
 > **デスクトップとモバイルで動作します**（Windows、macOS、Linux、iOS、Android）。このプラグインは Garmin Connect の内部APIを使用します。公式のサードパーティAPIはありません。Garmin のメールアドレスとパスワード（2段階認証を使っている場合は確認コードも）でサインインします。Garmin がその試行をブロックした場合は、ブラウザでのサインインを代替手段として利用できます。
 
+## ドキュメント
+
+- [設定](docs/settings.md) — すべての設定
+- [指標](docs/metrics.md) — ノートに書き込まれるすべてのプロパティ
+- [サイドパネルのカード](docs/panel-cards.md) — 各カードが示すこと、どの日々の判断に役立つか、計算方法
+- [電球の下の解釈](docs/panel-insights.md) — 各メッセージが表示される条件とその根拠
+- [履歴ノートとバックフィル](docs/history.md) — 履歴の保持と構築の方法
+- [トラブルシューティング](docs/troubleshooting.md) — サインイン、欠けている指標、パネル、ノート、バックフィル
+- [変更履歴](CHANGELOG.md) — 各リリースでの変更点
+
 ## 機能
 
 - **起動時の自動同期** — 過去7日間をチェックし、欠落している健康データを補完
 - **ノート待機モード** — 自動同期が、デイリーノートを自分で作成せず、他のツール（Templater、Calendar、外部同期）が作成するのを待つように設定できます
 - **手動同期** — コマンドパレットから開いている Daily Note を同期
 - **バックフィル** — 日付範囲の一括同期（例：過去3ヶ月分）
-- **20以上の指標** — 歩数、睡眠スコア、HRV、ストレス、Body Battery、SpO2、体重など
+- **30以上の指標** — 歩数、睡眠スコア、HRV、ストレス、Body Battery、SpO2、体重など
 - **アクティビティ追跡** — 各ワークアウトが読みやすいサマリーとして表示
 - **ワークアウトの場所** — 最初の GPS アクティビティから逆ジオコーディングで取得した地名
 - **スマート検出** — Periodic Notes または内蔵の Daily Notes プラグインから Daily Notes のパスとフォーマットを自動検出
@@ -193,17 +203,20 @@ Garmin の `typeKey` 値はより簡潔な正規キーに変換されます：
 
 | カテゴリ | 例 |
 |---|---|
-| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking |
-| `running` | running, trail_running, treadmill, ultra_run |
+| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking, virtual_ride |
+| `running` | running, trail_running, treadmill_running, indoor_running, ultra_run |
 | `walking` | walking, indoor_walking |
 | `outdoor` | hiking, mountaineering, rock_climbing, bouldering |
-| `swimming` | swimming, pool_swimming, open_water_swimming |
+| `swimming` | swimming, lap_swimming, pool_swimming, open_water_swimming |
 | `winter` | skiing, backcountry_skiing, cross_country_skiing, snowboarding |
-| `water` | sup, rowing, kayaking, surfing, sailing |
-| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit |
+| `water` | sup, rowing, kayaking, paddling, surfing, sailing |
+| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit, indoor_cardio |
 | `racket` | tennis, badminton, squash, table_tennis, pickleball |
 | `team` | soccer, basketball, volleyball, rugby |
-| `other` | golf, meditation, multi_sport |
+| `recovery` | breathwork, meditation, stretching, mobility（負荷には含めません） |
+| `other` | golf, multi_sport, triathlon |
+
+新しいスポーツには Garmin が付けるサフィックス（`kayaking_v2`、`skate_skiing_ws`）が付きます。名前とカテゴリではサフィックスを無視するため、通常のスポーツと同じに扱われます。セッションにはプラグインの言語でスポーツ名が表示されます。ここに載っていないスポーツは読みやすい文字で表示され、`other` として扱われます。週間負荷カードは、ランニング、サイクリング、ウォーキング、アウトドア、水泳の距離を追跡します。
 
 ## データとプライバシー
 

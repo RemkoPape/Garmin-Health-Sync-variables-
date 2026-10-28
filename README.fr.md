@@ -17,13 +17,23 @@
 
 > **Fonctionne sur ordinateur et sur mobile** (Windows, macOS, Linux, iOS, Android). Ce plugin utilise l’API interne de Garmin Connect ; il n’existe pas d’API tierce officielle. Vous vous connectez avec votre e-mail et votre mot de passe Garmin (et le code de vérification si vous utilisez la validation en deux étapes). Si Garmin bloque cette tentative, une connexion alternative par navigateur est proposée.
 
+## Documentation
+
+- [Réglages](docs/settings.md) — chaque réglage
+- [Mesures](docs/metrics.md) — chaque propriété écrite dans vos notes
+- [Cartes du panneau latéral](docs/panel-cards.md) — ce que montre chaque carte, quelle décision quotidienne elle aide à prendre et comment elle est calculée
+- [Interprétations sous l’ampoule](docs/panel-insights.md) — quand chaque affirmation apparaît et sur quoi elle repose
+- [Notes d’historique et remplissage](docs/history.md) — comment l’historique est conservé et construit
+- [Dépannage](docs/troubleshooting.md) — connexion, mesures manquantes, panneau, notes et remplissage
+- [Journal des modifications](CHANGELOG.md) — ce qui a changé à chaque version
+
 ## Fonctionnalités
 
 - **Synchronisation automatique au démarrage** — vérifie les 7 derniers jours et complète les données de santé manquantes
 - **Mode attente de note** — laisse éventuellement la synchronisation automatique attendre qu’un autre outil (Templater, Calendar, une synchronisation externe) crée la Daily Note, au lieu de la créer elle-même
 - **Synchronisation manuelle** — synchronisez n'importe quelle Daily Note ouverte via la palette de commandes
 - **Remplissage rétroactif** — synchronisation en masse d'une plage de dates (par ex. les 3 derniers mois)
-- **Plus de 20 métriques** — pas, score de sommeil, HRV, stress, Body Battery, SpO2, poids, et plus
+- **Plus de 30 métriques** — pas, score de sommeil, HRV, stress, Body Battery, SpO2, poids, et plus
 - **Suivi des activités** — chaque entraînement apparaît sous forme de résumé lisible
 - **Lieu d'entraînement** — nom du lieu obtenu par géocodage inverse de votre première activité GPS
 - **Détection intelligente** — détecte automatiquement le chemin et le format de vos Daily Notes depuis Periodic Notes ou le plugin natif Daily Notes
@@ -193,17 +203,20 @@ Chaque activité se voit attribuer une catégorie :
 
 | Catégorie | Exemples |
 |---|---|
-| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking |
-| `running` | running, trail_running, treadmill, ultra_run |
+| `cycling` | cycling, e_bike, e_mtb, mountain_biking, indoor_cycling, road_biking, virtual_ride |
+| `running` | running, trail_running, treadmill_running, indoor_running, ultra_run |
 | `walking` | walking, indoor_walking |
 | `outdoor` | hiking, mountaineering, rock_climbing, bouldering |
-| `swimming` | swimming, pool_swimming, open_water_swimming |
+| `swimming` | swimming, lap_swimming, pool_swimming, open_water_swimming |
 | `winter` | skiing, backcountry_skiing, cross_country_skiing, snowboarding |
-| `water` | sup, rowing, kayaking, surfing, sailing |
-| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit |
+| `water` | sup, rowing, kayaking, paddling, surfing, sailing |
+| `gym` | strength_training, gym_equipment, elliptical, yoga, pilates, hiit, indoor_cardio |
 | `racket` | tennis, badminton, squash, table_tennis, pickleball |
 | `team` | soccer, basketball, volleyball, rugby |
-| `other` | golf, meditation, multi_sport |
+| `recovery` | breathwork, meditation, stretching, mobility (exclues de la charge) |
+| `other` | golf, multi_sport, triathlon |
+
+Les sports plus récents portent un suffixe de Garmin (`kayaking_v2`, `skate_skiing_ws`) ; il est ignoré pour le nom et la catégorie, ils comptent donc comme le sport sans suffixe. Les séances affichent le nom du sport dans la langue du plugin ; un sport absent de cette liste s’affiche en texte lisible et compte comme `other`. La carte de charge hebdomadaire suit la distance de la course, du vélo, de la marche, des sports de plein air et de la natation.
 
 ## Données et confidentialité
 
