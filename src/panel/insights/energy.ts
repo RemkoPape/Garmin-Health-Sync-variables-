@@ -40,9 +40,14 @@ export function stressInsights(s: Signals): Insight[] {
 	if (level > STRESS_HIGH) {
 		if (sleep.minutes !== null && sleep.minutes < sleep.need - 60) out.push({ id: "stress_high_sleep", params: { sleep: formatMinutes(sleep.minutes) } });
 		if (week !== null && level > week + WEEK_MARGIN) out.push({ id: "stress_high_week", params: { week: String(Math.round(week)) } });
+		// high, but the last days were just as stressed: said as it is, so the card never opens to nothing
+		else if (week !== null && out.length === 0) out.push({ id: "stress_high_usual", params: { level: String(Math.round(level)), week: String(Math.round(week)) } });
 	} else if (level <= STRESS_CALM) {
 		out.push({ id: "stress_calm" });
-	} else if (week !== null && level <= week + WEEK_MARGIN && out.length === 0) {
+	} else if (week !== null && level > week + WEEK_MARGIN) {
+		// above the week but still in the low band: the one case that had no text
+		out.push({ id: "stress_above_week", params: { level: String(Math.round(level)), week: String(Math.round(week)), delta: String(Math.round(level - week)) } });
+	} else if (week !== null && out.length === 0) {
 		out.push({ id: "stress_usual", params: { level: String(Math.round(level)), week: String(Math.round(week)) } });
 	}
 	return out.slice(0, MAX_INSIGHTS);

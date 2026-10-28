@@ -14,7 +14,7 @@ const WINDOW_DAYS = 7;
 const ZONE_FACTOR = 1.1;
 /** The bar spans 0 to this multiple of the usual daily steps, which pins the zone at 62.5 % to 68.75 %. */
 const DOMAIN_FACTOR = 1.6;
-const STEPS_PER_MINUTE = 100;
+export const STEPS_PER_MINUTE = 100;
 
 export interface StepsModel {
 	/** What the data suggests, filled in by the panel (see insights/). */

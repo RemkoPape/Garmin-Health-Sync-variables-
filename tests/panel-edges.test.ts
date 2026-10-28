@@ -79,16 +79,16 @@ describe("averages of zero", () => {
 	});
 });
 
-describe("an unfinished day is not set against whole days", () => {
+describe("an unfinished day", () => {
 	const quietWeek = (ago: number): Record<string, unknown> => (ago === 0 ? { steps: 1000, floors: 1 } : { steps: ago < 6 ? 3000 : 9000, floors: ago < 6 ? 2 : 12 });
 
-	it("gives no 'below the usual' insight for today, but for a day that is over", async () => {
+	it("still gets the quiet-stretch texts, which look at the days before, and says what is left on floors", async () => {
 		const index = await indexOf(quietWeek, 14);
 		vi.useFakeTimers();
 		try {
 			vi.setSystemTime(new Date(2026, 9, 22, 10));
-			expect(stepsInsights(new Signals(index, END, null)).map((i) => i.id)).toEqual([]);
-			expect(floorsInsights(new Signals(index, END, null))).toEqual([]);
+			expect(stepsInsights(new Signals(index, END, null)).map((i) => i.id)).toContain("steps_below_streak");
+			expect(floorsInsights(new Signals(index, END, null)).map((i) => i.id)).toEqual(["floors_below_streak"]);
 			vi.setSystemTime(new Date(2026, 9, 24, 10));
 			expect(stepsInsights(new Signals(index, END, null)).map((i) => i.id)).toContain("steps_below_streak");
 			expect(floorsInsights(new Signals(index, END, null)).map((i) => i.id)).toContain("floors_below_streak");

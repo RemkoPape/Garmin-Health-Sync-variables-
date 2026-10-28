@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.12.0-beta.72
+
+### Fixed
+
+- **Stress and Floors no longer open their light bulb to nothing.** Every state of the Stress card now gets a statement: a level above your 7-day average by more than 10 that is still in the low band ("A level of 38 is 10 above your 7-day average of 28, still in the low band ..."), and a high level that is in line with a high week ("A level of 55 is high, but in line with your own week ..."). On a day that is not over, the Floors and Steps cards say how many floors or steps (and minutes of walking) are left to the start of your usual range. Before, those states had no text.
+- **Steps and Floors on today** get the quiet-stretch and weekday texts again. Beta.65 withheld them for an unfinished day, but those texts look at the days before, not at the partial day.
+- Each new text is in six languages and documented in `docs/panel-insights.md` (trigger, basis, no study cited).
+
 ## 0.12.0-beta.71
 
 ### Fixed

@@ -575,6 +575,14 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Basis:** In a pooled analysis of 15 cohorts, more daily steps went with lower all-cause mortality. Population-level association.
 - **References:** [paluch](https://doi.org/10.1016/S2468-2667(21)00302-9)
 
+### steps_to_go
+
+- **Card:** steps
+- **Trigger:** The shown day is today, the steps so far are below the usual (the 7 day average, from 5 days), and neither the quiet stretch (`steps_below_streak`) nor the weekday pattern (`steps_weekday_low`) applies.
+- **Text (English):** {left} more steps, about {min} minutes of walking, reach your usual {base}. The day is not over yet.
+- **Basis:** The steps still missing to the person's own usual, with walking time at 100 steps a minute (the card's own assumption); numbers from the user's own data, no claim.
+- **References:** none (the user's own usual, no study cited)
+
 ### steps_zone_good
 
 - **Card:** steps
@@ -783,6 +791,22 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Basis:** Body Battery follows sleep, stress and activity; a peak in the usual range says the night recharged as usual.
 - **References:** [garmin](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
 
+### stress_above_week
+
+- **Card:** stress
+- **Trigger:** The stress level is above 25 up to 50 (Garmin's low band) and more than 10 above the average of the 7 days before.
+- **Text (English):** A level of {level} is {delta} above your 7-day average of {week}, still in the low band. One busier day is common; a few in a row are worth a look.
+- **Basis:** A comparison of today with the person's own week, which closes the gap between `stress_usual` (not more than 10 above) and `stress_high_week` (above 50). No cause is named, because none is in the data.
+- **References:** none (a comparison with the user's own average, no health claim)
+
+### stress_high_usual
+
+- **Card:** stress
+- **Trigger:** The stress level is above 50 (medium or high), not more than 10 above the average of the 7 days before, and neither `stress_high_sleep` nor `stress_high_week` applies.
+- **Text (English):** A level of {level} is high, but in line with your own week (average {week}): the last days were this stressed too.
+- **Basis:** A comparison of today with the person's own week. It states that a high level is nothing new for the person; no cause is named, because none is in the data.
+- **References:** none (a comparison with the user's own average, no health claim)
+
 ### stress_usual
 
 - **Card:** stress
@@ -806,6 +830,14 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Text (English):** On {day}s you usually walk {avg} steps, {pct} percent fewer than on your other days. A short walk on these days evens out your week.
 - **Basis:** More daily steps go with lower mortality in a pooled analysis of 15 cohorts; the pattern itself is the user's own data.
 - **References:** [paluch](https://doi.org/10.1016/S2468-2667(21)00302-9)
+
+### floors_to_go
+
+- **Card:** floors
+- **Trigger:** The shown day is today, the floors so far are below the usual (the zone), and the 3-of-5 quiet stretch of `floors_below_streak` does not apply.
+- **Text (English):** {left} more floors reach the start of your usual {low}–{high}. The day is not over yet.
+- **Basis:** The floors still missing to the start of the person's own usual range, from the 7 day average; only numbers from the user's own data, no claim.
+- **References:** none (the user's own usual range, no study cited)
 
 ### floors_zone_good
 
