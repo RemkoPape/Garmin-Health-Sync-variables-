@@ -55,3 +55,30 @@ describe("getActivityCategory", () => {
 		}
 	});
 });
+
+describe("the newer Garmin keys", () => {
+	it.each([
+		["treadmill_running", "running"],
+		["indoor_running", "running"],
+		["street_running", "running"],
+		["virtual_ride", "cycling"],
+		["indoor_cardio", "gym"],
+		["stair_climbing", "gym"],
+		["paddling", "water"],
+		["triathlon", "other"],
+		["breathwork", "recovery"],
+		["meditation", "recovery"],
+		["stretching", "recovery"],
+		["mobility", "recovery"],
+		// the suffix Garmin puts on some newer sports does not change the sport
+		["kayaking_v2", "water"],
+		["rowing_v2", "water"],
+		["cross_country_skiing_ws", "winter"],
+		["resort_skiing_snowboarding_ws", "winter"],
+		["stand_up_paddleboarding_v2", "water"],
+		["snow_shoe_ws", "winter"],
+		["wind_kite_surfing_ws", "water"],
+	])("puts %s in %s", (key, category) => {
+		expect(getActivityCategory(key)).toBe(category);
+	});
+});

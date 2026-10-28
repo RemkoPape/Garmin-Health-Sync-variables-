@@ -20,7 +20,7 @@ export interface WeeklyDistance {
 export interface WeeklyModel {
 	/** What the data suggests, filled in by the panel (see insights/). */
 	insights: Insight[];
-	/** Running and cycling distance, for the sports that have any this week or in the previous weeks. */
+	/** Distance of running, cycling, walking, outdoor and swimming, for the sports that have any this week or in the previous weeks. */
 	distances: WeeklyDistance[];
 	/** Minutes so far this week, up to and including the shown day. */
 	minutes: number;
@@ -46,7 +46,7 @@ export function computeWeekly(index: DayIndex, date: string): WeeklyModel {
 
 const KM_PER_MILE = 1.609344;
 
-const CATEGORY_LABELS = { running: "panelCategoryRunning", cycling: "panelCategoryCycling", walking: "panelCategoryWalking", outdoor: "panelCategoryOutdoor" } as const;
+const CATEGORY_LABELS = { running: "panelCategoryRunning", cycling: "panelCategoryCycling", walking: "panelCategoryWalking", outdoor: "panelCategoryOutdoor", swimming: "panelCategorySwimming" } as const;
 
 export function renderWeekly(parent: HTMLElement, model: WeeklyModel, lang: string, imperial: boolean, explainOpen: boolean, onToggleExplain: () => void): void {
 	renderCard(parent, { title: t("panelWeeklyTitle", lang), value: formatNumber(model.minutes, lang, 0), unit: "min", explain: t("panelWeeklyExplain", lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {

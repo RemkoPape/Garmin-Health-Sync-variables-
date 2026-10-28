@@ -18,6 +18,8 @@ import { Signals } from "../src/panel/insights/signals";
 import { computeTrend } from "../src/panel/trend";
 import { en } from "../src/i18n/en";
 import { PANEL_CARDS } from "../src/panel/cards";
+import { computeSessions, renderSessions } from "../src/panel/cards/sessions-card";
+import { computeWeekly, renderWeekly } from "../src/panel/cards/weekly-card";
 
 const settings = { dailyNotePath: "", dailyNoteFormat: "YYYY-MM-DD" };
 const END = "2026-10-22"; // a Thursday
@@ -184,5 +186,25 @@ describe("work that is shared between the cards of one draw", () => {
 		expect(afterTouch).toBeGreaterThan(second);
 		expect(draw({ ...context(index), birthYear: 1990 })).toBeGreaterThan(afterTouch);
 		spy.mockRestore();
+	});
+});
+
+describe("activities in the training cards", () => {
+	it("names a session in the language of the user, also one with Garmin's suffix, and shows an unnamed one as readable text", async () => {
+		const index = await indexOf(() => ({ trainings: [{ type: "kayaking_v2", category: "water", duration_min: 40, avg_hr: 120 }, { type: "treadmill_running", category: "running", duration_min: 30 }, { type: "curling_on_mars", category: "other", duration_min: 20 }] }), 1);
+		const parent = document.createElement("div");
+		renderSessions(parent, computeSessions(index, END, null), "de", false, false, () => undefined);
+		const names = Array.from(parent.querySelectorAll(".ghs-session-type")).map((e) => e.textContent);
+		expect(names).toEqual(["Kajakfahren", "Laufband", "Curling on mars"]);
+	});
+
+	it("tracks the weekly distance of swimming like that of the other sports", async () => {
+		const swim = { type: "lap_swimming", category: "swimming", duration_min: 40, distance_km: 2 };
+		const index = await indexOf((ago) => ({ trainings: [swim], steps: 1 + ago }), 28);
+		const model = computeWeekly(index, END);
+		expect(model.distances.map((d) => d.category)).toContain("swimming");
+		const parent = document.createElement("div");
+		renderWeekly(parent, model, "de", false, false, () => undefined);
+		expect(parent.textContent).toContain("Schwimmen");
 	});
 });

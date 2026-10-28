@@ -1,4 +1,5 @@
 import { t } from "../../i18n/t";
+import { activityLabel } from "../../activity-names";
 import { formatNumber } from "../format";
 import type { DayIndex } from "../index";
 import { heartRateHistory, intensityStep } from "../load";
@@ -33,11 +34,6 @@ export function computeSessions(index: DayIndex, date: string, birthYear: number
 	};
 }
 
-/** "mountain_biking" -> "Mountain biking". */
-function label(type: string): string {
-	const words = type.replace(/_/g, " ");
-	return words.charAt(0).toUpperCase() + words.slice(1);
-}
 
 export function renderSessions(parent: HTMLElement, model: SessionsModel, lang: string, imperial: boolean, explainOpen: boolean, onToggleExplain: () => void): void {
 	const total = model.sessions.reduce((a, s) => a + s.minutes, 0);
@@ -53,7 +49,7 @@ export function renderSessions(parent: HTMLElement, model: SessionsModel, lang: 
 			const colour = s.zone === null ? (s.step ?? "none") : s.zone === 0 ? "none" : s.zone - 1;
 			const tile = card.createDiv({ cls: `ghs-session ${s.recovery ? "ghs-session-recovery" : `ghs-step-border-${colour}`}` });
 			const head = tile.createDiv({ cls: "ghs-session-head" });
-			head.createSpan({ cls: "ghs-session-type", text: `${label(s.type)}${s.count > 1 ? ` ×${s.count}` : ""}` });
+			head.createSpan({ cls: "ghs-session-type", text: `${activityLabel(s.type, lang)}${s.count > 1 ? ` ×${s.count}` : ""}` });
 			if (s.recovery) head.createSpan({ cls: "ghs-session-tag", text: t("panelRecovery", lang) });
 			else if (s.zone !== null) head.createSpan({ cls: "ghs-session-tag ghs-zone-tag", text: s.zone === 0 ? t("panelZoneBelow", lang) : t("panelZoneN", lang).replace("{n}", String(s.zone)) });
 			const facts: string[] = [formatMinutes(s.minutes)];
