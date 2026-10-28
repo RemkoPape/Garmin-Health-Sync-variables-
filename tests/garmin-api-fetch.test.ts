@@ -581,38 +581,48 @@ describe("per-endpoint accessors and the shared cache", () => {
 	});
 
 	it("gives up on the whole day after 60 seconds, tells the diagnostics and reports a fetch error", async () => {
-		routeData({ profile: () => new Promise<MockReply>(() => undefined) });
+		let release: (r: MockReply) => void = () => undefined;
+		routeData({ profile: () => new Promise<MockReply>((resolve) => (release = resolve)) });
 		api.setRequiredEndpoints(["hrv"]);
 		const run = api.fetchHrv(DATE).catch((e: unknown) => e);
 		await vi.advanceTimersByTimeAsync(59_999);
 		expect(api.getSyncDiagnostics()).not.toContain("timeout");
 		await vi.advanceTimersByTimeAsync(1);
 		const err = await run;
+		// the request that was given up on is answered late: it ends here, not in a later test
+		release({ body: { displayName: PRIVATE } });
+		await vi.advanceTimersByTimeAsync(0);
 		expect(err).toBeInstanceOf(SyncFetchError);
 		expect((err as Error).message).toBe("fetch_failed: Error");
 		expect(api.getSyncDiagnostics()).toContain("fetch timeout after 60000ms");
 	});
 
 	it("an endpoint that does not answer fails alone after 25 seconds; the others keep their data", async () => {
-		routeData({ hrv: () => new Promise<MockReply>(() => undefined) });
+		let release: (r: MockReply) => void = () => undefined;
+		routeData({ hrv: () => new Promise<MockReply>((resolve) => (release = resolve)) });
 		api.setRequiredEndpoints(["dailySummary", "hrv"]);
 		const run = api.fetchDataForDate(DATE);
 		await vi.advanceTimersByTimeAsync(25_000);
 		expect(Object.keys(await run)).toEqual(["dailySummary"]);
 		expect(api.failedEndpoints()).toEqual(["hrv"]);
 		expect(api.getSyncDiagnostics()).toContain("partial failure: hrv");
+		release({ body: {} });
+		await vi.advanceTimersByTimeAsync(0);
 	});
 
 	it("a token refresh that never answers ends as a transient error, not as a refresh that never finishes", async () => {
 		api.setTokens(OAUTH1, null);
 		net.reset();
 		net.on(/thegarth/, { body: {} });
-		net.on(EX, () => new Promise<MockReply>(() => undefined));
+		let release: (r: MockReply) => void = () => undefined;
+		net.on(EX, () => new Promise<MockReply>((resolve) => (release = resolve)));
 		api.setRequiredEndpoints(["hrv"]);
 		const run = api.fetchDataForDate(DATE).catch((e: unknown) => e);
 		await vi.advanceTimersByTimeAsync(25_000);
 		expect((await run as Error).message).toBe("token refresh timeout");
 		expect(api.getAuthState()).toBe("temporarilyUnavailable");
+		release({ body: { access_token: "late", refresh_token: "rt", expires_in: 3600 } });
+		await vi.advanceTimersByTimeAsync(0);
 	});
 
 	it("leaves no 30 second timer behind once a fetch has finished", async () => {
