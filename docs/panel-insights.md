@@ -66,6 +66,7 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **orsama**: Orsama AL et al. Weight rhythms: weight increases during weekends and decreases during weekdays. *Obes Facts* 2014;7:36-47. [https://pubmed.ncbi.nlm.nih.gov/24504358/](https://pubmed.ncbi.nlm.nih.gov/24504358/)
 - **fda**: U.S. Food and Drug Administration. *Pulse oximeters* (accuracy and limitations; use readings as estimates and follow trends). [https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters](https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters)
 - **watso**: Watso JC, Farquhar WB. Hydration status and cardiovascular function. *Nutrients* 2019;11:1866. [https://doi.org/10.3390/nu11081866](https://doi.org/10.3390/nu11081866)
+- **sawka**: Sawka MN et al. American College of Sports Medicine position stand. Exercise and fluid replacement. *Med Sci Sports Exerc* 2007;39:377-390. [https://pubmed.ncbi.nlm.nih.gov/17277604/](https://pubmed.ncbi.nlm.nih.gov/17277604/)
 - **garmin**: Garmin. *Body Battery energy monitoring* (heart rate variability, stress, sleep and activity; sleep charges, stress and strenuous activity drain). [https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/](https://www.garmin.com/en-US/garmin-technology/health-science/body-battery/)
 
 ## Interpretations
@@ -548,6 +549,22 @@ Only sources that were looked up when this file was written are listed. Where a 
 - **Trigger:** At least 3 of the 5 days before the shown day are under 75% of their goal (or of the 7-day average intake when no goal is logged).
 - **Text (English):** {n} of the last 5 days were below three quarters of your water goal or usual intake. Only logged drinks count, so a low value can also mean a missing log.
 - **Basis:** A repeated shortfall is a pattern, a single dry day is not. It is worded as something to check, because only logged drinks count.
+- **References:** none (the rule is arithmetic on the user's own data).
+
+### hydration_training_day
+
+- **Card:** hydration
+- **Trigger:** The shown day has at least 45 minutes of training (recovery sessions left out) and the logged water is under the goal of the day.
+- **Text (English):** You trained {min} minutes on this day. Sweat takes fluid with it, and how much varies a lot from person to person, so treat your goal as the minimum today and drink more, starting well before the next session.
+- **Basis:** Sweat takes fluid with it, sweat rates differ widely between people, and the position stand asks for individual fluid plans that start before the activity. The text gives no amount, because the user's own sweat loss is not known.
+- **References:** [sawka](https://pubmed.ncbi.nlm.nih.gov/17277604/)
+
+### hydration_weekday_low
+
+- **Card:** hydration
+- **Trigger:** The weekday of the shown day averages at most 75% of the logged water of the other days over the last 26 weeks (at least 8 such weekdays and 60 other days with a value).
+- **Text (English):** On {day}s you usually log {avg} ml, {pct} percent less than on your other days. Keep a glass within reach on these days.
+- **Basis:** A habit of the user's own data, as for the steps of a quiet weekday.
 - **References:** none (the rule is arithmetic on the user's own data).
 
 ### steps_below_streak

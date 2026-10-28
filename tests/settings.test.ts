@@ -110,8 +110,8 @@ describe("the settings layout", () => {
 		};
 
 		it("describes what every card needs and when it unlocks, in the user's language", () => {
-			expect(descs()("hrv")).toBe(en.panelNeedsHrv);
-			expect(descs({ language: "de" })("hrv")).toBe(de.panelNeedsHrv);
+			expect(descs()("hrv")).toBe(`${en.panelNeedsHrv} ${en.panelCardAlsoUseful.replace("{metrics}", en.metric_hydration_ml)}`);
+			expect(descs({ language: "de" })("hrv")).toBe(`${de.panelNeedsHrv} ${de.panelCardAlsoUseful.replace("{metrics}", de.metric_hydration_ml)}`);
 			for (const c of PANEL_CARDS) expect(descs()(c.id)!.startsWith(en[c.needs])).toBe(true);
 		});
 
@@ -149,7 +149,7 @@ describe("the settings layout", () => {
 		});
 
 		it("falls back to the default of a metric missing from the record", () => {
-			expect(descs({ enabledMetrics: {} })("hrv")).toBe(en.panelNeedsHrv);
+			expect(descs({ enabledMetrics: {} })("hrv")).toContain(en.panelNeedsHrv);
 			expect(descs({ enabledMetrics: {} })("spo2")).toContain(en.panelCardTurnOn.split("{")[0]!);
 		});
 	});

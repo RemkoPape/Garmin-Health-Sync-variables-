@@ -80,11 +80,12 @@ const RANGE_INSIGHTS: Record<string, (s: Signals) => Insight[]> = {
 	respiration_rate: breathingInsights,
 };
 
-const range = (spec: RangeCardSpec, section: SectionId, needs: TranslationKeys): PanelCard => ({
+const range = (spec: RangeCardSpec, section: SectionId, needs: TranslationKeys, extra?: string[]): PanelCard => ({
 	id: spec.id,
 	title: spec.title,
 	section,
 	metrics: [spec.key],
+	extra,
 	needs,
 	half: spec.half,
 	render: (c) => renderRange(c.parent, spec, { ...computeRange(spec, c.index, c.date), insights: RANGE_INSIGHTS[spec.id]!(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain),
@@ -93,8 +94,8 @@ const range = (spec: RangeCardSpec, section: SectionId, needs: TranslationKeys):
 /** Every card of the panel in display order. Ids are stable: they are stored in the settings. */
 export const PANEL_CARDS: PanelCard[] = [
 	{ id: "today", title: "panelTodayTitle", section: "today", metrics: ["hrv", "resting_hr", "sleep_duration"], needs: "panelNeedsToday", extra: ["body_battery_max", "training_readiness", "spo2", "respiration_rate", "stress"], render: (c) => renderToday(c.parent, { ...computeToday(c.index, c.date, c.birthYear), insights: todayInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
-	range(HRV_CARD, "recovery", "panelNeedsHrv"),
-	range(RESTING_HR_CARD, "recovery", "panelNeedsRestingHr"),
+	range(HRV_CARD, "recovery", "panelNeedsHrv", ["hydration_ml"]),
+	range(RESTING_HR_CARD, "recovery", "panelNeedsRestingHr", ["hydration_ml"]),
 	range(SPO2_CARD, "recovery", "panelNeedsSpo2"),
 	range(BREATHING_CARD, "recovery", "panelNeedsBreathing"),
 	{ id: "sleep", title: "panelSleepTitle", section: "sleep", metrics: ["sleep_duration"], needs: "panelNeedsSleep", extra: ["sleep_score", "sleep_start", "sleep_end"], render: (c) => renderSleep(c.parent, { ...computeSleep(c.index, c.date, c.birthYear), insights: sleepInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
