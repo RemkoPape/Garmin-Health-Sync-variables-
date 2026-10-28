@@ -291,6 +291,7 @@ export const en = {
 	panelBandPrime: "Prime",
 	panelTodayGarmin: "Garmin readiness",
 	panelTodayBridge: "Garmin's own readiness is shown until your own score has enough data.",
+	panelTodayWaiting: "Waiting for today's HRV, resting heart rate or sleep. The score appears when they are synced.",
 	insight_today_flag_hrv: "HRV is below your usual range.",
 	insight_today_flag_rhr: "Resting heart rate is above your usual.",
 	insight_today_flag_sleep: "Your sleep debt over the last 7 nights is {debt}.",

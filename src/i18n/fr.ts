@@ -292,6 +292,7 @@ export const fr: Record<TranslationKeys, string> = {
 	panelBandPrime: "optimal",
 	panelTodayGarmin: "Disponibilité Garmin",
 	panelTodayBridge: "La disponibilité propre à Garmin s’affiche tant que votre score n’a pas assez de données.",
+	panelTodayWaiting: "En attente de la VFC, de la fréquence cardiaque au repos ou du sommeil d’aujourd’hui. Le score apparaît après la synchronisation.",
 	insight_today_flag_hrv: "La VFC est sous votre plage habituelle.",
 	insight_today_flag_rhr: "La fréquence au repos est au-dessus de votre habitude.",
 	insight_today_flag_sleep: "Votre dette de sommeil des 7 dernières nuits est de {debt}.",

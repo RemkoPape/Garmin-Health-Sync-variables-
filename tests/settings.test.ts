@@ -260,11 +260,18 @@ describe("reading and writing values", () => {
 
 	it("writes plain settings and saves without refreshing for ordinary keys", async () => {
 		const { tab, plugin } = make();
-		await tab.setControlValue("dailyNotePath", "Journal");
-		expect(plugin.settings.dailyNotePath).toBe("Journal");
+		await tab.setControlValue("autoSync", false);
+		expect(plugin.settings.autoSync).toBe(false);
 		expect(plugin.saveSettings).toHaveBeenCalledOnce();
 		expect((tab as unknown as { updates: number }).updates).toBe(0);
+		expect(plugin.refreshPanels).not.toHaveBeenCalled();
 		expect(plugin.applyServerRegion).not.toHaveBeenCalled();
+	});
+
+	it.each(["dailyNotePath", "dailyNoteFormat"])("redraws the panel when %s changes, because it decides which notes are daily notes", async (key) => {
+		const { tab, plugin } = make();
+		await tab.setControlValue(key, "Journal");
+		expect(plugin.refreshPanels).toHaveBeenCalledOnce();
 	});
 
 	it("applies a changed server region to the provider", async () => {

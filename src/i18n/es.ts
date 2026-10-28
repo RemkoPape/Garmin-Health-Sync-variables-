@@ -292,6 +292,7 @@ export const es: Record<TranslationKeys, string> = {
 	panelBandPrime: "óptima",
 	panelTodayGarmin: "Preparación de Garmin",
 	panelTodayBridge: "Se muestra la preparación propia de Garmin hasta que tu puntuación tenga datos suficientes.",
+	panelTodayWaiting: "Faltan la VFC, la frecuencia cardíaca en reposo o el sueño de hoy. La puntuación aparece cuando se sincronizan.",
 	insight_today_flag_hrv: "La VFC está por debajo de tu rango habitual.",
 	insight_today_flag_rhr: "La frecuencia en reposo está por encima de lo habitual.",
 	insight_today_flag_sleep: "Tu deuda de sueño de las últimas 7 noches es de {debt}.",

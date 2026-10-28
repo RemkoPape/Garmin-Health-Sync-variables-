@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.0-beta.65
+
+### Fixed
+
+- **The load ratio no longer overstates a young history.** The weekly average of the last 28 days is taken over the days that have a note or history record, not always over four weeks, and no ratio is shown with fewer than 14 such days. Before, one or two weeks of data gave a ratio two to three times too high, which showed "Overreach", fired the load insights and raised the Today flag.
+- **The panel follows the right day.** A panel left open overnight moves on at midnight when it shows today, and its date field closes to the new future days. Opening an ordinary note no longer jumps the panel back to today; only a daily note changes the shown day.
+- **The panel draws again** after a restart when Obsidian has finished reading the notes' properties, and after a change of the daily notes folder or date format. A redraw keeps the scroll position, and a history note that changed no longer makes the panel flash empty while it is read again.
+- **A blank property in a note** (left by a template) no longer hides the value of the history record of that day.
+- **Steps and floors** with an average of zero (a watch that was off for the week) show no zone instead of "zone done", and sleep stages that add up to zero show no bars. A trend of two zero weeks reads as steady, not as a fall.
+- **No "below your usual" insight for an unfinished day** on steps and floors, which compared half a day with whole days.
+- **Weights in kilograms and pounds** (history records keep kilograms, notes may be in pounds) are brought to the unit of the latest reading before the weekly change is worked out, and a weekly change needs readings at least a week apart, so three weigh-ins in three days no longer read as a fast change.
+- **Today card without today's readings** now says it waits for them once the usual range exists, instead of "Unlocks after 5 days · 12 so far".
+
 ## 0.12.0-beta.64
 
 ### Fixed

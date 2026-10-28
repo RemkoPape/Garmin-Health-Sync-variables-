@@ -11,12 +11,17 @@ import { DayIndex } from "./index";
 
 export const VIEW_TYPE_HEALTH_PANEL = "garmin-health-panel";
 const RENDER_DEBOUNCE_MS = 300;
+const MIDNIGHT_CHECK_MS = 60_000;
 /** How far back the history notes are read for the shown day: the long view of a card looks at a year, and compares the last 90 days with the 90 before. */
 const HISTORY_DAYS = 400;
 
 /** Read-only side panel. Cards are computed from the daily notes' frontmatter; nothing is written or fetched. */
 export class HealthPanelView extends ItemView {
 	private date = localDateString(new Date());
+	/** The shown day is today because nothing else was chosen, so it moves on at midnight. */
+	private followsToday = true;
+	/** The day of the calendar the panel was last drawn on. */
+	private drawnOn = "";
 	/** A render was skipped while the leaf was hidden; do it when it is shown again. */
 	private dirty = false;
 	private readonly index: DayIndex;
@@ -64,6 +69,12 @@ export class HealthPanelView extends ItemView {
 			this.renderTimer = window.setTimeout(() => this.render(), RENDER_DEBOUNCE_MS);
 		};
 		this.registerEvent(this.app.metadataCache.on("changed", changed));
+		// after a restart the notes' properties are read in the background: what the panel saw before is incomplete
+		this.registerEvent(this.app.metadataCache.on("resolved", () => changed()));
+		// a panel left open overnight shows the new day (and its date field closes to the days that are still to come)
+		this.registerInterval(window.setInterval(() => {
+			if (this.drawnOn !== localDateString(new Date())) this.render();
+		}, MIDNIGHT_CHECK_MS));
 		this.registerEvent(this.app.vault.on("delete", changed));
 		this.registerEvent(this.app.vault.on("rename", changed));
 		this.render();
@@ -86,14 +97,18 @@ export class HealthPanelView extends ItemView {
 
 	/** Re-render after a language change. */
 	refresh(): void {
+		// a setting may change which notes are daily notes or how they are read
+		this.index.invalidate();
 		this.render();
 	}
 
-	/** The open daily note's date, otherwise today. */
+	/** The open daily note's date; any other note leaves the shown day as it is. */
 	private followActiveNote(): void {
 		const file = this.app.workspace.getActiveFile();
 		const noted = file instanceof TFile ? dateFromDailyNote(file, this.plugin.settings) : null;
-		this.date = noted ?? localDateString(new Date());
+		if (noted === null) return;
+		this.date = noted;
+		this.followsToday = noted === localDateString(new Date());
 	}
 
 	private render(): void {
@@ -103,9 +118,13 @@ export class HealthPanelView extends ItemView {
 			return;
 		}
 		this.dirty = false;
+		this.drawnOn = localDateString(new Date());
+		if (this.followsToday) this.date = this.drawnOn;
 		this.readHistory();
 		const lang = this.plugin.settings.language;
 		const root = this.contentEl;
+		// a redraw (a sync wrote a note) keeps the place in the panel
+		const scrolled = root.scrollTop;
 		root.empty();
 		root.addClass("ghs-panel");
 
@@ -128,6 +147,7 @@ export class HealthPanelView extends ItemView {
 		input.addEventListener("change", () => {
 			if (input.value === "" || input.value > today) return;
 			this.date = input.value;
+			this.followsToday = this.date === today;
 			this.render();
 		});
 		this.navButton(nav, "chevron-right", t("panelNextDay", lang), () => this.move(1), this.date >= today);
@@ -138,6 +158,7 @@ export class HealthPanelView extends ItemView {
 
 		if (this.editing) this.renderEditor(root, lang);
 		else this.renderCards(root, lang);
+		root.scrollTop = scrolled;
 	}
 
 	/** Reads the history notes the shown day needs; a note that was read changes the cards, so they are drawn again. */
@@ -209,6 +230,7 @@ export class HealthPanelView extends ItemView {
 
 	private move(days: number): void {
 		this.date = shiftDate(this.date, days);
+		this.followsToday = this.date === localDateString(new Date());
 		this.render();
 	}
 }

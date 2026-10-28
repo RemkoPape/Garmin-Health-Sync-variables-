@@ -11,6 +11,8 @@ import type { Insight } from "../insights/registry";
 
 const ACUTE_DAYS = 7;
 const CHRONIC_DAYS = 28;
+/** Days with a note or record needed in the 28 before a ratio is shown. */
+const MIN_COVERED_DAYS = 14;
 /** The bar spans these ratios; the zone borders sit at 0.8, 1.0, 1.3 and 1.5. */
 const DOMAIN_LOW = 0.5;
 const DOMAIN_HIGH = 1.8;
@@ -51,14 +53,18 @@ export function computeLoad(index: DayIndex, date: string, birthYear: number | n
 	const history = heartRateHistory(index, date);
 	let acute = 0;
 	let chronic = 0;
+	// days of the 28 that have a note or history record: a window with few of them is not a month of training
+	let covered = 0;
 	for (let i = 0; i < CHRONIC_DAYS; i++) {
+		if (index.hasDay(shiftDate(date, -i))) covered++;
 		let day = 0;
 		for (const s of index.sessions(shiftDate(date, -i))) if (!isRecovery(s)) day += sessionLoad(s, history, maxHr);
 		if (i < ACUTE_DAYS) acute += day;
 		chronic += day;
 	}
-	const weeklyAverage = chronic / (CHRONIC_DAYS / 7);
-	const ratio = weeks === 0 || weeklyAverage === 0 ? null : acute / weeklyAverage;
+	// the weekly average is taken over the days that are known, not over four weeks that may be half empty
+	const weeklyAverage = covered === 0 ? 0 : chronic / (covered / 7);
+	const ratio = weeks === 0 || covered < MIN_COVERED_DAYS || weeklyAverage === 0 ? null : acute / weeklyAverage;
 	const zone = ratio === null ? null : (ZONES.findIndex((z) => ratio < z.upTo) as Zone);
 	const status = index.text("training_status", date);
 	return { insights: [], weeks, ratio, zone, garmin: status === null ? null : garminLabel(status), zones: maxHr !== null };

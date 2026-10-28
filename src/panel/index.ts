@@ -75,7 +75,9 @@ export class DayIndex {
 	private raw(key: string, date: string): unknown {
 		this.build();
 		const fm = this.days.get(date);
-		return fm?.[key] ?? fm?.[PREFIX + key] ?? this.history?.get(date)?.[key];
+		// an empty property in the note (a template left it blank) is no value: the history record may have it
+		const own = fm?.[key] ?? fm?.[PREFIX + key];
+		return own === undefined || own === null || own === "" ? this.history?.get(date)?.[key] : own;
 	}
 
 	private build(): void {

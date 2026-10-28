@@ -41,17 +41,23 @@ export class HistoryStore {
 		return monthOfName(file.name) !== null;
 	}
 
-	/** Forget what was read, all of it or the month of one changed note. */
+	/** Months whose note changed after they were read: still served, until they are read again. */
+	private stale = new Set<string>();
+
+	/** Forget what was read: all of it, or the month of one changed note, which is read again but meanwhile still answers (the panel does not flash empty while a sync writes). */
 	invalidate(file?: TAbstractFile): void {
 		this.generation++;
 		const month = file ? monthOfName(file.name) : null;
-		if (month) this.cache.delete(month);
-		else this.cache.clear();
+		if (month) this.stale.add(month);
+		else {
+			this.cache.clear();
+			this.stale.clear();
+		}
 	}
 
 	/** Whether every month from `from` to `to` has been read. */
 	covers(from: string, to: string): boolean {
-		return monthsBetween(from, to).every((month) => this.cache.has(month));
+		return monthsBetween(from, to).every((month) => this.cache.has(month) && !this.stale.has(month));
 	}
 
 	/** Reads the months of a date range that are not cached yet; true when one of them has a note. */
@@ -59,14 +65,17 @@ export class HistoryStore {
 		const generation = this.generation;
 		let found = false;
 		for (const month of monthsBetween(from, to)) {
-			if (this.cache.has(month)) continue;
+			if (this.cache.has(month) && !this.stale.has(month)) continue;
 			const days = new Map<string, DayRecord>();
 			for (const file of this.filesOf(month)) {
 				found = true;
 				for (const [date, record] of parseMonth(await this.app.vault.cachedRead(file))) days.set(date, mergeRecord(days.get(date), record));
 			}
 			// something changed while the note was being read: what was read may be out of date, so it is not kept
-			if (generation === this.generation) this.cache.set(month, days);
+			if (generation === this.generation) {
+				this.cache.set(month, days);
+				this.stale.delete(month);
+			}
 		}
 		return found;
 	}
