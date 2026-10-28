@@ -162,7 +162,9 @@ export class GarminProvider implements HealthProvider {
 				console.debug(`Garmin Health Sync: Mapper [${label}] got data but mapped nothing — response keys: ${keys}`);
 				this.api.addSyncDiagnostic(`mapper ${label}: response keys: ${keys}`);
 			}
-			this.api.addSyncDiagnostic(`mapper ${label}: mapped ${Object.keys(data).length} field(s)`);
+			const names = Object.keys(data);
+			// the metric keys the mapper filled (our own names, no values), next to the response shape of the same endpoint
+			this.api.addSyncDiagnostic(`mapper ${label}: mapped ${names.length} field(s)${names.length > 0 ? `: ${names.join(", ")}` : ""}`);
 			Object.assign(metrics, data);
 		};
 		const warnOrRethrowAuth = (label: string, error: unknown): void => {

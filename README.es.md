@@ -229,7 +229,7 @@ No se envían datos a ningún otro servidor.
 
 **Notas de historial:** las notas de historial opcionales contienen tus valores de salud y viven en tu vault como tus notas diarias. El plugin no hace solicitudes de red adicionales para ellas.
 
-**Portapapeles:** El plugin solo usa el portapapeles cuando pulsas un botón, nunca en segundo plano. **Usar inicio de sesión en el navegador** lo lee una vez, cuando pulsas **Iniciar sesión desde el portapapeles**, para recoger el ticket de inicio de sesión de un solo uso que copiaste del navegador. Escribe en él cuando pulsas para copiar el enlace de inicio de sesión o **Copiar diagnóstico** (en los ajustes y en la ventana de inicio de sesión). El diagnóstico no contiene contraseña, tokens, datos de la cuenta ni valores de salud, solo detalles técnicos del último inicio de sesión o sincronización: nombres de tipos de datos, códigos de estado HTTP, tamaños de respuesta y tiempos.
+**Portapapeles:** El plugin solo usa el portapapeles cuando pulsas un botón, nunca en segundo plano. **Usar inicio de sesión en el navegador** lo lee una vez, cuando pulsas **Iniciar sesión desde el portapapeles**, para recoger el ticket de inicio de sesión de un solo uso que copiaste del navegador. Escribe en él cuando pulsas para copiar el enlace de inicio de sesión o **Copiar diagnóstico** (en los ajustes y en la ventana de inicio de sesión). El diagnóstico no contiene contraseña, tokens, datos de la cuenta ni valores de salud, solo detalles técnicos del último inicio de sesión o sincronización: nombres de tipos de datos, códigos de estado HTTP, tamaños de respuesta, tiempos y la estructura de las respuestas de Garmin (nombres y tipos de campos, nunca valores).
 
 ## Desarrollo
 

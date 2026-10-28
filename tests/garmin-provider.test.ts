@@ -220,6 +220,15 @@ describe("fetchData", () => {
 		expect(log).toContain("mapper dailySummary: mapped 0 field(s)");
 	});
 
+	it("names the metrics a mapper filled, never their values", async () => {
+		route({ dailySummary: { body: { totalSteps: 8123, restingHeartRate: 61 } } });
+		await provider.fetchData(DATE, ["steps", "resting_hr"]);
+		const log = provider.getSyncDiagnostics();
+		expect(log).toContain("mapper dailySummary: mapped 2 field(s): steps, resting_hr");
+		expect(log).not.toContain("8123");
+		expect(log).not.toContain("61");
+	});
+
 	it("describes unmapped array answers by length and first-element keys", async () => {
 		route({ trainingReadiness: { body: [{ unknownField: 1 }] }, weight: { body: [] } });
 		await provider.fetchData(DATE, ["training_readiness", "weight_kg"]);

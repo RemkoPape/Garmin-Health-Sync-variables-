@@ -703,6 +703,24 @@ describe("sync diagnostics (copied into bug reports)", () => {
 		expect(log).toContain("profile id from displayName, guid-shaped=no");
 	});
 
+	it("shows the structure of every answer, field names and types, and no value", async () => {
+		routeData({
+			dailySummary: { body: { totalSteps: 8123, averageStressLevel: 31.5, userNote: "private-note", calendarDate: DATE, empty: null, nested: { rest: 52, flag: true } } },
+			sleep: { body: { dailySleepDTO: { sleepTimeSeconds: 27000, sleepScores: { overall: { value: 81 } } } } },
+			activities: { body: [{ activityType: { typeKey: "running" }, distance: 5000.5, activityId: 987654321 }] },
+			hrv: { body: "" },
+		});
+		api.setRequiredEndpoints(["dailySummary", "sleep", "activities", "hrv"]);
+		await api.fetchDataForDate(DATE);
+		const log = api.getSyncDiagnostics();
+		expect(log).toContain("dailySummary shape: {totalSteps: int, averageStressLevel: float, userNote: string, calendarDate: string, empty: null, nested: {rest: int, flag: bool}}");
+		expect(log).toContain("sleep shape: {dailySleepDTO: {sleepTimeSeconds: int, sleepScores: {overall: {value: int}}}}");
+		expect(log).toContain("activities shape: [1]{activityType: {typeKey: string}, distance: float, activityId: int}");
+		// an answer without a body has no structure to show
+		expect(log).not.toContain("hrv shape:");
+		for (const secret of ["private-note", "running", "8123", "31.5", "987654321", "5000.5", "27000", PRIVATE]) expect(log, secret).not.toContain(secret);
+	});
+
 	it("notes when the profile id looks like a GUID, without printing it", async () => {
 		const guid = "123e4567-e89b-12d3-a456-426614174000";
 		routeData({ profile: { body: { displayName: guid } } });
@@ -757,7 +775,7 @@ describe("sync diagnostics (copied into bug reports)", () => {
 		expect(api.getSyncDiagnostics()).toContain("json=ok");
 	});
 
-	it("starts a fresh log for every fetch and caps it at 90 lines", async () => {
+	it("starts a fresh log for every fetch and caps it at 140 lines", async () => {
 		routeData();
 		await api.fetchDataForDate(DATE);
 		const first = api.getSyncDiagnostics();
@@ -765,7 +783,7 @@ describe("sync diagnostics (copied into bug reports)", () => {
 		expect(api.getSyncDiagnostics()).not.toBe(first);
 		expect(api.getSyncDiagnostics()).toContain("date=2026-10-23");
 		for (let i = 0; i < 200; i++) api.addSyncDiagnostic(`line ${i}`);
-		expect(api.getSyncDiagnostics().split("\n").length).toBeLessThanOrEqual(90);
+		expect(api.getSyncDiagnostics().split("\n").length).toBeLessThanOrEqual(140);
 	});
 
 	it("records the failed token refresh and profile failure", async () => {

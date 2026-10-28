@@ -6,7 +6,7 @@ All settings are under **Settings → Community plugins → Garmin Health Sync**
 
 - **Garmin Connect:** sign in with your Garmin email and password (and the verification code if you use two-step verification), or **Sign in via browser** if Garmin blocks that attempt. **Logout** clears the sign-in tokens on this device. Tokens are kept in Obsidian's secret storage and are not synced to your other devices, so each device signs in separately. See [Signing in in the README](../README.md#signing-in) and [Troubleshooting](troubleshooting.md#signing-in).
 - **Server region:** choose China if your account is registered at garmin.cn.
-- **Copy diagnostics:** copies technical details of the last sign-in or sync (data type names, HTTP status codes, sizes, timings; no password, tokens, account data or health values) for a bug report.
+- **Copy diagnostics:** copies technical details of the last sync for a bug report: per endpoint the HTTP status, size, timing and the **structure** of Garmin's answer (field names and types such as `totalSteps: int`, never values; a key that is not a plain field name, such as an id, is not printed), and which metrics the mapper filled. No password, tokens, account data or health values. The structure shows what your watch really sends, so a mapper can be written against it. Run a sync first; without one it says "no sync run since the plugin started".
 
 ## Syncing
 

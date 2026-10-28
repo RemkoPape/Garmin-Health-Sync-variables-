@@ -5,7 +5,7 @@
 - **Garmin blocks or limits the sign-in.** Garmin may limit repeated attempts from one device; the plugin then shows a countdown before you can try again. Use **Sign in via browser** instead: sign in on Garmin's page, copy the page text that contains `ST-…` and paste it into the plugin. See [Signing in in the README](../README.md#signing-in).
 - **"Session expired" or the sign-in notice comes back.** The long-lived token was rejected. Sign in again from the notice or the settings. A single endpoint that answers 401 or 403 while the others work does *not* log you out: the day is stored without that value.
 - **A phone that was suspended.** Auto-sync catches up when you come back to the app, and a request that never answered counts as failed after 25 seconds and is retried at the next sync.
-- **Report a problem:** **Copy diagnostics** in the settings (see [settings.md](settings.md#connection)) contains no password, tokens or health values.
+- **Report a problem:** **Copy diagnostics** in the settings (see [settings.md](settings.md#connection)) contains no password, tokens or health values. After a sync it also holds the structure of each Garmin answer (field names and types), which is what is needed when a metric is missing or looks wrong for your watch.
 
 ## A metric is missing or starts late
 
