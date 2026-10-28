@@ -90,6 +90,32 @@ describe("the settings layout", () => {
 		expect(page.items![0]!.items!.map((i) => i.control!.key)).toEqual(METRICS.filter((m) => m.category === "extended").map((m) => `metric:${m.key}`));
 	});
 
+	describe("the lifestyle log", () => {
+		const habits = { lifestyle_late_caffeine: { name: "Late caffeine", kind: "count" as const }, lifestyle_alcohol: { name: "Alcohol", kind: "check" as const } };
+		const extendedPage = (patch: Partial<HealthSyncSettings>): Item => make(patch).defs().find((i) => i.type === "page" && i.name === en.settingsMetricsExtendedDesc)!;
+
+		it("shows no habits while the switch is off", () => {
+			expect(extendedPage({ lifestyleHabits: habits}).items).toHaveLength(1);
+		});
+
+		it("says what is kept and that nothing was found yet", () => {
+			const group = extendedPage({ enabledMetrics: { ...DEFAULT_SETTINGS.enabledMetrics, lifestyle_log: true } }).items![1]!;
+			expect(group.heading).toBe(en.settingsLifestyleHeading);
+			expect(group.items!.map((i) => i.name)).toEqual([en.settingsLifestylePrivacy, en.settingsLifestyleNone]);
+		});
+
+		it("lists the habits sorted by name, each with a switch and its kind, off until chosen", () => {
+			const { defs, tab } = make({ enabledMetrics: { ...DEFAULT_SETTINGS.enabledMetrics, lifestyle_log: true }, lifestyleHabits: habits });
+			const group = (defs().find((i) => i.type === "page" && i.name === en.settingsMetricsExtendedDesc)!).items![1]!;
+			const rows = group.items!.slice(1);
+			expect(rows.map((i) => [i.name, (i as { desc?: string }).desc, i.control!.key])).toEqual([
+				["Alcohol", en.lifestyleKindCheck, "metric:lifestyle_alcohol"],
+				["Late caffeine", en.lifestyleKindCount, "metric:lifestyle_late_caffeine"],
+			]);
+			expect(tab.getControlValue("metric:lifestyle_alcohol")).toBe(false);
+		});
+	});
+
 	it("puts the side panel switch on its own page", () => {
 		const page = make().defs().find((i) => i.name === en.settingsPanel)!;
 		expect(page.type).toBe("page");

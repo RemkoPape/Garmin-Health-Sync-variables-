@@ -65,6 +65,10 @@ describe("records", () => {
 		expect(recordFromNote(note)).toEqual({ hrv: 40, steps: 9000, sleep_duration: "6h 24min", running: "30min · Ø150 bpm", distance_mi: 3.1, trainings: [{ type: "running" }] });
 	});
 
+	it("takes the habits of the lifestyle log out of a note, numbers only", () => {
+		expect(recordFromNote({ lifestyle_alcohol: 0, ohs_lifestyle_late_caffeine: 2, lifestyle_mood: "good", lifestyle_list: [1] })).toEqual({ lifestyle_alcohol: 0, lifestyle_late_caffeine: 2 });
+	});
+
 	it("gives nothing for a note without Garmin values, or with values of the wrong kind", () => {
 		expect(recordFromNote({ tags: ["x"] })).toBeNull();
 		expect(recordFromNote({ hrv: [1], trainings: "none", distance_mi: {} })).toBeNull();

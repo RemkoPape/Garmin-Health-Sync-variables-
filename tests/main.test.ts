@@ -1684,6 +1684,16 @@ describe("birth year setting", () => {
 	});
 });
 
+describe("lifestyle habit settings", () => {
+	it("keeps the saved habits, drops entries that are no habits and reads an unknown kind as a yes or no", async () => {
+		const { plugin } = await load({ lifestyleHabits: { lifestyle_a: { name: "A", kind: "count" }, lifestyle_b: { name: "B", kind: "other" }, other: { name: "C", kind: "check" }, lifestyle_d: { name: 4 }, lifestyle_e: null } } as never);
+		expect(plugin.settings.lifestyleHabits).toEqual({ lifestyle_a: { name: "A", kind: "count" }, lifestyle_b: { name: "B", kind: "check" } });
+		const { plugin: fresh } = await load(null);
+		expect(fresh.settings.lifestyleHabits).toEqual({});
+		expect(DEFAULT_SETTINGS.lifestyleHabits).toEqual({});
+	});
+});
+
 describe("panel card settings", () => {
 	it("starts with no card switched off, and copies the saved ones instead of sharing the defaults", async () => {
 		const { plugin } = await load(null);
