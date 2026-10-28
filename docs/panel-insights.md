@@ -777,6 +777,38 @@ See also: [panel-cards.md](panel-cards.md) (what each card shows and how it is c
 - **Basis:** In the wearable studies of illness the signal is a raised breathing rate, so a lower one is not read as a warning.
 - **References:** [natarajan](https://doi.org/10.1038/s41746-020-00363-7)
 
+### lifestyle_hrv_up
+
+- **Card:** habits
+- **Trigger:** A habit of the lifestyle log has at least 8 nights after days with it and 8 after days logged as "no" within the last 90 days, and the HRV of the nights after it is higher by a clear margin: Welch's t at least 2.5 and a difference of at least 0.3 of the usual spread.
+- **Text (English):** After {habit} your HRV is {diff} ms higher than after days without it ({n} days against {m}).
+- **Basis:** Each night's HRV is taken as the difference to its own 28-day usual, so a slow rise or fall in fitness does not look like an effect of the habit. Days without an entry are left out, because a missing entry does not say that the habit was not done. A correlation in the user's own data, not proof of cause.
+- **References:** none (the rule is arithmetic on the user's own data; Welch's t-test for two groups of unequal spread).
+
+### lifestyle_hrv_down
+
+- **Card:** habits
+- **Trigger:** As above, with the HRV of the nights after the habit lower by a clear margin.
+- **Text (English):** After {habit} your HRV is {diff} ms lower than after days without it ({n} days against {m}).
+- **Basis:** As above. Worded as a pattern to look at, because other things on the same days (training, sleep, illness) can play a part.
+- **References:** none (the rule is arithmetic on the user's own data).
+
+### lifestyle_rhr_down
+
+- **Card:** habits
+- **Trigger:** As above, with the resting heart rate of the nights after the habit lower by a clear margin.
+- **Text (English):** After {habit} your resting heart rate is {diff} bpm lower than after days without it ({n} days against {m}).
+- **Basis:** As above; a lower resting heart rate goes with better recovery.
+- **References:** none (the rule is arithmetic on the user's own data).
+
+### lifestyle_rhr_up
+
+- **Card:** habits
+- **Trigger:** As above, with the resting heart rate of the nights after the habit higher by a clear margin.
+- **Text (English):** After {habit} your resting heart rate is {diff} bpm higher than after days without it ({n} days against {m}).
+- **Basis:** As above. Worded as a pattern to look at, not as a cause.
+- **References:** none (the rule is arithmetic on the user's own data).
+
 ### sleep_short_plain
 
 - **Card:** sleep

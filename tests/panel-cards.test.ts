@@ -25,7 +25,7 @@ describe("PANEL_CARDS", () => {
 	});
 
 	it("keeps the ids stored in users' settings", () => {
-		expect(PANEL_CARDS.map((c) => c.id)).toEqual(["today", "hrv", "resting_hr", "spo2", "respiration_rate", "sleep", "stages", "battery", "stress", "hydration", "steps", "intensity", "floors", "vo2", "body", "load", "weekly", "sessions"]);
+		expect(PANEL_CARDS.map((c) => c.id)).toEqual(["today", "hrv", "resting_hr", "spo2", "respiration_rate", "habits", "sleep", "stages", "battery", "stress", "hydration", "steps", "intensity", "floors", "vo2", "body", "load", "weekly", "sessions"]);
 	});
 
 	it("names every card and section", () => {

@@ -206,6 +206,7 @@ export class HealthPanelView extends ItemView {
 				lang,
 				imperial: this.plugin.settings.unitSystem === "imperial",
 				birthYear: this.plugin.settings.birthYear,
+				habits: this.plugin.settings.lifestyleHabits,
 				explainOpen: this.explain === card.id,
 				onToggleExplain: () => {
 					this.explain = this.explain === card.id ? null : card.id;

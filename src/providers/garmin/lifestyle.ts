@@ -57,9 +57,9 @@ export function parseHabits(data: Record<string, unknown>): Habit[] {
 	return habits;
 }
 
-/** The habits the user switched on, with what was logged for the day. */
-export function mapLifestyle(data: Record<string, unknown>, enabled: Set<string>): Record<string, number> {
+/** What was logged for the day, every habit that was touched: the lifestyle log has one switch, there is no choice per habit. */
+export function mapLifestyle(data: Record<string, unknown>): Record<string, number> {
 	const result: Record<string, number> = {};
-	for (const habit of parseHabits(data)) if (habit.value !== null && enabled.has(habit.key)) result[habit.key] = habit.value;
+	for (const habit of parseHabits(data)) if (habit.value !== null) result[habit.key] = habit.value;
 	return result;
 }

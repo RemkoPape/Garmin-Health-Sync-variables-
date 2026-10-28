@@ -59,6 +59,14 @@ In panel order. "Needs" names the metrics to switch on in the settings (every me
 - **Needs:** `respiration_rate`.
 - **Light bulb:** `breathing_*`.
 
+### habits
+- **What it shows:** the habits you log in Garmin Connect (the lifestyle log): the ones logged on the shown day as tags (a tick for yes, a cross for no, "×2" for a counted habit), then per habit a strip of the last 14 days and how the night after it looks, as two bars: HRV and resting pulse.
+- **Decision it supports:** which of your own habits go with a better or worse night, so you can repeat the first and think twice about the second. It is a pattern in your own data, not proof that a habit causes it.
+- **How it is calculated:** a habit on day D is compared with the HRV and the resting heart rate of day D+1, the night after it, each against your own usual value (mean of the 28 days before that night, from 7 days; outliers trimmed as in the other cards). Over the last 90 days the nights after days with the habit (above 0) are set against the nights after days you logged "no". Days without an entry are left out: a missing entry does not say that the habit was not done. A difference is shown from 8 days on each side; it counts as a pattern when Welch's t is at least 2.5 (stricter than the usual 2, because several habits and two measures are tested at once) and the difference is at least 0.3 of your usual spread. The shown day's own habits are not counted yet, because their night has not happened. A habit with no entry in the last 30 days drops off the card by itself.
+- **How it is drawn:** per habit two bars from a middle line: right is a better night (higher HRV, lower resting heart rate), green for a clear pattern, orange for a clearly worse one, grey when the difference is not clear. Dots: filled for logged, ring for "no", dashed for not logged.
+- **Needs:** `lifestyle_log`; extra: `hrv`, `resting_hr` (without them a habit shows only its strip and counts).
+- **Light bulb:** `lifestyle_*` (HRV higher or lower, resting heart rate lower or higher after a habit; the three clearest patterns).
+
 ### sleep
 - **What it shows:** last night's sleep, the last 7 nights as columns, the sleep debt, and a suggested sleep for tonight.
 - **Decision it supports:** how early to go to bed tonight.

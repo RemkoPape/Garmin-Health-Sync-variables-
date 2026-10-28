@@ -96,6 +96,11 @@ export const INSIGHTS = {
 	hydration_training_day: { card: "hydration", kind: "watch" },
 	hydration_weekday_low: { card: "hydration", kind: "watch" },
 
+	lifestyle_hrv_up: { card: "habits", kind: "good" },
+	lifestyle_hrv_down: { card: "habits", kind: "watch" },
+	lifestyle_rhr_down: { card: "habits", kind: "good" },
+	lifestyle_rhr_up: { card: "habits", kind: "watch" },
+
 	steps_below_streak: { card: "steps", kind: "watch" },
 	steps_to_go: { card: "steps", kind: "watch" },
 	steps_zone_good: { card: "steps", kind: "good" },

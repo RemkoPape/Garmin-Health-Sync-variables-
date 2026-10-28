@@ -67,7 +67,7 @@ describe("health panel view", () => {
 
 	it("shows the cards in order: today, recovery, sleep, movement", async () => {
 		const { view } = await open({ panelCards: {} });
-		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelTodayTitle, en.panelHrvTitle, en.panelRestingHrTitle, en.panelSpo2Title, en.panelBreathingTitle, en.panelSleepTitle, en.panelStagesTitle, en.panelBatteryTitle, en.panelStressTitle, en.panelHydrationTitle, en.panelStepsTitle, en.panelIntensityTitle, en.panelFloorsTitle, en.panelVo2Title, en.panelBodyTitle, en.panelLoadTitle, en.panelWeeklyTitle, en.panelSessionsTitle]);
+		expect(Array.from(view.contentEl.querySelectorAll(".ghs-card-title")).map((e) => e.textContent)).toEqual([en.panelTodayTitle, en.panelHrvTitle, en.panelRestingHrTitle, en.panelSpo2Title, en.panelBreathingTitle, en.panelHabitsTitle, en.panelSleepTitle, en.panelStagesTitle, en.panelBatteryTitle, en.panelStressTitle, en.panelHydrationTitle, en.panelStepsTitle, en.panelIntensityTitle, en.panelFloorsTitle, en.panelVo2Title, en.panelBodyTitle, en.panelLoadTitle, en.panelWeeklyTitle, en.panelSessionsTitle]);
 	});
 
 	it("groups the cards under Today, Recovery, Sleep, Energy, Movement, Fitness and Training headers", async () => {
@@ -307,7 +307,7 @@ describe("health panel view", () => {
 
 	it("labels the buttons in the plugin language", async () => {
 		const { view } = await open({ language: "de", panelCards: {} });
-		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelEdit, de.commandSync, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);
+		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelEdit, de.commandSync, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);
 	});
 
 	it("skips rendering while hidden and renders on the next reveal", async () => {

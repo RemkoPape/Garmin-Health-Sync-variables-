@@ -10,7 +10,7 @@ const NOT_IN_SETTINGS_TAB: Record<string, string> = {
 	lastSyncTimes: "internal bookkeeping (date -> last sync time), never user-editable",
 	fetchLog: "internal bookkeeping of the backfill (day -> index of the metrics requested), never user-editable",
 	backfillJob: "internal bookkeeping of the backfill that is running (the days left), never user-editable",
-	lifestyleHabits: "the habits Garmin has sent (names and kinds); the tab lists them as one switch each, the switches themselves are enabledMetrics entries",
+	lifestyleHabits: "names and kinds of the habits Garmin has sent, for the panel; bookkeeping, never user-editable",
 	fetchSets: "internal bookkeeping of the backfill (the sets of metrics requested), never user-editable",
 	garminSession: "legacy cookie session, only cleared on login; not a preference",
 	garminOAuth1: "token written by the login flow (moved to secret storage when available)",

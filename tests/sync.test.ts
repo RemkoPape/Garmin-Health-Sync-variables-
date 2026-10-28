@@ -69,12 +69,11 @@ describe("syncDate with the history setting", () => {
 describe("the habits of the lifestyle log", () => {
 	const HABITS = [{ key: "lifestyle_alcohol", name: "Alcohol", kind: "check" as const }, { key: "lifestyle_late_caffeine", name: "Late caffeine", kind: "count" as const }];
 
-	it("are remembered from a sync, a rename is followed, and none is switched on by it", async () => {
+	it("are remembered from a sync and a rename is followed", async () => {
 		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: HABITS };
 		const s = settings();
 		await sync.syncDate(DATE, s);
 		expect(s.lifestyleHabits).toEqual({ lifestyle_alcohol: { name: "Alcohol", kind: "check" }, lifestyle_late_caffeine: { name: "Late caffeine", kind: "count" } });
-		expect(s.enabledMetrics["lifestyle_alcohol"]).toBeUndefined();
 		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: [{ key: "lifestyle_alcohol", name: "Alcohol (any)", kind: "check" }] };
 		await sync.syncDate(DATE, s);
 		expect(s.lifestyleHabits["lifestyle_alcohol"]!.name).toBe("Alcohol (any)");
