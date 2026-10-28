@@ -3,7 +3,7 @@ import type { HealthData, HealthProvider } from "./providers/provider";
 import { writeToDailyNote, dailyNoteExists } from "./daily-note";
 import type { HistoryStore } from "./history/store";
 import { recordFromData } from "./history/record";
-import { estimateMs, formatDuration } from "./history/progress";
+import { ProgressNotice, estimateMs, formatDuration } from "./history/progress";
 import { isComplete } from "./history/builder";
 import { RECENT_DAYS, isFetched, markFetched } from "./fetch-log";
 import { localDateString, shiftDate } from "./dates";
@@ -22,15 +22,37 @@ import { isLoginRequiredError } from "./errors";
  */
 export type SyncOutcome = "synced" | "no-data" | "skipped-missing-note" | "error";
 
+/** The backfill reports where it is every this many days, so a restart can go on from there. */
+const CURSOR_EVERY = 5;
+
 export class SyncManager {
 	private provider: HealthProvider;
 	private app: App;
 	private history: HistoryStore;
 
+	/** The backfill that is running, with its notice; only one runs at a time. */
+	private run: { ui: ProgressNotice; stopped: boolean } | null = null;
+
 	constructor(app: App, provider: HealthProvider, history: HistoryStore) {
 		this.app = app;
 		this.provider = provider;
 		this.history = history;
+	}
+
+	/** Whether a backfill is running. */
+	get backfilling(): boolean {
+		return this.run !== null;
+	}
+
+	/** Puts the progress notice of the running backfill back on screen; false when none is running. */
+	revealProgress(): boolean {
+		this.run?.ui.reveal();
+		return this.run !== null;
+	}
+
+	/** Ends the running backfill after the day it is at. */
+	stopBackfill(): void {
+		if (this.run) this.run.stopped = true;
 	}
 
 	/** Whether the history notes already hold the day with every metric that is wanted. */
@@ -145,13 +167,21 @@ export class SyncManager {
 	}
 
 	/** Backfill for a date range */
-	async backfill(fromDate: string, toDate: string, settings: HealthSyncSettings, options: { force?: boolean } = {}): Promise<number> {
+	async backfill(fromDate: string, toDate: string, settings: HealthSyncSettings, options: { force?: boolean; statusBar?: () => HTMLElement | null; onCursor?: (next: string) => Promise<void> } = {}): Promise<number> {
 		if (!this.provider.isConfigured()) {
 			new Notice(t("noticeLoginRequired", settings.language));
 			return 0;
 		}
+		// two runs would fetch the same days twice and share one connection: the running one is shown instead
+		if (this.run) {
+			this.run.ui.reveal();
+			new Notice(t("noticeBackfillRunning", settings.language), 8000);
+			return 0;
+		}
 
-		const startNotice = new Notice(t("noticeBackfillStart", settings.language), 0);
+		const run: { ui: ProgressNotice; stopped: boolean } = { ui: new ProgressNotice(settings.language, () => { run.stopped = true; }, options.statusBar?.() ?? null), stopped: false };
+		this.run = run;
+		run.ui.setText(t("noticeBackfillStart", settings.language), t("backfillStatusBar", settings.language).replace("{n}", "0").replace("{total}", "…"));
 
 		let count = 0;
 		let failed = 0;
@@ -189,8 +219,15 @@ export class SyncManager {
 
 			for (let i = 0; i < dates.length; i++) {
 				const date = dates[i]!;
+				if (run.stopped) {
+					new Notice(t("noticeBackfillStopped", settings.language).replace("{date}", date).replace("{count}", String(count)), 10000);
+					return count;
+				}
 				// the notice stays on screen for the whole run, so say where it is
-				startNotice.setMessage(t("noticeBackfillProgress", settings.language).replace("{n}", String(i + 1)).replace("{total}", String(dates.length)).replace("{date}", date).replace("{eta}", formatDuration(estimateMs(dates.length - i, batchDelay))));
+				run.ui.setText(
+					t("noticeBackfillProgress", settings.language).replace("{n}", String(i + 1)).replace("{total}", String(dates.length)).replace("{date}", date).replace("{eta}", formatDuration(estimateMs(dates.length - i, batchDelay))),
+					t("backfillStatusBar", settings.language).replace("{n}", String(i + 1)).replace("{total}", String(dates.length)),
+				);
 				try {
 					const data = await this.provider.fetchData(date, enabledMetrics);
 					const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
@@ -216,6 +253,8 @@ export class SyncManager {
 				// by an immediate next request just fails the next day too). Not after the last date.
 				if (i < dates.length - 1) {
 					await this.sleep(batchDelay);
+					// a restart goes on from here, so the place is kept every few days
+					if (i % CURSOR_EVERY === CURSOR_EVERY - 1) await options.onCursor?.(dates[i + 1]!);
 				}
 			}
 
@@ -234,7 +273,8 @@ export class SyncManager {
 			new Notice(t("noticeSyncError", settings.language));
 			return 0;
 		} finally {
-			startNotice.hide();
+			run.ui.dismiss();
+			this.run = null;
 		}
 	}
 

@@ -34,6 +34,13 @@ export type UnitSystem = "metric" | "imperial";
 /** What happens with a day that has no daily note: create the note, keep the day only in the history notes, or leave the day alone (no fetching). */
 export type MissingNoteBehaviour = "create" | "history" | "skip";
 
+/** A backfill that was started and not finished: `from` is the next day to fetch. */
+export interface BackfillJob {
+	from: string;
+	to: string;
+	force: boolean;
+}
+
 export interface HealthSyncSettings {
 	usePrefix: boolean;
 	dailyNotePath: string;
@@ -43,6 +50,7 @@ export interface HealthSyncSettings {
 	lastSyncTimes: Record<string, number>; // Date → last sync timestamp (epoch ms)
 	fetchLog: Record<string, number>; // Backfilled day → index of the metrics requested for it in fetchSets
 	fetchSets: string[][]; // The distinct sets of metrics the backfill requested
+	backfillJob: BackfillJob | null; // A backfill that is not finished: it goes on after a restart, from the day it had reached
 	garminSession: string;
 	garminOAuth1: string; // JSON-serialized OAuth1Token (long-lived, ~1 year)
 	garminOAuth2: string; // JSON-serialized OAuth2Token (short-lived)
@@ -69,6 +77,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	lastSyncTimes: {},
 	fetchLog: {},
 	fetchSets: [],
+	backfillJob: null,
 	garminSession: "",
 	garminOAuth1: "",
 	garminOAuth2: "",

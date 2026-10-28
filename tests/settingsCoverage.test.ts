@@ -9,6 +9,7 @@ import { PANEL_CARDS } from "../src/panel/cards";
 const NOT_IN_SETTINGS_TAB: Record<string, string> = {
 	lastSyncTimes: "internal bookkeeping (date -> last sync time), never user-editable",
 	fetchLog: "internal bookkeeping of the backfill (day -> index of the metrics requested), never user-editable",
+	backfillJob: "internal bookkeeping of the backfill that is running (the days left), never user-editable",
 	fetchSets: "internal bookkeeping of the backfill (the sets of metrics requested), never user-editable",
 	garminSession: "legacy cookie session, only cleared on login; not a preference",
 	garminOAuth1: "token written by the login flow (moved to secret storage when available)",
