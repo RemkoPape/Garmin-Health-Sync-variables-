@@ -1329,3 +1329,44 @@
 .ghs-fig-bar.is-long {
 	width: 90%;
 }
+
+.ghs-fig-frame {
+	padding: var(--size-4-2) var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+}
+
+.ghs-fig-arrow {
+	padding: var(--size-2-2) 0;
+	color: var(--text-muted);
+	text-align: center;
+}
+
+.ghs-fig-notice {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-3);
+	padding: var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-secondary);
+	box-shadow: var(--shadow-s);
+}
+
+.ghs-fig-statusbar {
+	margin-top: var(--size-4-2);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	text-align: right;
+}
+
+.ghs-fig-command {
+	padding: var(--size-2-3) var(--size-4-3);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+}
+
+.ghs-fig-command:nth-child(odd) {
+	background: var(--background-secondary);
+}

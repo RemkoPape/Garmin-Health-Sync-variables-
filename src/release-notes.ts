@@ -22,6 +22,8 @@ const RELEASE_NOTES: ReleaseNote[] = [
 			{ title: "whatsNew0120Item2Title", text: "whatsNew0120Item2Text", figure: "light-bulb" },
 			{ title: "whatsNew0120Item3Title", text: "whatsNew0120Item3Text", figure: "history" },
 			{ title: "whatsNew0120Item4Title", text: "whatsNew0120Item4Text", figure: "properties" },
+			{ title: "whatsNew0120Item5Title", text: "whatsNew0120Item5Text", figure: "backfill" },
+			{ title: "whatsNew0120Item6Title", text: "whatsNew0120Item6Text", figure: "commands" },
 		],
 	},
 	{
