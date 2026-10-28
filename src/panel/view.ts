@@ -165,6 +165,8 @@ export class HealthPanelView extends ItemView {
 			this.editing = !this.editing;
 			this.render();
 		}, false);
+		// the same as the command "Sync current note": the panel is where the day is looked at, so it is where a refresh is wanted
+		this.navButton(nav, "refresh-cw", t("commandSync", lang), () => void this.plugin.manualSync(), false);
 
 		if (this.editing) this.renderEditor(root, lang);
 		else this.renderCards(root, lang);

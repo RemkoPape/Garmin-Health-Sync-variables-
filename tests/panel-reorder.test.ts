@@ -197,7 +197,7 @@ describe("the panel: day picker and arranging the cards", () => {
 	it("switches to a list with a handle for every card that is on, and back with the same button", async () => {
 		const { view } = open({ panelCards: { today: false, sessions: false } });
 		await view.onOpen();
-		const edit = (): HTMLButtonElement => view.contentEl.querySelector(".ghs-daynav .clickable-icon:last-child") as HTMLButtonElement;
+		const edit = (): HTMLButtonElement => view.contentEl.querySelector(".ghs-daynav .clickable-icon:nth-last-child(2)") as HTMLButtonElement;
 		expect(edit().getAttribute("aria-label")).toBe(en.panelEdit);
 		edit().click();
 		expect(view.contentEl.querySelector(".ghs-card")).toBeNull();
@@ -216,21 +216,21 @@ describe("the panel: day picker and arranging the cards", () => {
 	it("saves the order after a move and draws the cards in it", async () => {
 		const { view, plugin, saveSettings } = open({ panelCards: { today: false } });
 		await view.onOpen();
-		(view.contentEl.querySelector(".ghs-daynav .clickable-icon:last-child") as HTMLButtonElement).click();
+		(view.contentEl.querySelector(".ghs-daynav .clickable-icon:nth-last-child(2)") as HTMLButtonElement).click();
 		const second = view.contentEl.querySelectorAll(".ghs-sort-row")[1]!.querySelector(".ghs-sort-handle") as HTMLElement;
 		second.dispatchEvent(Object.assign(new window.Event("keydown", { cancelable: true }), { key: "ArrowUp" }));
 		await vi.advanceTimersByTimeAsync(0);
 		expect(saveSettings).toHaveBeenCalledOnce();
 		expect(plugin.settings.panelOrder.slice(0, 2)).toEqual(["resting_hr", "hrv"]);
 		expect(view.contentEl.querySelectorAll(".ghs-sort-row")[0]!.querySelector(".ghs-sort-title")?.textContent).toBe(en.panelRestingHrTitle);
-		(view.contentEl.querySelector(".ghs-daynav .clickable-icon:last-child") as HTMLButtonElement).click();
+		(view.contentEl.querySelector(".ghs-daynav .clickable-icon:nth-last-child(2)") as HTMLButtonElement).click();
 		expect(titles(view).indexOf(en.panelRestingHrTitle)).toBeLessThan(titles(view).indexOf(en.panelHrvTitle));
 	});
 
 	it("goes back to the default order with the reset button, in the user's language", async () => {
 		const { view, plugin, saveSettings } = open({ language: "de", panelOrder: ["steps", "hrv"], panelCards: { today: false } });
 		await view.onOpen();
-		(view.contentEl.querySelector(".ghs-daynav .clickable-icon:last-child") as HTMLButtonElement).click();
+		(view.contentEl.querySelector(".ghs-daynav .clickable-icon:nth-last-child(2)") as HTMLButtonElement).click();
 		const reset = view.contentEl.querySelector(".ghs-edit-reset") as HTMLButtonElement;
 		expect(reset.textContent).toBe(de.panelEditReset);
 		reset.click();

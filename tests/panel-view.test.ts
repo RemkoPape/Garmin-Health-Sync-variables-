@@ -21,10 +21,10 @@ function note(path: string, size = 10): TFile {
 	return f;
 }
 
-async function open(settings = {}): Promise<{ app: App; view: HealthPanelView; plugin: { settings: typeof DEFAULT_SETTINGS } }> {
+async function open(settings = {}): Promise<{ app: App; view: HealthPanelView; plugin: { settings: typeof DEFAULT_SETTINGS; manualSync: ReturnType<typeof vi.fn> } }> {
 	const app = new App();
 	// the Today card is switched off here so these tests keep looking at the first data card; panel-today.test.ts covers it
-	const plugin = { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false }, ...settings } };
+	const plugin = { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false }, ...settings }, manualSync: vi.fn(() => Promise.resolve()) };
 	const leaf = new WorkspaceLeaf(app);
 	const view = new HealthPanelView(leaf as never, plugin as never);
 	await view.onOpen();
@@ -296,9 +296,18 @@ describe("health panel view", () => {
 		expect(dateText(view)).toBe(formatPanelDate("2026-10-22", "en"));
 	});
 
+	it("has a sync button after the edit button that runs the sync of the current note", async () => {
+		const { view, plugin } = await open({ panelCards: {} });
+		const nav = Array.from(view.contentEl.querySelectorAll<HTMLButtonElement>(".ghs-daynav > .clickable-icon"));
+		const sync = nav[nav.length - 1]!;
+		expect(sync.getAttribute("aria-label")).toBe(en.commandSync);
+		sync.click();
+		expect(plugin.manualSync).toHaveBeenCalledTimes(1);
+	});
+
 	it("labels the buttons in the plugin language", async () => {
 		const { view } = await open({ language: "de", panelCards: {} });
-		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelEdit, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);
+		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelEdit, de.commandSync, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);
 	});
 
 	it("skips rendering while hidden and renders on the next reveal", async () => {
