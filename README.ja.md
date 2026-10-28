@@ -144,6 +144,16 @@ Daily Note を開き、コマンドパレット（Cmd/Ctrl+P）から **Garmin H
 
 プラグイン設定で **サイドパネル** をオンにし、リボンのアイコンまたはコマンド **ヘルスパネルを開く** で開きます。カードは今日をあなた自身の普段の範囲（過去30日）と比べ、ノートを変更することはありません。日付をタップして日を選び、矢印で1日ずつ移動し、鉛筆ボタンでカードをドラッグして並べ替えられます。各カードには設定にスイッチがあり、そのカードに必要な指標も表示されます。カードの電球をタップすると、**データから分かること**（あなた自身のデータに基づく理由と対策）と **見方** が表示されます。パネルは医療上のアドバイスではありません。設定で生年（年のみ）を入力すると、心拍ゾーンと年齢に応じた目標が使えます。
 
+<p>
+<img src="docs/screenshots/panel-today.png" width="280" alt="レディネスと回復">
+<img src="docs/screenshots/panel-today-dark.png" width="280" alt="同じカードのダークテーマ表示">
+<img src="docs/screenshots/panel-insights.png" width="280" alt="電球の下に表示されるデータからの示唆">
+<img src="docs/screenshots/panel-hydration.png" width="280" alt="解説付きの水分補給カード">
+<img src="docs/screenshots/panel-sleep.png" width="280" alt="睡眠と睡眠ステージ">
+<img src="docs/screenshots/panel-energy.png" width="280" alt="ボディバッテリー、ストレス、水分補給">
+<img src="docs/screenshots/panel-training.png" width="280" alt="歩数、負荷バランス、週間負荷、セッション">
+</p>
+
 ### 履歴ノートと Garmin履歴の作成
 
 **デイリーノートがない日** を **履歴ファイルに保存** にすると、取得した各日がデイリーノートのフォルダ内の月ごとの小さなノート（`Garmin history/Garmin history 2026-10.md`、1日1行）にも保存されます。通常の Markdown なので Vault と一緒に同期され、パネルはノートがない日にこれを読みます。コマンド **デイリーノートから履歴を取り込む** は、既存のノートの Garmin の値を履歴にコピーします。**Garmin履歴を作成** は、選んだ日付（既定は5年前）まで新しい日から順に取得します。必要な時間を表示し、停止しても続きから再開でき、Garmin が応答しないときは待って再試行し、すでにある日はスキップします。デイリーノートのフォルダを変更すると、履歴ノートも一緒に移動します。

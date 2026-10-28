@@ -30,10 +30,23 @@ export interface StressModel {
 	/** Minutes stressed (medium and high) and minutes recovering (rest) of the day, from the sync. */
 	stressed: number | null;
 	recovering: number | null;
+	/** The usual share of stressed minutes in stressed plus recovering minutes (0 to 1): the 7 days before, null with fewer than STRESS_MIN_DAYS of each. */
+	usualShare: number | null;
 }
 
 export function computeStress(index: DayIndex, date: string): StressModel {
-	return { insights: [], trend: computeTrend((d) => index.value("stress", d), date), level: index.value("stress", date), week: average(index, "stress", date, WINDOW_DAYS, STRESS_MIN_DAYS), stressed: index.value("stress_high", date), recovering: index.value("recovery_high", date) };
+	const usualStressed = average(index, "stress_high", date, WINDOW_DAYS, STRESS_MIN_DAYS);
+	const usualRecovering = average(index, "recovery_high", date, WINDOW_DAYS, STRESS_MIN_DAYS);
+	const usualTotal = (usualStressed ?? 0) + (usualRecovering ?? 0);
+	return {
+		insights: [],
+		trend: computeTrend((d) => index.value("stress", d), date),
+		level: index.value("stress", date),
+		week: average(index, "stress", date, WINDOW_DAYS, STRESS_MIN_DAYS),
+		stressed: index.value("stress_high", date),
+		recovering: index.value("recovery_high", date),
+		usualShare: usualStressed === null || usualRecovering === null || usualTotal === 0 ? null : usualStressed / usualTotal,
+	};
 }
 
 const pct = (v: number): number => Math.min(100, Math.max(0, v));
@@ -51,9 +64,12 @@ export function renderStress(parent: HTMLElement, model: StressModel, lang: stri
 		if (model.week !== null) card.createDiv({ cls: "ghs-card-note", text: t("panelStressWeek", lang).replace("{n}", formatNumber(model.week, lang, 0)) });
 		if (model.stressed !== null && model.recovering !== null && model.stressed + model.recovering > 0) {
 			const total = model.stressed + model.recovering;
-			const split = card.createDiv({ cls: "ghs-split", attr: { role: "img", "aria-label": `${model.stressed}/${model.recovering}` } });
+			const wrap = card.createDiv({ cls: "ghs-split-wrap" });
+			const split = wrap.createDiv({ cls: "ghs-split", attr: { role: "img", "aria-label": `${model.stressed}/${model.recovering}` } });
 			split.createDiv({ cls: "ghs-split-part ghs-split-stressed" }).setCssProps({ "--ghs-w": `${(model.stressed / total) * 100}%` });
 			split.createDiv({ cls: "ghs-split-part ghs-split-recovering" }).setCssProps({ "--ghs-w": `${(model.recovering / total) * 100}%` });
+			// the usual split of the days before, so a day can be read against the person's own norm
+			if (model.usualShare !== null) wrap.createDiv({ cls: "ghs-tick ghs-tick-solid ghs-split-usual" }).setCssProps({ "--ghs-x": `${model.usualShare * 100}%` });
 			const labels = card.createDiv({ cls: "ghs-split-labels" });
 			labels.createSpan({ cls: "ghs-split-label-stressed", text: t("panelStressed", lang).replace("{time}", formatMinutes(model.stressed)) });
 			labels.createSpan({ cls: "ghs-split-label-recovering", text: t("panelRecovering", lang).replace("{time}", formatMinutes(model.recovering)) });

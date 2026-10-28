@@ -14,6 +14,8 @@
 		"test:cov": "vitest run --coverage",
 		"typecheck:tests": "tsc -p tsconfig.test.json",
 		"check:dead-code": "knip --production && knip --no-config-hints --include dependencies,unlisted,binaries,unresolved",
+		"screenshots": "node scripts/render-screenshots.mjs",
+		"check:screenshots": "node scripts/render-screenshots.mjs --check",
 		"check-release": "node scripts/check-release.mjs",
 		"check:i18n-sync": "node scripts/check-i18n-sync.mjs",
 		"lint:cloud-parity": "node scripts/lint-cloud-parity.mjs",

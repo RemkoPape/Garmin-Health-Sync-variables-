@@ -1101,6 +1101,10 @@
 }
 
 /* Stress minutes: stressed against recovering */
+.ghs-split-wrap {
+	position: relative;
+}
+
 .ghs-split {
 	display: flex;
 	height: 8px;
