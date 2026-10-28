@@ -19,7 +19,7 @@ export interface HealthData {
 	trainings?: TrainingEntry[];
 	/** Start coordinates of the first activity with GPS */
 	startLocation?: { lat: number; lon: number };
-	/** The habits of the lifestyle log that Garmin sent for the day (all of them, the chosen ones or not), so the settings can offer them. */
+	/** The habits of the lifestyle log that Garmin sent for the day (all of them), so the panel can name them. */
 	habits?: { key: string; name: string; kind: "check" | "count" }[];
 	/** Endpoints that failed for this day (error or timeout, not "no data"): the day is incomplete and must be fetched again. */
 	failedEndpoints?: string[];

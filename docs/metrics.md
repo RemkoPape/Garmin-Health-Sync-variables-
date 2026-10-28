@@ -11,8 +11,8 @@ A metric a watch does not produce is simply not written for that day: an empty a
 | `steps` | Steps of the day | number | on | daily summary | [steps](panel-cards.md#steps) |
 | `sleep_duration` | Time asleep | text, `7h 43min` | on | sleep | [sleep](panel-cards.md#sleep), [today](panel-cards.md#today) |
 | `sleep_score` | Garmin's sleep score | 0 to 100 | on | sleep | [sleep](panel-cards.md#sleep) |
-| `resting_hr` | Resting heart rate | bpm | on | daily summary | [resting_hr](panel-cards.md#resting_hr), [today](panel-cards.md#today) |
-| `hrv` | Heart rate variability of last night | ms | on | HRV | [hrv](panel-cards.md#hrv), [today](panel-cards.md#today) |
+| `resting_hr` | Resting heart rate | bpm | on | daily summary | [resting_hr](panel-cards.md#resting_hr), [today](panel-cards.md#today), [habits](panel-cards.md#habits) |
+| `hrv` | Heart rate variability of last night | ms | on | HRV | [hrv](panel-cards.md#hrv), [today](panel-cards.md#today), [habits](panel-cards.md#habits) |
 | `stress` | Average stress level | 0 to 100 | on | daily summary | [stress](panel-cards.md#stress), [today](panel-cards.md#today) |
 | `body_battery` | Body battery *charged* over the day (mostly the overnight recharge), not the current level | number | off | body battery | [battery](panel-cards.md#battery) |
 | `body_battery_min` | Lowest body battery of the day | 0 to 100 | off | body battery | [battery](panel-cards.md#battery) |
@@ -37,7 +37,7 @@ A metric a watch does not produce is simply not written for that day: an empty a
 | `training_status` | Garmin's training status | text, `PRODUCTIVE_2` | off | training status | [load](panel-cards.md#load) |
 | `weight_kg` | Weight (kg in the note and the history; lbs in imperial notes) | kg | off | weight | [body](panel-cards.md#body) |
 | `body_fat_pct` | Body fat | % | off | weight | [body](panel-cards.md#body) |
-| `lifestyle_log` | The switch of the lifestyle log: the habits you log in Garmin Connect (see below) | none itself | off | lifestyle log | none yet |
+| `lifestyle_log` | The switch of the lifestyle log: the habits you log in Garmin Connect (see below) | none itself | off | lifestyle log | [habits](panel-cards.md#habits) |
 | `stress_high` | Minutes of medium and high stress | minutes | off | daily summary | [stress](panel-cards.md#stress) |
 | `recovery_high` | Minutes of rest (stress 0 to 25) | minutes | off | daily summary | [stress](panel-cards.md#stress) |
 
@@ -47,6 +47,6 @@ See also: [what each card does with them](panel-cards.md), [the settings](settin
 
 ## Lifestyle log (habits)
 
-With **Lifestyle log (habits)** on, the habits you log in Garmin Connect are read (one more request per day). After the first sync they are listed under **Additional metrics**, each with its own switch, off until you choose it. Only a habit you switch on is written to the daily note, as `lifestyle_<name>` (`lifestyle_late_caffeine`), and kept in the [history notes](history.md). A yes or no habit is `1` or `0`; a counted habit (cups, drinks) is the amount. A habit you did not touch that day is not written at all, so an empty day is never read as "no". The names of the habits are kept in the plugin settings. A habit you rename in Garmin Connect gets a new key.
+With **Lifestyle log (habits)** on, the habits you log in Garmin Connect are read (one more request per day). All of them are written to the daily note as `lifestyle_<name>` (`lifestyle_late_caffeine`) and kept in the [history notes](history.md): `1` or `0` for a yes or no habit, the amount for a counted habit (cups, drinks). A habit you did not touch that day is not written at all, so an empty day is never read as "no". Habits can be personal: switch the lifestyle log off, or the properties off in your notes, if you do not want them in the vault. The names of the habits are kept in the plugin settings so the [Habits card](panel-cards.md#habits) can name them; a habit you rename in Garmin Connect gets a new key, and a habit you stop logging drops off the card after 30 days.
 
 The structure of Garmin's answer is not documented; **Copy diagnostics** shows it (field names and types, never values), so a report tells what Garmin really sends.

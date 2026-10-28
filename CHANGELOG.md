@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.79
+
+### Added
+
+- **Habits card.** Under Recovery: the habits you log in Garmin Connect as tags (tick, cross, "×2" for a counted habit), then per habit a strip of the last 14 days and how the night after it looks, as two bars (HRV and resting pulse; right is a better night). A habit on day D is compared with the HRV and resting heart rate of day D+1 against your own 4-week usual. Days without an entry are left out. A difference is only called a pattern from 8 days with and 8 days without the habit, Welch's t of at least 2.5 and a difference of at least 0.3 of your usual spread; otherwise it is shown in grey, and with too few days the card says what it needs. The light bulb names the three clearest patterns. The card has its own switch under **Health side panel**. See [the Habits card](docs/panel-cards.md#habits).
+
+### Changed
+
+- **One switch for the lifestyle log.** The per-habit switches of beta 78 are gone: with **Lifestyle log (habits)** on, every habit you log is written to the daily note as `lifestyle_<name>` and kept in the history notes. A habit you stop logging drops off the card after 30 days by itself.
+
 ## 0.12.0-beta.78
 
 ### Added

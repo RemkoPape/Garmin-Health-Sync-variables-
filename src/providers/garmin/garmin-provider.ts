@@ -214,12 +214,12 @@ export class GarminProvider implements HealthProvider {
 			group("trainingStatus", "Training Status", this.api.fetchTrainingStatus(date), data => mapTrainingStatus(data, enabled));
 		}
 
-		// the lifestyle log: the habits the user chose are mapped, all of them are reported so the settings can offer them
+		// the lifestyle log: every habit that was logged is mapped, and all of them are reported so the panel can name them
 		let habits: HealthData["habits"];
 		if (enabled.has("lifestyle_log")) {
 			group("lifestyle", "Lifestyle log", this.api.fetchLifestyle(date), data => {
 				habits = parseHabits(data).map(({ key, name, kind }) => ({ key, name, kind }));
-				return mapLifestyle(data, enabled);
+				return mapLifestyle(data);
 			});
 		}
 

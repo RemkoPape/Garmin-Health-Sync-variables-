@@ -60,15 +60,13 @@ describe("parseHabits", () => {
 });
 
 describe("mapLifestyle", () => {
-	const data = report(
-		{ behaviourId: 2, name: "Light exercise", logStatus: "YES" },
-		{ behaviourId: 3, name: "Alcohol", logStatus: "NO" },
-		{ behaviourId: 4, name: "Mindfulness" },
-	);
-
-	it("writes only the habits that were switched on and that have a value", () => {
-		expect(mapLifestyle(data, new Set(["lifestyle_light_exercise", "lifestyle_alcohol", "lifestyle_mindfulness", "steps"]))).toEqual({ lifestyle_light_exercise: 1, lifestyle_alcohol: 0 });
-		expect(mapLifestyle(data, new Set(["lifestyle_alcohol"]))).toEqual({ lifestyle_alcohol: 0 });
-		expect(mapLifestyle(data, new Set(["lifestyle_log"]))).toEqual({});
+	it("writes every habit that was touched and none that was not", () => {
+		const data = report(
+			{ behaviourId: 2, name: "Light exercise", logStatus: "YES" },
+			{ behaviourId: 3, name: "Alcohol", logStatus: "NO" },
+			{ behaviourId: 4, name: "Mindfulness" },
+		);
+		expect(mapLifestyle(data)).toEqual({ lifestyle_light_exercise: 1, lifestyle_alcohol: 0 });
+		expect(mapLifestyle({})).toEqual({});
 	});
 });

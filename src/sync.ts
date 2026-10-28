@@ -11,7 +11,7 @@ import { t } from "./i18n/t";
 import { convertToImperial } from "./units";
 import { isLoginRequiredError } from "./errors";
 
-/** Remembers the habits of the lifestyle log Garmin sent, so the settings can list them; a habit is only ever added or renamed here, never switched on. */
+/** Remembers the habits of the lifestyle log Garmin sent, so the settings can list them; a habit is only ever added or renamed here. */
 export function registerHabits(settings: HealthSyncSettings, data: HealthData): void {
 	for (const habit of data.habits ?? []) settings.lifestyleHabits[habit.key] = { name: habit.name, kind: habit.kind };
 }
