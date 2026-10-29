@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.12.0
+
+The release of the health panel. The detail of every step is in the `0.12.0-beta.N` sections below.
+
+### Added
+
+- **Health panel** in the right sidebar (ribbon icon or **Open health panel**; opening it switches it on). It reads your daily notes and the history notes, follows the note you have open, steps through days and has a day picker, a sync button and a button to arrange the cards. 19 cards in sections Today, Recovery, Sleep, Energy, Movement, Fitness and Training: readiness verdict, HRV, resting heart rate, SpO2, breathing, habits, sleep and sleep stages with a timeline, body battery, stress, hydration, steps, intensity minutes, floors, VO2 max, body, load balance, weekly load and sessions (with heart rate zones from an optional birth year). Every card has a switch; a fresh install shows only the cards that have data, existing installs keep every card they had.
+- **What your data suggests** under the light bulb of each card: interpretations that fire only on your own numbers, never generic advice, each documented in `docs/panel-insights.md`. "How to read this" explains the metric, and long-view numbers show the last year.
+- **Lifestyle log (habits)**: the habits you log in Garmin Connect (yes or no, or a count such as coffee) are synced as `lifestyle_*` properties and shown in the Habits card, compared with the HRV and resting heart rate of the night after, against your own baseline, with an honest "not clear yet" while the data is thin. Habits can be hidden in the card; dropped habits disappear.
+- **History notes** (monthly notes with one JSON line per day), **Build Garmin history**, **Import history from daily notes**, and one robust **Backfill health data** command with progress, resume after a restart and retry of failed days.
+- New metrics: water intake and goal, bedtime and wake-up time, stress and recovery minutes. New setting **Days without a daily note** and **Properties of daily notes** (leave, fold, hide, or both). A birth year for heart rate zones.
+- **A fresh install sets itself up from existing notes** (metrics, prefix, units, lifestyle log, panel) and follows the Daily Notes or Periodic Notes plugin when its folder or format changed.
+- Copy diagnostics includes the shape of Garmin's answers and what the panel sees in the vault. Docs pages for metrics, panel cards, panel insights, settings, history and troubleshooting; README screenshots rendered from the real panel code; a "what's new" entry in six languages.
+
+### Fixed
+
+- Blood oxygen (SpO2) is written (the field name was wrong), a missing HRV night stays a gap, a failed endpoint no longer marks a day complete or logs you out, each request has its own timeout, and a backfill never loses days.
+- Many robustness fixes of the panel's statistics (outliers, ties, zero values, units) and its drawing (redraw only for relevant notes, follows midnight).
+- Mobile: the panel cannot scroll sideways, half-width cards stack on a narrow panel, labels survive a large Android font, touch targets, and "What's new" scrolls only vertically.
+
+### Changed
+
+- The sync leaves the frontmatter of your notes as you wrote it. Readiness is gentler with a young history. Three backfill commands became one.
+
+### Internal
+
+- Tests at 100 % coverage (statements, branches, functions, lines), contract tests against real Garmin answers, translation sync check, dead-code check, cloud-parity lint.
+
 ## 0.12.0-beta.97
 
 ### Changed
