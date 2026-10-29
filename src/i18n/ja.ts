@@ -341,6 +341,7 @@ export const ja: Record<TranslationKeys, string> = {
 	panelEditReset: "並び順をリセット",
 	panelNoNotes: "名前の形式 {format} のデイリーノートが見つかりません。デイリーノートの名前が違う場合は、プラグインの設定でフォルダーと形式を指定してください。",
 	panelNoNotesIn: "フォルダー {folder} に名前の形式 {format} のデイリーノートが見つかりません。デイリーノートの名前や置き場所が違う場合は、プラグインの設定でフォルダーと形式を指定してください。",
+	panelNoGarminData: "デイリーノートが{count}件見つかりました（最新は{date}）が、steps や hrv などのGarminプロパティを持つものはありません。ノートのプロパティを確認するか、同期してください。",
 	panelEditHint: "ハンドルをドラッグしてカードを動かします。ハンドルでは矢印キーも使えます。",
 	panelDragHandle: "{card}を移動",
 	panelHrvTitle: "HRV",

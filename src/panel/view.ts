@@ -169,6 +169,10 @@ export class HealthPanelView extends ItemView {
 		this.navButton(nav, "refresh-cw", t("commandSync", lang), () => void this.plugin.manualSync(), false);
 
 		// no daily note was recognised: say what is looked for, instead of cards that all say "no reading"
+		const overview = this.index.overview();
+		if (!this.editing && overview.notes > 0 && overview.withData === 0 && this.history.empty) {
+			root.createDiv({ cls: "ghs-panel-empty", text: t("panelNoGarminData", lang).replace("{count}", String(overview.notes)).replace("{date}", overview.newest!) });
+		}
 		if (!this.editing && !this.index.hasAnyDay()) {
 			const { dailyNotePath, dailyNoteFormat } = this.plugin.settings;
 			root.createDiv({ cls: "ghs-panel-empty", text: (dailyNotePath ? t("panelNoNotesIn", lang).replace("{folder}", dailyNotePath) : t("panelNoNotes", lang)).replace("{format}", dailyNoteFormat || "YYYY-MM-DD") });

@@ -342,6 +342,7 @@ export const de: Record<TranslationKeys, string> = {
 	panelEditReset: "Reihenfolge zurücksetzen",
 	panelNoNotes: "Keine Tagesnotizen mit dem Namensformat {format} gefunden. Wenn deine Tagesnotizen anders heißen, stelle Ordner und Format in den Plugin-Einstellungen ein.",
 	panelNoNotesIn: "Keine Tagesnotizen im Ordner {folder} mit dem Namensformat {format} gefunden. Wenn deine Tagesnotizen anders heißen oder liegen, stelle Ordner und Format in den Plugin-Einstellungen ein.",
+	panelNoGarminData: "{count} Tagesnotizen gefunden (die neueste ist {date}), aber keine enthält Garmin-Properties wie steps oder hrv. Prüfe die Properties einer Notiz oder synchronisiere.",
 	panelEditHint: "Zieh eine Karte am Griff, um sie zu verschieben. Auch die Pfeiltasten am Griff funktionieren.",
 	panelDragHandle: "{card} verschieben",
 	panelHrvTitle: "HRV",

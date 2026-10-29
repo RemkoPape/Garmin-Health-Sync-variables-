@@ -1318,9 +1318,29 @@ describe("logging out", () => {
 describe("diagnostics and misc", () => {
 	it("hands out the provider's sync log, or says nothing ran yet", async () => {
 		const loaded = await load();
-		expect(loaded.plugin.getSyncDiagnostics()).toBe("no sync run since the plugin started");
+		expect(loaded.plugin.getSyncDiagnostics().split("\n")[0]).toBe("no sync run since the plugin started");
 		loaded.provider.diagnostics = "plugin v1, platform=ios";
-		expect(loaded.plugin.getSyncDiagnostics()).toBe("plugin v1, platform=ios");
+		expect(loaded.plugin.getSyncDiagnostics().split("\n")[0]).toBe("plugin v1, platform=ios");
+	});
+
+	it("adds what the panel sees in the vault: the settings that pick the notes, the counts and the Garmin properties of the newest note, no value and no name", async () => {
+		const loaded = await load({ dailyNotePath: "Private folder", dailyNoteFormat: "DD.MM.YYYY" }, (app) => {
+			for (const [path, fm] of Object.entries({ "Private folder/28.10.2026.md": { tags: ["x"] }, "Private folder/29.10.2026.md": { ohs_steps: 8123, hrv: 48, mood: "secret", ohs_lifestyle_x: 1 }, "Private folder/meeting.md": { steps: 1 } })) {
+				app.vault.seed(path, "x");
+				app.metadataCache.frontmatter.set(path, fm);
+			}
+		});
+		const line = loaded.plugin.getSyncDiagnostics().split("\n").at(-1)!;
+		expect(line).toBe("notes: panel=off, folder=set, format=DD.MM.YYYY, daily notes found=2 (newest 2026-10-29), with Garmin properties=1 (newest 2026-10-29), its properties: [ohs_steps, hrv] and 2 other");
+		for (const secret of ["Private folder", "8123", "secret", "meeting"]) expect(line, secret).not.toContain(secret);
+	});
+
+	it("says so when it finds no daily note", async () => {
+		const loaded = await load();
+		expect(loaded.plugin.getSyncDiagnostics().split("\n").at(-1)).toBe("notes: panel=off, folder=none, format=YYYY-MM-DD, daily notes found=0 (newest -), with Garmin properties=0 (newest -), its properties: none");
+		loaded.plugin.settings.dailyNoteFormat = "";
+		loaded.plugin.settings.panelEnabled = true;
+		expect(loaded.plugin.getSyncDiagnostics().split("\n").at(-1)).toContain("panel=on, folder=none, format=(empty)");
 	});
 
 	it("applies a changed server region to the provider", async () => {

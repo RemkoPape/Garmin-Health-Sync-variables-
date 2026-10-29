@@ -19,6 +19,7 @@ import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "./panel/view";
 import { NoteProperties } from "./note-properties";
 import { garminKeys } from "./history/record";
 import { applyDetection, detectGarminData } from "./detect";
+import { DayIndex } from "./panel/index";
 import { showWhatsNewIfDue, showWhatsNewNotes } from "./whats-new";
 
 const AUTO_SYNC_TRIGGER_DEBOUNCE_MS = 30 * 1000;
@@ -668,7 +669,15 @@ export default class HealthSyncPlugin extends Plugin {
 
 	/** Redacted log of the last data fetch (settings → copy diagnostics). */
 	getSyncDiagnostics(): string {
-		return this.garminProvider.getSyncDiagnostics() || "no sync run since the plugin started";
+		return `${this.garminProvider.getSyncDiagnostics() || "no sync run since the plugin started"}\n${this.describeNotes()}`;
+	}
+
+	/** What the panel sees in the vault, without a note's name or a value: the settings that decide which notes count, how many notes it found, and which of our own properties the newest one holds. */
+	private describeNotes(): string {
+		const { dailyNotePath, dailyNoteFormat, panelEnabled } = this.settings;
+		const found = new DayIndex(this.app, () => this.settings).overview();
+		const keys = found.keys.length > 0 ? `[${found.keys.join(", ")}] and ${found.otherKeys} other` : "none";
+		return `notes: panel=${panelEnabled ? "on" : "off"}, folder=${dailyNotePath ? "set" : "none"}, format=${dailyNoteFormat || "(empty)"}, daily notes found=${found.notes} (newest ${found.newest ?? "-"}), with Garmin properties=${found.withData} (newest ${found.newestWithData ?? "-"}), its properties: ${keys}`;
 	}
 
 	/** Apply the configured server region to the API layer */

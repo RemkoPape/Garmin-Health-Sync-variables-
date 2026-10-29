@@ -100,6 +100,36 @@ describe("DayIndex", () => {
 	});
 });
 
+describe("overview", () => {
+	it("counts the daily notes and the ones with Garmin properties, and names the Garmin properties of the newest of those", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 4, frontmatter: (ago) => (ago === 0 ? { tags: ["x"] } : ago === 1 ? { ohs_steps: 9000, hrv: 50, mood: "ok", note: "x" } : ago === 2 ? { steps: 1 } : { hrv: "", steps: null }) });
+		expect(new DayIndex(app as never, () => settings).overview()).toEqual({ notes: 4, withData: 2, newest: "2026-10-22", newestWithData: "2026-10-21", keys: ["ohs_steps", "hrv"], otherKeys: 2 });
+	});
+
+	it("is empty for no notes and for notes without any Garmin property", async () => {
+		expect(new DayIndex(new App() as never, () => settings).overview()).toEqual({ notes: 0, withData: 0, newest: null, newestWithData: null, keys: [], otherKeys: 0 });
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 2, frontmatter: () => ({ tags: ["x"] }) });
+		expect(new DayIndex(app as never, () => settings).overview()).toMatchObject({ notes: 2, withData: 0, newestWithData: null, keys: [], otherKeys: 0 });
+	});
+});
+
+describe("two notes of one day", () => {
+	it("fills what one note leaves blank from the other, and keeps what the first has", async () => {
+		const app = new App();
+		app.vault.seed("Daily/2026-10-22.md", "x");
+		app.metadataCache.frontmatter.set("Daily/2026-10-22.md", { tags: ["x"], hrv: null, steps: 100 });
+		app.vault.seed("Archive/2026-10-22.md", "x");
+		app.metadataCache.frontmatter.set("Archive/2026-10-22.md", { hrv: 61, steps: 5, resting_hr: 50, spo2: "" });
+		const index = new DayIndex(app as never, () => settings);
+		expect(index.value("hrv", "2026-10-22")).toBe(61);
+		expect(index.value("steps", "2026-10-22")).toBe(100);
+		expect(index.value("resting_hr", "2026-10-22")).toBe(50);
+		expect(index.overview().notes).toBe(1);
+	});
+});
+
 describe("hasAnyDay", () => {
 	it("is false for a vault without a daily note or a history, true with either", async () => {
 		const empty = new App();

@@ -351,6 +351,24 @@ describe("health panel view", () => {
 			await vi.waitFor(() => expect(hint(other.view)).toBeUndefined());
 		});
 
+		it("says when notes are found but none holds a Garmin property, with the count and the newest day, and not once there is data", async () => {
+			const { app, view } = await open({ panelCards: {} });
+			await seedHistory(app, { end: "2026-10-22", days: 3, frontmatter: () => ({ tags: ["x"] }) });
+			view.refresh();
+			const hints = Array.from(view.contentEl.querySelectorAll(".ghs-panel-empty")).map((e) => e.textContent);
+			expect(hints).toEqual([en.panelNoGarminData.replace("{count}", "3").replace("{date}", "2026-10-22")]);
+			app.metadataCache.frontmatter.set("2026-10-22.md", { hrv: 50, steps: 7000, resting_hr: 52 });
+			view.refresh();
+			expect(view.contentEl.querySelector(".ghs-panel-empty")).toBeNull();
+		});
+
+		it("says it in the plugin language", async () => {
+			const { app, view } = await open({ panelCards: {}, language: "de" });
+			await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ tags: ["x"] }) });
+			view.refresh();
+			expect(view.contentEl.querySelector(".ghs-panel-empty")?.textContent).toBe(de.panelNoGarminData.replace("{count}", "1").replace("{date}", "2026-10-22"));
+		});
+
 		it("is not shown while the cards are arranged", async () => {
 			const { view } = await open({ panelCards: {} });
 			(view.contentEl.querySelector(".ghs-daynav .clickable-icon:nth-last-child(2)") as HTMLButtonElement).click();
