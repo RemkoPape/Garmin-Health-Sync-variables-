@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.88
+
+### Fixed
+
+- **The habit sections under the light bulb are aligned and low.** The names were centred or pushed right depending on whether the heading had a dot, and a closed section kept a gap for its hidden content. Now every heading has a dot (grey when there is nothing to say), the name sits next to it, the arrow is at the right edge, and a thin line separates the sections. On phones the touch area stays 44 px, taken back with a negative margin so the heading is as low as on a desktop.
+
 ## 0.12.0-beta.87
 
 ### Added
