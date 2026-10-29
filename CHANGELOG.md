@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.90
+
+### Fixed
+
+- **The What's new window scrolls only up and down.** An illustration in the notes was wider than the window on a phone (396 px content in a 234 to 324 px box), so the text could be dragged sideways and bounced. The illustrations now shrink to the window, long words wrap, the list indent is smaller, and the window is set to vertical scrolling only (no horizontal bar, no sideways swipe, no rubber band). Checked in a headless browser at 340, 390 and 430 px wide: the content width equals the window width.
+
 ## 0.12.0-beta.89
 
 ### Changed
