@@ -1684,6 +1684,16 @@ describe("birth year setting", () => {
 	});
 });
 
+describe("hidden habit settings", () => {
+	it("keeps the saved keys of hidden habits, drops anything else and starts empty", async () => {
+		const { plugin } = await load({ hiddenHabits: ["lifestyle_a", 5, "steps", "lifestyle_b"] } as never);
+		expect(plugin.settings.hiddenHabits).toEqual(["lifestyle_a", "lifestyle_b"]);
+		expect((await load({ hiddenHabits: "lifestyle_a" } as never)).plugin.settings.hiddenHabits).toEqual([]);
+		expect((await load(null)).plugin.settings.hiddenHabits).toEqual([]);
+		expect(DEFAULT_SETTINGS.hiddenHabits).toEqual([]);
+	});
+});
+
 describe("lifestyle habit settings", () => {
 	it("keeps the saved habits, drops entries that are no habits and reads an unknown kind as a yes or no", async () => {
 		const { plugin } = await load({ lifestyleHabits: { lifestyle_a: { name: "A", kind: "count", last: "2026-10-24" }, lifestyle_b: { name: "B", kind: "other", last: "yesterday" }, other: { name: "C", kind: "check" }, lifestyle_d: { name: 4 }, lifestyle_e: null } } as never);

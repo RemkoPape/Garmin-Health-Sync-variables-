@@ -25,6 +25,7 @@ const RELEASE_NOTES: ReleaseNote[] = [
 			{ title: "whatsNew0120Item5Title", text: "whatsNew0120Item5Text", figure: "backfill" },
 			{ title: "whatsNew0120Item6Title", text: "whatsNew0120Item6Text", figure: "commands" },
 			{ title: "whatsNew0120Item7Title", text: "whatsNew0120Item7Text" },
+			{ title: "whatsNew0120Item9Title", text: "whatsNew0120Item9Text" },
 			// the look-ahead goes last, as in 0.11.2: what the next big release attempts
 			{ title: "whatsNew0120Item8Title", text: "whatsNew0120Item8Text" },
 		],

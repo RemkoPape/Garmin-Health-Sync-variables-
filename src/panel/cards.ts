@@ -41,6 +41,9 @@ export interface CardContext {
 	birthYear: number | null;
 	/** The habits of the lifestyle log Garmin has sent: their names and kinds. */
 	habits: Record<string, HabitInfo>;
+	/** The habits the user hid in the card, and how a habit is hidden or shown again. */
+	hiddenHabits: string[];
+	onHideHabit: (key: string, hide: boolean) => void;
 	explainOpen: boolean;
 	onToggleExplain: () => void;
 }
@@ -111,7 +114,7 @@ export const PANEL_CARDS: PanelCard[] = [
 	range(RESTING_HR_CARD, "recovery", "panelNeedsRestingHr", ["hydration_ml"]),
 	range(SPO2_CARD, "recovery", "panelNeedsSpo2"),
 	range(BREATHING_CARD, "recovery", "panelNeedsBreathing"),
-	{ id: "habits", title: "panelHabitsTitle", section: "recovery", metrics: ["lifestyle_log"], extra: ["hrv", "resting_hr"], needs: "panelNeedsHabits", render: (c) => { const model = computeHabitsCard(c.index, c.date, c.habits); renderHabits(c.parent, { ...model, insights: habitInsights(model, c.lang) }, c.lang, c.explainOpen, c.onToggleExplain); } },
+	{ id: "habits", title: "panelHabitsTitle", section: "recovery", metrics: ["lifestyle_log"], extra: ["hrv", "resting_hr"], needs: "panelNeedsHabits", render: (c) => { const model = computeHabitsCard(c.index, c.date, c.habits, c.hiddenHabits); renderHabits(c.parent, { ...model, insights: habitInsights(model, c.lang) }, c.lang, c.explainOpen, c.onToggleExplain, c.onHideHabit); } },
 	{ id: "sleep", title: "panelSleepTitle", section: "sleep", metrics: ["sleep_duration"], needs: "panelNeedsSleep", extra: ["sleep_score", "sleep_start", "sleep_end"], render: (c) => renderSleep(c.parent, { ...computeSleep(c.index, c.date, c.birthYear), insights: sleepInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "stages", title: "panelStagesTitle", section: "sleep", metrics: ["sleep_deep", "sleep_rem", "sleep_light", "sleep_awake"], needs: "panelNeedsStages", render: (c) => renderStages(c.parent, { ...computeStages(c.index, c.date), insights: stagesInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },
 	{ id: "battery", title: "panelBatteryTitle", section: "energy", metrics: ["body_battery_max"], needs: "panelNeedsBattery", extra: ["body_battery_min", "body_battery"], render: (c) => renderBattery(c.parent, { ...computeBattery(c.index, c.date), insights: batteryInsights(signals(c)) }, c.lang, c.explainOpen, c.onToggleExplain) },

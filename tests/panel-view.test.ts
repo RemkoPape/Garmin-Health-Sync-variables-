@@ -21,10 +21,10 @@ function note(path: string, size = 10): TFile {
 	return f;
 }
 
-async function open(settings = {}): Promise<{ app: App; view: HealthPanelView; plugin: { settings: typeof DEFAULT_SETTINGS; manualSync: ReturnType<typeof vi.fn> } }> {
+async function open(settings = {}): Promise<{ app: App; view: HealthPanelView; plugin: { settings: typeof DEFAULT_SETTINGS; manualSync: ReturnType<typeof vi.fn>; saveSettings: ReturnType<typeof vi.fn> } }> {
 	const app = new App();
 	// the Today card is switched off here so these tests keep looking at the first data card; panel-today.test.ts covers it
-	const plugin = { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false }, ...settings }, manualSync: vi.fn(() => Promise.resolve()) };
+	const plugin = { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false }, ...settings }, manualSync: vi.fn(() => Promise.resolve()), saveSettings: vi.fn(() => Promise.resolve()) };
 	const leaf = new WorkspaceLeaf(app);
 	const view = new HealthPanelView(leaf as never, plugin as never);
 	await view.onOpen();
@@ -303,6 +303,21 @@ describe("health panel view", () => {
 		expect(sync.getAttribute("aria-label")).toBe(en.commandSync);
 		sync.click();
 		expect(plugin.manualSync).toHaveBeenCalledTimes(1);
+	});
+
+	it("hides a habit from the card, keeps the choice in the settings and shows it again from its square", async () => {
+		const { app, view, plugin } = await open({ panelCards: {}, lifestyleHabits: { lifestyle_alcohol: { name: "Alcohol", kind: "check", last: "2026-10-22" } } });
+		await seedHistory(app, { end: "2026-10-22", days: 3, frontmatter: () => ({ lifestyle_alcohol: 1 }) });
+		(view as unknown as { index: { invalidate(): void } }).index.invalidate();
+		await view.onOpen();
+		const hide = view.contentEl.querySelector<HTMLButtonElement>(".ghs-habit-hide")!;
+		hide.click();
+		await vi.waitFor(() => expect(plugin.settings.hiddenHabits).toEqual(["lifestyle_alcohol"]));
+		expect(plugin.saveSettings).toHaveBeenCalledTimes(1);
+		await vi.waitFor(() => expect(view.contentEl.querySelector(".ghs-habit-square")).not.toBeNull());
+		view.contentEl.querySelector<HTMLButtonElement>(".ghs-habit-square")!.click();
+		await vi.waitFor(() => expect(plugin.settings.hiddenHabits).toEqual([]));
+		expect(plugin.saveSettings).toHaveBeenCalledTimes(2);
 	});
 
 	it("labels the buttons in the plugin language", async () => {
