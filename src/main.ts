@@ -18,6 +18,7 @@ import { parseBirthYear } from "./panel/zones";
 import { HealthPanelView, VIEW_TYPE_HEALTH_PANEL } from "./panel/view";
 import { NoteProperties } from "./note-properties";
 import { garminKeys } from "./history/record";
+import { applyDetection, detectGarminData } from "./detect";
 import { showWhatsNewIfDue, showWhatsNewNotes } from "./whats-new";
 
 const AUTO_SYNC_TRIGGER_DEBOUNCE_MS = 30 * 1000;
@@ -143,6 +144,8 @@ export default class HealthSyncPlugin extends Plugin {
 			this.background(this.history.relocate(), "move history notes");
 			this.background(this.tryAutoSync(), "auto-sync");
 			this.resumeBackfill();
+			// a device without the plugin's settings but with the notes sets itself up from them
+			this.background(this.detectExistingData(), "detect existing data");
 			this.background(
 				Promise.resolve().then(() => showWhatsNewIfDue(this.app, this.settings.language, this.manifest.version, this.freshInstall, performance.now())),
 				"what's new",
@@ -263,6 +266,32 @@ export default class HealthSyncPlugin extends Plugin {
 		const lang = this.settings.language;
 		const count = await importFromNotes(this.app, this.history, this.settings);
 		new Notice(t(count === 0 ? "noticeHistoryImportEmpty" : "noticeHistoryImported", lang).replace("{count}", String(count)));
+	}
+
+	/**
+	 * On a fresh install (no saved settings) the daily notes may already hold Garmin data, written by another device: the
+	 * metrics, the prefix, the units and the habits are then taken from the notes and the side panel is switched on, so the
+	 * panel shows the data without a sign-in. Runs when the layout is ready and, when that finds nothing, once more when
+	 * Obsidian has indexed the vault (the first pass can see an incomplete metadata cache); never once settings were saved.
+	 */
+	private async detectExistingData(second = false): Promise<void> {
+		if (!this.freshInstall) return;
+		const found = detectGarminData(this.app, this.settings);
+		if (!found) {
+			if (!second) {
+				const ref = this.app.metadataCache.on("resolved", () => {
+					this.app.metadataCache.offref(ref);
+					this.background(this.detectExistingData(true), "detect existing data");
+				});
+				this.registerEvent(ref);
+			}
+			return;
+		}
+		applyDetection(this.settings, found);
+		this.freshInstall = false;
+		await this.saveSettings();
+		new Notice(t("noticeDataDetected", this.settings.language).replace("{count}", String(found.notes)), 12000);
+		this.refreshPanels();
 	}
 
 	/** Reveals the health panel in the right sidebar, creating it on first use. */

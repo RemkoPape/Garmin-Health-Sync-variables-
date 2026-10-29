@@ -332,6 +332,7 @@ export const de: Record<TranslationKeys, string> = {
 	settingsBirthYearDesc: "Nur das Jahr. Es macht das Gesundheitspanel genauer: Pulszonen für deine Einheiten und wie hart sie waren sowie Schlaf- und Aktivitätsziele für dein Alter. Leer lassen, um darauf zu verzichten.",
 	settingsBirthYearMax: "Geschätzter Maximalpuls: {max} bpm.",
 	noticePanelDisabled: "Aktiviere zuerst das Gesundheitspanel in den Plugin-Einstellungen.",
+	noticeDataDetected: "Garmin-Daten in {count} Tagesnotizen gefunden. Die passenden Metriken und das Seitenpanel sind eingeschaltet; ändere das in den Einstellungen.",
 	panelTitle: "Gesundheit",
 	panelPrevDay: "Vorheriger Tag",
 	panelNextDay: "Nächster Tag",

@@ -1684,6 +1684,90 @@ describe("birth year setting", () => {
 	});
 });
 
+describe("setting up from the notes on a fresh install", () => {
+	const NOTES = (app: App): void => {
+		for (const [path, fm] of Object.entries({ "Daily/2026-10-24.md": { ohs_steps: 8000, ohs_resting_hr: 52, ohs_hrv: 48, ohs_lifestyle_coffee: 3 }, "Daily/2026-10-23.md": { ohs_steps: 7000, ohs_hrv: 50, ohs_floors: 6 } })) {
+			app.vault.seed(path, "---\n---\n");
+			app.metadataCache.frontmatter.set(path, fm);
+		}
+	};
+
+	it("takes the metrics, the prefix and the habits from the notes, switches the side panel on, saves and says so", async () => {
+		const { app, plugin } = await load(null, NOTES, "0.12.0");
+		app.workspace.layoutReady();
+		await settle();
+		expect(plugin.settings.panelEnabled).toBe(true);
+		expect(plugin.settings.usePrefix).toBe(true);
+		expect(plugin.settings.enabledMetrics["floors"]).toBe(true);
+		expect(plugin.settings.enabledMetrics["lifestyle_log"]).toBe(true);
+		expect(plugin.saves).toBeGreaterThan(0);
+		expect((plugin.data as { usePrefix?: boolean }).usePrefix).toBe(true);
+		expect(Notice.messages()).toContain(en.noticeDataDetected.replace("{count}", "2"));
+	});
+
+	it("says it in the plugin language", async () => {
+		const { app } = await load(null, (a) => { NOTES(a); document.documentElement.lang = "de"; }, "0.12.0");
+		app.workspace.layoutReady();
+		await settle();
+		expect(Notice.messages()).toContain(de.noticeDataDetected.replace("{count}", "2"));
+	});
+
+	it("leaves settings that were saved alone, whatever the notes hold", async () => {
+		const { app, plugin } = await load({ language: "en", usePrefix: false, panelEnabled: false }, NOTES, "0.12.0");
+		app.workspace.layoutReady();
+		await settle();
+		expect(plugin.settings.panelEnabled).toBe(false);
+		expect(plugin.settings.usePrefix).toBe(false);
+		expect(plugin.settings.enabledMetrics["floors"]).toBe(false);
+		expect(Notice.messages()).not.toContain(en.noticeDataDetected.replace("{count}", "2"));
+	});
+
+	it("changes nothing when the notes hold no Garmin data", async () => {
+		const { app, plugin } = await load(null, (a) => { a.vault.seed("Daily/2026-10-24.md", "x"); a.metadataCache.frontmatter.set("Daily/2026-10-24.md", { mood: "good" }); }, "0.12.0");
+		const saves = plugin.saves;
+		app.workspace.layoutReady();
+		await settle();
+		expect(plugin.settings.panelEnabled).toBe(false);
+		expect(plugin.saves).toBe(saves);
+		expect(Notice.messages().some((m) => m.includes("Found Garmin data"))).toBe(false);
+	});
+
+	it("looks once more when Obsidian has indexed the vault, and not a third time", async () => {
+		const { app, plugin } = await load(null, undefined, "0.12.0");
+		app.workspace.layoutReady();
+		await settle();
+		expect(plugin.settings.panelEnabled).toBe(false);
+		// the metadata of the notes arrives after the first look
+		NOTES(app);
+		app.metadataCache.fire("resolved");
+		await settle();
+		expect(plugin.settings.panelEnabled).toBe(true);
+		expect(Notice.messages()).toContain(en.noticeDataDetected.replace("{count}", "2"));
+	});
+
+	it("gives up after the second look and keeps looking at nothing after that", async () => {
+		const { app, plugin } = await load(null, undefined, "0.12.0");
+		app.workspace.layoutReady();
+		await settle();
+		app.metadataCache.fire("resolved");
+		await settle();
+		NOTES(app);
+		app.metadataCache.fire("resolved");
+		await settle();
+		expect(plugin.settings.panelEnabled).toBe(false);
+	});
+
+	it("looks only once for settings that were saved, also after indexing", async () => {
+		const { app, plugin } = await load({ language: "en" }, undefined, "0.12.0");
+		app.workspace.layoutReady();
+		await settle();
+		NOTES(app);
+		app.metadataCache.fire("resolved");
+		await settle();
+		expect(plugin.settings.panelEnabled).toBe(false);
+	});
+});
+
 describe("hidden habit settings", () => {
 	it("keeps the saved keys of hidden habits, drops anything else and starts empty", async () => {
 		const { plugin } = await load({ hiddenHabits: ["lifestyle_a", 5, "steps", "lifestyle_b"] } as never);

@@ -3,6 +3,7 @@ import { dateFromDailyNote } from "../daily-note";
 import { parseClock, parseDuration } from "./parse";
 import type { HistoryStore } from "../history/store";
 import { parseSessions, type Session } from "./sessions";
+import { LIFESTYLE_PREFIX, type HabitInfo } from "../providers/garmin/lifestyle";
 
 /** Frontmatter prefix the sync adds when "use prefix" is on. Notes of both kinds can sit in one vault. */
 const PREFIX = "ohs_";
@@ -91,6 +92,32 @@ export class DayIndex {
 	/** A clock time ("23:15") on a day in minutes since midnight, or null. */
 	clock(key: string, date: string): number | null {
 		return parseClock(this.raw(key, date));
+	}
+
+	/**
+	 * The habits of the lifestyle log that the notes and the history hold, found by their `lifestyle_` keys: what the panel
+	 * can name without Garmin's answer (a device that was never signed in). The name is made from the key, a habit with an
+	 * amount above 1 is a counted one, and `last` is the latest day with an entry.
+	 */
+	habitsInNotes(): Record<string, HabitInfo> {
+		this.build();
+		const found = new Map<string, { last: string; max: number }>();
+		const take = (date: string, record: Record<string, unknown>): void => {
+			for (const [raw, value] of Object.entries(record)) {
+				const key = raw.startsWith(PREFIX) ? raw.slice(PREFIX.length) : raw;
+				if (!key.startsWith(LIFESTYLE_PREFIX) || key === LIFESTYLE_PREFIX || typeof value !== "number" || !Number.isFinite(value)) continue;
+				const seen = found.get(key) ?? { last: "", max: 0 };
+				found.set(key, { last: date > seen.last ? date : seen.last, max: Math.max(seen.max, value) });
+			}
+		};
+		for (const [date, fm] of this.days) take(date, fm);
+		this.history?.forEachRecord(take);
+		const habits: Record<string, HabitInfo> = {};
+		for (const [key, seen] of found) {
+			const words = key.slice(LIFESTYLE_PREFIX.length).replace(/_+/g, " ").trim();
+			habits[key] = { name: words.charAt(0).toUpperCase() + words.slice(1), kind: seen.max > 1 ? "count" : "check", last: seen.last };
+		}
+		return habits;
 	}
 
 	/** The frontmatter value under the plain or the prefixed key. */

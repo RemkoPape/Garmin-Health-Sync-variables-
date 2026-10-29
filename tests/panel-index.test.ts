@@ -100,6 +100,40 @@ describe("DayIndex", () => {
 	});
 });
 
+describe("the habits the notes hold", () => {
+	it("names the habits by their keys, with and without the prefix, and reads count or yes/no from the amounts", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 4, frontmatter: (ago) => ({ lifestyle_late_caffeine: ago === 0 ? 3 : 1, ohs_lifestyle_cold_showers: ago % 2, lifestyle_run: ago === 3 ? 1 : undefined, hrv: 50 }) });
+		const habits = new DayIndex(app as never, () => settings).habitsInNotes();
+		expect(habits).toEqual({
+			lifestyle_late_caffeine: { name: "Late caffeine", kind: "count", last: "2026-10-22" },
+			lifestyle_cold_showers: { name: "Cold showers", kind: "check", last: "2026-10-22" },
+			lifestyle_run: { name: "Run", kind: "check", last: "2026-10-19" },
+		});
+	});
+
+	it("ignores text, empty and non-finite values, the bare prefix and keys of other metrics", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ lifestyle_mood: "good", lifestyle_empty: "", lifestyle_nan: Number.NaN, lifestyle_: 1, lifestyle_list: [1], hrv: 50, steps: 9000 }) });
+		expect(new DayIndex(app as never, () => settings).habitsInNotes()).toEqual({});
+	});
+
+	it("finds habits that only the history notes hold, and takes the later day of the two sources", async () => {
+		const app = new App();
+		app.vault.seed("Garmin history/Garmin history 2026-10.md", serializeMonth("2026-10", new Map([["2026-10-20", { lifestyle_run: 2, lifestyle_alcohol: 0 }], ["2026-10-21", { lifestyle_alcohol: 1 }]])));
+		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ lifestyle_run: 1 }) });
+		const history = new HistoryStore(app as never, settings);
+		await history.warm("2026-10-01", "2026-10-31");
+		const habits = new DayIndex(app as never, () => settings, history).habitsInNotes();
+		expect(habits["lifestyle_run"]).toEqual({ name: "Run", kind: "count", last: "2026-10-22" });
+		expect(habits["lifestyle_alcohol"]).toEqual({ name: "Alcohol", kind: "check", last: "2026-10-21" });
+	});
+
+	it("is empty for a vault without habits", () => {
+		expect(new DayIndex(new App() as never, () => settings).habitsInNotes()).toEqual({});
+	});
+});
+
 describe("DayIndex with the history notes", () => {
 	const HISTORY = "Garmin history/Garmin history 2026-10.md";
 	const month = (days: Record<string, Record<string, unknown>>): string => serializeMonth("2026-10", new Map(Object.entries(days)));

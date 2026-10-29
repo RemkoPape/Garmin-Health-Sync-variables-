@@ -417,9 +417,12 @@ export class MetadataCache {
 		const fm = this.frontmatter.get(file.path);
 		return fm ? { frontmatter: fm } : null;
 	}
-	on(name: "changed" | "resolved", cb: (file: TFile) => void): { name: string } {
+	on(name: "changed" | "resolved", cb: (file: TFile) => void): { name: "changed" | "resolved"; cb: (file: TFile) => void } {
 		(this.listeners[name] ??= []).push(cb);
-		return { name };
+		return { name, cb };
+	}
+	offref(ref: { name: "changed" | "resolved"; cb: (file: TFile) => void }): void {
+		this.listeners[ref.name] = (this.listeners[ref.name] ?? []).filter((cb) => cb !== ref.cb);
 	}
 	/** Test helper: deliver a "changed" event. */
 	fireChanged(file: TFile): void {

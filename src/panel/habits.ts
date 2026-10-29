@@ -160,6 +160,18 @@ function effectOf(ctx: Context, index: DayIndex, measure: Measure, days: { day: 
 }
 
 /**
+ * The habits to list: the ones Garmin has sent (their names and last listing are right), and the ones the notes hold that
+ * it has not, named from their keys. A habit only the notes know has no last listing, so it takes the latest one of the
+ * others: it is dropped by the 30 days without an entry, not by a listing it never had.
+ */
+export function knownHabits(saved: Record<string, HabitInfo>, inNotes: Record<string, HabitInfo>): Record<string, HabitInfo> {
+	const latest = Object.values(saved).reduce((last, h) => (h.last > last ? h.last : last), "");
+	const merged: Record<string, HabitInfo> = {};
+	for (const [key, habit] of Object.entries(inNotes)) merged[key] = { ...habit, last: latest };
+	return { ...merged, ...saved };
+}
+
+/**
  * The habits of the lifestyle log with the nights after them. A habit on day D is compared with the HRV and the resting
  * heart rate of day D+1 (the night after it), each against its own usual value of the 4 weeks before that night. Days
  * on which a habit was not logged are left out: an entry that is missing does not say that it was not done. The most

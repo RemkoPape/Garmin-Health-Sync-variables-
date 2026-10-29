@@ -25,6 +25,10 @@ All settings are under **Settings → Community plugins → Garmin Health Sync**
 - **Unit system:** metric or imperial for distance and weight.
 - **Language:** the plugin language (English, German, Spanish, French, Japanese, Chinese); it follows your Obsidian language until you choose one.
 
+## A second device
+
+With no saved settings (a fresh install) the plugin looks through the properties of your daily notes once: when they hold Garmin data it switches on the metrics it finds, follows the `ohs_` prefix and the units of the notes, reads the lifestyle log when habits are there and switches the side panel on, so the panel shows the data without a sign-in. See [troubleshooting.md](troubleshooting.md#the-side-panel).
+
 ## Metrics
 
 - **Standard metrics** (steps, sleep duration, sleep score, resting heart rate, HRV, stress) are on by default.

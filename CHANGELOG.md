@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0-beta.93
+
+### Added
+
+- **A fresh install on a second device sets itself up from the notes.** With no saved settings and a daily note that holds at least three Garmin properties (a blank property of a template does not count), the plugin switches on the metrics it finds, takes the `ohs_` prefix and miles or pounds from the notes (so a first sync does not write a second set of properties next to the first), reads the lifestyle log when habits are there, and switches the side panel on. A notice says so. Nothing is ever switched off, it looks once at startup and once more when Obsidian has indexed the vault, and it never runs again once settings are saved.
+- **The Habits card works without a sign-in.** It names the habits from the `lifestyle_` properties of the notes and the history (a habit with an amount above 1 is a counted one) until a sync brings Garmin's own names; names from Garmin win.
+
 ## 0.12.0-beta.92
 
 ### Fixed
