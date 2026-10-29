@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.86
+
+### Changed
+
+- **The light bulb of the Habits card is one folded section per habit.** Under "What your data suggests" every habit is a closed heading with a small dot (orange: something to watch, green: better nights, none: nothing to say yet). Opening it shows that habit's patterns, its counts (days logged, the mean of a counted habit) and the hint when it has no "no" days. A card with many habits stays short until you open one. Hidden habits have no section.
+
 ## 0.12.0-beta.85
 
 ### Changed

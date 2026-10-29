@@ -112,13 +112,28 @@ describe("the Habits card", () => {
 		expect(text(parent.querySelector(".ghs-habit-legend"))).toContain(de.panelHabitsBarsHint);
 	});
 
-	it("names the clear patterns under the light bulb, the strongest first and at most three", async () => {
+	it("folds the light bulb into one section per habit, closed, each holding only that habit's patterns and counts", async () => {
 		const parent = await render(80, (ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, lifestyle_coffee: on(ago) ? 2 : 0, hrv: 50 - (on(ago + 1) ? 8 : 0) + noise(ago), resting_hr: 55 + (on(ago + 1) ? 3 : 0) + noise(ago + 3) * 0.5 }), { open: true });
-		const items = Array.from(parent.querySelectorAll(".ghs-insight-watch, .ghs-insight-good")).map(text);
-		expect(items).toHaveLength(3);
-		expect(items.every((t) => /^After (Alcohol|Late caffeine) your (HRV is \d+ ms lower|resting heart rate is \d+ bpm higher) than after days without it \(\d+ days against \d+\)\.$/.test(t))).toBe(true);
-		expect(parent.querySelectorAll(".ghs-insight-watch")).toHaveLength(3);
+		const groups = Array.from(parent.querySelectorAll<HTMLDetailsElement>(".ghs-insight-group"));
+		expect(groups.map((g) => text(g.querySelector("summary"))).sort()).toEqual(["Alcohol", "Late caffeine"]);
+		for (const g of groups) {
+			expect(g.open).toBe(false);
+			const name = text(g.querySelector("summary"));
+			const watch = Array.from(g.querySelectorAll(".ghs-insight-watch")).map(text);
+			expect(watch).toHaveLength(2);
+			expect(watch.every((t) => new RegExp(`^After ${name} your (HRV is \\d+ ms lower|resting heart rate is \\d+ bpm higher) than after days without it \\(\\d+ days against \\d+\\)\\.$`).test(t))).toBe(true);
+			expect(g.querySelectorAll(".ghs-fact").length).toBeGreaterThan(0);
+			expect(g.querySelector("summary")!.classList.contains("ghs-insight-group-watch")).toBe(true);
+		}
+		expect(parent.querySelector(".ghs-insight > .ghs-insight-item")).toBeNull();
 		expect(text(parent.querySelector(".ghs-explain"))).toBe(en.panelHabitsExplain);
+	});
+
+	it("marks a habit with a better night as good and a habit with nothing to say as neither", async () => {
+		const parent = await render(80, (ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, lifestyle_coffee: on(ago + 5) ? 1 : 0, hrv: 50 + (on(ago + 1) ? 8 : 0) + noise(ago) }), { open: true });
+		const byName = (n: string): Element => Array.from(parent.querySelectorAll(".ghs-insight-group > summary")).find((s) => text(s) === n)!;
+		expect(byName("Alcohol").classList.contains("ghs-insight-group-good")).toBe(true);
+		expect(byName("Late caffeine").className).toBe("ghs-insight-group-title");
 	});
 });
 
@@ -233,21 +248,26 @@ describe("the columns of a counted habit", () => {
 });
 
 describe("habitInsights", () => {
-	it("picks the text for the measure and the direction, with the habit, the size and the day counts", async () => {
+	async function rows(frontmatter: (ago: number) => Record<string, unknown>): Promise<ReturnType<typeof computeHabitsCard>["habits"]> {
 		const app = new App();
-		await seedHistory(app, { end: END, days: 80, frontmatter: (ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, lifestyle_coffee: on(ago) ? 1 : 0, hrv: 50 + (on(ago + 1) ? 8 : 0) + noise(ago), resting_hr: 55 - (on(ago + 1) ? 3 : 0) + noise(ago + 3) * 0.5 }) });
-		const model = computeHabitsCard(new DayIndex(app as never, () => settings), END, NAMES);
-		const insights = habitInsights(model, "en");
-		expect(insights.map((i) => i.id).sort()).toEqual(["lifestyle_hrv_up", "lifestyle_hrv_up", "lifestyle_rhr_down"].sort());
-		const first = insights.find((i) => i.id === "lifestyle_hrv_up")!;
-		expect(insightText(first, "en")).toMatch(/^After (Alcohol|Late caffeine) your HRV is \d ms higher than after days without it \(\d+ days against \d+\)\.$/);
-		expect(habitInsights({ insights: [], habits: [], hidden: [] }, "en")).toEqual([]);
+		await seedHistory(app, { end: END, days: 80, frontmatter });
+		return computeHabitsCard(new DayIndex(app as never, () => settings), END, NAMES).habits;
+	}
+
+	it("picks the text for the measure and the direction, with the habit, the size and the day counts", async () => {
+		const [row] = await rows((ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, hrv: 50 + (on(ago + 1) ? 8 : 0) + noise(ago), resting_hr: 55 - (on(ago + 1) ? 3 : 0) + noise(ago + 3) * 0.5 }));
+		const insights = habitInsights(row!, "en");
+		expect(insights.map((i) => i.id).sort()).toEqual(["lifestyle_hrv_up", "lifestyle_rhr_down"]);
+		expect(insightText(insights.find((i) => i.id === "lifestyle_hrv_up")!, "en")).toMatch(/^After Alcohol your HRV is \d ms higher than after days without it \(\d+ days against \d+\)\.$/);
 	});
 
 	it("names a rise of the resting heart rate and a fall of the HRV as something to watch", async () => {
-		const app = new App();
-		await seedHistory(app, { end: END, days: 80, frontmatter: (ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, hrv: 50 - (on(ago + 1) ? 8 : 0) + noise(ago), resting_hr: 55 + (on(ago + 1) ? 3 : 0) + noise(ago + 3) * 0.5 }) });
-		const ids = habitInsights(computeHabitsCard(new DayIndex(app as never, () => settings), END, NAMES), "en").map((i) => i.id);
-		expect(ids.sort()).toEqual(["lifestyle_hrv_down", "lifestyle_rhr_up"]);
+		const [row] = await rows((ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, hrv: 50 - (on(ago + 1) ? 8 : 0) + noise(ago), resting_hr: 55 + (on(ago + 1) ? 3 : 0) + noise(ago + 3) * 0.5 }));
+		expect(habitInsights(row!, "en").map((i) => i.id).sort()).toEqual(["lifestyle_hrv_down", "lifestyle_rhr_up"]);
+	});
+
+	it("says nothing for a habit without a clear pattern and without a gap in its no days", async () => {
+		const [row] = await rows((ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, hrv: 50 + noise(ago * 7) }));
+		expect(habitInsights(row!, "en")).toEqual([]);
 	});
 });

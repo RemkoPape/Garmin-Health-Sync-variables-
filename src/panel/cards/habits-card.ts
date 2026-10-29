@@ -4,12 +4,10 @@ import { formatNumber, formatSigned } from "../format";
 import type { HabitInfo } from "../../providers/garmin/lifestyle";
 import type { DayIndex } from "../index";
 import { MIN_GROUP, computeHabits, type Dot, type Effect, type HabitRow, type Measure } from "../habits";
-import type { Insight } from "../insights/registry";
+import { habitInsights } from "../insights/lifestyle";
 import { renderCard } from "./shell";
 
 export interface HabitsModel {
-	/** What the data suggests, filled in by the panel (see insights/). */
-	insights: Insight[];
 	/** The habits that are shown as rows. */
 	habits: HabitRow[];
 	/** The habits the user hid: they are shown as small squares at the bottom, and left out of the light bulb. */
@@ -18,7 +16,7 @@ export interface HabitsModel {
 
 export function computeHabitsCard(index: DayIndex, date: string, names: Record<string, HabitInfo>, hiddenKeys: string[] = []): HabitsModel {
 	const rows = computeHabits(index, date, names);
-	return { insights: [], habits: rows.filter((r) => !hiddenKeys.includes(r.key)), hidden: rows.filter((r) => hiddenKeys.includes(r.key)) };
+	return { habits: rows.filter((r) => !hiddenKeys.includes(r.key)), hidden: rows.filter((r) => hiddenKeys.includes(r.key)) };
 }
 
 const UNITS: Record<Measure, string> = { hrv: "ms", resting_hr: "bpm" };
@@ -94,23 +92,15 @@ function habitRow(parent: HTMLElement, row: HabitRow, lang: string, hide: (key: 
 	if (row.resting_hr) effectRow(el, t("panelHabitsRhr", lang), "resting_hr", row.resting_hr, lang);
 }
 
-/** What does not fit on the card: the counts behind every habit. */
-function facts(habits: HabitRow[], lang: string): string[] {
-	const out: string[] = [];
-	for (const h of habits) {
-		out.push(t("panelHabitsFactDays", lang).replace("{habit}", h.name).replace("{n}", String(h.logged)).replace("{yes}", String(h.with + (h.today !== null && h.today > 0 ? 1 : 0))).replace("{no}", String(h.without + (h.today === 0 ? 1 : 0))));
-		if (h.kind === "count" && h.week) {
-			out.push(t("panelHabitsFactWeek", lang).replace("{habit}", h.name).replace("{mean}", formatNumber(h.week.mean, lang, 1)).replace("{total}", formatNumber(h.week.total, lang, 0)));
-			if (h.usual !== null) out.push(t("panelHabitsFactUsual", lang).replace("{habit}", h.name).replace("{usual}", formatNumber(h.usual, lang, 1)));
-		}
-		if (h.hrv === null && h.resting_hr === null) out.push(t("panelHabitsProgress", lang).replace("{habit}", h.name).replace(/\{min\}/g, String(MIN_GROUP)).replace("{n}", String(h.with)).replace("{m}", String(h.without)));
+/** What does not fit on the card: the counts behind a habit. */
+function factsOf(h: HabitRow, lang: string): string[] {
+	const out = [t("panelHabitsFactDays", lang).replace("{habit}", h.name).replace("{n}", String(h.logged)).replace("{yes}", String(h.with + (h.today !== null && h.today > 0 ? 1 : 0))).replace("{no}", String(h.without + (h.today === 0 ? 1 : 0)))];
+	if (h.kind === "count" && h.week) {
+		out.push(t("panelHabitsFactWeek", lang).replace("{habit}", h.name).replace("{mean}", formatNumber(h.week.mean, lang, 1)).replace("{total}", formatNumber(h.week.total, lang, 0)));
+		if (h.usual !== null) out.push(t("panelHabitsFactUsual", lang).replace("{habit}", h.name).replace("{usual}", formatNumber(h.usual, lang, 1)));
 	}
+	if (h.hrv === null && h.resting_hr === null) out.push(t("panelHabitsProgress", lang).replace("{habit}", h.name).replace(/\{min\}/g, String(MIN_GROUP)).replace("{n}", String(h.with)).replace("{m}", String(h.without)));
 	return out;
-}
-
-/** The state of a habit on the shown day, for the colour of its square and for its label: yes, no, or not logged. */
-function state(row: HabitRow): Dot {
-	return row.today === null ? "unknown" : row.today > 0 ? "yes" : "no";
 }
 
 /** The first letters of the first word of each name: one letter, and two or three only for the habits whose shorter label another habit shares. */
@@ -124,6 +114,11 @@ export function squareLabels(names: string[]): string[] {
 		}
 		return prefix(word, 3);
 	});
+}
+
+/** The state of a habit on the shown day, for the colour of its square and for its label: yes, no, or not logged. */
+function state(row: HabitRow): Dot {
+	return row.today === null ? "unknown" : row.today > 0 ? "yes" : "no";
 }
 
 /** The hidden habits as small squares in the colour of their day; a tap shows the habit again. */
@@ -141,7 +136,7 @@ function hiddenSquares(card: HTMLElement, hidden: HabitRow[], lang: string, hide
 }
 
 export function renderHabits(parent: HTMLElement, model: HabitsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void, hide: (key: string, hide: boolean) => void): void {
-	renderCard(parent, { title: t("panelHabitsTitle", lang), value: undefined, explain: t("panelHabitsExplain", lang), facts: facts(model.habits, lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
+	renderCard(parent, { title: t("panelHabitsTitle", lang), value: undefined, explain: t("panelHabitsExplain", lang), groups: model.habits.map((h) => ({ title: h.name, insights: habitInsights(h, lang), facts: factsOf(h, lang) })), explainOpen, onToggleExplain, lang, insights: [] }, (card) => {
 		if (model.habits.length === 0 && model.hidden.length === 0) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelHabitsEmpty", lang) });
 			return;
