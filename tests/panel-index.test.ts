@@ -61,6 +61,14 @@ describe("DayIndex", () => {
 		expect(index.value("hrv", "2026-10-21")).toBeNull();
 	});
 
+	it("finds daily notes in any folder while no daily note folder is set (a device whose plugin settings did not come along)", async () => {
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 2, folder: "Journal", frontmatter: (ago) => ({ hrv: 60 - ago }) });
+		const index = new DayIndex(app as never, () => settings);
+		expect(index.value("hrv", "2026-10-22")).toBe(60);
+		expect(index.value("hrv", "2026-10-21")).toBe(59);
+	});
+
 	it("reads duration strings as minutes", async () => {
 		const app = new App();
 		await seedHistory(app, { end: "2026-10-22", days: 3, frontmatter: (ago) => [{ sleep_duration: "6h 13min" }, { ohs_sleep_duration: "7h" }, { sleep_duration: 5 }][ago]! });

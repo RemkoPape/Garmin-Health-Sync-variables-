@@ -110,8 +110,10 @@ export function dateFromNotePath(
 	let match = relative.match(pattern);
 
 	// Fallback: match the basename alone, so notes that were moved into
-	// hand-made subfolders below the configured folder stay recognisable.
-	if (!match && basePath && !format.includes("/")) {
+	// hand-made subfolders below the configured folder stay recognisable. With no folder set at all (a fresh
+	// install on another device, where the plugin's settings did not come along) a note named by date anywhere in
+	// the vault is a daily note: the panel must not stay empty because a folder is not known.
+	if (!match && !format.includes("/")) {
 		match = basename.match(pattern);
 	}
 	if (match?.groups) {
@@ -123,7 +125,7 @@ export function dateFromNotePath(
 	// The pattern above only knows YYYY, MM and DD. Formats with other tokens (a weekday, a month name, ...)
 	// are read back with moment instead, which must reproduce the name exactly.
 	return dateFromFormattedName(relative, format)
-		?? (basePath && !format.includes("/") ? dateFromFormattedName(basename, format) : null);
+		?? (!format.includes("/") ? dateFromFormattedName(basename, format) : null);
 }
 
 /**
