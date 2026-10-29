@@ -22,6 +22,14 @@
 - **A light bulb has no "What your data suggests".** A statement appears only when your own data points to something; see [panel-insights.md](panel-insights.md).
 - **The panel keeps showing a day.** Opening a daily note moves it to that day; any other note leaves it. At midnight it moves on when it shows today.
 
+## Habits (lifestyle log)
+
+- **The Habits card is empty.** The lifestyle log is off by default: switch on **Lifestyle log (habits)** under **Additional metrics** and sync. The card lists habits with an entry in the last 30 days; a habit Garmin no longer lists (deleted or replaced in the app) is hidden from the day after its last one.
+- **A habit has no bars.** A yes or no habit needs 8 days with it and 8 days logged as "no"; a counted habit needs 14 logged days with at least 3 different amounts. A day without an entry is never counted as "no": log a "no" on the days you skip a habit. A grey bar means the difference is not clear yet.
+- **A habit shows twice, or its history stopped.** The key of a habit is made from its name when the plugin first sees it and then kept by Garmin's id, so a rename in the app or another account language keeps it. A habit that was seen only before this was added gets a new key when its name changed; the old key stays in your notes.
+- **A value you removed in Garmin Connect is still in the note.** A sync writes what is logged; it does not delete a property that an earlier sync wrote.
+- **Days from before you switched it on.** Run a backfill: the days are fetched again for the new metric.
+
 ## Notes and files
 
 - **"Frontmatter could not be read".** The note's properties block is damaged (a duplicate key, a line that is not valid YAML). The plugin leaves it alone, writes a backup to `_garmin-health-sync/backups` (the last five are kept) and tells you. Fix the block and sync again.

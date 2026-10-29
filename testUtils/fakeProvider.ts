@@ -16,6 +16,9 @@ export class FakeProvider implements HealthProvider {
 	/** When set, fetchData waits for it after recording the call (holds a sync open). */
 	gate: Promise<void> | null = null;
 
+	/** Set to record the habit keys the sync hands to the provider. */
+	setHabitKeys: ((keys: Record<string, string>) => void) | undefined;
+
 	fetchCalls: { date: string; enabledMetrics: string[] }[] = [];
 	authCalls = 0;
 	delayCalls: string[][] = [];

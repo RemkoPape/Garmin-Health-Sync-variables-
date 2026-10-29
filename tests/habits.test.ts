@@ -199,6 +199,22 @@ describe("computeHabits", () => {
 		});
 	});
 
+	it("still shows a dropped habit on the days before its last one", async () => {
+		const i = await index(60, () => ({ lifestyle_alcohol: 1, lifestyle_coffee: 2 }));
+		const names = { lifestyle_alcohol: { name: "Alcohol", kind: "check" as const, last: "2026-10-10" }, lifestyle_coffee: { name: "Late caffeine", kind: "count" as const, last: END } };
+		expect(computeHabits(i, "2026-10-10", names).map((r) => r.name).sort()).toEqual(["Alcohol", "Late caffeine"]);
+		expect(computeHabits(i, "2026-10-11", names).map((r) => r.name)).toEqual(["Late caffeine"]);
+	});
+
+	it("gives the same rows for many habits that share the nights (the usual values are worked out once)", async () => {
+		const names: Record<string, { name: string; kind: "check"; last: string }> = {};
+		for (let n = 0; n < 6; n++) names[`lifestyle_h${n}`] = { name: `Habit ${n}`, kind: "check", last: END };
+		const i = await index(80, (ago) => Object.fromEntries([...Object.keys(names).map((k, n) => [k, habitOn(ago + n) ? 1 : 0]), ["hrv", 50 + (habitOn(ago + 1) ? 8 : 0) + noise(ago)]]));
+		const rows = computeHabits(i, END, names);
+		expect(rows).toHaveLength(6);
+		expect(rows.find((r) => r.key === "lifestyle_h0")!.hrv).toMatchObject({ clear: true, better: true });
+	});
+
 	it("gives no habits for an empty log", async () => {
 		expect(computeHabits(await index(30, () => ({ hrv: 50 })), END, NAMES)).toEqual([]);
 		expect(computeHabits(await index(30, () => ({ lifestyle_alcohol: 1 })), END, {})).toEqual([]);

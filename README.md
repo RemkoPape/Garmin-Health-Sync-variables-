@@ -41,6 +41,7 @@
 - **Language auto-detection** — UI language is set from your Obsidian language (EN, DE, ZH, JA, ES, FR)
 - **Optional structured data** — machine-readable `trainings` field for advanced Dataview queries
 - **Property prefix** — optionally adds an `ohs_` prefix to all frontmatter properties to avoid naming conflicts with other plugins
+- **Lifestyle log (habits)** — optionally sync the habits you log in Garmin Connect (yes or no, or a count such as cups of coffee) as `lifestyle_<name>` properties; the Habits card in the side panel shows each habit and, once there is enough data, how your HRV and resting heart rate look on the night after it
 - **Health side panel** — optional right sidebar with cards for recovery, sleep, energy, movement, fitness and training, set against your own usual range; tap the light bulb on a card for what your data suggests and how it is worked out; turn it on under **Settings → Garmin Health Sync → Side panel**
 - **History notes** — optionally keep every fetched day in small monthly markdown notes, so the panel also works for days without a daily note and the data syncs with your vault
 - **Properties of daily notes** — fold the properties block when a note opens, or hide the Garmin properties the panel already shows

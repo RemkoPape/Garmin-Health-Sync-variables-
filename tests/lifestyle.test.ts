@@ -1,7 +1,7 @@
 // Why it matters: the lifestyle log is read from an answer Garmin does not document. A habit that was not touched must
 // never turn into a "no", a count must add up, and two habits must never share one key in the notes.
 import { describe, expect, it } from "vitest";
-import { LIFESTYLE_PREFIX, mapLifestyle, parseHabits } from "../src/providers/garmin/lifestyle";
+import { LIFESTYLE_PREFIX, habitKeysOf, mapLifestyle, parseHabits } from "../src/providers/garmin/lifestyle";
 
 const report = (...dailyLogsReport: unknown[]): Record<string, unknown> => ({ dailyLogsReport });
 
@@ -13,9 +13,9 @@ describe("parseHabits", () => {
 			{ behaviourId: 4, name: "Mindfulness", measurementType: "NONE" },
 		));
 		expect(habits).toEqual([
-			{ key: "lifestyle_light_exercise", name: "Light exercise", kind: "check", value: 1 },
-			{ key: "lifestyle_alcohol", name: "Alcohol", kind: "check", value: 0 },
-			{ key: "lifestyle_mindfulness", name: "Mindfulness", kind: "check", value: null },
+			{ key: "lifestyle_light_exercise", id: "2", name: "Light exercise", kind: "check", value: 1 },
+			{ key: "lifestyle_alcohol", id: "3", name: "Alcohol", kind: "check", value: 0 },
+			{ key: "lifestyle_mindfulness", id: "4", name: "Mindfulness", kind: "check", value: null },
 		]);
 	});
 
@@ -42,9 +42,26 @@ describe("parseHabits", () => {
 		expect(habits[0]!.name).toBe("Café – après 18 h!");
 	});
 
+	it("keeps the key of a habit Garmin renamed, or named in another language, and does not give it to another habit", () => {
+		const known = { "2": "lifestyle_alcohol" };
+		const [renamed, other] = parseHabits(report({ behaviourId: 2, name: "Alkohol", logStatus: "YES" }, { behaviourId: 7, name: "Alcohol", logStatus: "YES" }), known);
+		expect(renamed).toMatchObject({ key: "lifestyle_alcohol", name: "Alkohol" });
+		expect(other).toMatchObject({ key: "lifestyle_alcohol_7", name: "Alcohol" });
+		expect(mapLifestyle(report({ behaviourId: 2, name: "Alkohol", logStatus: "NO" }), known)).toEqual({ lifestyle_alcohol: 0 });
+	});
+
+	it("gives two new habits of the same name the same keys on every day, whichever comes first", () => {
+		const a = { behaviourId: 1, name: "Cafe", logStatus: "YES" };
+		const b = { behaviourId: 2, name: "Café", logStatus: "YES" };
+		expect(parseHabits(report(a, b)).map((h) => [h.id, h.key])).toEqual([["1", "lifestyle_cafe"], ["2", "lifestyle_cafe_2"]]);
+		expect(habitKeysOf({ lifestyle_cafe: { name: "Cafe", kind: "check", last: "", id: "1" }, lifestyle_cafe_2: { name: "Café", kind: "check", last: "", id: "2" }, lifestyle_none: { name: "x", kind: "check", last: "" } })).toEqual({ "1": "lifestyle_cafe", "2": "lifestyle_cafe_2" });
+		expect(parseHabits(report(b, a), { "1": "lifestyle_cafe", "2": "lifestyle_cafe_2" }).map((h) => [h.id, h.key])).toEqual([["2", "lifestyle_cafe_2"], ["1", "lifestyle_cafe"]]);
+	});
+
 	it("falls back to the id for a name without a Latin letter, and to the position without an id", () => {
 		const habits = parseHabits(report({ behaviourId: 347806, name: "瞑想", logStatus: "YES" }, { name: "!!!", logStatus: "YES" }));
 		expect(habits.map((h) => h.key)).toEqual(["lifestyle_habit_347806", "lifestyle_habit_1"]);
+		expect(habits.map((h) => h.id)).toEqual(["347806", ""]);
 	});
 
 	it("cuts a long name to 40 characters", () => {

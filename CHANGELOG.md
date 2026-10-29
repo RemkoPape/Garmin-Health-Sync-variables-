@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.12.0-beta.91
+
+### Fixed (final sweep of the lifestyle log)
+
+- **A habit keeps its key when Garmin renames it or changes its language.** The key (`lifestyle_alcohol`) was made from the name on every sync, so a rename in the app, or an account language switch that translates the stock habits, started a new key and cut the history in two. The plugin now remembers Garmin's id of each habit and keeps the key it first gave it; the name shown follows Garmin. Habits seen before this beta get their id on the next sync (the key stays as it was while the name is unchanged).
+- **Two habits that read the same get the same keys on every day.** The second one used to get its suffix by the order of the list, which could swap the two between days.
+- **A dropped habit shows on the days before its last one.** A habit Garmin stopped listing was hidden on every day you looked at, also on the days when it was in use. It is now hidden from the day after its last listing.
+- **The Habits card is faster with many habits.** The usual values of the nights are worked out once and shared by all habits, not once per habit.
+
+### Docs
+
+- README (six languages) has a Features line for the lifestyle log, and the troubleshooting page a section on habits (empty card, no bars, renamed habits, removed values, days from before).
+
 ## 0.12.0-beta.90
 
 ### Fixed

@@ -336,10 +336,18 @@ describe("the lifestyle log", () => {
 		route({ lifestyle: LOG });
 		const data = await provider.fetchData(DATE, ["lifestyle_log"]);
 		expect(data.habits).toEqual([
-			{ key: "lifestyle_light_exercise", name: "Light exercise", kind: "check" },
-			{ key: "lifestyle_alcohol", name: "Alcohol", kind: "check" },
-			{ key: "lifestyle_late_caffeine", name: "Late caffeine", kind: "count" },
+			{ key: "lifestyle_light_exercise", id: "2", name: "Light exercise", kind: "check" },
+			{ key: "lifestyle_alcohol", id: "3", name: "Alcohol", kind: "check" },
+			{ key: "lifestyle_late_caffeine", id: "5", name: "Late caffeine", kind: "count" },
 		]);
+	});
+
+	it("keeps the key of a habit that was renamed, when the keys are set", async () => {
+		route({ lifestyle: { body: { dailyLogsReport: [{ behaviourId: 3, name: "Alkohol", measurementType: "NONE", logStatus: "YES" }] } } });
+		provider.setHabitKeys({ "3": "lifestyle_alcohol" });
+		const data = await provider.fetchData(DATE, ["lifestyle_log"]);
+		expect(data.metrics).toEqual({ lifestyle_alcohol: 1 });
+		expect(data.habits).toEqual([{ key: "lifestyle_alcohol", id: "3", name: "Alkohol", kind: "check" }]);
 	});
 
 	it("shows the structure of the answer and what was mapped in the diagnostics, without a habit name or value", async () => {
