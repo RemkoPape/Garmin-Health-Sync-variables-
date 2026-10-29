@@ -15,6 +15,11 @@ const MIN_USUAL = 7;
 /** Welch's t of at least this (stricter than 2: several habits and two measures are tested at once) and a difference of at least this share of the usual spread make a pattern. */
 const MIN_T = 2.5;
 const MIN_SHIFT = 0.3;
+/** A counted habit with no day without it is compared by amount: from this many nights with an entry, at this many different amounts. */
+export const MIN_DOSE_DAYS = 14;
+export const MIN_DISTINCT = 3;
+/** The rank correlation of the amount with the night after it must reach this, next to the same t as above. */
+const MIN_RHO = 0.3;
 /** The smallest spread per measure, so a very steady person does not get razor-thin limits (as in the other cards). */
 const SD_FLOOR = { hrv: 2, resting_hr: 1.5 };
 /** The mean of the weeks before needs this many days with an entry. */
@@ -37,8 +42,10 @@ export interface Effect {
 	share: number;
 	/** A pattern: large enough against the day-to-day swing. Otherwise the difference is shown as no clear one. */
 	clear: boolean;
-	/** Welch's t, for ranking. */
+	/** Welch's t, for ranking (for a comparison by amount: the t of the rank correlation). */
 	t: number;
+	/** The comparison is by amount (a counted habit): `diff` is the change of the night per one more, `with` the nights compared and `without` 0. */
+	dose: boolean;
 }
 
 export interface HabitRow {
@@ -73,11 +80,61 @@ function variance(values: number[], m: number): number {
 	return values.reduce((a, b) => a + (b - m) ** 2, 0) / (values.length - 1);
 }
 
+/** Ranks of the values, equal values sharing the mean of their places. */
+function ranks(values: number[]): number[] {
+	const order = values.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
+	const out = new Array<number>(values.length).fill(0);
+	for (let start = 0; start < order.length; ) {
+		let end = start;
+		while (end + 1 < order.length && order[end + 1]!.v === order[start]!.v) end++;
+		for (let k = start; k <= end; k++) out[order[k]!.i] = (start + end) / 2 + 1;
+		start = end + 1;
+	}
+	return out;
+}
+
+/** How the night after a counted habit changes with the amount, or null with too few nights, or too few different amounts. For a habit that has no days without it, where the two groups cannot be compared. */
+function doseOf(index: DayIndex, measure: Measure, days: { day: string; value: number }[]): Effect | null {
+	const x: number[] = [];
+	const y: number[] = [];
+	for (const { day, value } of days) {
+		const night = shiftDate(day, 1);
+		const observed = index.value(measure, night);
+		const usual = baseline(windowValues(index, measure, night, USUAL_DAYS), MIN_USUAL, SD_FLOOR[measure]);
+		if (observed === null || usual === null) continue;
+		x.push(value);
+		y.push(observed - usual.mean);
+	}
+	if (x.length < MIN_DOSE_DAYS || new Set(x).size < MIN_DISTINCT) return null;
+	// Spearman's rank correlation (counts are skewed and small), its t for the evidence and the plain slope for the size
+	const rx = ranks(x);
+	const ry = ranks(y);
+	const mx = mean(rx);
+	const my = mean(ry);
+	let sxy = 0;
+	let sxx = 0;
+	let syy = 0;
+	rx.forEach((r, i) => {
+		sxy += (r - mx) * (ry[i]! - my);
+		sxx += (r - mx) ** 2;
+		syy += (ry[i]! - my) ** 2;
+	});
+	const rho = syy === 0 ? 0 : sxy / Math.sqrt(sxx * syy);
+	// a perfect correlation would divide by zero: the denominator is kept above a tiny floor, so t is large but finite
+	const t = rho * Math.sqrt((x.length - 2) / Math.max(1e-9, 1 - rho * rho));
+	const meanX = mean(x);
+	const meanY = mean(y);
+	const slope = x.reduce((sum, v, i) => sum + (v - meanX) * (y[i]! - meanY), 0) / x.reduce((sum, v) => sum + (v - meanX) ** 2, 0);
+	const better = measure === "hrv" ? slope > 0 : slope < 0;
+	return { dose: true, diff: slope, with: x.length, without: 0, better, share: Math.max(-1, Math.min(1, measure === "hrv" ? rho : -rho)), clear: Math.abs(t) >= MIN_T && Math.abs(rho) >= MIN_RHO, t };
+}
+
 /** How the nights after the habit differ from the nights after a day without it, or null without enough days of both. */
-function effectOf(index: DayIndex, measure: Measure, days: { day: string; on: boolean }[], date: string): Effect | null {
+function effectOf(index: DayIndex, measure: Measure, days: { day: string; value: number }[], date: string): Effect | null {
 	const withHabit: number[] = [];
 	const without: number[] = [];
-	for (const { day, on } of days) {
+	for (const { day, value: amount } of days) {
+		const on = amount > 0;
 		const night = shiftDate(day, 1);
 		const value = index.value(measure, night);
 		const usual = baseline(windowValues(index, measure, night, USUAL_DAYS), MIN_USUAL, SD_FLOOR[measure]);
@@ -94,7 +151,7 @@ function effectOf(index: DayIndex, measure: Measure, days: { day: string; on: bo
 	const t = error === 0 ? 0 : diff / error;
 	const better = measure === "hrv" ? diff > 0 : diff < 0;
 	const share = Math.max(-1, Math.min(1, (measure === "hrv" ? diff : -diff) / (2 * spread)));
-	return { diff, with: withHabit.length, without: without.length, better, share, clear: Math.abs(t) >= MIN_T && Math.abs(diff) >= MIN_SHIFT * spread, t };
+	return { dose: false, diff, with: withHabit.length, without: without.length, better, share, clear: Math.abs(t) >= MIN_T && Math.abs(diff) >= MIN_SHIFT * spread, t };
 }
 
 /**
@@ -112,14 +169,14 @@ export function computeHabits(index: DayIndex, date: string, names: Record<strin
 		let active = false;
 		for (let i = 0; i < ACTIVE_DAYS && !active; i++) active = index.value(key, shiftDate(date, -i)) !== null;
 		if (!active) continue;
-		const days: { day: string; on: boolean }[] = [];
+		const days: { day: string; value: number }[] = [];
 		let withDays = 0;
 		let withoutDays = 0;
 		for (let i = 1; i <= EFFECT_DAYS; i++) {
 			const day = shiftDate(date, -i);
 			const v = index.value(key, day);
 			if (v === null) continue;
-			days.push({ day, on: v > 0 });
+			days.push({ day, value: v });
 			if (v > 0) withDays++;
 			else withoutDays++;
 		}
@@ -155,7 +212,7 @@ export function computeHabits(index: DayIndex, date: string, names: Record<strin
 		}
 		const daily: (number | null)[] = [];
 		for (let i = STRIP_DAYS - 1; i >= 0; i--) daily.push(index.value(key, shiftDate(date, -i)));
-		rows.push({ key, name: habit.name, kind: habit.kind, strip, with: withDays, without: withoutDays, today, streak, logged: withDays + withoutDays + (today === null ? 0 : 1), week: weekEntries === 0 ? null : { entries: weekEntries, days: weekDays, total: weekTotal, mean: weekTotal / weekEntries }, usual: beforeEntries >= MIN_USUAL_ENTRIES ? beforeTotal / beforeEntries : null, daily, hrv: effectOf(index, "hrv", days, date), resting_hr: effectOf(index, "resting_hr", days, date) });
+		rows.push({ key, name: habit.name, kind: habit.kind, strip, with: withDays, without: withoutDays, today, streak, logged: withDays + withoutDays + (today === null ? 0 : 1), week: weekEntries === 0 ? null : { entries: weekEntries, days: weekDays, total: weekTotal, mean: weekTotal / weekEntries }, usual: beforeEntries >= MIN_USUAL_ENTRIES ? beforeTotal / beforeEntries : null, daily, hrv: effectOf(index, "hrv", days, date) ?? (habit.kind === "count" ? doseOf(index, "hrv", days) : null), resting_hr: effectOf(index, "resting_hr", days, date) ?? (habit.kind === "count" ? doseOf(index, "resting_hr", days) : null) });
 	}
 	// habits with a pattern first, the strongest on top; the rest by name
 	const strength = (r: HabitRow): number => Math.max(...[r.hrv, r.resting_hr].map((e) => (e?.clear ? Math.abs(e.t) : 0)));

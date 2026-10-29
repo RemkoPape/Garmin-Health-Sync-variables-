@@ -3,7 +3,7 @@ import { t } from "../../i18n/t";
 import { formatNumber, formatSigned } from "../format";
 import type { HabitInfo } from "../../providers/garmin/lifestyle";
 import type { DayIndex } from "../index";
-import { MIN_GROUP, computeHabits, type Dot, type Effect, type HabitRow, type Measure } from "../habits";
+import { MIN_DISTINCT, MIN_DOSE_DAYS, MIN_GROUP, computeHabits, type Dot, type Effect, type HabitRow, type Measure } from "../habits";
 import { habitInsights } from "../insights/lifestyle";
 import { renderCard } from "./shell";
 
@@ -26,10 +26,11 @@ function effectRow(parent: HTMLElement, label: string, measure: Measure, effect:
 	const tone = !effect.clear ? "flat" : effect.better ? "good" : "bad";
 	const row = parent.createDiv({ cls: "ghs-habit-effect" });
 	row.createSpan({ cls: "ghs-habit-effect-label", text: label });
-	const bar = row.createDiv({ cls: "ghs-habit-bar", attr: { role: "img", "aria-label": `${label} ${formatSigned(effect.diff, lang, 0)} ${UNITS[measure]}` } });
+	const bar = row.createDiv({ cls: "ghs-habit-bar", attr: { role: "img", "aria-label": `${label} ${formatSigned(effect.diff, lang, effect.dose ? 1 : 0)} ${UNITS[measure]}` } });
 	const width = Math.abs(effect.share) * 50;
 	bar.createDiv({ cls: `ghs-habit-fill ghs-habit-fill-${tone} ${effect.share >= 0 ? "ghs-habit-fill-right" : "ghs-habit-fill-left"}` }).setCssProps({ "--ghs-w": `${width}%` });
-	row.createSpan({ cls: `ghs-habit-value ghs-habit-value-${tone}`, text: `${formatSigned(effect.diff, lang, 0)} ${UNITS[measure]}` });
+	const shown = `${formatSigned(effect.diff, lang, effect.dose ? 1 : 0)} ${UNITS[measure]}${effect.dose ? ` ${t("panelHabitsPerOne", lang).toLowerCase()}` : ""}`;
+	row.createSpan({ cls: `ghs-habit-value ghs-habit-value-${tone}`, text: shown });
 }
 
 function strip(parent: HTMLElement, dots: Dot[]): void {
@@ -63,8 +64,10 @@ function columns(parent: HTMLElement, daily: (number | null)[]): void {
 
 /** How close the comparison is to the days it needs, as a thin bar. */
 function progress(parent: HTMLElement, row: HabitRow): void {
-	const share = (Math.min(row.with, MIN_GROUP) + Math.min(row.without, MIN_GROUP)) / (2 * MIN_GROUP);
-	const bar = parent.createDiv({ cls: "ghs-habit-progress", attr: { role: "img", "aria-label": `${Math.min(row.with, MIN_GROUP)}/${MIN_GROUP} · ${Math.min(row.without, MIN_GROUP)}/${MIN_GROUP}` } });
+	// a counted habit is compared by amount and needs days logged; a yes or no habit needs days with and days without it
+	const share = row.kind === "count" ? Math.min(row.logged, MIN_DOSE_DAYS) / MIN_DOSE_DAYS : (Math.min(row.with, MIN_GROUP) + Math.min(row.without, MIN_GROUP)) / (2 * MIN_GROUP);
+	const label = row.kind === "count" ? `${Math.min(row.logged, MIN_DOSE_DAYS)}/${MIN_DOSE_DAYS}` : `${Math.min(row.with, MIN_GROUP)}/${MIN_GROUP} · ${Math.min(row.without, MIN_GROUP)}/${MIN_GROUP}`;
+	const bar = parent.createDiv({ cls: "ghs-habit-progress", attr: { role: "img", "aria-label": label } });
 	bar.createDiv({ cls: "ghs-habit-progress-fill" }).setCssProps({ "--ghs-w": `${share * 100}%` });
 }
 
@@ -99,7 +102,8 @@ function factsOf(h: HabitRow, lang: string): string[] {
 		out.push(t("panelHabitsFactWeek", lang).replace("{habit}", h.name).replace("{mean}", formatNumber(h.week.mean, lang, 1)).replace("{total}", formatNumber(h.week.total, lang, 0)));
 		if (h.usual !== null) out.push(t("panelHabitsFactUsual", lang).replace("{habit}", h.name).replace("{usual}", formatNumber(h.usual, lang, 1)));
 	}
-	if (h.hrv === null && h.resting_hr === null) out.push(t("panelHabitsProgress", lang).replace("{habit}", h.name).replace(/\{min\}/g, String(MIN_GROUP)).replace("{n}", String(h.with)).replace("{m}", String(h.without)));
+	if (h.hrv === null && h.resting_hr === null && h.kind === "count") out.push(t("panelHabitsProgressDose", lang).replace("{habit}", h.name).replace("{min}", String(MIN_DOSE_DAYS)).replace("{k}", String(MIN_DISTINCT)).replace("{n}", String(h.logged)));
+	else if (h.hrv === null && h.resting_hr === null) out.push(t("panelHabitsProgress", lang).replace("{habit}", h.name).replace(/\{min\}/g, String(MIN_GROUP)).replace("{n}", String(h.with)).replace("{m}", String(h.without)));
 	return out;
 }
 

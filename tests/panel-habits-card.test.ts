@@ -247,6 +247,34 @@ describe("the columns of a counted habit", () => {
 	});
 });
 
+describe("a counted habit compared by amount in the card", () => {
+	const cups = (ago: number): number => 1 + (Math.imul(ago + 3, 0x9e3779b1) >>> 29) % 5;
+	const frontmatter = (ago: number): Record<string, unknown> => ({ lifestyle_coffee: cups(ago), hrv: 55 - 3 * cups(ago + 1) + noise(ago), resting_hr: 55 + 1.5 * cups(ago + 1) + noise(ago + 3) * 0.3 });
+
+	it("shows the change for one more in the bar and says it under the light bulb", async () => {
+		const parent = await render(60, frontmatter, { open: true, habits: { lifestyle_coffee: NAMES.lifestyle_coffee } as never });
+		const values = Array.from(parent.querySelectorAll(".ghs-habit-value")).map(text);
+		expect(values[0]).toMatch(/^−\d(\.\d)? ms per \+1$/);
+		expect(values[1]).toMatch(/^\+\d(\.\d)? bpm per \+1$/);
+		const items = Array.from(parent.querySelectorAll(".ghs-insight-watch")).map(text);
+		expect(items.some((t) => /^The more Late caffeine you log, the lower your HRV on the night after: about \d(\.\d)? ms less for each additional one \(\d+ days\)\.$/.test(t))).toBe(true);
+		expect(items.some((t) => /the higher your resting heart rate on the night after: about \d(\.\d)? bpm more/.test(t))).toBe(true);
+	});
+
+	it("names the good directions too", async () => {
+		const parent = await render(60, (ago) => ({ lifestyle_coffee: cups(ago), hrv: 40 + 3 * cups(ago + 1) + noise(ago), resting_hr: 70 - 1.5 * cups(ago + 1) + noise(ago + 3) * 0.3 }), { open: true, habits: { lifestyle_coffee: NAMES.lifestyle_coffee } as never });
+		const items = Array.from(parent.querySelectorAll(".ghs-insight-good")).map(text);
+		expect(items.some((t) => t.includes("the higher your HRV"))).toBe(true);
+		expect(items.some((t) => t.includes("the lower your resting heart rate"))).toBe(true);
+	});
+
+	it("fills the progress bar towards 14 days logged while there is too little, and says what is needed", async () => {
+		const parent = await render(60, (ago) => (ago < 6 ? { lifestyle_coffee: 2 + (ago % 3), hrv: 50, resting_hr: 55 } : { hrv: 50 }), { open: true, habits: { lifestyle_coffee: NAMES.lifestyle_coffee } as never });
+		expect(parent.querySelector(".ghs-habit-progress")!.getAttribute("aria-label")).toBe("6/14");
+		expect(Array.from(parent.querySelectorAll(".ghs-fact")).map(text)).toContain("Late caffeine: the comparison with the night after starts at 14 days logged with at least 3 different amounts, 6 so far.");
+	});
+});
+
 describe("habitInsights", () => {
 	async function rows(frontmatter: (ago: number) => Record<string, unknown>): Promise<ReturnType<typeof computeHabitsCard>["habits"]> {
 		const app = new App();

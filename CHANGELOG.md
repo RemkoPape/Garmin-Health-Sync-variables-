@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.87
+
+### Added
+
+- **A counted habit is compared by amount, so it can show a pattern sooner.** A habit like coffee that you log every day has no day without it, so the comparison of "with" and "without" never started. It now checks whether the night after changes with the amount (rank correlation of the cups of a day with the HRV or resting heart rate of the night after, against your own 4-week usual): from 14 nights with an entry and at least 3 different amounts, and only when the correlation is at least 0.3 with a t of 2.5. The bar shows the change for one more cup ("-0.8 ms per +1"), the light bulb has four new statements for it (all six languages), and the progress bar of a counted habit now fills towards 14 days. Yes or no habits and counted habits that do have days without them keep the comparison of the groups.
+
+### Changed
+
+- The hint "log a no on the days you skip it" is now only for yes or no habits; a counted habit does not need it.
+
 ## 0.12.0-beta.86
 
 ### Changed

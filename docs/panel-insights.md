@@ -809,10 +809,42 @@ See also: [panel-cards.md](panel-cards.md) (what each card shows and how it is c
 - **Basis:** As above. Worded as a pattern to look at, not as a cause.
 - **References:** none (the rule is arithmetic on the user's own data).
 
+### lifestyle_hrv_dose_up
+
+- **Card:** habits
+- **Trigger:** A counted habit has at least 14 nights with an entry in the last 90 days, at least 3 different amounts, and the HRV of the night after rises with the amount: rank correlation of at least 0.3 and its t at least 2.5.
+- **Text (English):** The more {habit} you log, the higher your HRV on the night after: about {diff} ms more for each additional one ({n} days).
+- **Basis:** For a habit counted per day (cups, drinks) that has no days without it, the two groups of the other statements cannot be compared. The amount on day D is set against the night after it (D+1), taken as the difference to its own 28-day usual, with Spearman's rank correlation (counts are skewed and small); the size is the plain slope per one more. Days without an entry are left out. A correlation in the user's own data, not proof of cause.
+- **References:** none (the rule is arithmetic on the user's own data; Spearman's rank correlation).
+
+### lifestyle_hrv_dose_down
+
+- **Card:** habits
+- **Trigger:** A counted habit has at least 14 nights with an entry in the last 90 days, at least 3 different amounts, and the HRV of the night after falls with the amount: rank correlation of at most -0.3 and its t at most -2.5.
+- **Text (English):** The more {habit} you log, the lower your HRV on the night after: about {diff} ms less for each additional one ({n} days).
+- **Basis:** For a habit counted per day (cups, drinks) that has no days without it, the two groups of the other statements cannot be compared. The amount on day D is set against the night after it (D+1), taken as the difference to its own 28-day usual, with Spearman's rank correlation (counts are skewed and small); the size is the plain slope per one more. Days without an entry are left out. A correlation in the user's own data, not proof of cause.
+- **References:** none (the rule is arithmetic on the user's own data; Spearman's rank correlation).
+
+### lifestyle_rhr_dose_down
+
+- **Card:** habits
+- **Trigger:** A counted habit has at least 14 nights with an entry in the last 90 days, at least 3 different amounts, and the resting heart rate of the night after falls with the amount: rank correlation of at most -0.3 and its t at most -2.5.
+- **Text (English):** The more {habit} you log, the lower your resting heart rate on the night after: about {diff} bpm less for each additional one ({n} days).
+- **Basis:** For a habit counted per day (cups, drinks) that has no days without it, the two groups of the other statements cannot be compared. The amount on day D is set against the night after it (D+1), taken as the difference to its own 28-day usual, with Spearman's rank correlation (counts are skewed and small); the size is the plain slope per one more. Days without an entry are left out. A correlation in the user's own data, not proof of cause.
+- **References:** none (the rule is arithmetic on the user's own data; Spearman's rank correlation).
+
+### lifestyle_rhr_dose_up
+
+- **Card:** habits
+- **Trigger:** A counted habit has at least 14 nights with an entry in the last 90 days, at least 3 different amounts, and the resting heart rate of the night after rises with the amount: rank correlation of at least 0.3 and its t at least 2.5.
+- **Text (English):** The more {habit} you log, the higher your resting heart rate on the night after: about {diff} bpm more for each additional one ({n} days).
+- **Basis:** For a habit counted per day (cups, drinks) that has no days without it, the two groups of the other statements cannot be compared. The amount on day D is set against the night after it (D+1), taken as the difference to its own 28-day usual, with Spearman's rank correlation (counts are skewed and small); the size is the plain slope per one more. Days without an entry are left out. A correlation in the user's own data, not proof of cause.
+- **References:** none (the rule is arithmetic on the user's own data; Spearman's rank correlation).
+
 ### lifestyle_no_days
 
 - **Card:** habits
-- **Trigger:** A habit has at least 8 days logged with it and fewer than 3 days logged as "no" within the last 90 days.
+- **Trigger:** A yes or no habit has at least 8 days logged with it and fewer than 3 days logged as "no" within the last 90 days (a counted habit is compared by amount instead).
 - **Text (English):** {habit}: only {n} days logged as no so far. Log a no on the days you skip it, so the nights after it can be compared.
 - **Basis:** A comparison needs days with and days without the habit. Days without an entry are not counted as "no", because a missing entry does not say that the habit was not done, so the other half has to be logged.
 - **References:** none (a rule about what the comparison needs).
