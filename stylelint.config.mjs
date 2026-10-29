@@ -1,5 +1,6 @@
 // Lints styles.css with the two checks Obsidian's community-plugin review applies to it:
 //   - no `!important`
+//   - no property declared twice in one block (the review warns: "Unexpected duplicate"); a fallback for an older engine goes in an `@supports` block
 //   - no CSS feature the review's browser only partially supports (for example the text-decoration longhands)
 //
 // The browser target is a calibrated guess at the engine the review runs against, not a published fact: "chrome 138"
@@ -10,6 +11,7 @@ export default {
 	plugins: ["stylelint-no-unsupported-browser-features"],
 	rules: {
 		"declaration-no-important": true,
+		"declaration-block-no-duplicate-properties": true,
 		"plugin/no-unsupported-browser-features": [true, { browsers: ["chrome 138"], severity: "error" }],
 	},
 };

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.12.1
+
+### Fixed
+
+- The two CSS warnings of the Obsidian review ("Unexpected duplicate max-height" and "Unexpected duplicate border-top"): the fallbacks for older engines (`dvh` units and `color-mix`) now sit in `@supports` blocks instead of repeating the property. The look does not change.
+
+### Changed
+
+- The README (all six languages) states under Data & Privacy why the plugin lists the vault's files (`vault.getMarkdownFiles`): to find daily notes and its own history notes, never sending names or contents anywhere.
+
+### Internal
+
+- `stylelint` now enforces `declaration-block-no-duplicate-properties`, and `check-release` fails if the rule is removed, so the warning cannot come back unnoticed.
+
 ## 0.12.0
 
 The release of the health panel. The detail of every step is in the `0.12.0-beta.N` sections below.

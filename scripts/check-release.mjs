@@ -299,9 +299,9 @@ if (pkg) {
 {
 	const cfg = await readText("stylelint.config.mjs");
 	if (cfg === null) fail("stylelint config present", "stylelint.config.mjs is missing");
-	else if (!/declaration-no-important/.test(cfg) || !/no-unsupported-browser-features/.test(cfg) || !/browsers:\s*\[\s*"chrome \d+"/.test(cfg)) {
-		fail("stylelint config present", "must enable declaration-no-important and no-unsupported-browser-features with a chrome target");
-	} else pass("stylelint config present", "declaration-no-important + no-unsupported-browser-features");
+	else if (!/declaration-no-important/.test(cfg) || !/declaration-block-no-duplicate-properties/.test(cfg) || !/no-unsupported-browser-features/.test(cfg) || !/browsers:\s*\[\s*"chrome \d+"/.test(cfg)) {
+		fail("stylelint config present", "must enable declaration-no-important, declaration-block-no-duplicate-properties and no-unsupported-browser-features with a chrome target");
+	} else pass("stylelint config present", "declaration-no-important + declaration-block-no-duplicate-properties + no-unsupported-browser-features");
 }
 
 // ---------- Scripts, lint, build, test ----------

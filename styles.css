@@ -53,14 +53,19 @@
 /* "What's new" window: the text scrolls while the button stays on screen. */
 .ghs-whats-new-body {
 	max-height: 60vh;
-	/* the visible height on a phone, where vh ignores the on-screen keyboard and the browser bars */
-	max-height: 60dvh;
 	/* up and down only: nothing sideways, no horizontal bar, no rubber band, and no swipe to the side on a touch screen */
 	overflow-x: hidden;
 	overflow-y: auto;
 	overscroll-behavior: contain;
 	touch-action: pan-y;
 	overflow-wrap: anywhere;
+}
+
+@supports (height: 1dvh) {
+	/* the visible height on a phone, where vh ignores the on-screen keyboard and the browser bars */
+	.ghs-whats-new-body {
+		max-height: 60dvh;
+	}
 }
 
 .ghs-whats-new-modal {
@@ -984,8 +989,13 @@
 	top: var(--ghs-y, 50%);
 	z-index: 1;
 	border-top: 1px dotted var(--text-muted);
-	border-top: 1px dotted color-mix(in srgb, var(--text-normal) 60%, transparent);
 	pointer-events: none;
+}
+
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+	.ghs-night-line {
+		border-top-color: color-mix(in srgb, var(--text-normal) 60%, transparent);
+	}
 }
 
 .ghs-axis-top {

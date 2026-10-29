@@ -230,6 +230,8 @@ Aucune donnée n'est envoyée à un autre serveur.
 
 **Notes d’historique :** les notes d’historique optionnelles contiennent vos valeurs de santé et se trouvent dans votre coffre comme vos notes quotidiennes. Le plugin n’effectue aucune requête réseau supplémentaire pour elles.
 
+**Accès au coffre :** le plugin liste les fichiers de votre coffre (`vault.getMarkdownFiles`) pour retrouver vos notes quotidiennes et ses propres notes d’historique d’après leur chemin et leur nom fondé sur la date, et pour indiquer au panneau latéral quels jours ont des données. Il ne lit les propriétés et le contenu que des notes qu’il reconnaît comme notes quotidiennes ou d’historique, et n’écrit que dans celles-ci, dans la sauvegarde d’une note endommagée et dans son dossier d’historique. Les noms de fichiers et le contenu des notes ne quittent jamais votre appareil.
+
 **Presse-papiers :** Le plugin n’utilise le presse-papiers que lorsque vous touchez un bouton, jamais en arrière-plan. **Utiliser la connexion par navigateur** le lit une fois, lorsque vous touchez **Se connecter depuis le presse-papiers**, pour récupérer le ticket de connexion à usage unique copié depuis votre navigateur. Il y écrit lorsque vous touchez pour copier le lien de connexion ou **Copier le diagnostic** (dans les paramètres et dans la fenêtre de connexion). Le diagnostic ne contient ni mot de passe, ni jetons, ni données de compte, ni valeurs de santé, uniquement des détails techniques de la dernière connexion ou synchronisation : noms des types de données, codes d’état HTTP, tailles de réponse, durées et la structure des réponses de Garmin (noms et types des champs, jamais les valeurs).
 
 ## Développement
