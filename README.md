@@ -230,6 +230,8 @@ No data is sent to any other server.
 
 **History notes:** the optional history notes contain your health values and live in your vault like your daily notes. The plugin makes no extra network requests for them.
 
+**Vault access:** the plugin lists the files of your vault (`vault.getMarkdownFiles`) to find your daily notes and its own history notes by their path and date-based name, and to tell the side panel which days have data. It reads the properties and contents only of the notes it recognises as daily notes or history notes, and writes only to those, to the plugin's backup of a broken note and to its history folder. File names and note contents never leave your device.
+
 **Clipboard:** The plugin only uses the clipboard when you click a button, never in the background. **Use browser login** reads it once, when you click **Sign in from clipboard**, to pick up the one-time login ticket you copied from your browser. It writes to it when you click to copy the sign-in link, or **Copy diagnostics** (in the settings and in the sign-in window). Diagnostics contain no password, tokens, account data or health values, only technical details of the last sign-in or sync: data type names, HTTP status codes, response sizes, timings and the structure of Garmin's answers (field names and types, never values).
 
 ## Development

@@ -82,4 +82,10 @@ describe("the shipped notes", () => {
 			}
 		}
 	});
+
+	it("tells someone who saw 0.12.0 what 0.12.1 changed, and someone coming from 0.11.2 both", () => {
+		expect(notesToShow("0.12.0", "0.12.1").map((n) => n.version)).toEqual(["0.12.1"]);
+		expect(notesToShow("0.11.2", "0.12.1").map((n) => n.version)).toEqual(["0.12.0", "0.12.1"]);
+		expect(notesToShow("0.12.1", "0.12.1")).toEqual([]);
+	});
 });

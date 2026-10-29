@@ -230,6 +230,8 @@ Es werden keine Daten an andere Server gesendet.
 
 **Verlaufsnotizen:** Die optionalen Verlaufsnotizen enthalten deine Gesundheitswerte und liegen wie deine Daily Notes in deinem Vault. Das Plugin stellt dafür keine zusätzlichen Netzwerkanfragen.
 
+**Zugriff auf den Vault:** Das Plugin listet die Dateien deines Vaults auf (`vault.getMarkdownFiles`), um deine Tagesnotizen und seine eigenen Verlaufsnotizen anhand von Pfad und datumsbasiertem Namen zu finden und dem Seitenpanel mitzuteilen, für welche Tage Daten vorliegen. Eigenschaften und Inhalt liest es nur von Notizen, die es als Tages- oder Verlaufsnotizen erkennt, und schreibt nur dorthin, in die Sicherung einer beschädigten Notiz und in seinen Verlaufsordner. Dateinamen und Notizinhalte verlassen dein Gerät nie.
+
 **Zwischenablage:** Das Plugin nutzt die Zwischenablage nur, wenn du auf eine Schaltfläche klickst, nie im Hintergrund. **Browser-Anmeldung verwenden** liest sie einmal, wenn du auf **Aus Zwischenablage anmelden** klickst, um das einmalige Anmelde-Ticket zu übernehmen, das du aus dem Browser kopiert hast. Geschrieben wird, wenn du den Anmeldelink kopierst oder **Diagnose kopieren** wählst (in den Einstellungen und im Anmeldefenster). Die Diagnose enthält kein Passwort, keine Tokens, keine Kontodaten und keine Gesundheitswerte, nur technische Angaben zur letzten Anmeldung oder Synchronisierung: Namen der Datentypen, HTTP-Statuscodes, Antwortgrößen, Laufzeiten und den Aufbau der Garmin-Antworten (Feldnamen und Typen, niemals Werte).
 
 ## Entwicklung
