@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.92
+
+### Fixed
+
+- **The panel found no daily notes while the daily note folder was empty in the settings.** On a second device (a desktop that got the notes through Obsidian Sync, where the plugin's own settings did not come along) the folder setting is empty, and a note such as `Daily/2026-10-29.md` was not recognised as the daily note of its day, so every card stayed empty although the properties were in the notes. The panel never needed a Garmin sign-in; it only reads the notes. With no folder set, a note named by date in any folder is now a daily note. With a folder set, only notes below it count, as before.
+
 ## 0.12.0-beta.91
 
 ### Fixed (final sweep of the lifestyle log)

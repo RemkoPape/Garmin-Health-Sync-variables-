@@ -4,7 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as obsidian from "../testUtils/mocks/obsidian";
 import { App, Notice, moment, network as net, parseYaml } from "../testUtils/mocks/obsidian";
-import { dailyNoteExists, matchDailyNoteDate, writeToDailyNote } from "../src/daily-note";
+import { dailyNoteExists, dateFromNotePath, matchDailyNoteDate, writeToDailyNote } from "../src/daily-note";
 import type { HealthData } from "../src/providers/provider";
 
 type Options = Parameters<typeof writeToDailyNote>[3];
@@ -198,6 +198,15 @@ describe("matching a changed file to its date", () => {
 	it("handles an empty folder setting", () => {
 		const file = vault.seed(`${DATE}.md`, "text");
 		expect(matchDailyNoteDate(file, candidates, { ...o, dailyNotePath: "" })).toBe(DATE);
+	});
+
+	it("takes a note named by date in any folder while no folder is set, but still not one in another folder when one is set", () => {
+		const none = { ...o, dailyNotePath: "" };
+		expect(matchDailyNoteDate(vault.seed(`Journal/${DATE}.md`, "text"), candidates, none)).toBe(DATE);
+		expect(matchDailyNoteDate(vault.seed(`Journal/readme.md`, "text"), candidates, none)).toBeNull();
+		expect(dateFromNotePath(`Journal/2026/${DATE}.md`, DATE, none)).toBe(DATE);
+		expect(dateFromNotePath(`Journal/Sat ${DATE}.md`, `Sat ${DATE}`, { ...none, dailyNoteFormat: "[Sat] YYYY-MM-DD" })).toBe(DATE);
+		expect(dateFromNotePath(`Elsewhere/${DATE}.md`, DATE, o)).toBeNull();
 	});
 
 	it("only matches the exact path when the format pins a subfolder", () => {
