@@ -3,6 +3,13 @@ import { t } from "../../i18n/t";
 import { INSIGHTS, insightText, type Insight } from "../insights/registry";
 import { renderTrend, type TrendView } from "../trend";
 
+/** What the light bulb says about one part of a card (a habit), folded under its name until it is opened. */
+export interface InsightGroup {
+	title: string;
+	insights: Insight[];
+	facts: string[];
+}
+
 export interface CardShell {
 	title: string;
 	/** Headline value of the day; null means "No reading" and makes the card dashed; undefined shows no headline. */
@@ -21,6 +28,8 @@ export interface CardShell {
 	lang: string;
 	/** Small trend line at the bottom of the card. */
 	trend?: TrendView;
+	/** Interpretations and numbers grouped under folded headings, after the flat ones. */
+	groups?: InsightGroup[];
 	/** What the data suggests (why a value is off and what helps, or why it is good), shown under the light bulb before the general explanation. */
 	insights: Insight[];
 }
@@ -44,11 +53,20 @@ export function renderCard(parent: HTMLElement, shell: CardShell, details: (card
 	if (shell.trend) renderTrend(card, shell.trend, shell.lang);
 	if (shell.explainOpen) {
 		const facts = shell.facts ?? [];
-		if (shell.insights.length > 0 || facts.length > 0) {
+		const groups = shell.groups ?? [];
+		if (shell.insights.length > 0 || facts.length > 0 || groups.length > 0) {
 			const box = card.createDiv({ cls: "ghs-insight" });
 			box.createDiv({ cls: "ghs-insight-title", text: t("panelInsightTitle", shell.lang) });
 			for (const insight of shell.insights) box.createDiv({ cls: `ghs-insight-item ghs-insight-${INSIGHTS[insight.id].kind}`, text: insightText(insight, shell.lang) });
 			for (const fact of facts) box.createDiv({ cls: "ghs-insight-item ghs-fact", text: fact });
+			for (const group of groups) {
+				const details = box.createEl("details", { cls: "ghs-insight-group" });
+				const watch = group.insights.some((i) => INSIGHTS[i.id].kind === "watch");
+				const good = group.insights.some((i) => INSIGHTS[i.id].kind === "good");
+				details.createEl("summary", { cls: `ghs-insight-group-title${watch ? " ghs-insight-group-watch" : good ? " ghs-insight-group-good" : ""}`, text: group.title });
+				for (const insight of group.insights) details.createDiv({ cls: `ghs-insight-item ghs-insight-${INSIGHTS[insight.id].kind}`, text: insightText(insight, shell.lang) });
+				for (const fact of group.facts) details.createDiv({ cls: "ghs-insight-item ghs-fact", text: fact });
+			}
 		}
 		// what the card shows and how it is worked out, with the disclaimer, folded until asked for
 		const about = card.createEl("details", { cls: "ghs-about" });
