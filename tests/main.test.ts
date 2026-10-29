@@ -380,6 +380,33 @@ describe("startup", () => {
 			expect(empty.plugin.settings.dailyNotePath).toBe("");
 			expect((await load()).plugin.settings.dailyNotePath).toBe("");
 		});
+
+		it("takes the format of notes in the root of the vault, which have no folder, from Periodic Notes or the core plugin", async () => {
+			const periodic = await load(null, (app) => {
+				app.plugins = { plugins: { "periodic-notes": { settings: { daily: { folder: "", format: "DD.MM.YYYY" } } } } };
+			});
+			expect(periodic.plugin.settings).toMatchObject({ dailyNotePath: "", dailyNoteFormat: "DD.MM.YYYY" });
+			const core = await load(null, (app) => {
+				app.internalPlugins = { plugins: { "daily-notes": { instance: { options: { folder: "", format: "YYYYMMDD" } } } } };
+			});
+			expect(core.plugin.settings).toMatchObject({ dailyNotePath: "", dailyNoteFormat: "YYYYMMDD" });
+			const both = await load(null, (app) => {
+				app.plugins = { plugins: { "periodic-notes": { settings: { daily: { format: "DD.MM.YYYY" } } } } };
+				app.internalPlugins = { plugins: { "daily-notes": { instance: { options: { format: "YYYYMMDD" } } } } };
+			});
+			expect(both.plugin.settings.dailyNoteFormat).toBe("DD.MM.YYYY");
+		});
+
+		it("keeps a format the user changed, and the default when the plugins have none", async () => {
+			const own = await load({ dailyNoteFormat: "YYYY_MM_DD" }, (app) => {
+				app.plugins = { plugins: { "periodic-notes": { settings: { daily: { format: "DD.MM.YYYY" } } } } };
+			});
+			expect(own.plugin.settings.dailyNoteFormat).toBe("YYYY_MM_DD");
+			const none = await load(null, (app) => {
+				app.internalPlugins = { plugins: { "daily-notes": { instance: { options: { format: "" } } } } };
+			});
+			expect(none.plugin.settings.dailyNoteFormat).toBe("YYYY-MM-DD");
+		});
 	});
 });
 

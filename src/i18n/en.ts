@@ -338,6 +338,8 @@ export const en = {
 	panelEdit: "Arrange cards",
 	panelEditDone: "Done",
 	panelEditReset: "Reset order",
+	panelNoNotes: "No daily notes found with the name format {format}. If your daily notes are named differently, set the folder and format in the plugin settings.",
+	panelNoNotesIn: "No daily notes found in the folder {folder} with the name format {format}. If your daily notes are named or kept differently, set the folder and format in the plugin settings.",
 	panelEditHint: "Drag a card by its handle to move it. The arrow keys work on the handle too.",
 	panelDragHandle: "Move {card}",
 	panelHrvTitle: "HRV",

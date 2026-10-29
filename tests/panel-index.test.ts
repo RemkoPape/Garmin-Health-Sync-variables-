@@ -100,6 +100,23 @@ describe("DayIndex", () => {
 	});
 });
 
+describe("hasAnyDay", () => {
+	it("is false for a vault without a daily note or a history, true with either", async () => {
+		const empty = new App();
+		expect(new DayIndex(empty as never, () => settings).hasAnyDay()).toBe(false);
+		expect(new DayIndex(empty as never, () => settings, new HistoryStore(empty as never, settings)).hasAnyDay()).toBe(false);
+		const app = new App();
+		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 50 }) });
+		expect(new DayIndex(app as never, () => settings).hasAnyDay()).toBe(true);
+		const other = new App();
+		other.vault.seed("Garmin history/Garmin history 2026-10.md", serializeMonth("2026-10", new Map([["2026-10-20", { hrv: 44 }]])));
+		const history = new HistoryStore(other as never, settings);
+		expect(new DayIndex(other as never, () => settings, history).hasAnyDay()).toBe(false);
+		await history.warm("2026-10-01", "2026-10-31");
+		expect(new DayIndex(other as never, () => settings, history).hasAnyDay()).toBe(true);
+	});
+});
+
 describe("the habits the notes hold", () => {
 	it("names the habits by their keys, with and without the prefix, and reads count or yes/no from the amounts", async () => {
 		const app = new App();

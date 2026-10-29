@@ -62,6 +62,12 @@ export class DayIndex {
 		return this.days.has(date);
 	}
 
+	/** Whether any daily note was recognised, or any day is in the history: false means the panel has nothing to show at all. */
+	hasAnyDay(): boolean {
+		this.build();
+		return this.days.size > 0 || !(this.history?.empty ?? true);
+	}
+
 	/** Whether the day has a note or a history record. */
 	hasDay(date: string): boolean {
 		return this.hasNote(date) || (this.history?.has(date) ?? false);

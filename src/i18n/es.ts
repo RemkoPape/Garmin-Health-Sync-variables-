@@ -339,6 +339,8 @@ export const es: Record<TranslationKeys, string> = {
 	panelEdit: "Ordenar tarjetas",
 	panelEditDone: "Hecho",
 	panelEditReset: "Restablecer el orden",
+	panelNoNotes: "No se encontraron notas diarias con el formato de nombre {format}. Si tus notas diarias se llaman de otra forma, ajusta la carpeta y el formato en los ajustes del plugin.",
+	panelNoNotesIn: "No se encontraron notas diarias en la carpeta {folder} con el formato de nombre {format}. Si tus notas diarias se llaman o se guardan de otra forma, ajusta la carpeta y el formato en los ajustes del plugin.",
 	panelEditHint: "Arrastra una tarjeta por su asa para moverla. Las teclas de flecha también funcionan en el asa.",
 	panelDragHandle: "Mover {card}",
 	panelHrvTitle: "VFC",

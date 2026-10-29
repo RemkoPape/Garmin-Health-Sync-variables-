@@ -339,6 +339,8 @@ export const zh: Record<TranslationKeys, string> = {
 	panelEdit: "调整卡片顺序",
 	panelEditDone: "完成",
 	panelEditReset: "重置顺序",
+	panelNoNotes: "未找到名称格式为 {format} 的每日笔记。如果你的每日笔记命名不同，请在插件设置中设置文件夹和格式。",
+	panelNoNotesIn: "在文件夹 {folder} 中未找到名称格式为 {format} 的每日笔记。如果你的每日笔记命名或存放方式不同，请在插件设置中设置文件夹和格式。",
 	panelEditHint: "拖动卡片的把手来移动它。把手上也可以用方向键。",
 	panelDragHandle: "移动{card}",
 	panelHrvTitle: "HRV",

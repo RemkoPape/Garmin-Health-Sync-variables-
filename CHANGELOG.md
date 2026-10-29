@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.94
+
+### Fixed
+
+- **A second device with daily notes in the vault root and another name format found no notes.** The format of the Daily Notes or Periodic Notes plugin was only taken over together with a folder, so with notes in the root (no folder) and a format such as `DD.MM.YYYY` the default `YYYY-MM-DD` stayed and nothing matched. An untouched format now follows the daily notes plugin; a format you changed stays.
+
+### Added
+
+- **The panel says when it finds no daily notes.** Instead of a card of "no reading" after another it shows one line: which name format (and folder) it looks for, and that both can be set in the plugin settings. It disappears as soon as a daily note or a day of the history is found.
+
 ## 0.12.0-beta.93
 
 ### Added
