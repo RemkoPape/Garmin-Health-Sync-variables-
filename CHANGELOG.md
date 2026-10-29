@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.89
+
+### Changed
+
+- **A bar in the Habits card says how sure it is.** Under every HRV or resting pulse figure a small line shows how many nights it rests on, and for a grey bar "Not clear yet · 30 nights", so a grey figure such as "+1.4 bpm" is read as a lean within your normal swing, not as a finding. The text for a counted habit is "per extra" (it was "per +1") in all six languages.
+
 ## 0.12.0-beta.88
 
 ### Fixed

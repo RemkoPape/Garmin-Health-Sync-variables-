@@ -201,6 +201,25 @@ describe("hiding a habit in the card", () => {
 	});
 });
 
+describe("how sure a bar is", () => {
+	it("says under a clear result how many nights it rests on, and under a grey one that it is not clear yet", async () => {
+		const clear = await render(80, (ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, hrv: 50 + (on(ago + 1) ? 8 : 0) + noise(ago) }), { habits: { lifestyle_alcohol: NAMES.lifestyle_alcohol } as never });
+		const note = text(clear.querySelector(".ghs-habit-result-note"));
+		expect(note).toMatch(/^\d+ nights$/);
+		expect(clear.querySelector(".ghs-habit-value-good")).not.toBeNull();
+		const grey = await render(80, (ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, hrv: 50 + noise(ago * 7) }), { habits: { lifestyle_alcohol: NAMES.lifestyle_alcohol } as never });
+		expect(text(grey.querySelector(".ghs-habit-result-note"))).toMatch(/^Not clear yet · \d+ nights$/);
+		expect(grey.querySelector(".ghs-habit-value-flat")).not.toBeNull();
+	});
+
+	it("counts the nights of a comparison by amount, and says it in the plugin language", async () => {
+		const cups = (ago: number): number => 1 + (Math.imul(ago + 3, 0x9e3779b1) >>> 29) % 5;
+		const parent = await render(60, (ago) => ({ lifestyle_coffee: cups(ago), hrv: 50 + noise(ago * 7) }), { lang: "de", habits: { lifestyle_coffee: NAMES.lifestyle_coffee } as never });
+		expect(text(parent.querySelector(".ghs-habit-result-note"))).toMatch(/^Noch nicht eindeutig · \d+ Nächte$/);
+		expect(text(parent.querySelector(".ghs-habit-value"))).toMatch(/ je zusätzlich$/);
+	});
+});
+
 describe("squareLabels", () => {
 	it("is the first letter of the first word, upper case", () => {
 		expect(squareLabels(["Light exercise before bed", "moderate exercise", "Vigorous Exercise"])).toEqual(["L", "M", "V"]);
@@ -254,8 +273,8 @@ describe("a counted habit compared by amount in the card", () => {
 	it("shows the change for one more in the bar and says it under the light bulb", async () => {
 		const parent = await render(60, frontmatter, { open: true, habits: { lifestyle_coffee: NAMES.lifestyle_coffee } as never });
 		const values = Array.from(parent.querySelectorAll(".ghs-habit-value")).map(text);
-		expect(values[0]).toMatch(/^−\d(\.\d)? ms per \+1$/);
-		expect(values[1]).toMatch(/^\+\d(\.\d)? bpm per \+1$/);
+		expect(values[0]).toMatch(/^−\d(\.\d)? ms per extra$/);
+		expect(values[1]).toMatch(/^\+\d(\.\d)? bpm per extra$/);
 		const items = Array.from(parent.querySelectorAll(".ghs-insight-watch")).map(text);
 		expect(items.some((t) => /^The more Late caffeine you log, the lower your HRV on the night after: about \d(\.\d)? ms less for each additional one \(\d+ days\)\.$/.test(t))).toBe(true);
 		expect(items.some((t) => /the higher your resting heart rate on the night after: about \d(\.\d)? bpm more/.test(t))).toBe(true);

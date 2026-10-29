@@ -30,7 +30,11 @@ function effectRow(parent: HTMLElement, label: string, measure: Measure, effect:
 	const width = Math.abs(effect.share) * 50;
 	bar.createDiv({ cls: `ghs-habit-fill ghs-habit-fill-${tone} ${effect.share >= 0 ? "ghs-habit-fill-right" : "ghs-habit-fill-left"}` }).setCssProps({ "--ghs-w": `${width}%` });
 	const shown = `${formatSigned(effect.diff, lang, effect.dose ? 1 : 0)} ${UNITS[measure]}${effect.dose ? ` ${t("panelHabitsPerOne", lang).toLowerCase()}` : ""}`;
-	row.createSpan({ cls: `ghs-habit-value ghs-habit-value-${tone}`, text: shown });
+	// the figure, and under it how sure it is: "not clear yet" while it is within the normal swing, and how many nights it rests on
+	const result = row.createDiv({ cls: "ghs-habit-result" });
+	result.createSpan({ cls: `ghs-habit-value ghs-habit-value-${tone}`, text: shown });
+	const nights = t("panelHabitsNights", lang).replace("{n}", String(effect.with + effect.without));
+	result.createSpan({ cls: "ghs-habit-result-note", text: effect.clear ? nights : `${t("panelHabitsNotClear", lang)} · ${nights}` });
 }
 
 function strip(parent: HTMLElement, dots: Dot[]): void {
