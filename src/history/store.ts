@@ -82,6 +82,12 @@ export class HistoryStore {
 		return found;
 	}
 
+	/** Whether any day was read. */
+	get empty(): boolean {
+		for (const month of this.cache.values()) if (month.size > 0) return false;
+		return true;
+	}
+
 	/** Every record that was read, by day. */
 	forEachRecord(visit: (date: string, record: DayRecord) => void): void {
 		for (const month of this.cache.values()) for (const [date, record] of month) visit(date, record);

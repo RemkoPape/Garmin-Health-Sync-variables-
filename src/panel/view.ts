@@ -168,6 +168,12 @@ export class HealthPanelView extends ItemView {
 		// the same as the command "Sync current note": the panel is where the day is looked at, so it is where a refresh is wanted
 		this.navButton(nav, "refresh-cw", t("commandSync", lang), () => void this.plugin.manualSync(), false);
 
+		// no daily note was recognised: say what is looked for, instead of cards that all say "no reading"
+		if (!this.editing && !this.index.hasAnyDay()) {
+			const { dailyNotePath, dailyNoteFormat } = this.plugin.settings;
+			root.createDiv({ cls: "ghs-panel-empty", text: (dailyNotePath ? t("panelNoNotesIn", lang).replace("{folder}", dailyNotePath) : t("panelNoNotes", lang)).replace("{format}", dailyNoteFormat || "YYYY-MM-DD") });
+		}
+
 		if (this.editing) this.renderEditor(root, lang);
 		else this.renderCards(root, lang);
 		root.scrollTop = scrolled;

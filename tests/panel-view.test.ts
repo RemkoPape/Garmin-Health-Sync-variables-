@@ -320,6 +320,44 @@ describe("health panel view", () => {
 		expect(plugin.saveSettings).toHaveBeenCalledTimes(2);
 	});
 
+	describe("when no daily note is recognised", () => {
+		const hint = (view: HealthPanelView): string | undefined => view.contentEl.querySelector(".ghs-panel-empty")?.textContent ?? undefined;
+
+		it("says what name format is looked for, instead of leaving the cards to say no reading one by one", async () => {
+			const { view } = await open({ panelCards: {} });
+			expect(hint(view)).toBe(en.panelNoNotes.replace("{format}", "YYYY-MM-DD"));
+		});
+
+		it("names the folder and the format that are set, in the plugin language", async () => {
+			const { view } = await open({ panelCards: {}, dailyNotePath: "Journal", dailyNoteFormat: "DD.MM.YYYY", language: "de" });
+			expect(hint(view)).toBe(de.panelNoNotesIn.replace("{folder}", "Journal").replace("{format}", "DD.MM.YYYY"));
+		});
+
+		it("falls back to the standard format when the setting is empty", async () => {
+			const { view } = await open({ panelCards: {}, dailyNoteFormat: "" });
+			expect(hint(view)).toContain("YYYY-MM-DD");
+		});
+
+		it("is gone as soon as a daily note is found, and also for days that are only in the history", async () => {
+			const { app, view } = await open({ panelCards: {}, dailyNotePath: "" });
+			expect(hint(view)).toBeDefined();
+			await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 50 }) });
+			view.refresh();
+			expect(hint(view)).toBeUndefined();
+			const other = await open({ panelCards: {} });
+			other.app.vault.seed("Garmin history/Garmin history 2026-10.md", serializeMonth("2026-10", new Map([["2026-10-20", { hrv: 44 }]])));
+			(other.view as unknown as { history: { invalidate(): void } }).history.invalidate();
+			other.view.refresh();
+			await vi.waitFor(() => expect(hint(other.view)).toBeUndefined());
+		});
+
+		it("is not shown while the cards are arranged", async () => {
+			const { view } = await open({ panelCards: {} });
+			(view.contentEl.querySelector(".ghs-daynav .clickable-icon:nth-last-child(2)") as HTMLButtonElement).click();
+			expect(hint(view)).toBeUndefined();
+		});
+	});
+
 	it("labels the buttons in the plugin language", async () => {
 		const { view } = await open({ language: "de", panelCards: {} });
 		expect(buttons(view).map((b) => b.getAttribute("aria-label"))).toEqual([de.panelPrevDay, de.panelNextDay, de.panelEdit, de.commandSync, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo, de.panelInfo]);

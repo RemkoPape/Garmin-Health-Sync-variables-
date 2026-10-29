@@ -703,6 +703,16 @@ export default class HealthSyncPlugin extends Plugin {
 			console.debug("Garmin Health Sync: Auto-detected daily note path from Daily Notes:", this.settings.dailyNotePath);
 			return;
 		}
+
+		// Daily notes in the root of the vault have no folder to detect, but they can have another format ("DD.MM.YYYY"):
+		// an untouched format follows the one of the daily notes plugin, a format the user changed stays
+		if (this.settings.dailyNoteFormat === DEFAULT_SETTINGS.dailyNoteFormat) {
+			const format = periodicNotes?.settings?.daily?.format || dailyNotes?.instance?.options?.format;
+			if (format) {
+				this.settings.dailyNoteFormat = format;
+				console.debug("Garmin Health Sync: Auto-detected daily note format:", format);
+			}
+		}
 	}
 
 	async loadSettings() {
