@@ -332,6 +332,7 @@ export const zh: Record<TranslationKeys, string> = {
 	settingsBirthYearMax: "估算最大心率：{max} bpm。",
 	noticePanelDisabled: "请先在插件设置中启用健康面板。",
 	noticeDataDetected: "在 {count} 篇每日笔记中发现了 Garmin 数据。已打开相应的指标和侧边栏；可在设置中更改。",
+	noticeDailyNotesFollowed: "每日笔记插件现在使用文件夹 {folder} 和格式 {format}，其笔记比本插件读取的更新，因此已跟随。你可以在插件设置中更改。",
 	panelTitle: "健康",
 	panelPrevDay: "前一天",
 	panelNextDay: "后一天",

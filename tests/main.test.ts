@@ -397,6 +397,129 @@ describe("startup", () => {
 			expect(both.plugin.settings.dailyNoteFormat).toBe("DD.MM.YYYY");
 		});
 
+		describe("following the daily notes plugin when it changed after the plugin was set up", () => {
+			const note = (app: App, path: string): void => void app.vault.seed(path, "x");
+			const core = (app: App, folder: string, format = ""): void => {
+				app.internalPlugins = { plugins: { "daily-notes": { instance: { options: { folder, format } } } } };
+			};
+			const started = async (saved: Partial<HealthSyncSettings>, setup: (app: App) => void) => {
+				const loaded = await load(saved, setup);
+				const saves = loaded.plugin.saves;
+				loaded.app.workspace.layoutReady();
+				await settle();
+				return { ...loaded, saved: loaded.plugin.saves > saves };
+			};
+
+			it("moves to the new folder when its daily notes are newer than the ones in the old folder, saves, and says so", async () => {
+				const { plugin, saved } = await started({ dailyNotePath: "Old" }, (app) => {
+					core(app, "New");
+					note(app, "Old/2026-10-10.md");
+					note(app, "New/2026-10-24.md");
+				});
+				expect(plugin.settings).toMatchObject({ dailyNotePath: "New", dailyNoteFormat: "YYYY-MM-DD" });
+				expect(saved).toBe(true);
+				expect(Notice.messages()).toContain(en.noticeDailyNotesFollowed.replace("{folder}", "New").replace("{format}", "YYYY-MM-DD"));
+			});
+
+			it("says it in the plugin language", async () => {
+				await started({ dailyNotePath: "Old", language: "de" }, (app) => {
+					core(app, "New");
+					note(app, "New/2026-10-24.md");
+				});
+				expect(Notice.messages()).toContain(de.noticeDailyNotesFollowed.replace("{folder}", "New").replace("{format}", "YYYY-MM-DD"));
+			});
+
+			it("moves also when the old folder has no daily note at all", async () => {
+				const { plugin } = await started({ dailyNotePath: "Old" }, (app) => {
+					core(app, "New");
+					note(app, "New/2026-10-24.md");
+				});
+				expect(plugin.settings.dailyNotePath).toBe("New");
+			});
+
+			it("follows a new format, with or without a folder change", async () => {
+				const format = await started({ dailyNotePath: "Daily" }, (app) => {
+					core(app, "Daily", "DD.MM.YYYY");
+					note(app, "Daily/2026-10-10.md");
+					note(app, "Daily/24.10.2026.md");
+				});
+				expect(format.plugin.settings).toMatchObject({ dailyNotePath: "Daily", dailyNoteFormat: "DD.MM.YYYY" });
+				const both = await started({ dailyNotePath: "Old" }, (app) => {
+					core(app, "New", "YYYYMMDD");
+					note(app, "New/20261024.md");
+				});
+				expect(both.plugin.settings).toMatchObject({ dailyNotePath: "New", dailyNoteFormat: "YYYYMMDD" });
+			});
+
+			it("follows a daily notes plugin that now keeps its notes in the vault root", async () => {
+				const { plugin } = await started({ dailyNotePath: "Old" }, (app) => {
+					core(app, "");
+					app.internalPlugins = { plugins: { "daily-notes": { instance: { options: { folder: "", format: "YYYY-MM-DD" } } } } };
+					note(app, "2026-10-24.md");
+					note(app, "Old/2026-10-10.md");
+				});
+				expect(plugin.settings.dailyNotePath).toBe("");
+			});
+
+			it("reads a setup that has only a folder or only a format", async () => {
+				const folderOnly = await started({ dailyNotePath: "Old", dailyNoteFormat: "YYYY-MM-DD" }, (app) => {
+					app.internalPlugins = { plugins: { "daily-notes": { instance: { options: { folder: "New" } } } } };
+					note(app, "New/2026-10-24.md");
+				});
+				expect(folderOnly.plugin.settings).toMatchObject({ dailyNotePath: "New", dailyNoteFormat: "YYYY-MM-DD" });
+				const formatOnly = await started({ dailyNotePath: "Daily" }, (app) => {
+					app.plugins = { plugins: { "periodic-notes": { settings: { daily: { format: "DD.MM.YYYY" } } } } };
+					note(app, "Daily/24.10.2026.md");
+					note(app, "Daily/2026-10-01.md");
+				});
+				expect(formatOnly.plugin.settings.dailyNoteFormat).toBe("DD.MM.YYYY");
+			});
+
+			it("prefers Periodic Notes over the core plugin, as when it was first read", async () => {
+				const { plugin } = await started({ dailyNotePath: "Old" }, (app) => {
+					core(app, "Core");
+					app.plugins = { plugins: { "periodic-notes": { settings: { daily: { folder: "Periodic" } } } } };
+					note(app, "Periodic/2026-10-24.md");
+					note(app, "Core/2026-10-25.md");
+				});
+				expect(plugin.settings.dailyNotePath).toBe("Periodic");
+			});
+
+			it("keeps the saved folder when it has the newer notes, when the dates are equal, or when the new folder has none", async () => {
+				for (const notes of [["Old/2026-10-24.md", "New/2026-10-10.md"], ["Old/2026-10-24.md", "New/2026-10-24.md"], ["Old/2026-10-24.md"], []]) {
+					const { plugin, saved } = await started({ dailyNotePath: "Old" }, (app) => {
+						core(app, "New");
+						for (const path of notes) note(app, path);
+					});
+					expect(plugin.settings.dailyNotePath, notes.join()).toBe("Old");
+					expect(saved).toBe(false);
+				}
+			});
+
+			it("does nothing when the setup is the same, when no plugin has one, and for notes that are no daily notes", async () => {
+				const same = await started({ dailyNotePath: "New" }, (app) => {
+					core(app, "New");
+					note(app, "New/2026-10-24.md");
+				});
+				expect(same.saved).toBe(false);
+				const none = await started({ dailyNotePath: "Old" }, (app) => note(app, "New/2026-10-24.md"));
+				expect(none.plugin.settings.dailyNotePath).toBe("Old");
+				const other = await started({ dailyNotePath: "Old" }, (app) => {
+					core(app, "New");
+					note(app, "New/meeting.md");
+				});
+				expect(other.plugin.settings.dailyNotePath).toBe("Old");
+			});
+
+			it("changes nothing else in the settings", async () => {
+				const { plugin } = await started({ dailyNotePath: "Old", usePrefix: true, language: "en", panelEnabled: false }, (app) => {
+					core(app, "New");
+					note(app, "New/2026-10-24.md");
+				});
+				expect(plugin.settings).toMatchObject({ usePrefix: true, panelEnabled: false, language: "en" });
+			});
+		});
+
 		it("keeps a format the user changed, and the default when the plugins have none", async () => {
 			const own = await load({ dailyNoteFormat: "YYYY_MM_DD" }, (app) => {
 				app.plugins = { plugins: { "periodic-notes": { settings: { daily: { format: "DD.MM.YYYY" } } } } };

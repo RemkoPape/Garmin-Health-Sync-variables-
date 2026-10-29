@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.0-beta.96
+
+### Fixed
+
+- **The panel looked in an old folder after the daily notes plugin changed.** The plugin read the folder and format of the Daily Notes or Periodic Notes plugin once and kept them, so after you changed them there (or moved your notes) it went on looking in the old place and found no data. At every start the saved folder and format now follow the daily notes plugin when that one says something else and its daily notes are newer than the ones the saved setup finds. A saved setup whose notes are as new or newer stays, so a folder you set yourself is not overridden. A notice says when it follows.
+
 ## 0.12.0-beta.95
 
 ### Added

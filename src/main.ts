@@ -141,6 +141,8 @@ export default class HealthSyncPlugin extends Plugin {
 
 		// On startup: auto-sync only — BrowserWindow opens on demand
 		this.app.workspace.onLayoutReady(() => {
+			// the folder and format of the daily notes plugin may have changed since the plugin last read them
+			this.followDailyNotesPlugin();
 			// history notes left in an earlier daily notes folder come along before anything is fetched
 			this.background(this.history.relocate(), "move history notes");
 			this.background(this.tryAutoSync(), "auto-sync");
@@ -683,6 +685,35 @@ export default class HealthSyncPlugin extends Plugin {
 	/** Apply the configured server region to the API layer */
 	applyServerRegion(): void {
 		this.garminProvider.setRegion(this.settings.serverRegion);
+	}
+
+	/** The folder and format the Periodic Notes or the core Daily Notes plugin hold now, or null when neither has any. */
+	private dailyNotesSetup(): { folder: string; format: string } | null {
+		const periodic = (this.app as unknown as { plugins?: { plugins?: Record<string, { settings?: { daily?: { folder?: string; format?: string } } }> } }).plugins?.plugins?.["periodic-notes"]?.settings?.daily;
+		const core = (this.app as unknown as { internalPlugins?: { plugins?: Record<string, { instance?: { options?: { folder?: string; format?: string } } }> } }).internalPlugins?.plugins?.["daily-notes"]?.instance?.options;
+		const source = periodic?.folder || periodic?.format ? periodic : core;
+		return source?.folder || source?.format ? { folder: source.folder ?? "", format: source.format ?? "" } : null;
+	}
+
+	/**
+	 * The folder and the format are read from the daily notes plugin once and then kept, so a plugin that was set up before
+	 * the daily notes plugin's folder or format changed went on looking in the old place and found no data. When the setup
+	 * now says something else and its daily notes are newer than the ones of the saved setup, the saved one follows it.
+	 */
+	private followDailyNotesPlugin(): void {
+		const found = this.dailyNotesSetup();
+		if (!found) return;
+		const next = { dailyNotePath: found.folder, dailyNoteFormat: found.format || this.settings.dailyNoteFormat };
+		if (next.dailyNotePath === this.settings.dailyNotePath && next.dailyNoteFormat === this.settings.dailyNoteFormat) return;
+		const files = this.app.vault.getMarkdownFiles();
+		const newest = (setup: { dailyNotePath: string; dailyNoteFormat: string }): string => files.reduce((latest, file) => {
+			const date = dateFromDailyNote(file, setup);
+			return date !== null && date > latest ? date : latest;
+		}, "");
+		if (newest(next) <= newest(this.settings)) return;
+		Object.assign(this.settings, next);
+		this.background(this.saveSettings(), "save settings");
+		new Notice(t("noticeDailyNotesFollowed", this.settings.language).replace("{folder}", next.dailyNotePath || "/").replace("{format}", next.dailyNoteFormat), 12000);
 	}
 
 	/** Detect path and format from Periodic Notes / Daily Notes if not manually configured */

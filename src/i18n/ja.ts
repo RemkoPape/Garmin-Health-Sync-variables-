@@ -332,6 +332,7 @@ export const ja: Record<TranslationKeys, string> = {
 	settingsBirthYearMax: "推定最大心拍数：{max} bpm。",
 	noticePanelDisabled: "先にプラグイン設定でヘルスパネルを有効にしてください。",
 	noticeDataDetected: "{count}件のデイリーノートでGarminのデータが見つかりました。対応するメトリクスとサイドパネルをオンにしました。設定で変更できます。",
+	noticeDailyNotesFollowed: "デイリーノートのプラグインは現在フォルダー {folder} と形式 {format} を使っており、そのノートはこのプラグインが読んでいたものより新しいため、これに合わせました。プラグインの設定で変更できます。",
 	panelTitle: "ヘルス",
 	panelPrevDay: "前の日",
 	panelNextDay: "次の日",
