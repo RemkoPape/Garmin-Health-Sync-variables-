@@ -1938,6 +1938,22 @@ describe("setting up from the notes on a fresh install", () => {
 	});
 });
 
+describe("the panel chooses its cards by data", () => {
+	it("is on for a fresh install and for settings that have it on, and off for settings saved before it existed", async () => {
+		expect((await load(null)).plugin.settings.panelAuto).toBe(true);
+		expect((await load({ panelAuto: true })).plugin.settings.panelAuto).toBe(true);
+		expect((await load({ panelAuto: false })).plugin.settings.panelAuto).toBe(false);
+		expect((await load({ language: "en", panelEnabled: true, panelCards: { hrv: false } })).plugin.settings.panelAuto).toBe(false);
+		expect(DEFAULT_SETTINGS.panelAuto).toBe(true);
+	});
+
+	it("keeps what a saved setup had: every card it did not switch off", async () => {
+		const { plugin } = await load({ panelEnabled: true, panelCards: { hrv: false } });
+		expect(plugin.settings.panelAuto).toBe(false);
+		expect(plugin.settings.panelCards).toEqual({ hrv: false });
+	});
+});
+
 describe("hidden habit settings", () => {
 	it("keeps the saved keys of hidden habits, drops anything else and starts empty", async () => {
 		const { plugin } = await load({ hiddenHabits: ["lifestyle_a", 5, "steps", "lifestyle_b"] } as never);
@@ -1990,12 +2006,27 @@ describe("health panel", () => {
 		expect(app.workspace.getLeavesOfType(PANEL)).toHaveLength(1);
 	});
 
-	it("tells the user to switch the panel on first", async () => {
-		const { app, plugin } = await load(null);
+	it("switches the panel on and opens it when it is asked for, with nothing to turn on in the settings first, and keeps it on", async () => {
+		const { app, plugin } = await load({ panelEnabled: false, language: "en" });
+		const saves = plugin.saves;
 		plugin.commands.get("open-health-panel")!.callback!();
 		await settle();
-		expect(Notice.recorded.map((n) => n.message)).toContain(en.noticePanelDisabled);
-		expect(app.workspace.leaves).toHaveLength(0);
+		expect(plugin.settings.panelEnabled).toBe(true);
+		expect(plugin.saves).toBe(saves + 1);
+		expect((plugin.data as { panelEnabled?: boolean }).panelEnabled).toBe(true);
+		expect(app.workspace.getLeavesOfType(PANEL)).toHaveLength(1);
+		plugin.commands.get("open-health-panel")!.callback!();
+		await settle();
+		expect(plugin.saves).toBe(saves + 1);
+		expect(app.workspace.getLeavesOfType(PANEL)).toHaveLength(1);
+	});
+
+	it("opens from the ribbon icon of a fresh install the same way", async () => {
+		const { app, plugin } = await load(null);
+		(plugin as unknown as { ribbonIcons: { callback: () => void }[] }).ribbonIcons[0]!.callback();
+		await settle();
+		expect(plugin.settings.panelEnabled).toBe(true);
+		expect(app.workspace.getLeavesOfType(PANEL)).toHaveLength(1);
 	});
 
 	it("opens the panel in the right sidebar and reuses it on the next call", async () => {

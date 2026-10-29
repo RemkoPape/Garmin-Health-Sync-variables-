@@ -330,7 +330,6 @@ export const es: Record<TranslationKeys, string> = {
 	settingsBirthYear: "Año de nacimiento",
 	settingsBirthYearDesc: "Solo el año. Hace el panel de salud más preciso: zonas de frecuencia cardíaca de tus sesiones y lo dura que fueron, y los objetivos de sueño y actividad para tu edad. Déjalo vacío para omitirlo.",
 	settingsBirthYearMax: "Frecuencia cardíaca máxima estimada: {max} lpm.",
-	noticePanelDisabled: "Activa primero el panel de salud en los ajustes del plugin.",
 	noticeDataDetected: "Se encontraron datos de Garmin en {count} notas diarias. Las métricas correspondientes y el panel lateral están activados; cámbialo en los ajustes.",
 	noticeDailyNotesFollowed: "El plugin de notas diarias ahora usa la carpeta {folder} y el formato {format}, y sus notas son más recientes que las que leía este plugin, por lo que lo sigue. Puedes cambiarlo en los ajustes del plugin.",
 	panelTitle: "Salud",

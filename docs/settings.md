@@ -37,7 +37,8 @@ With no saved settings (a fresh install) the plugin looks through the properties
 
 ## Side panel
 
-- **Show the health panel:** adds the panel to the right sidebar; it reads your daily notes and never changes them. Open it from the ribbon icon or the command **Open health panel**.
+- **Show the health panel:** adds the panel to the right sidebar; it reads your daily notes and never changes them. Open it from the ribbon icon or the command **Open health panel**: asking for it switches it on, there is nothing to turn on first, and this switch turns it off again.
+- **Cards by data:** on a fresh install the panel leaves out a card that has nothing to show (no value of its metrics in the last 90 days, no workout, no habit) until it has data. A card you switch on stays, one you switch off stays off, and a setup that was saved before this keeps every card it had.
 - **Birth year:** only the year. It gives heart rate zones for sessions, age-based sleep need and activity goals.
 - **One switch per card:** each says which metrics the card needs and which only add detail. What each card shows and how it is calculated: [panel-cards.md](panel-cards.md); what the light bulb says: [panel-insights.md](panel-insights.md).
 

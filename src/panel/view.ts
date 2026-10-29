@@ -3,7 +3,7 @@ import type HealthSyncPlugin from "../main";
 import { dateFromDailyNote, dateFromNotePath } from "../daily-note";
 import { localDateString, shiftDate } from "../dates";
 import { t } from "../i18n/t";
-import { SECTION_TITLES, orderedCards, type SectionId } from "./cards";
+import { SECTION_TITLES, cardHasData, orderedCards, type PanelCard, type SectionId } from "./cards";
 import { makeSortable } from "./sortable";
 import { HistoryStore } from "../history/store";
 import { formatPanelDate } from "./format";
@@ -196,12 +196,24 @@ export class HealthPanelView extends ItemView {
 		});
 	}
 
-	/** The cards the user has not switched off, in order, under their section headers; half-width cards pair up. */
+	/**
+	 * The cards to show: the ones the user did not switch off and, for settings that choose by data, only those that have
+	 * something to show (a card the user switched on is always shown). When none has, all are shown, so the panel is never blank.
+	 */
+	private visibleCards(): PanelCard[] {
+		const { panelCards, panelAuto, panelOrder, lifestyleHabits } = this.plugin.settings;
+		const cards = orderedCards(panelOrder).filter((card) => panelCards[card.id] !== false);
+		if (!panelAuto) return cards;
+		const today = localDateString(new Date());
+		const withData = cards.filter((card) => panelCards[card.id] === true || cardHasData(card, this.index, today, lifestyleHabits));
+		return withData.length > 0 ? withData : cards;
+	}
+
+	/** The cards that are shown, in order, under their section headers; half-width cards pair up. */
 	private renderCards(root: HTMLElement, lang: string): void {
 		let section: SectionId | null = null;
 		let pair: HTMLElement | null = null;
-		for (const card of orderedCards(this.plugin.settings.panelOrder)) {
-			if (this.plugin.settings.panelCards[card.id] === false) continue;
+		for (const card of this.visibleCards()) {
 			if (card.section !== section) {
 				section = card.section;
 				pair = null;

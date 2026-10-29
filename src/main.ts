@@ -299,10 +299,10 @@ export default class HealthSyncPlugin extends Plugin {
 
 	/** Reveals the health panel in the right sidebar, creating it on first use. */
 	async openPanel(): Promise<void> {
-		const lang = this.settings.language;
+		// asking for the panel is the switch: nothing has to be turned on in the settings first (the switch there turns it off again)
 		if (!this.settings.panelEnabled) {
-			new Notice(t("noticePanelDisabled", lang));
-			return;
+			this.settings.panelEnabled = true;
+			await this.saveSettings();
 		}
 		const { workspace } = this.app;
 		let leaf = workspace.getLeavesOfType(VIEW_TYPE_HEALTH_PANEL)[0] ?? null;
@@ -778,6 +778,8 @@ export default class HealthSyncPlugin extends Plugin {
 			? { from: job.from, to: job.to, force: job.force === true, untilStart: job.untilStart === true, behaviour: ["create", "history", "skip"].includes(job.behaviour) ? job.behaviour : this.settings.missingNoteBehaviour }
 			: null;
 		this.settings.panelCards = { ...(saved?.panelCards ?? {}) };
+		// settings saved before the panel chose its cards by data keep showing every card; a fresh install chooses by data
+		this.settings.panelAuto = saved ? saved.panelAuto === true : true;
 		this.settings.panelOrder = (saved?.panelOrder ?? []).filter((id) => typeof id === "string");
 		this.settings.birthYear = parseBirthYear(saved?.birthYear, new Date().getFullYear());
 		// "Create daily note when missing" became a three-way choice: off meant waiting for the note, which is "skip".
