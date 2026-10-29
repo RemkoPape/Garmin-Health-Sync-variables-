@@ -8,7 +8,7 @@ import { PANEL_CARDS } from "../src/panel/cards";
 import { en } from "../src/i18n/en";
 import { de } from "../src/i18n/de";
 import { insightText } from "../src/panel/insights/registry";
-import { computeHabitsCard } from "../src/panel/cards/habits-card";
+import { computeHabitsCard, squareLabels } from "../src/panel/cards/habits-card";
 import { habitInsights } from "../src/panel/insights/lifestyle";
 
 const END = "2026-10-22";
@@ -163,6 +163,7 @@ describe("hiding a habit in the card", () => {
 			["Show Alcohol · No", "ghs-habit-square ghs-habit-square-no"],
 			["Show Late caffeine · Yes", "ghs-habit-square ghs-habit-square-yes"],
 		]);
+		expect(squares.map(text)).toEqual(["A", "L"]);
 		squares[0]!.click();
 		expect(calls).toEqual([["lifestyle_alcohol", false]]);
 	});
@@ -182,6 +183,23 @@ describe("hiding a habit in the card", () => {
 	it("still says there is nothing to show when no habit is listed, hidden or not", async () => {
 		const parent = await render(40, () => ({ hrv: 50 }), { hidden: ["lifestyle_alcohol"] });
 		expect(text(parent.querySelector(".ghs-card-note"))).toBe(en.panelHabitsEmpty);
+	});
+});
+
+describe("squareLabels", () => {
+	it("is the first letter of the first word, upper case", () => {
+		expect(squareLabels(["Light exercise before bed", "moderate exercise", "Vigorous Exercise"])).toEqual(["L", "M", "V"]);
+		expect(squareLabels(["  Cold Showers/Baths "])).toEqual(["C"]);
+	});
+
+	it("takes more letters of the first word only for the habits that would read alike", () => {
+		expect(squareLabels(["Coffees", "Cold Showers/Baths", "Running"])).toEqual(["COF", "COL", "R"]);
+		expect(squareLabels(["Stretching", "Sleep", "Walk"])).toEqual(["ST", "SL", "W"]);
+	});
+
+	it("keeps a name with no word, a one-letter word and a letter outside Latin as they are", () => {
+		expect(squareLabels(["", "瞑想 daily", "A b"])).toEqual(["", "瞑", "A"]);
+		expect(squareLabels(["Cc", "Cc"])).toEqual(["CC", "CC"]);
 	});
 });
 

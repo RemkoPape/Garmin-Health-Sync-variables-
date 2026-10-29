@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.12.0-beta.85
+
+### Changed
+
+- **The hide button is always at the right edge of its row**, also when a long habit name pushes the note onto a second line.
+- **Hidden habits are told apart.** Each square carries the first letter of the habit's first word (L, M, V). Only habits whose letter another habit shares get two or three letters (COF and COL for Coffees and Cold showers). The full name is still the label of the square.
+
 ## 0.12.0-beta.84
 
 ### Added

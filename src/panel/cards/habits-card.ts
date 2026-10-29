@@ -78,11 +78,10 @@ function habitRow(parent: HTMLElement, row: HabitRow, lang: string, hide: (key: 
 	if (row.today !== null) name.createSpan({ cls: row.today > 0 ? "ghs-habit-yes" : "ghs-habit-no", text: row.today > 0 ? "✓ " : "✗ " });
 	name.createSpan({ text: row.name });
 	if (row.kind === "count" && row.today !== null && row.today > 0) name.createEl("b", { text: ` ×${formatNumber(row.today, lang, 0)}` });
-	const side = head.createSpan({ cls: "ghs-habit-side" });
-	side.createSpan({ cls: "ghs-habit-note", text: meta(row, lang) });
+	head.createSpan({ cls: "ghs-habit-note", text: meta(row, lang) });
 	// hiding is done here, not in the settings: the habit goes to a small square at the bottom of the card
 	const label = t("panelHabitsHide", lang).replace("{habit}", row.name);
-	const button = side.createEl("button", { cls: "clickable-icon ghs-habit-hide", attr: { "aria-label": label, title: label } });
+	const button = head.createEl("button", { cls: "clickable-icon ghs-habit-hide", attr: { "aria-label": label, title: label } });
 	setIcon(button, "eye-off");
 	button.addEventListener("click", () => hide(row.key, true));
 	if (row.kind === "count") columns(el, row.daily);
@@ -114,17 +113,31 @@ function state(row: HabitRow): Dot {
 	return row.today === null ? "unknown" : row.today > 0 ? "yes" : "no";
 }
 
+/** The first letters of the first word of each name: one letter, and two or three only for the habits whose shorter label another habit shares. */
+export function squareLabels(names: string[]): string[] {
+	const words = names.map((n) => Array.from(n.trim().split(/[\s/·–-]+/)[0]!));
+	const prefix = (word: string[], length: number): string => word.slice(0, length).join("").toUpperCase();
+	return words.map((word) => {
+		for (let length = 1; length < 3; length++) {
+			const label = prefix(word, length);
+			if (words.filter((w) => prefix(w, length) === label).length === 1) return label;
+		}
+		return prefix(word, 3);
+	});
+}
+
 /** The hidden habits as small squares in the colour of their day; a tap shows the habit again. */
 function hiddenSquares(card: HTMLElement, hidden: HabitRow[], lang: string, hide: (key: string, hide: boolean) => void): void {
 	const box = card.createDiv({ cls: "ghs-habit-hidden" });
 	box.createSpan({ cls: "ghs-habit-note", text: t("panelHabitsHiddenHint", lang) });
 	const squares = box.createDiv({ cls: "ghs-habit-squares" });
 	const states = { yes: "panelHabitsLogged", no: "panelHabitsNo", unknown: "panelHabitsNotLogged" } as const;
-	for (const row of hidden) {
+	const letters = squareLabels(hidden.map((r) => r.name));
+	hidden.forEach((row, i) => {
 		const label = `${t("panelHabitsShow", lang).replace("{habit}", row.name)} · ${t(states[state(row)], lang)}`;
-		const square = squares.createEl("button", { cls: `ghs-habit-square ghs-habit-square-${state(row)}`, attr: { "aria-label": label, title: label } });
+		const square = squares.createEl("button", { cls: `ghs-habit-square ghs-habit-square-${state(row)}`, text: letters[i], attr: { "aria-label": label, title: label } });
 		square.addEventListener("click", () => hide(row.key, false));
-	}
+	});
 }
 
 export function renderHabits(parent: HTMLElement, model: HabitsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void, hide: (key: string, hide: boolean) => void): void {
