@@ -146,6 +146,59 @@ describe("computeHabits", () => {
 		expect(computeHabits(i, END, names("", END)).map((r) => r.name)).toEqual(["Late caffeine"]);
 	});
 
+	describe("a counted habit by amount", () => {
+		const COFFEE = { lifestyle_coffee: { name: "Late caffeine", kind: "count" as const, last: END } };
+		const cups = (ago: number): number => 1 + (Math.imul(ago + 3, 0x9e3779b1) >>> 29) % 5;
+
+		it("finds the night after falling with the amount when no day is without the habit", async () => {
+			const i = await index(60, (ago) => ({ lifestyle_coffee: cups(ago), hrv: 55 - 3 * cups(ago + 1) + noise(ago), resting_hr: 55 + 1.5 * cups(ago + 1) + noise(ago + 3) * 0.3 }));
+			const row = computeHabits(i, END, COFFEE)[0]!;
+			expect(row.without).toBe(0);
+			expect(row.hrv).toMatchObject({ dose: true, better: false, clear: true, without: 0 });
+			expect(row.hrv!.diff).toBeCloseTo(-3, 0);
+			expect(row.hrv!.share).toBeLessThan(-0.8);
+			expect(row.resting_hr).toMatchObject({ dose: true, better: false, clear: true });
+			expect(row.resting_hr!.diff).toBeGreaterThan(1);
+			expect(row.hrv!.with).toBeGreaterThan(40);
+		});
+
+		it("reads a rise with the amount as a better night for the HRV and a worse one for the resting heart rate", async () => {
+			const i = await index(60, (ago) => ({ lifestyle_coffee: cups(ago), hrv: 40 + 3 * cups(ago + 1) + noise(ago), resting_hr: 60 + 1.5 * cups(ago + 1) + noise(ago + 3) * 0.3 }));
+			const row = computeHabits(i, END, COFFEE)[0]!;
+			expect(row.hrv).toMatchObject({ better: true, clear: true });
+			expect(row.resting_hr).toMatchObject({ better: false, clear: true });
+		});
+
+		it("does not call noise a pattern", async () => {
+			const i = await index(60, (ago) => ({ lifestyle_coffee: cups(ago), hrv: 50 + noise(ago * 7) }));
+			expect(computeHabits(i, END, COFFEE)[0]!.hrv).toMatchObject({ dose: true, clear: false });
+		});
+
+		it("needs 14 nights and three different amounts, and a spread of the night after", async () => {
+			expect(computeHabits(await index(60, (ago) => ({ lifestyle_coffee: ago % 2 ? 2 : 3, hrv: 50 + noise(ago) })), END, COFFEE)[0]!.hrv).toBeNull();
+			expect(computeHabits(await index(45, (ago) => ({ lifestyle_coffee: ago > 10 ? undefined : cups(ago), hrv: 55 - 3 * cups(ago + 1) + noise(ago) })), END, COFFEE)[0]!.hrv).toBeNull();
+			const flat = computeHabits(await index(60, (ago) => ({ lifestyle_coffee: cups(ago), hrv: 50 })), END, COFFEE)[0]!;
+			expect(flat.hrv).toMatchObject({ dose: true, clear: false, t: 0 });
+		});
+
+		it("does not compare a yes or no habit by amount", async () => {
+			const i = await index(60, (ago) => ({ lifestyle_alcohol: 1, hrv: 55 - 3 * cups(ago + 1) + noise(ago) }));
+			expect(computeHabits(i, END, { lifestyle_alcohol: { name: "Alcohol", kind: "check" as const, last: END } })[0]!.hrv).toBeNull();
+		});
+
+		it("keeps the comparison of groups for a counted habit that has days without it", async () => {
+			const i = await index(80, (ago) => ({ lifestyle_coffee: habitOn(ago) ? 2 : 0, hrv: 50 + (habitOn(ago + 1) ? 8 : 0) + noise(ago) }));
+			expect(computeHabits(i, END, COFFEE)[0]!.hrv).toMatchObject({ dose: false, clear: true });
+		});
+
+		it("keeps a near-perfect correlation finite", async () => {
+			const i = await index(60, (ago) => ({ lifestyle_coffee: 1 + (ago % 4), hrv: 50 + 2 * (1 + ((ago + 1) % 4)) }));
+			const hrv = computeHabits(i, END, COFFEE)[0]!.hrv!;
+			expect(Number.isFinite(hrv.t)).toBe(true);
+			expect(hrv.clear).toBe(true);
+		});
+	});
+
 	it("gives no habits for an empty log", async () => {
 		expect(computeHabits(await index(30, () => ({ hrv: 50 })), END, NAMES)).toEqual([]);
 		expect(computeHabits(await index(30, () => ({ lifestyle_alcohol: 1 })), END, {})).toEqual([]);
