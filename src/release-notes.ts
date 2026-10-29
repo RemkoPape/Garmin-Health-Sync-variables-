@@ -14,6 +14,15 @@ export interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
 	{
+		version: "0.12.1",
+		title: "whatsNew0121Title",
+		intro: "whatsNew0121Intro",
+		items: [
+			{ title: "whatsNew0121Item1Title", text: "whatsNew0121Item1Text" },
+			{ title: "whatsNew0121Item2Title", text: "whatsNew0121Item2Text" },
+		],
+	},
+	{
 		version: "0.12.0",
 		title: "whatsNew0120Title",
 		intro: "whatsNew0120Intro",

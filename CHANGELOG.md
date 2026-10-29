@@ -10,6 +10,10 @@
 
 - The README (all six languages) states under Data & Privacy why the plugin lists the vault's files (`vault.getMarkdownFiles`): to find daily notes and its own history notes, never sending names or contents anywhere.
 
+### Added
+
+- A "what's new" entry for 0.12.1 (six languages) that names the two changes above. The 0.12.0 notes say the side panel switches itself on when opened and that a new install shows only the cards with data (the text still told to switch it on in the settings first).
+
 ### Internal
 
 - `stylelint` now enforces `declaration-block-no-duplicate-properties`, and `check-release` fails if the rule is removed, so the warning cannot come back unnoticed.
