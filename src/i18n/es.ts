@@ -332,6 +332,7 @@ export const es: Record<TranslationKeys, string> = {
 	settingsBirthYearMax: "Frecuencia cardíaca máxima estimada: {max} lpm.",
 	noticePanelDisabled: "Activa primero el panel de salud en los ajustes del plugin.",
 	noticeDataDetected: "Se encontraron datos de Garmin en {count} notas diarias. Las métricas correspondientes y el panel lateral están activados; cámbialo en los ajustes.",
+	noticeDailyNotesFollowed: "El plugin de notas diarias ahora usa la carpeta {folder} y el formato {format}, y sus notas son más recientes que las que leía este plugin, por lo que lo sigue. Puedes cambiarlo en los ajustes del plugin.",
 	panelTitle: "Salud",
 	panelPrevDay: "Día anterior",
 	panelNextDay: "Día siguiente",

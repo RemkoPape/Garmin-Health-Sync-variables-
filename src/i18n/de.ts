@@ -333,6 +333,7 @@ export const de: Record<TranslationKeys, string> = {
 	settingsBirthYearMax: "Geschätzter Maximalpuls: {max} bpm.",
 	noticePanelDisabled: "Aktiviere zuerst das Gesundheitspanel in den Plugin-Einstellungen.",
 	noticeDataDetected: "Garmin-Daten in {count} Tagesnotizen gefunden. Die passenden Metriken und das Seitenpanel sind eingeschaltet; ändere das in den Einstellungen.",
+	noticeDailyNotesFollowed: "Das Plugin für Tagesnotizen nutzt jetzt den Ordner {folder} und das Format {format}, und seine Notizen sind neuer als die, die dieses Plugin las; es folgt daher. Du kannst das in den Plugin-Einstellungen ändern.",
 	panelTitle: "Gesundheit",
 	panelPrevDay: "Vorheriger Tag",
 	panelNextDay: "Nächster Tag",

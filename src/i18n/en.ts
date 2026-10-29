@@ -331,6 +331,7 @@ export const en = {
 	settingsBirthYearMax: "Estimated maximum heart rate: {max} bpm.",
 	noticePanelDisabled: "Turn on the health panel in the plugin settings first.",
 	noticeDataDetected: "Found Garmin data in {count} daily notes. The matching metrics and the side panel are switched on; change this in the settings.",
+	noticeDailyNotesFollowed: "The daily notes plugin now uses the folder {folder} and the format {format}, and its notes are newer than the ones this plugin was reading, so it follows. You can change this in the plugin settings.",
 	panelTitle: "Health",
 	panelPrevDay: "Previous day",
 	panelNextDay: "Next day",
