@@ -154,6 +154,18 @@ describe("what the habits say with little data", () => {
 	});
 });
 
+describe("without a sign-in", () => {
+	it("lists the habits of the notes by their names although the plugin has none saved, and still hides a habit that was dropped", async () => {
+		const frontmatter = (ago: number): Record<string, unknown> => ({ lifestyle_alcohol: on(ago) ? 1 : 0, lifestyle_late_caffeine: 2 + (ago % 3), hrv: 50 });
+		const parent = await render(40, frontmatter, { habits: {} as never });
+		expect(Array.from(parent.querySelectorAll(".ghs-habit-name")).map((e) => text(e).replace(/\s+/g, " ").trim().replace(/^[✓✗] /, "").replace(/ ×\d+$/, "")).sort()).toEqual(["Alcohol", "Late caffeine"]);
+		expect(parent.querySelectorAll(".ghs-habit-col")).toHaveLength(14);
+		// a habit Garmin no longer lists is hidden, one only the notes know stays (it has no listing to be dropped by)
+		const dropped = await render(40, frontmatter, { habits: { lifestyle_alcohol: { name: "Alcohol", kind: "check", last: "2026-10-01" }, lifestyle_other: { name: "Other", kind: "check", last: END } } as never });
+		expect(Array.from(dropped.querySelectorAll(".ghs-habit-name")).map((e) => text(e).replace(/\s+/g, " ").trim().replace(/^[✓✗] /, "").replace(/ ×\d+$/, ""))).toEqual(["Late caffeine"]);
+	});
+});
+
 describe("hiding a habit in the card", () => {
 	const frontmatter = (ago: number): Record<string, unknown> => ({ lifestyle_alcohol: ago === 0 ? 0 : on(ago) ? 1 : 0, lifestyle_coffee: ago === 0 ? 3 : 1 });
 

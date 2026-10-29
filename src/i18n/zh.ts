@@ -331,6 +331,7 @@ export const zh: Record<TranslationKeys, string> = {
 	settingsBirthYearDesc: "仅需年份。它能让健康面板更精确：训练的心率区间及其强度，以及适合你年龄的睡眠和活动目标。留空则不使用。",
 	settingsBirthYearMax: "估算最大心率：{max} bpm。",
 	noticePanelDisabled: "请先在插件设置中启用健康面板。",
+	noticeDataDetected: "在 {count} 篇每日笔记中发现了 Garmin 数据。已打开相应的指标和侧边栏；可在设置中更改。",
 	panelTitle: "健康",
 	panelPrevDay: "前一天",
 	panelNextDay: "后一天",

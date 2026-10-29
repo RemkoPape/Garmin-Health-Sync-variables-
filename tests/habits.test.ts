@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DayIndex } from "../src/panel/index";
-import { computeHabits, ACTIVE_DAYS, MIN_GROUP } from "../src/panel/habits";
+import { computeHabits, knownHabits, ACTIVE_DAYS, MIN_GROUP } from "../src/panel/habits";
 
 const END = "2026-10-22";
 const settings = { dailyNotePath: "", dailyNoteFormat: "YYYY-MM-DD" };
@@ -225,5 +225,23 @@ describe("computeHabits", () => {
 		const row = computeHabits(i, END, NAMES)[0]!;
 		expect(row.hrv!.t).toBe(0);
 		expect(row.hrv!.clear).toBe(false);
+	});
+});
+
+describe("knownHabits", () => {
+	const saved = { lifestyle_alcohol: { name: "Alcohol (any)", kind: "check" as const, last: "2026-10-22", id: "3" } };
+	const inNotes = { lifestyle_alcohol: { name: "Alcohol", kind: "check" as const, last: "2026-10-20" }, lifestyle_run: { name: "Run", kind: "count" as const, last: "2026-10-18" } };
+
+	it("lets what Garmin sent win, and adds the habits only the notes hold with the latest listing of the others", () => {
+		expect(knownHabits(saved, inNotes)).toEqual({
+			lifestyle_alcohol: saved.lifestyle_alcohol,
+			lifestyle_run: { name: "Run", kind: "count", last: "2026-10-22" },
+		});
+	});
+
+	it("takes the habits of the notes as they are while Garmin has sent none (a device that was never signed in)", () => {
+		expect(knownHabits({}, inNotes)).toEqual({ lifestyle_alcohol: { ...inNotes.lifestyle_alcohol, last: "" }, lifestyle_run: { ...inNotes.lifestyle_run, last: "" } });
+		expect(knownHabits({}, {})).toEqual({});
+		expect(knownHabits(saved, {})).toEqual(saved);
 	});
 });

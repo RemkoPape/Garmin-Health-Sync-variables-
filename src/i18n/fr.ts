@@ -331,6 +331,7 @@ export const fr: Record<TranslationKeys, string> = {
 	settingsBirthYearDesc: "Uniquement l’année. Elle rend le panneau santé plus précis : zones de fréquence cardiaque de vos séances et leur difficulté, ainsi que les objectifs de sommeil et d’activité adaptés à votre âge. Laissez vide pour l’ignorer.",
 	settingsBirthYearMax: "Fréquence cardiaque maximale estimée : {max} bpm.",
 	noticePanelDisabled: "Activez d’abord le panneau santé dans les réglages du plugin.",
+	noticeDataDetected: "Données Garmin trouvées dans {count} notes quotidiennes. Les métriques correspondantes et le panneau latéral sont activés ; modifiez cela dans les réglages.",
 	panelTitle: "Santé",
 	panelPrevDay: "Jour précédent",
 	panelNextDay: "Jour suivant",
