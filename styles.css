@@ -1437,6 +1437,8 @@
 }
 
 .ghs-habit-head {
+	position: relative;
+	padding-right: 28px;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
@@ -1604,15 +1606,16 @@
 	background: var(--ghs-data);
 }
 
-/* The note and the hide button sit together on the right of the habit's name */
-.ghs-habit-side {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--size-2-2);
+.is-mobile .ghs-habit-head {
+	padding-right: 36px;
 }
 
+/* The hide button is always at the right edge of the row, whatever the name and the note take */
 .ghs-habit-hide {
 	--icon-size: 14px;
+	position: absolute;
+	top: 0;
+	right: 0;
 	padding: var(--size-2-2);
 	color: var(--text-faint);
 }
@@ -1620,7 +1623,8 @@
 .is-mobile .ghs-habit-hide {
 	min-width: 44px;
 	min-height: 44px;
-	margin: -14px -10px -14px 0;
+	top: -10px;
+	right: -10px;
 }
 
 /* Hidden habits: one square each, in the colour of the day (accent = yes, ring = no, dashed = not logged) */
@@ -1640,9 +1644,13 @@
 
 .ghs-habit-square {
 	box-sizing: border-box;
-	width: 20px;
-	height: 20px;
-	padding: 0;
+	min-width: 24px;
+	height: 24px;
+	padding: 0 var(--size-2-3);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	line-height: 1;
 	border: 2px solid var(--text-muted);
 	border-radius: var(--radius-s);
 	background: transparent;
@@ -1651,15 +1659,17 @@
 }
 
 .is-mobile .ghs-habit-square {
-	width: 28px;
-	height: 28px;
+	min-width: 32px;
+	height: 32px;
 }
 
 .ghs-habit-square-yes {
 	border-color: var(--ghs-data);
 	background: var(--ghs-data);
+	color: var(--text-on-accent);
 }
 
 .ghs-habit-square-unknown {
 	border: 1.5px dashed var(--text-faint);
+	color: var(--text-faint);
 }
