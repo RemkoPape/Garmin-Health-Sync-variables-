@@ -4,13 +4,36 @@ import { parseClock, parseDuration } from "./parse";
 import type { HistoryStore } from "../history/store";
 import { parseSessions, type Session } from "./sessions";
 import { LIFESTYLE_PREFIX, type HabitInfo } from "../providers/garmin/lifestyle";
+import { METRICS } from "../metrics";
 
 /** Frontmatter prefix the sync adds when "use prefix" is on. Notes of both kinds can sit in one vault. */
 const PREFIX = "ohs_";
+const GARMIN_KEYS = new Set([...METRICS.map((m) => m.key), "distance_mi", "weight_lbs"]);
+
+/** What the panel found in the vault: how many daily notes, how many of them hold Garmin properties, and which ones the newest of those holds. */
+export interface NotesOverview {
+	notes: number;
+	withData: number;
+	newest: string | null;
+	newestWithData: string | null;
+	/** The Garmin properties of the newest note that holds any (names of our own metrics only), and how many others it has. */
+	keys: string[];
+	otherKeys: number;
+}
 
 export interface IndexSettings {
 	dailyNotePath: string;
 	dailyNoteFormat: string;
+}
+
+/** The properties of two notes of one day: a value the first has stays, a blank one is filled from the second. */
+function mergeFrontmatter(first: Record<string, unknown>, second: Record<string, unknown>): Record<string, unknown> {
+	const merged = { ...first };
+	for (const [key, value] of Object.entries(second)) {
+		const own = merged[key];
+		if (own === undefined || own === null || own === "") merged[key] = value;
+	}
+	return merged;
 }
 
 /**
@@ -60,6 +83,17 @@ export class DayIndex {
 	hasNote(date: string): boolean {
 		this.build();
 		return this.days.has(date);
+	}
+
+	/** What the panel found in the notes: for the hint when there is nothing to show, and for the diagnostics. */
+	overview(): NotesOverview {
+		this.build();
+		const garminKeys = (fm: Record<string, unknown>): string[] => Object.entries(fm).filter(([k, v]) => GARMIN_KEYS.has(k.startsWith(PREFIX) ? k.slice(PREFIX.length) : k) && v !== null && v !== undefined && v !== "").map(([k]) => k);
+		const dates = [...this.days.keys()].sort();
+		const withData = dates.filter((d) => garminKeys(this.days.get(d)!).length > 0);
+		const latest = withData[withData.length - 1] ?? null;
+		const keys = latest === null ? [] : garminKeys(this.days.get(latest)!);
+		return { notes: dates.length, withData: withData.length, newest: dates[dates.length - 1] ?? null, newestWithData: latest, keys, otherKeys: latest === null ? 0 : Object.keys(this.days.get(latest)!).length - keys.length };
 	}
 
 	/** Whether any daily note was recognised, or any day is in the history: false means the panel has nothing to show at all. */
@@ -144,7 +178,10 @@ export class DayIndex {
 			if (this.history?.isHistoryFile(file)) continue;
 			const date = dateFromDailyNote(file, settings);
 			const fm = date ? this.app.metadataCache.getFileCache(file)?.frontmatter : undefined;
-			if (date && fm) this.days.set(date, fm);
+			if (!date || !fm) continue;
+			// two notes of one day (an archive copy, a template named by date): what one lacks the other may hold
+			const other = this.days.get(date);
+			this.days.set(date, other ? mergeFrontmatter(other, fm) : fm);
 		}
 	}
 }

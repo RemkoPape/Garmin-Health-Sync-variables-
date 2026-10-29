@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.95
+
+### Added
+
+- **Copy diagnostics shows what the panel sees in the vault.** A last `notes:` line gives the panel switch, whether a daily note folder is set, the name format, how many daily notes were found (and the newest day), how many hold Garmin properties, and which of our own properties the newest of those holds. No note name and no value. It tells apart a wrong folder or format from notes without Garmin properties.
+- **The panel says when it finds notes but no Garmin data.** One line with the number of notes and the newest day, instead of a card of "no reading" after another.
+
+### Fixed
+
+- **Two notes of one day no longer hide each other.** With notes now counted in any folder, an archive copy or a template named by date could replace the real note of that day in the panel. Their properties are merged: what one leaves blank the other fills in.
+
 ## 0.12.0-beta.94
 
 ### Fixed

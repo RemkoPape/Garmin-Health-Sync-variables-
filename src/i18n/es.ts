@@ -341,6 +341,7 @@ export const es: Record<TranslationKeys, string> = {
 	panelEditReset: "Restablecer el orden",
 	panelNoNotes: "No se encontraron notas diarias con el formato de nombre {format}. Si tus notas diarias se llaman de otra forma, ajusta la carpeta y el formato en los ajustes del plugin.",
 	panelNoNotesIn: "No se encontraron notas diarias en la carpeta {folder} con el formato de nombre {format}. Si tus notas diarias se llaman o se guardan de otra forma, ajusta la carpeta y el formato en los ajustes del plugin.",
+	panelNoGarminData: "Se encontraron {count} notas diarias (la más reciente es {date}), pero ninguna tiene propiedades de Garmin como steps o hrv. Revisa las propiedades de una nota o sincroniza.",
 	panelEditHint: "Arrastra una tarjeta por su asa para moverla. Las teclas de flecha también funcionan en el asa.",
 	panelDragHandle: "Mover {card}",
 	panelHrvTitle: "VFC",

@@ -340,6 +340,7 @@ export const en = {
 	panelEditReset: "Reset order",
 	panelNoNotes: "No daily notes found with the name format {format}. If your daily notes are named differently, set the folder and format in the plugin settings.",
 	panelNoNotesIn: "No daily notes found in the folder {folder} with the name format {format}. If your daily notes are named or kept differently, set the folder and format in the plugin settings.",
+	panelNoGarminData: "Found {count} daily notes (the newest is {date}), but none holds Garmin properties such as steps or hrv. Open a note in the Properties view to check them, or sync.",
 	panelEditHint: "Drag a card by its handle to move it. The arrow keys work on the handle too.",
 	panelDragHandle: "Move {card}",
 	panelHrvTitle: "HRV",
