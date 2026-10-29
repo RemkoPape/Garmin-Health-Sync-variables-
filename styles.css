@@ -55,7 +55,29 @@
 	max-height: 60vh;
 	/* the visible height on a phone, where vh ignores the on-screen keyboard and the browser bars */
 	max-height: 60dvh;
+	/* up and down only: nothing sideways, no horizontal bar, no rubber band, and no swipe to the side on a touch screen */
+	overflow-x: hidden;
 	overflow-y: auto;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+	overflow-wrap: anywhere;
+}
+
+.ghs-whats-new-modal {
+	overflow-x: hidden;
+	touch-action: pan-y;
+}
+
+/* whatever a note holds stays inside the window: a long word wraps, an illustration shrinks to the width */
+.ghs-whats-new-body li,
+.ghs-whats-new-body p,
+.ghs-whats-new-body h3 {
+	min-width: 0;
+	max-width: 100%;
+}
+
+.ghs-whats-new-body ul {
+	padding-inline-start: var(--size-4-6);
 }
 
 .ghs-whats-new-intro {
@@ -1308,6 +1330,9 @@
 
 /* Illustrations of the what's new window, drawn with the real panel code */
 .ghs-whats-new-figure {
+	box-sizing: border-box;
+	max-width: 100%;
+	overflow: hidden;
 	margin: var(--size-4-2) 0 var(--size-4-3);
 	padding: var(--size-4-3);
 	border: 1px dashed var(--background-modifier-border);
@@ -1316,6 +1341,8 @@
 }
 
 .ghs-fig-setting {
+	flex-wrap: wrap;
+	min-width: 0;
 	padding: var(--size-4-2) 0;
 }
 
@@ -1339,6 +1366,7 @@
 .ghs-fig-side {
 	display: flex;
 	flex: 1;
+	min-width: 0;
 	flex-direction: column;
 	gap: var(--size-4-2);
 }
