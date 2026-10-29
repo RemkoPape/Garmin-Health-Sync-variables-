@@ -10,12 +10,13 @@ import type { HealthSyncSettings, MissingNoteBehaviour } from "./settings";
 import { t } from "./i18n/t";
 import { convertToImperial } from "./units";
 import { isLoginRequiredError } from "./errors";
+import { habitKeysOf } from "./providers/garmin/lifestyle";
 
 /** Remembers the habits of the lifestyle log Garmin sent, so the settings can list them; a habit is only ever added or renamed here. */
 export function registerHabits(settings: HealthSyncSettings, data: HealthData, date: string): void {
 	for (const habit of data.habits ?? []) {
 		const last = settings.lifestyleHabits[habit.key]?.last ?? "";
-		settings.lifestyleHabits[habit.key] = { name: habit.name, kind: habit.kind, last: date > last ? date : last };
+		settings.lifestyleHabits[habit.key] = { name: habit.name, kind: habit.kind, last: date > last ? date : last, ...(habit.id ? { id: habit.id } : {}) };
 	}
 }
 
@@ -144,6 +145,7 @@ export class SyncManager {
 				.map(([key]) => key);
 
 			// Fetch data
+			this.provider.setHabitKeys?.(habitKeysOf(settings.lifestyleHabits));
 			const data = await this.provider.fetchData(date, enabledMetrics);
 			registerHabits(settings, data, date);
 
@@ -191,6 +193,7 @@ export class SyncManager {
 		}
 
 		const enabledMetrics = Object.entries(settings.enabledMetrics).filter(([, enabled]) => enabled).map(([key]) => key);
+		this.provider.setHabitKeys?.(habitKeysOf(settings.lifestyleHabits));
 		const behaviour = options.behaviour ?? settings.missingNoteBehaviour;
 		const ui = new BuildProgressUi(settings.language, () => this.stopBackfill(), options.statusBar?.() ?? null);
 		const backfill = new Backfill({
@@ -204,7 +207,11 @@ export class SyncManager {
 			wasFetched: (date) => isFetched(settings, date, enabledMetrics),
 			markFetched: (date) => markFetched(settings, date, enabledMetrics),
 			writeNote: (date, data, mayCreate) => this.writeDay(date, data, settings, mayCreate),
-			onFetched: (date, data) => registerHabits(settings, data, date),
+			onFetched: (date, data) => {
+				registerHabits(settings, data, date);
+				// a habit met during the run keeps its key for the days that follow
+				this.provider.setHabitKeys?.(habitKeysOf(settings.lifestyleHabits));
+			},
 			onCursor: options.onCursor,
 			onProgress: (progress) => ui.update(progress),
 		});

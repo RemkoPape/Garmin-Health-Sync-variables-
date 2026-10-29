@@ -3,7 +3,7 @@ import type { ServerRegion } from "../../settings";
 import { GarminApi, getRequiredEndpoints, calculateBatchDelay, type CredentialLoginOutcome } from "./garmin-api";
 import type { OAuth1Token, OAuth2Token } from "./garmin-oauth";
 import type { AuthState } from "./auth-state";
-import { mapLifestyle, parseHabits } from "./lifestyle";
+import { mapLifestyle, parseHabits, type HabitKeys } from "./lifestyle";
 import { LoginRequiredError, isLoginRequiredError, isSyncFetchError } from "../../errors";
 import {
 	mapDailySummary,
@@ -116,6 +116,13 @@ export class GarminProvider implements HealthProvider {
 		return calculateBatchDelay(endpoints.length);
 	}
 
+	/** The keys the habits have in notes and history, by Garmin's id of the habit. */
+	private habitKeys: HabitKeys = {};
+
+	setHabitKeys(keys: HabitKeys): void {
+		this.habitKeys = keys;
+	}
+
 	/** The API keeps one day's data in a cache, so two fetches must never overlap (an auto-sync during a long history build). */
 	private fetching: Promise<unknown> = Promise.resolve();
 
@@ -218,8 +225,8 @@ export class GarminProvider implements HealthProvider {
 		let habits: HealthData["habits"];
 		if (enabled.has("lifestyle_log")) {
 			group("lifestyle", "Lifestyle log", this.api.fetchLifestyle(date), data => {
-				habits = parseHabits(data).map(({ key, name, kind }) => ({ key, name, kind }));
-				return mapLifestyle(data);
+				habits = parseHabits(data, this.habitKeys).map(({ key, id, name, kind }) => ({ key, id, name, kind }));
+				return mapLifestyle(data, this.habitKeys);
 			});
 		}
 

@@ -1,7 +1,7 @@
 import { shiftDate } from "../dates";
 import type { DayIndex } from "./index";
 import type { HabitInfo } from "../providers/garmin/lifestyle";
-import { baseline, windowValues } from "./stats";
+import { baseline, windowValues, type Baseline } from "./stats";
 
 /** Habits with a logged value on one of this many days up to the shown day are listed; a habit that is not logged any more drops off the card. */
 export const ACTIVE_DAYS = 30;
@@ -80,6 +80,12 @@ function variance(values: number[], m: number): number {
 	return values.reduce((a, b) => a + (b - m) ** 2, 0) / (values.length - 1);
 }
 
+/** What every habit shares: the usual value before a night and the usual spread of a measure, worked out once per night and measure instead of once per habit. */
+interface Context {
+	usual(measure: Measure, night: string): Baseline | null;
+	spread(measure: Measure): number;
+}
+
 /** Ranks of the values, equal values sharing the mean of their places. */
 function ranks(values: number[]): number[] {
 	const order = values.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
@@ -94,13 +100,13 @@ function ranks(values: number[]): number[] {
 }
 
 /** How the night after a counted habit changes with the amount, or null with too few nights, or too few different amounts. For a habit that has no days without it, where the two groups cannot be compared. */
-function doseOf(index: DayIndex, measure: Measure, days: { day: string; value: number }[]): Effect | null {
+function doseOf(ctx: Context, index: DayIndex, measure: Measure, days: { day: string; value: number }[]): Effect | null {
 	const x: number[] = [];
 	const y: number[] = [];
 	for (const { day, value } of days) {
 		const night = shiftDate(day, 1);
 		const observed = index.value(measure, night);
-		const usual = baseline(windowValues(index, measure, night, USUAL_DAYS), MIN_USUAL, SD_FLOOR[measure]);
+		const usual = ctx.usual(measure, night);
 		if (observed === null || usual === null) continue;
 		x.push(value);
 		y.push(observed - usual.mean);
@@ -130,20 +136,19 @@ function doseOf(index: DayIndex, measure: Measure, days: { day: string; value: n
 }
 
 /** How the nights after the habit differ from the nights after a day without it, or null without enough days of both. */
-function effectOf(index: DayIndex, measure: Measure, days: { day: string; value: number }[], date: string): Effect | null {
+function effectOf(ctx: Context, index: DayIndex, measure: Measure, days: { day: string; value: number }[]): Effect | null {
 	const withHabit: number[] = [];
 	const without: number[] = [];
 	for (const { day, value: amount } of days) {
 		const on = amount > 0;
 		const night = shiftDate(day, 1);
 		const value = index.value(measure, night);
-		const usual = baseline(windowValues(index, measure, night, USUAL_DAYS), MIN_USUAL, SD_FLOOR[measure]);
+		const usual = ctx.usual(measure, night);
 		if (value === null || usual === null) continue;
 		(on ? withHabit : without).push(value - usual.mean);
 	}
 	if (withHabit.length < MIN_GROUP || without.length < MIN_GROUP) return null;
-	// the nights compared lie inside this window and there are at least 16 of them, so the usual spread exists
-	const spread = baseline(windowValues(index, measure, date, EFFECT_DAYS + 1), MIN_USUAL, SD_FLOOR[measure])!.sd;
+	const spread = ctx.spread(measure);
 	const mw = mean(withHabit);
 	const mo = mean(without);
 	const diff = mw - mo;
@@ -162,10 +167,25 @@ function effectOf(index: DayIndex, measure: Measure, days: { day: string; value:
  */
 export function computeHabits(index: DayIndex, date: string, names: Record<string, HabitInfo>): HabitRow[] {
 	const rows: HabitRow[] = [];
+	const usualCache = new Map<string, Baseline | null>();
+	const spreadCache = new Map<Measure, number>();
+	const ctx: Context = {
+		usual: (measure, night) => {
+			const id = `${measure}|${night}`;
+			if (!usualCache.has(id)) usualCache.set(id, baseline(windowValues(index, measure, night, USUAL_DAYS), MIN_USUAL, SD_FLOOR[measure]));
+			return usualCache.get(id)!;
+		},
+		// the nights compared lie inside this window and there are at least 16 of them, so the usual spread exists
+		spread: (measure) => {
+			if (!spreadCache.has(measure)) spreadCache.set(measure, baseline(windowValues(index, measure, date, EFFECT_DAYS + 1), MIN_USUAL, SD_FLOOR[measure])!.sd);
+			return spreadCache.get(measure)!;
+		},
+	};
 	// Garmin lists every habit that is set up in the app on every day, so a habit that was last listed before the others has been dropped there
 	const newest = Object.values(names).reduce((latest, h) => (h.last > latest ? h.last : latest), "");
 	for (const [key, habit] of Object.entries(names)) {
-		if (habit.last < newest) continue;
+		// a habit Garmin dropped is gone from the days after its last one; the days before it still show it
+		if (habit.last < newest && date > habit.last) continue;
 		let active = false;
 		for (let i = 0; i < ACTIVE_DAYS && !active; i++) active = index.value(key, shiftDate(date, -i)) !== null;
 		if (!active) continue;
@@ -212,7 +232,7 @@ export function computeHabits(index: DayIndex, date: string, names: Record<strin
 		}
 		const daily: (number | null)[] = [];
 		for (let i = STRIP_DAYS - 1; i >= 0; i--) daily.push(index.value(key, shiftDate(date, -i)));
-		rows.push({ key, name: habit.name, kind: habit.kind, strip, with: withDays, without: withoutDays, today, streak, logged: withDays + withoutDays + (today === null ? 0 : 1), week: weekEntries === 0 ? null : { entries: weekEntries, days: weekDays, total: weekTotal, mean: weekTotal / weekEntries }, usual: beforeEntries >= MIN_USUAL_ENTRIES ? beforeTotal / beforeEntries : null, daily, hrv: effectOf(index, "hrv", days, date) ?? (habit.kind === "count" ? doseOf(index, "hrv", days) : null), resting_hr: effectOf(index, "resting_hr", days, date) ?? (habit.kind === "count" ? doseOf(index, "resting_hr", days) : null) });
+		rows.push({ key, name: habit.name, kind: habit.kind, strip, with: withDays, without: withoutDays, today, streak, logged: withDays + withoutDays + (today === null ? 0 : 1), week: weekEntries === 0 ? null : { entries: weekEntries, days: weekDays, total: weekTotal, mean: weekTotal / weekEntries }, usual: beforeEntries >= MIN_USUAL_ENTRIES ? beforeTotal / beforeEntries : null, daily, hrv: effectOf(ctx, index, "hrv", days) ?? (habit.kind === "count" ? doseOf(ctx, index, "hrv", days) : null), resting_hr: effectOf(ctx, index, "resting_hr", days) ?? (habit.kind === "count" ? doseOf(ctx, index, "resting_hr", days) : null) });
 	}
 	// habits with a pattern first, the strongest on top; the rest by name
 	const strength = (r: HabitRow): number => Math.max(...[r.hrv, r.resting_hr].map((e) => (e?.clear ? Math.abs(e.t) : 0)));

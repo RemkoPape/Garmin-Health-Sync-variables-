@@ -67,14 +67,14 @@ describe("syncDate with the history setting", () => {
 });
 
 describe("the habits of the lifestyle log", () => {
-	const HABITS = [{ key: "lifestyle_alcohol", name: "Alcohol", kind: "check" as const }, { key: "lifestyle_late_caffeine", name: "Late caffeine", kind: "count" as const }];
+	const HABITS = [{ key: "lifestyle_alcohol", id: "3", name: "Alcohol", kind: "check" as const }, { key: "lifestyle_late_caffeine", id: "5", name: "Late caffeine", kind: "count" as const }];
 
 	it("are remembered from a sync and a rename is followed", async () => {
 		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: HABITS };
 		const s = settings();
 		await sync.syncDate(DATE, s);
-		expect(s.lifestyleHabits).toEqual({ lifestyle_alcohol: { name: "Alcohol", kind: "check", last: DATE }, lifestyle_late_caffeine: { name: "Late caffeine", kind: "count", last: DATE } });
-		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: [{ key: "lifestyle_alcohol", name: "Alcohol (any)", kind: "check" }] };
+		expect(s.lifestyleHabits).toEqual({ lifestyle_alcohol: { name: "Alcohol", kind: "check", last: DATE, id: "3" }, lifestyle_late_caffeine: { name: "Late caffeine", kind: "count", last: DATE, id: "5" } });
+		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: [{ key: "lifestyle_alcohol", id: "3", name: "Alcohol (any)", kind: "check" }] };
 		await sync.syncDate(DATE, s);
 		expect(s.lifestyleHabits["lifestyle_alcohol"]!.name).toBe("Alcohol (any)");
 		expect(Object.keys(s.lifestyleHabits)).toHaveLength(2);
@@ -86,6 +86,26 @@ describe("the habits of the lifestyle log", () => {
 		await sync.syncDate("2026-10-24", s);
 		await sync.syncDate("2026-10-20", s);
 		expect(s.lifestyleHabits["lifestyle_alcohol"]!.last).toBe("2026-10-24");
+	});
+
+	it("tell the provider which key each habit has, from the first sync on and while a backfill runs", async () => {
+		const keys: Record<string, string>[] = [];
+		provider.setHabitKeys = (k) => void keys.push({ ...k });
+		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: HABITS };
+		const s = settings({ lifestyleHabits: { lifestyle_old: { name: "Old", kind: "check", last: "2026-10-01", id: "9" } } });
+		await sync.syncDate(DATE, s);
+		expect(keys[0]).toEqual({ "9": "lifestyle_old" });
+		const p = sync.backfill("2026-10-22", "2026-10-23", s);
+		await vi.runAllTimersAsync();
+		await p;
+		expect(keys.some((k) => k["3"] === "lifestyle_alcohol" && k["5"] === "lifestyle_late_caffeine")).toBe(true);
+	});
+
+	it("are remembered without an id when Garmin sent none", async () => {
+		provider.defaultData = { metrics: { steps: 8000 }, activities: {}, habits: [{ key: "lifestyle_alcohol", id: "", name: "Alcohol", kind: "check" }] };
+		const s = settings();
+		await sync.syncDate(DATE, s);
+		expect(s.lifestyleHabits["lifestyle_alcohol"]).toEqual({ name: "Alcohol", kind: "check", last: DATE });
 	});
 
 	it("are remembered from the days of a backfill too", async () => {

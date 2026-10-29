@@ -20,7 +20,7 @@ export interface HealthData {
 	/** Start coordinates of the first activity with GPS */
 	startLocation?: { lat: number; lon: number };
 	/** The habits of the lifestyle log that Garmin sent for the day (all of them), so the panel can name them. */
-	habits?: { key: string; name: string; kind: "check" | "count" }[];
+	habits?: { key: string; id: string; name: string; kind: "check" | "count" }[];
 	/** Endpoints that failed for this day (error or timeout, not "no data"): the day is incomplete and must be fetched again. */
 	failedEndpoints?: string[];
 }
@@ -50,6 +50,9 @@ export interface HealthProvider {
 
 	/** Fetch health data for a specific date */
 	fetchData(date: string, enabledMetrics: string[]): Promise<HealthData>;
+
+	/** The keys the habits of the lifestyle log already have in notes and history, by Garmin's id of the habit (optional: only a provider with such a log needs it). */
+	setHabitKeys?(keys: Record<string, string>): void;
 
 	/** Recommended delay between dates in batch operations (ms) — optional */
 	getRecommendedBatchDelay?(enabledMetrics: string[]): number;

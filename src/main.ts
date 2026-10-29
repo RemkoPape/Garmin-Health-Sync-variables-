@@ -687,7 +687,7 @@ export default class HealthSyncPlugin extends Plugin {
 		this.settings.enabledMetrics = { ...(saved?.enabledMetrics ?? defaults) };
 		this.settings.lifestyleHabits = {};
 		for (const [key, habit] of Object.entries(saved?.lifestyleHabits ?? {})) {
-			if (key.startsWith("lifestyle_") && typeof habit?.name === "string") this.settings.lifestyleHabits[key] = { name: habit.name, kind: habit.kind === "count" ? "count" : "check", last: typeof habit.last === "string" && /^\d{4}-\d{2}-\d{2}$/.test(habit.last) ? habit.last : "" };
+			if (key.startsWith("lifestyle_") && typeof habit?.name === "string") this.settings.lifestyleHabits[key] = { name: habit.name, kind: habit.kind === "count" ? "count" : "check", last: typeof habit.last === "string" && /^\d{4}-\d{2}-\d{2}$/.test(habit.last) ? habit.last : "", ...(typeof habit.id === "string" && habit.id !== "" ? { id: habit.id } : {}) };
 		}
 		this.settings.hiddenHabits = (Array.isArray(saved?.hiddenHabits) ? saved.hiddenHabits : []).filter((key) => typeof key === "string" && key.startsWith("lifestyle_"));
 		this.settings.lastSyncTimes = { ...(saved?.lastSyncTimes ?? {}) };
