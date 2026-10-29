@@ -91,6 +91,9 @@
 
 /* Health panel (right sidebar) */
 .ghs-panel {
+	/* up and down only: a card that is a few pixels too wide must not make the panel slide sideways */
+	overflow-x: hidden;
+	touch-action: pan-y;
 	/* One data colour for everything that has no good or bad side: the accent of the theme with its lightness held between 0.5 and 0.72, so a very bright or very dark accent still stands out on a light and on a dark card. The shades fade it towards the card, strongest first. */
 	--ghs-data: var(--interactive-accent);
 	/* The card colour: the theme's secondary background with a hint of the accent, so the cards sit in the theme instead of beside it */
@@ -322,7 +325,8 @@
 
 /* Only a bar with numbers under it needs the room for them */
 .ghs-range-labelled {
-	margin-bottom: var(--size-4-6);
+	/* room for the label line below the bar, which grows with the font size (a phone with a large font) */
+	margin-bottom: calc(var(--font-ui-smaller) * 1.5 + var(--size-4-2));
 }
 
 .ghs-range-track {
@@ -356,6 +360,7 @@
 
 .ghs-tick-label {
 	position: absolute;
+	white-space: nowrap;
 	text-transform: lowercase;
 	left: var(--ghs-x, 50%);
 	transform: translateX(-50%);
@@ -580,7 +585,8 @@
 /* Half-width pair: SpO2 and breathing */
 .ghs-pair {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	/* two half cards need about 190px each; a narrower panel (a phone) stacks them, instead of pushing the head of a card out of it */
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
 	gap: var(--size-4-6);
 }
 
@@ -814,7 +820,8 @@
 
 .ghs-zones {
 	display: grid;
-	grid-template-columns: 23.1fr 15.4fr 23.1fr 15.4fr 23.1fr;
+	/* the columns follow the zones of the bar, but a long word (German "Überlastung") keeps the room it needs instead of running into the next */
+	grid-template-columns: minmax(min-content, 23.1fr) minmax(min-content, 15.4fr) minmax(min-content, 23.1fr) minmax(min-content, 15.4fr) minmax(min-content, 23.1fr);
 	text-align: center;
 	color: var(--text-normal);
 	font-size: var(--font-ui-smaller);

@@ -74,6 +74,12 @@ export class DayIndex {
 		return typeof n === "number" && Number.isFinite(n) ? n : null;
 	}
 
+	/** Whether the day has a value for the key, of any kind (a number, a duration, a text): what decides if a card has anything to show. */
+	has(key: string, date: string): boolean {
+		const v = this.raw(key, date);
+		return v !== undefined && v !== null && v !== "";
+	}
+
 	/** A duration metric ("6h 13min") on a day in minutes, or null. */
 	minutes(key: string, date: string): number | null {
 		return parseDuration(this.raw(key, date));

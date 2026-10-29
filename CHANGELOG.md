@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.12.0-beta.97
+
+### Changed
+
+- **Asking for the side panel switches it on.** The ribbon icon and the command **Open health panel** no longer say "turn on the health panel in the settings first": they switch it on and open it. The switch in the settings is still there and turns the panel off again.
+- **A fresh install shows only the cards that have data.** A card with nothing to show (no value of its metrics in the last 90 days, no workout, no habit) is left out until it has data; if no card has data, all are shown so the panel is never blank. A card you switch on in the settings stays, one you switch off stays off. **Settings saved before this beta keep every card they had** (nothing is switched off for existing users).
+
+### Fixed
+
+- **The panel could slide sideways on a phone.** Two half-width cards (SpO2 and breathing) needed 324 px next to each other, more than a 360 px phone has inside the panel, so a card head stuck out by up to 30 px. A panel narrower than two 190 px cards now stacks them, and the panel itself never scrolls sideways.
+- **Android with a large font: labels ran into each other.** In the weekly card "limit 244" wrapped onto the line below and overlapped "Noch 184 Min."; in the load card the zone names "Belastung" and "Überlastung" ran together. The bar labels no longer wrap and the room under them grows with the font size, and the zone names keep the width they need. Checked in a headless browser at 320, 360 and 412 px with the normal and a 1.3 times larger font.
+
 ## 0.12.0-beta.96
 
 ### Fixed

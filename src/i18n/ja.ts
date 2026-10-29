@@ -330,7 +330,6 @@ export const ja: Record<TranslationKeys, string> = {
 	settingsBirthYear: "生まれた年",
 	settingsBirthYearDesc: "年のみです。ヘルスパネルがより正確になります：セッションの心拍ゾーンとそのきつさ、年齢に合った睡眠と運動の目標。空欄のままにすると使われません。",
 	settingsBirthYearMax: "推定最大心拍数：{max} bpm。",
-	noticePanelDisabled: "先にプラグイン設定でヘルスパネルを有効にしてください。",
 	noticeDataDetected: "{count}件のデイリーノートでGarminのデータが見つかりました。対応するメトリクスとサイドパネルをオンにしました。設定で変更できます。",
 	noticeDailyNotesFollowed: "デイリーノートのプラグインは現在フォルダー {folder} と形式 {format} を使っており、そのノートはこのプラグインが読んでいたものより新しいため、これに合わせました。プラグインの設定で変更できます。",
 	panelTitle: "ヘルス",

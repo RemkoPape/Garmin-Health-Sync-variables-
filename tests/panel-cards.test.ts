@@ -7,9 +7,9 @@ import { HealthPanelView } from "../src/panel/view";
 import { DEFAULT_SETTINGS } from "../src/settings";
 import { en } from "../src/i18n/en";
 
-async function open(panelCards: Record<string, boolean>): Promise<HealthPanelView> {
+async function open(panelCards: Record<string, boolean>, panelAuto = false): Promise<HealthPanelView> {
 	const app = new App();
-	const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards } } as never);
+	const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards, panelAuto } } as never);
 	await view.onOpen();
 	return view;
 }

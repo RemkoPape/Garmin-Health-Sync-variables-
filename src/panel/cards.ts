@@ -14,6 +14,7 @@ import { computeStress, renderStress } from "./cards/stress-card";
 import { computeVo2, renderVo2 } from "./cards/vo2-card";
 import { computeWeekly, renderWeekly } from "./cards/weekly-card";
 import type { HabitInfo } from "../providers/garmin/lifestyle";
+import { shiftDate } from "../dates";
 import type { DayIndex } from "./index";
 import { bodyInsights, floorsInsights, intensityInsights, stepsInsights, vo2Insights } from "./insights/activity";
 import { batteryInsights, stressInsights } from "./insights/energy";
@@ -129,6 +130,19 @@ export const PANEL_CARDS: PanelCard[] = [
 	{ id: "weekly", title: "panelWeeklyTitle", section: "training", metrics: [], needs: "panelNeedsWeekly", render: (c) => renderWeekly(c.parent, { ...computeWeekly(c.index, c.date), insights: weeklyInsights(signals(c)) }, c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
 	{ id: "sessions", title: "panelSessionsTitle", section: "training", metrics: [], needs: "panelNeedsSessions", render: (c) => renderSessions(c.parent, { ...computeSessions(c.index, c.date, c.birthYear), insights: sessionsInsights(signals(c)) }, c.lang, c.imperial, c.explainOpen, c.onToggleExplain) },
 ];
+
+/** Days back from today that are looked at for a card's data. */
+const DATA_DAYS = 90;
+
+/** Whether a card has anything to show: a value of one of the metrics it needs on one of the last 90 days, a session for the cards that read workouts, a habit for the Habits card. */
+export function cardHasData(card: PanelCard, index: DayIndex, today: string, habits: Record<string, HabitInfo>): boolean {
+	if (card.id === "habits") return Object.keys(habits).length > 0 || Object.keys(index.habitsInNotes()).length > 0;
+	for (let i = 0; i < DATA_DAYS; i++) {
+		const day = shiftDate(today, -i);
+		if (card.metrics.length === 0 ? index.sessions(day).length > 0 : card.metrics.some((key) => index.has(key, day))) return true;
+	}
+	return false;
+}
 
 export const SECTION_TITLES: Record<SectionId, TranslationKeys> = {
 	today: "panelSectionToday",

@@ -329,7 +329,6 @@ export const en = {
 	settingsBirthYear: "Birth year",
 	settingsBirthYearDesc: "Only the year. It makes the health panel more precise: heart rate zones for your sessions and how hard they were, and the sleep and activity goals for your age. Leave it empty to skip.",
 	settingsBirthYearMax: "Estimated maximum heart rate: {max} bpm.",
-	noticePanelDisabled: "Turn on the health panel in the plugin settings first.",
 	noticeDataDetected: "Found Garmin data in {count} daily notes. The matching metrics and the side panel are switched on; change this in the settings.",
 	noticeDailyNotesFollowed: "The daily notes plugin now uses the folder {folder} and the format {format}, and its notes are newer than the ones this plugin was reading, so it follows. You can change this in the plugin settings.",
 	panelTitle: "Health",

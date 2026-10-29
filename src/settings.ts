@@ -70,7 +70,9 @@ export interface HealthSyncSettings {
 	unitSystem: UnitSystem;
 	propertiesMode: PropertiesMode; // What a daily note does with its properties block: nothing, fold it, or hide what the panel shows
 	panelEnabled: boolean; // Side panel with health cards
-	panelCards: Record<string, boolean>; // Cards switched off in the panel (missing = on)
+	panelCards: Record<string, boolean>; // Cards switched on or off by the user in the panel settings (missing = decided by `panelAuto`)
+	/** A card with nothing to show is left out of the panel until it has data. False for settings saved before this existed: those users keep every card they did not switch off. */
+	panelAuto: boolean;
 	panelOrder: string[]; // Card ids in the order the user arranged them (empty = default order)
 	birthYear: number | null; // Only the year: estimates max heart rate for the heart rate zones in the panel
 }
@@ -100,6 +102,7 @@ export const DEFAULT_SETTINGS: HealthSyncSettings = {
 	propertiesMode: "off",
 	panelEnabled: false,
 	panelCards: {},
+	panelAuto: true,
 	panelOrder: [],
 	birthYear: null,
 };
