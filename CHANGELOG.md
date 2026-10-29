@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0-beta.84
+
+### Added
+
+- **Hide a habit in the Habits card.** An eye button on every row hides that habit. It becomes a small square at the bottom of the card: filled in the accent colour when the shown day has a yes, a ring for a no, dashed for not logged. A tap on the square shows the habit again. A hidden habit is also left out of the light bulb. The choice is made in the card; there is no setting for it.
+- **What's new mentions the lifestyle log.** A new item in the 0.12.0 notes (all six languages) tells that the habits of Garmin Connect can be synced and shown in the new Habits card.
+
+### Changed
+
+- **More accent colour, three clearly different states.** Yes is a dot (or column) in the accent colour of the panel, no is an empty ring (a low grey column), not logged is a tiny faint dot (a hairline). The thin comparison bar uses the accent colour too. The legend now reads Yes, No, Not logged.
+
 ## 0.12.0-beta.83
 
 ### Changed

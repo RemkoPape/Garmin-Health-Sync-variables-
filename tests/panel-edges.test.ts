@@ -151,7 +151,7 @@ describe("body insights from two weigh-ins", () => {
 });
 
 describe("work that is shared between the cards of one draw", () => {
-	const context = (index: DayIndex) => ({ parent: document.createElement("div"), index, date: END, lang: "en", imperial: false, birthYear: null as number | null, habits: {}, explainOpen: false, onToggleExplain: () => undefined });
+	const context = (index: DayIndex) => ({ parent: document.createElement("div"), index, date: END, lang: "en", imperial: false, birthYear: null as number | null, habits: {}, hiddenHabits: [] as string[], onHideHabit: () => undefined, explainOpen: false, onToggleExplain: () => undefined });
 
 	it("reads the sessions of a day once, until the index is touched or invalidated", async () => {
 		const app = new App();

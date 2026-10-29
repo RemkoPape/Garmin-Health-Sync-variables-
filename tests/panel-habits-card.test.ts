@@ -23,12 +23,12 @@ const on = (ago: number): boolean => {
 	return (x & 1) === 0;
 };
 
-async function render(days: number, frontmatter: (ago: number) => Record<string, unknown> | null, options: { lang?: string; open?: boolean; habits?: typeof NAMES } = {}): Promise<HTMLElement> {
+async function render(days: number, frontmatter: (ago: number) => Record<string, unknown> | null, options: { lang?: string; open?: boolean; habits?: typeof NAMES; hidden?: string[]; onHide?: (key: string, hide: boolean) => void } = {}): Promise<HTMLElement> {
 	const app = new App();
 	await seedHistory(app, { end: END, days, frontmatter });
 	const parent = document.createElement("div");
 	const card = PANEL_CARDS.find((c) => c.id === "habits")!;
-	card.render({ parent, index: new DayIndex(app as never, () => settings), date: END, lang: options.lang ?? "en", imperial: false, birthYear: null, habits: options.habits ?? NAMES, explainOpen: options.open ?? false, onToggleExplain: () => undefined });
+	card.render({ parent, index: new DayIndex(app as never, () => settings), date: END, lang: options.lang ?? "en", imperial: false, birthYear: null, habits: options.habits ?? NAMES, hiddenHabits: options.hidden ?? [], onHideHabit: options.onHide ?? (() => undefined), explainOpen: options.open ?? false, onToggleExplain: () => undefined });
 	return parent;
 }
 const text = (el: Element | null | undefined): string => el?.textContent ?? "";
@@ -139,6 +139,52 @@ describe("what the habits say with little data", () => {
 	});
 });
 
+describe("hiding a habit in the card", () => {
+	const frontmatter = (ago: number): Record<string, unknown> => ({ lifestyle_alcohol: ago === 0 ? 0 : on(ago) ? 1 : 0, lifestyle_coffee: ago === 0 ? 3 : 1 });
+
+	it("has a hide button on every row that hides that habit", async () => {
+		const calls: [string, boolean][] = [];
+		const parent = await render(60, frontmatter, { onHide: (key, hide) => calls.push([key, hide]) });
+		const buttons = Array.from(parent.querySelectorAll<HTMLButtonElement>(".ghs-habit-hide"));
+		expect(buttons.map((b) => b.getAttribute("aria-label")).sort()).toEqual(["Hide Alcohol", "Hide Late caffeine"]);
+		buttons.find((b) => b.getAttribute("aria-label") === "Hide Alcohol")!.click();
+		expect(calls).toEqual([["lifestyle_alcohol", true]]);
+		expect(parent.querySelector(".ghs-habit-hidden")).toBeNull();
+	});
+
+	it("shows a hidden habit as a square in the colour of its day at the bottom, and a tap shows it again", async () => {
+		const calls: [string, boolean][] = [];
+		const parent = await render(60, frontmatter, { hidden: ["lifestyle_alcohol", "lifestyle_coffee"], onHide: (key, hide) => calls.push([key, hide]) });
+		expect(parent.querySelector(".ghs-habit")).toBeNull();
+		expect(parent.querySelector(".ghs-habit-legend")).toBeNull();
+		expect(text(parent.querySelector(".ghs-habit-hidden .ghs-habit-note"))).toBe(en.panelHabitsHiddenHint);
+		const squares = Array.from(parent.querySelectorAll<HTMLButtonElement>(".ghs-habit-square"));
+		expect(squares.map((s) => [s.getAttribute("aria-label"), s.className])).toEqual([
+			["Show Alcohol · No", "ghs-habit-square ghs-habit-square-no"],
+			["Show Late caffeine · Yes", "ghs-habit-square ghs-habit-square-yes"],
+		]);
+		squares[0]!.click();
+		expect(calls).toEqual([["lifestyle_alcohol", false]]);
+	});
+
+	it("keeps the rows of the habits that are not hidden, and marks a habit not logged today", async () => {
+		const parent = await render(60, (ago) => (ago === 0 ? { lifestyle_coffee: 3 } : frontmatter(ago)), { hidden: ["lifestyle_alcohol"] });
+		expect(Array.from(parent.querySelectorAll(".ghs-habit-name")).map((e) => text(e).replace(/\s+/g, " ").trim())).toEqual(["✓ Late caffeine ×3"]);
+		expect(parent.querySelector(".ghs-habit-square-unknown")).not.toBeNull();
+		expect(parent.querySelector(".ghs-habit-legend")).not.toBeNull();
+	});
+
+	it("leaves a hidden habit out of the light bulb", async () => {
+		const parent = await render(80, (ago) => ({ lifestyle_alcohol: on(ago) ? 1 : 0, hrv: 50 - (on(ago + 1) ? 8 : 0) + noise(ago) }), { open: true, hidden: ["lifestyle_alcohol"], habits: { lifestyle_alcohol: NAMES.lifestyle_alcohol } as never });
+		expect(Array.from(parent.querySelectorAll(".ghs-insight-item")).map(text).join(" ")).not.toContain("Alcohol");
+	});
+
+	it("still says there is nothing to show when no habit is listed, hidden or not", async () => {
+		const parent = await render(40, () => ({ hrv: 50 }), { hidden: ["lifestyle_alcohol"] });
+		expect(text(parent.querySelector(".ghs-card-note"))).toBe(en.panelHabitsEmpty);
+	});
+});
+
 describe("a habit without an entry in the last 7 days", () => {
 	it("shows its strip and no week", async () => {
 		const parent = await render(60, (ago) => (ago === 10 ? { lifestyle_alcohol: 1 } : {}), { habits: { lifestyle_alcohol: NAMES.lifestyle_alcohol } as never });
@@ -177,7 +223,7 @@ describe("habitInsights", () => {
 		expect(insights.map((i) => i.id).sort()).toEqual(["lifestyle_hrv_up", "lifestyle_hrv_up", "lifestyle_rhr_down"].sort());
 		const first = insights.find((i) => i.id === "lifestyle_hrv_up")!;
 		expect(insightText(first, "en")).toMatch(/^After (Alcohol|Late caffeine) your HRV is \d ms higher than after days without it \(\d+ days against \d+\)\.$/);
-		expect(habitInsights({ insights: [], habits: [] }, "en")).toEqual([]);
+		expect(habitInsights({ insights: [], habits: [], hidden: [] }, "en")).toEqual([]);
 	});
 
 	it("names a rise of the resting heart rate and a fall of the HRV as something to watch", async () => {

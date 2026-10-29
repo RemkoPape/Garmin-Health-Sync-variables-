@@ -1,3 +1,4 @@
+import { setIcon } from "obsidian";
 import { t } from "../../i18n/t";
 import { formatNumber, formatSigned } from "../format";
 import type { HabitInfo } from "../../providers/garmin/lifestyle";
@@ -9,11 +10,15 @@ import { renderCard } from "./shell";
 export interface HabitsModel {
 	/** What the data suggests, filled in by the panel (see insights/). */
 	insights: Insight[];
+	/** The habits that are shown as rows. */
 	habits: HabitRow[];
+	/** The habits the user hid: they are shown as small squares at the bottom, and left out of the light bulb. */
+	hidden: HabitRow[];
 }
 
-export function computeHabitsCard(index: DayIndex, date: string, names: Record<string, HabitInfo>): HabitsModel {
-	return { insights: [], habits: computeHabits(index, date, names) };
+export function computeHabitsCard(index: DayIndex, date: string, names: Record<string, HabitInfo>, hiddenKeys: string[] = []): HabitsModel {
+	const rows = computeHabits(index, date, names);
+	return { insights: [], habits: rows.filter((r) => !hiddenKeys.includes(r.key)), hidden: rows.filter((r) => hiddenKeys.includes(r.key)) };
 }
 
 const UNITS: Record<Measure, string> = { hrv: "ms", resting_hr: "bpm" };
@@ -65,7 +70,7 @@ function progress(parent: HTMLElement, row: HabitRow): void {
 	bar.createDiv({ cls: "ghs-habit-progress-fill" }).setCssProps({ "--ghs-w": `${share * 100}%` });
 }
 
-function habitRow(parent: HTMLElement, row: HabitRow, lang: string): void {
+function habitRow(parent: HTMLElement, row: HabitRow, lang: string, hide: (key: string, hide: boolean) => void): void {
 	const el = parent.createDiv({ cls: "ghs-habit" });
 	const head = el.createDiv({ cls: "ghs-habit-head" });
 	const name = head.createSpan({ cls: "ghs-habit-name" });
@@ -73,7 +78,13 @@ function habitRow(parent: HTMLElement, row: HabitRow, lang: string): void {
 	if (row.today !== null) name.createSpan({ cls: row.today > 0 ? "ghs-habit-yes" : "ghs-habit-no", text: row.today > 0 ? "✓ " : "✗ " });
 	name.createSpan({ text: row.name });
 	if (row.kind === "count" && row.today !== null && row.today > 0) name.createEl("b", { text: ` ×${formatNumber(row.today, lang, 0)}` });
-	head.createSpan({ cls: "ghs-habit-note", text: meta(row, lang) });
+	const side = head.createSpan({ cls: "ghs-habit-side" });
+	side.createSpan({ cls: "ghs-habit-note", text: meta(row, lang) });
+	// hiding is done here, not in the settings: the habit goes to a small square at the bottom of the card
+	const label = t("panelHabitsHide", lang).replace("{habit}", row.name);
+	const button = side.createEl("button", { cls: "clickable-icon ghs-habit-hide", attr: { "aria-label": label, title: label } });
+	setIcon(button, "eye-off");
+	button.addEventListener("click", () => hide(row.key, true));
 	if (row.kind === "count") columns(el, row.daily);
 	else strip(el, row.strip);
 	if (row.hrv === null && row.resting_hr === null) {
@@ -98,19 +109,40 @@ function facts(habits: HabitRow[], lang: string): string[] {
 	return out;
 }
 
-export function renderHabits(parent: HTMLElement, model: HabitsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void): void {
+/** The state of a habit on the shown day, for the colour of its square and for its label: yes, no, or not logged. */
+function state(row: HabitRow): Dot {
+	return row.today === null ? "unknown" : row.today > 0 ? "yes" : "no";
+}
+
+/** The hidden habits as small squares in the colour of their day; a tap shows the habit again. */
+function hiddenSquares(card: HTMLElement, hidden: HabitRow[], lang: string, hide: (key: string, hide: boolean) => void): void {
+	const box = card.createDiv({ cls: "ghs-habit-hidden" });
+	box.createSpan({ cls: "ghs-habit-note", text: t("panelHabitsHiddenHint", lang) });
+	const squares = box.createDiv({ cls: "ghs-habit-squares" });
+	const states = { yes: "panelHabitsLogged", no: "panelHabitsNo", unknown: "panelHabitsNotLogged" } as const;
+	for (const row of hidden) {
+		const label = `${t("panelHabitsShow", lang).replace("{habit}", row.name)} · ${t(states[state(row)], lang)}`;
+		const square = squares.createEl("button", { cls: `ghs-habit-square ghs-habit-square-${state(row)}`, attr: { "aria-label": label, title: label } });
+		square.addEventListener("click", () => hide(row.key, false));
+	}
+}
+
+export function renderHabits(parent: HTMLElement, model: HabitsModel, lang: string, explainOpen: boolean, onToggleExplain: () => void, hide: (key: string, hide: boolean) => void): void {
 	renderCard(parent, { title: t("panelHabitsTitle", lang), value: undefined, explain: t("panelHabitsExplain", lang), facts: facts(model.habits, lang), explainOpen, onToggleExplain, lang, insights: model.insights }, (card) => {
-		if (model.habits.length === 0) {
+		if (model.habits.length === 0 && model.hidden.length === 0) {
 			card.createDiv({ cls: "ghs-card-note", text: t("panelHabitsEmpty", lang) });
 			return;
 		}
-		for (const h of model.habits) habitRow(card, h, lang);
-		const legend = card.createDiv({ cls: "ghs-habit-legend" });
-		for (const [dot, key] of [["yes", "panelHabitsLogged"], ["no", "panelHabitsNo"], ["unknown", "panelHabitsNotLogged"]] as const) {
-			const item = legend.createSpan();
-			item.createSpan({ cls: `ghs-habit-dot ghs-habit-dot-${dot}` });
-			item.createSpan({ text: ` ${t(key, lang)}` });
+		for (const h of model.habits) habitRow(card, h, lang, hide);
+		if (model.habits.length > 0) {
+			const legend = card.createDiv({ cls: "ghs-habit-legend" });
+			for (const [dot, key] of [["yes", "panelHabitsLogged"], ["no", "panelHabitsNo"], ["unknown", "panelHabitsNotLogged"]] as const) {
+				const item = legend.createSpan();
+				item.createSpan({ cls: `ghs-habit-dot ghs-habit-dot-${dot}` });
+				item.createSpan({ text: ` ${t(key, lang)}` });
+			}
+			if (model.habits.some((h) => h.hrv || h.resting_hr)) legend.createSpan({ text: t("panelHabitsBarsHint", lang) });
 		}
-		if (model.habits.some((h) => h.hrv || h.resting_hr)) legend.createSpan({ text: t("panelHabitsBarsHint", lang) });
+		if (model.hidden.length > 0) hiddenSquares(card, model.hidden, lang, hide);
 	});
 }

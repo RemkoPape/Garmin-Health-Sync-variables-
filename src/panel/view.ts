@@ -207,6 +207,8 @@ export class HealthPanelView extends ItemView {
 				imperial: this.plugin.settings.unitSystem === "imperial",
 				birthYear: this.plugin.settings.birthYear,
 				habits: this.plugin.settings.lifestyleHabits,
+				hiddenHabits: this.plugin.settings.hiddenHabits,
+				onHideHabit: (key, hide) => void this.setHabitHidden(key, hide),
 				explainOpen: this.explain === card.id,
 				onToggleExplain: () => {
 					this.explain = this.explain === card.id ? null : card.id;
@@ -230,6 +232,14 @@ export class HealthPanelView extends ItemView {
 		}
 		makeSortable(list, (ids) => void this.saveOrder(ids));
 		root.createEl("button", { cls: "ghs-edit-reset", text: t("panelEditReset", lang) }).addEventListener("click", () => void this.saveOrder([]));
+	}
+
+	/** Hides a habit of the Habits card or shows it again; the choice is kept in the settings, not offered there. */
+	private async setHabitHidden(key: string, hide: boolean): Promise<void> {
+		const rest = this.plugin.settings.hiddenHabits.filter((k) => k !== key);
+		this.plugin.settings.hiddenHabits = hide ? [...rest, key] : rest;
+		await this.plugin.saveSettings();
+		this.render();
 	}
 
 	private async saveOrder(ids: string[]): Promise<void> {

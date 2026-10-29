@@ -1462,8 +1462,9 @@
 	border-radius: 50%;
 }
 
+/* Yes is the accent colour of the panel, no is an empty ring, not logged is a tiny faint dot: three states that differ in shape as well as in colour */
 .ghs-habit-dot-yes {
-	background: var(--text-normal);
+	background: var(--ghs-data);
 }
 
 .ghs-habit-dot-no {
@@ -1471,7 +1472,10 @@
 }
 
 .ghs-habit-dot-unknown {
-	border: 1.5px dashed var(--text-faint);
+	width: 4px;
+	height: 4px;
+	margin: 3px;
+	background: var(--text-faint);
 }
 
 .ghs-habit-effect {
@@ -1573,17 +1577,17 @@
 	width: 10px;
 	height: var(--ghs-h, 3px);
 	border-radius: 2px;
-	background: var(--text-normal);
+	background: var(--ghs-data);
 }
 
 .ghs-habit-col-zero {
+	height: 4px;
 	background: var(--text-muted);
 }
 
 .ghs-habit-col-unknown {
-	height: 3px;
-	border: 1px dashed var(--text-faint);
-	background: transparent;
+	height: 2px;
+	background: var(--text-faint);
 }
 
 /* How close the comparison is to the days it needs */
@@ -1597,5 +1601,65 @@
 	width: var(--ghs-w, 0);
 	height: 100%;
 	border-radius: 2px;
-	background: var(--text-faint);
+	background: var(--ghs-data);
+}
+
+/* The note and the hide button sit together on the right of the habit's name */
+.ghs-habit-side {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-2);
+}
+
+.ghs-habit-hide {
+	--icon-size: 14px;
+	padding: var(--size-2-2);
+	color: var(--text-faint);
+}
+
+.is-mobile .ghs-habit-hide {
+	min-width: 44px;
+	min-height: 44px;
+	margin: -14px -10px -14px 0;
+}
+
+/* Hidden habits: one square each, in the colour of the day (accent = yes, ring = no, dashed = not logged) */
+.ghs-habit-hidden {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-3);
+	padding-top: var(--size-4-2);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.ghs-habit-squares {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+}
+
+.ghs-habit-square {
+	box-sizing: border-box;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: 2px solid var(--text-muted);
+	border-radius: var(--radius-s);
+	background: transparent;
+	box-shadow: none;
+	cursor: pointer;
+}
+
+.is-mobile .ghs-habit-square {
+	width: 28px;
+	height: 28px;
+}
+
+.ghs-habit-square-yes {
+	border-color: var(--ghs-data);
+	background: var(--ghs-data);
+}
+
+.ghs-habit-square-unknown {
+	border: 1.5px dashed var(--text-faint);
 }
