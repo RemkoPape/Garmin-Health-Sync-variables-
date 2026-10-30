@@ -4,9 +4,11 @@
  */
 
 import { requestUrl } from "obsidian";
+import { withTimeout } from "./timeout";
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse";
 const USER_AGENT = "ObsidianHealthSync/1.0";
+const GEOCODE_TIMEOUT_MS = 8000;
 
 /**
  * Removes non-Latin characters from a string.
@@ -14,9 +16,10 @@ const USER_AGENT = "ObsidianHealthSync/1.0";
  * (e.g. "Oualidia ⵍⵡⴰⵍⵉⴷⵢⵢⴰ الوليدية"), we only want the Latin part.
  */
 function cleanMultiscript(text: string): string {
-	// Keep words that consist only of Latin characters + common special characters
+	// Drop a word only if it contains a letter outside the Latin script. Latin-Extended letters such as
+	// Vietnamese "ộ" or "Đ" (above U+0250) are Latin and must stay.
 	const words = text.split(/\s+/);
-	const latin = words.filter(w => !/[\u0250-\uFFFF]/.test(w));
+	const latin = words.filter(w => !/(?!\p{Script=Latin})\p{L}/u.test(w));
 	return latin.length > 0 ? latin.join(" ").trim() : text.trim();
 }
 
@@ -29,10 +32,11 @@ export async function reverseGeocode(lat: number, lon: number): Promise<string |
 	try {
 		const lang = activeDocument.documentElement.lang?.slice(0, 2) || "en";
 		const url = `${NOMINATIM_URL}?lat=${lat}&lon=${lon}&format=json&zoom=14&accept-language=${lang}`;
-		const response = await requestUrl({
+		// a place name is not worth a note that waits for it: a service that does not answer is no place
+		const response = await withTimeout(requestUrl({
 			url,
 			headers: { "User-Agent": USER_AGENT },
-		});
+		}), GEOCODE_TIMEOUT_MS, "geocoding timeout");
 
 		if (response.status !== 200) return null;
 

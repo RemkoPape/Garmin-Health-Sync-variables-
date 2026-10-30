@@ -10,6 +10,20 @@ export function isLoginRequiredError(error: unknown): error is LoginRequiredErro
 		|| (error instanceof Error && error.message === "login_required");
 }
 
+/** A data fetch produced no usable response (refresh/profile/network failure, timeout, or
+ *  every endpoint failed). Distinct from a successful fetch that simply has no data, so the
+ *  sync can report an error instead of "no health data". */
+export class SyncFetchError extends Error {
+	constructor(message = "sync_fetch_failed") {
+		super(message);
+		this.name = "SyncFetchError";
+	}
+}
+
+export function isSyncFetchError(error: unknown): error is SyncFetchError {
+	return error instanceof SyncFetchError;
+}
+
 /** Carries the HTTP status of a failed Garmin OAuth/API call so the auth state
  *  machine can tell a dead OAuth1 grant (401/403 → needsUserLogin) apart from a
  *  transient failure (429/5xx/network → temporarilyUnavailable + backoff).
@@ -34,12 +48,4 @@ export function isGarminAuthError(error: unknown): error is GarminAuthError {
  *  code only checked 401; the added 403 is the documented side-finding. */
 export function isAuthFailureStatus(status: number): boolean {
 	return status === 401 || status === 403;
-}
-
-/** Transient failure: retry with backoff, never log out. Covers rate limiting
- *  (429), server-side errors (5xx) and network-level failures (status ≤ 0).
- *  The state machine treats every non-auth-failure as transient by default;
- *  this helper exists for explicit, readable checks. */
-export function isTransientStatus(status: number): boolean {
-	return status === 429 || status >= 500 || status <= 0;
 }

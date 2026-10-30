@@ -8,7 +8,7 @@
 
 ## Environment & tooling
 
-- Node.js: use current LTS (Node 18+ recommended).
+- Node.js 24 (see `.nvmrc`), npm >= 11.10. Node 22 and older are not supported; CI also runs Node 26 as a non-blocking look-ahead.
 - **Package manager: npm** (required for this sample - `package.json` defines npm scripts and dependencies).
 - **Bundler: esbuild** (required for this sample - `esbuild.config.mjs` and build scripts depend on it). Alternative bundlers like Rollup or webpack are acceptable for other projects if they bundle all external dependencies into `main.js`.
 - Types: `obsidian` type definitions.
@@ -86,6 +86,23 @@ npm run build
   ```
 - Reload Obsidian and enable the plugin in **Settings → Community plugins**.
 
+### Automated tests and gates
+
+```bash
+npm test                    # vitest (tests/**/*.test.ts); helpers live in testUtils/, never in tests/
+npm run test:cov            # + v8 coverage; the gate is 100 % on all four metrics (locked since 0.11.1)
+npm run typecheck:tests     # tsc over src, tests, testUtils (tsconfig.test.json)
+npm run check:dead-code     # knip --production: code only a test reaches is reported, so delete it
+npm run lint:cloud-parity   # lint src/ with moment and @types/node hidden, as the review bot sees it
+npm run screenshots         # re-render docs/screenshots from the real panel code and synthetic data (skill: docs-screenshots); check:screenshots verifies without writing
+npm run check-release       # pre-release validator, REQUIRED before tagging: -- --tag X | --with-build | --strict
+```
+
+- The `obsidian` package ships only types; tests alias it to `testUtils/mocks/obsidian.ts`.
+- Tests assert behaviour (vault content, requests sent, notices, persisted settings), are deterministic (fake timers, `vi.setSystemTime`, unrouted `requestUrl` fails the test) and never use `v8 ignore`. Unreachable code is deleted, not hidden; code reachable from persisted or hand-edited `data.json` stays and gets a test.
+- Test files are `tests/**/*.test.ts` only and everything else (mocks, fixtures, setup) is under `testUtils/`: the community review bot lints every `.ts`/`.js`/`.css` file except names like `*.test.*` and `testUtils`. `tests/reviewScope.test.ts` enforces it.
+- Required CI checks (names must not change): `validate`, `timezones (America/Los_Angeles)`, `timezones (Pacific/Auckland)`, `timezones (Europe/Vienna)`, `store-listing`. `next-node` is informational.
+
 ## Commands & settings
 
 - Any user-facing commands should be added via `this.addCommand(...)`.
@@ -100,19 +117,30 @@ npm run build
 - Attach `manifest.json`, `main.js`, and `styles.css` (if present) to the release as individual assets.
 - After the initial release, follow the process to add/update your plugin in the community catalog as required.
 
-### Release checklist (this project)
+### Release rules (this project)
 
-Past releases were marked down in quality for inconsistent numbering and a broken `versions.json` (missing `0.9.5`, unsorted). Follow this every time:
+Procedures live in project skills (`.claude/skills/`): **`docs-screenshots`** to re-render the README images of the side panel, **`release-beta`** for every release that goes out for testing, **`release-stable`** only when Daniel explicitly says to go stable. Load the skill before starting and follow it step by step.
 
-1. **Keep the version in sync across all four files**: `package.json`, `package-lock.json`, `manifest.json`, `versions.json`. Running `npm version x.y.z` updates `package.json` + `package-lock.json` and runs `version-bump.mjs` (which writes `manifest.json` and appends to `versions.json`).
-2. **`versions.json` must be complete and sorted ascending**, every released stable version → its `minAppVersion`. No gaps. Do **not** add `-beta` versions here — `versions.json` is for stable store versions only.
-3. **Before tagging**, run and confirm clean: `npm run build`, `npm run lint`, `git diff --check` (no whitespace errors / conflict markers).
-4. **Before the release lint run, verify the linter itself is current**: `npm outdated eslint-plugin-obsidianmd` — the directory review bot always lints with the latest version plus type-aware `@typescript-eslint/no-unsafe-*` rules (mirrored for `src/` in `eslint.config.mts`; never weaken that block). A clean lint on an outdated plugin version proves nothing (learned 2026-08-02: 0.10.0 shipped locally clean on 0.1.9 and got a "Caution" badge with ~90 warnings; root cause was a tsconfig `lib` older than the APIs the code uses — keep `lib` at ES2018+, incl. `DOM.Iterable`). The bot also does **not install transitive type packages**: values typed through `moment` (obsidian's re-export) or `@types/node` are error-typed there even when local lint is clean — never call those directly, go through a locally-typed module-level const (see `momentFn` in `src/daily-note.ts`, `window.require` in `garmin-api.ts`). To verify like the bot: temporarily move `node_modules/moment` and `node_modules/@types/node` aside, `npm run lint` must stay clean, move them back.
-5. **Lint warnings are release blockers, not noise.** The Obsidian community review mirrors `eslint-plugin-obsidianmd` findings (warnings and recommendations, e.g. deprecated APIs, missing `getSettingDefinitions()`) into the plugin's public review score. If `npm run lint` reports anything, resolve it before tagging or explicitly warn Andi and let him decide — never ship a release with known lint warnings silently. (Learned 2026-08-02 in immich-journal: two ignored warnings cost a rating point on the plugin's review page.)
-6. **Tag format**: stable = exactly `x.y.z` (no leading `v`). Pre-release = `x.y.z-beta.N`. The release workflow triggers on both and auto-marks `-beta.N` tags as GitHub pre-releases.
-7. **The GitHub release's tag and name must both match `manifest.json`'s version.** Release notes come from `CHANGELOG.md` — add the new section at the top before tagging.
-8. **Verify release assets** are attached: `main.js`, `manifest.json`, `styles.css`.
-9. **After release, confirm with** `gh release view <version> --json tagName,name,isDraft,isPrerelease,assets`.
+| Trigger | Skill |
+|---|---|
+| A change is merged to `main` and needs testing; "release", "tag", "ship a beta" | `release-beta` |
+| Daniel **explicitly** says "go stable", "promote", "release for everyone" | `release-stable` |
+| A panel card or its look changed; a release touches the panel; "screenshots" | `docs-screenshots` |
+
+Always-on rules:
+
+- Branch, PR, CI green, merge with a merge commit (never squash: release tags must stay reachable from `main`), never routine work on `main`. `release/*` branches are reserved for the stable version bump.
+- **`main`'s `manifest.json` must always name a version that already has a published, non-prerelease GitHub release** with `main.js`, `manifest.json`, `styles.css` (the community directory reads it; a `-beta.N` on `main` got the plugin delisted on 2026-09-18). Never commit a beta version. The `store-listing` CI check enforces it.
+- **Every release starts as `X.Y.Z-beta.N` tagged on `main`** after its PR merged. CI stamps the beta version into the working tree only (`stamp-prerelease.mjs`); do not run `npm version` for a beta. Stable only on explicit instruction, tagged on the `release/X.Y.Z` branch head, merged only after the release exists.
+- Releases are tag-driven (`.github/workflows/release.yml`); never `gh release create|upload|edit|delete` by hand. A published beta number is never reused.
+- `versions.json` lists stable versions only, ascending, no gaps; keep `package.json`, `package-lock.json`, `manifest.json` and `versions.json` in sync for a stable bump (`npm version X.Y.Z --no-git-tag-version`, because without the flag npm also creates a local git tag).
+- `minAppVersion` stays what the latest stable release says unless Daniel decides otherwise (raising it once stopped BRAT installs on iOS).
+- **Zero warnings, zero errors**: `npm run build`, `npm run lint`, `typecheck:tests`, `check:dead-code`, `check-release` (and `lint:cloud-parity` for errors) are all clean before a PR is ready and before any tag. The Obsidian review mirrors `eslint-plugin-obsidianmd` findings into the public score, and the bot does not install transitive type packages (`moment`, `@types/node`): never call those directly, go through a locally typed module-level const (see `momentFn` in `src/daily-note.ts`, `window.require` in `garmin-api.ts`). Keep tsconfig `lib` at ES2018+ incl. `DOM.Iterable`. Never silence a rule or add an ignore to get to zero. Never weaken the type-aware `src/**` block in `eslint.config.mts`.
+- Source stays on ES2018 and APIs already used in the code base (iOS WebViews are older than Node): no `structuredClone`, `Array.prototype.at`, `Object.hasOwn`, `replaceAll` in `src/`.
+- Dependencies are dev-only, exact-pinned, at least 14 days old (`.npmrc` `min-release-age`, Dependabot cooldown); nothing may end up in `main.js`. `@codemirror/state|view` stay pinned to obsidian's exact peer versions; `moment` is obsidian's (do not declare it). Actions are pinned to full commit SHAs.
+- Every interpretation the health panel shows under a card's light bulb (`src/panel/insights/`) is a health-related statement: it needs its text in all six languages and a section in `docs/panel-insights.md` (trigger, basis, a link to a source you actually looked up, or `none` and why); `tests/panelInsightsDocs.test.ts` enforces it. No generic advice that applies to everyone (alcohol, caffeine, water): a tip appears only when the user's own data points to it.
+- Docs stay interlinked and current (`docs/README.md` is the index): a card in `PANEL_CARDS` needs its section in `docs/panel-cards.md` (`tests/panelCardsDocs.test.ts`), a metric in `src/metrics.ts` needs its row in `docs/metrics.md` (`tests/metricsDocs.test.ts`), a setting needs its line in `docs/settings.md`, and every relative link and anchor in the README files and `docs/*.md` must resolve (`tests/docsLinks.test.ts`). The six `README*.md` keep the same sections, feature bullets and images (`tests/readmeParity.test.ts`). Credits for ideas taken from other plugins live in `NOTICE.md` and the README Credits.
+- Release notes come from this version's own section in `CHANGELOG.md` (`## X.Y.Z` or `## X.Y.Z-beta.N`); add it before tagging. Contact for decisions and warnings: Daniel.
 
 ## Security, privacy, and compliance
 

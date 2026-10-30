@@ -6,11 +6,127 @@ import { App, Notice, TFile, TFolder, moment, normalizePath, parseYaml, stringif
  * does not install — every call becomes error-typed there. Type the tiny
  * surface this module uses locally so the checks hold in any environment.
  */
-type MomentFn = (input?: string, format?: string) => { format(format: string): string };
+type MomentFn = (input?: string, format?: string, strict?: boolean) => { format(format: string): string; isValid(): boolean };
 const momentFn = moment as unknown as MomentFn;
 import type { HealthData } from "./providers/provider";
 import { applyPrefix } from "./metrics";
 import { reverseGeocode } from "./geocoding";
+import { t } from "./i18n/t";
+
+/** Date tokens understood when parsing a note path back into a date. */
+const DATE_TOKENS: { token: string; group: string; digits: number }[] = [
+	{ token: "YYYY", group: "year", digits: 4 },
+	{ token: "MM", group: "month", digits: 2 },
+	{ token: "DD", group: "day", digits: 2 },
+];
+
+function escapeRegex(text: string): string {
+	return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Builds a regex that recovers year/month/day from a path formatted with the
+ * given moment format. Understands the YYYY, MM and DD tokens plus moment's
+ * literal escapes ("[text]"); every other character is matched verbatim.
+ * A token that appears more than once becomes a backreference, so
+ * "YYYY/YYYY-MM-DD" only matches when both years agree.
+ */
+function dateFormatToRegex(format: string): RegExp {
+	const known = REGEX_CACHE.get(format);
+	if (known) return known;
+	const regex = buildDateFormatRegex(format);
+	REGEX_CACHE.set(format, regex);
+	return regex;
+}
+
+/** The compiled pattern of each format: the panel asks for it once per note of the vault at every rebuild. */
+const REGEX_CACHE = new Map<string, RegExp>();
+
+function buildDateFormatRegex(format: string): RegExp {
+	const seen = new Set<string>();
+	let pattern = "";
+
+	for (let i = 0; i < format.length; ) {
+		// moment escape: [literal text] is taken verbatim, tokens inside are not expanded
+		if (format[i] === "[") {
+			const end = format.indexOf("]", i + 1);
+			if (end !== -1) {
+				pattern += escapeRegex(format.substring(i + 1, end));
+				i = end + 1;
+				continue;
+			}
+		}
+
+		const token = DATE_TOKENS.find(candidate => format.startsWith(candidate.token, i));
+		if (token) {
+			pattern += seen.has(token.token)
+				? `\\k<${token.group}>`
+				: `(?<${token.group}>\\d{${token.digits}})`;
+			seen.add(token.token);
+			i += token.token.length;
+			continue;
+		}
+
+		pattern += escapeRegex(format.charAt(i));
+		i += 1;
+	}
+
+	return new RegExp(`^${pattern}$`);
+}
+
+/**
+ * Recovers the date a note belongs to from its path.
+ *
+ * The filename format may itself contain "/" (the core Daily Notes plugin
+ * allows this, and writeToDailyNote creates the matching subfolders), so the
+ * format is matched against the note path *relative to the configured
+ * folder* — matching the basename alone would silently fail for everyone
+ * using a format like "YYYY/YYYY-MM-DD".
+ */
+export function dateFromDailyNote(
+	file: TFile,
+	settings: { dailyNotePath: string; dailyNoteFormat: string }
+): string | null {
+	return dateFromNotePath(file.path, file.basename, settings);
+}
+
+/** The same for a note that is known by its path and name only (a note that was renamed or deleted). */
+export function dateFromNotePath(
+	path: string,
+	basename: string,
+	settings: { dailyNotePath: string; dailyNoteFormat: string }
+): string | null {
+	const format = settings.dailyNoteFormat || "YYYY-MM-DD";
+	const basePath = (settings.dailyNotePath || "").replace(/^\/+|\/+$/g, "");
+
+	const notePath = path.replace(/\.md$/i, "");
+	let relative = notePath;
+	if (basePath) {
+		if (!notePath.startsWith(basePath + "/")) return null;
+		relative = notePath.substring(basePath.length + 1);
+	}
+
+	const pattern = dateFormatToRegex(format);
+	let match = relative.match(pattern);
+
+	// Fallback: match the basename alone, so notes that were moved into
+	// hand-made subfolders below the configured folder stay recognisable. With no folder set at all (a fresh
+	// install on another device, where the plugin's settings did not come along) a note named by date anywhere in
+	// the vault is a daily note: the panel must not stay empty because a folder is not known.
+	if (!match && !format.includes("/")) {
+		match = basename.match(pattern);
+	}
+	if (match?.groups) {
+		const { year, month, day } = match.groups;
+		if (!year || !month || !day) return null;
+		return `${year}-${month}-${day}`;
+	}
+
+	// The pattern above only knows YYYY, MM and DD. Formats with other tokens (a weekday, a month name, ...)
+	// are read back with moment instead, which must reproduce the name exactly.
+	return dateFromFormattedName(relative, format)
+		?? (!format.includes("/") ? dateFromFormattedName(basename, format) : null);
+}
 
 /**
  * Searches for a daily note recursively in the given directory and all subdirectories.
@@ -103,7 +219,7 @@ export function matchDailyNoteDate(
 }
 
 /** Creates a folder including all parent directories */
-async function ensureFolderExists(app: App, folderPath: string): Promise<void> {
+export async function ensureFolderExists(app: App, folderPath: string): Promise<void> {
 	const normalized = normalizePath(folderPath);
 	if (app.vault.getAbstractFileByPath(normalized)) return;
 	const parts = normalized.split("/");
@@ -111,7 +227,12 @@ async function ensureFolderExists(app: App, folderPath: string): Promise<void> {
 	for (const part of parts) {
 		current = current ? `${current}/${part}` : part;
 		if (!app.vault.getAbstractFileByPath(current)) {
-			await app.vault.createFolder(current);
+			try {
+				await app.vault.createFolder(current);
+			} catch (error) {
+				// another plugin or device made it in the meantime: the folder is there, which is what was wanted
+				if (!app.vault.getAbstractFileByPath(current)) throw error;
+			}
 		}
 	}
 }
@@ -138,6 +259,7 @@ export async function writeToDailyNote(
 		writeStrengthSets?: boolean;
 		writeWorkoutLocation: boolean;
 		createIfMissing: boolean;
+		language: string;
 	}
 ): Promise<boolean> {
 	const fileName = formatDate(date, options.dailyNoteFormat);
@@ -160,7 +282,14 @@ export async function writeToDailyNote(
 			await ensureFolderExists(app, fileDir);
 		}
 		const initialContent = options.template || "";
-		file = await app.vault.create(filePath, initialContent);
+		try {
+			file = await app.vault.create(filePath, initialContent);
+		} catch (error) {
+			// Templater, a periodic notes plugin or another device made the note in the meantime: write into that one
+			const made = findDailyNoteRecursive(app, fileName, options.dailyNotePath);
+			if (!made) throw error;
+			file = made;
+		}
 	}
 
 	// Build properties map
@@ -193,7 +322,7 @@ export async function writeToDailyNote(
 	}
 
 	// Write to frontmatter (returns false if nothing would change)
-	return updateFrontmatter(app, file, properties);
+	return updateFrontmatter(app, file, properties, options.language);
 }
 
 /**
@@ -215,7 +344,8 @@ export async function writeToDailyNote(
 async function updateFrontmatter(
 	app: App,
 	file: TFile,
-	properties: Record<string, number | string | Record<string, unknown>[]>
+	properties: Record<string, number | string | Record<string, unknown>[]>,
+	language: string
 ): Promise<boolean> {
 	const content = await app.vault.read(file);
 	const parsed = extractFrontmatter(content);
@@ -223,47 +353,46 @@ async function updateFrontmatter(
 	if (parsed.kind === "invalid") {
 		// Don't overwrite a damaged file — back it up and bail with a notice.
 		await backupFile(app, file, content, parsed.reason);
-		const msg = `Garmin Health Sync: Frontmatter in "${file.path}" ist kaputt (${parsed.reason}). Ein Backup wurde unter _garmin-health-sync/backups/ abgelegt. Bitte manuell reparieren.`;
+		const msg = t("noticeFrontmatterBroken", language).replace("{path}", file.path).replace("{reason}", parsed.reason);
 		console.warn(msg);
 		new Notice(msg, 15000);
 		return false;
 	}
 
-	const existing = parsed.kind === "present" ? parsed.data : {};
-
-	// Dirty-check: skip the write when every incoming key is already present
-	// with the same value. Avoids flipping the file's mtime and firing LiveSync
-	// when nothing changed.
-	let changed = false;
-	for (const [key, value] of Object.entries(properties)) {
-		if (!isDeepEqual(existing[key], value)) {
-			changed = true;
-			break;
-		}
-	}
-	if (!changed) {
+	if (!hasChanges(parsed.kind === "present" ? parsed.data : {}, properties)) {
 		console.debug("Garmin Health Sync: frontmatter unchanged, skipping write for", file.path);
 		return false;
 	}
 
-	const merged = { ...existing };
-	for (const [key, value] of Object.entries(properties)) {
-		merged[key] = value;
-	}
+	// Write atomically. The note may have changed since the read above (it is often open and being typed in),
+	// so the merge is redone against the content as it is NOW instead of overwriting with the stale copy.
+	let written = false;
+	await app.vault.process(file, (current) => {
+		const now = extractFrontmatter(current);
+		if (now.kind === "invalid") return current;
+		const nowExisting = now.kind === "present" ? now.data : {};
+		if (!hasChanges(nowExisting, properties)) return current;
+		written = true;
+		return renderWithFrontmatter({ ...nowExisting, ...properties }, now, properties);
+	});
+	return written;
+}
 
-	const newContent = renderWithFrontmatter(merged, parsed);
-	await app.vault.modify(file, newContent);
-	return true;
+/** Dirty check: true if any incoming key is missing or differs. Avoids flipping the file's mtime and firing sync
+ *  engines (LiveSync and the like) when nothing changed. */
+function hasChanges(existing: Record<string, unknown>, properties: Record<string, unknown>): boolean {
+	return Object.entries(properties).some(([key, value]) => !isDeepEqual(existing[key], value));
 }
 
 type FrontmatterParse =
-	| { kind: "absent"; body: string; lineEnding: string }
+	| { kind: "absent"; body: string; lineEnding: string; bom: string }
 	| {
 			kind: "present";
 			data: Record<string, unknown>;
 			body: string;
 			lineEnding: string;
 			rawHeader: string;
+			bom: string;
 	  }
 	| { kind: "invalid"; reason: string };
 
@@ -272,28 +401,38 @@ type FrontmatterParse =
  * on its own line. The block ends at the next `---` line. Anything between
  * is parsed via parseYaml and must yield a plain object.
  */
-function extractFrontmatter(content: string): FrontmatterParse {
+function extractFrontmatter(rawContent: string): FrontmatterParse {
+	// A UTF-8 byte order mark may precede the opening `---`. Set it aside and put it back first when writing,
+	// otherwise the block is not recognised and a second one would be added above the mark.
+	const bom = rawContent.startsWith("\uFEFF") ? "\uFEFF" : "";
+	const content = bom ? rawContent.slice(1) : rawContent;
 	const lineEnding = content.includes("\r\n") ? "\r\n" : "\n";
 
 	// File doesn't open with `---\n` → no frontmatter.
-	if (!/^---\r?\n/.test(content)) {
-		return { kind: "absent", body: content, lineEnding };
+	const opener = /^---\r?\n/.exec(content);
+	if (!opener) {
+		return { kind: "absent", body: content, lineEnding, bom };
 	}
 
-	const lines = content.split(/\r?\n/);
-	// Find the closing `---` (start at line 1, line 0 is the opener).
-	let closingIdx = -1;
-	for (let i = 1; i < lines.length; i++) {
-		if (lines[i] === "---") {
-			closingIdx = i;
+	// Find the closing `---` line and keep the body exactly as it is, line endings included.
+	const headerStart = opener[0].length;
+	let closingStart = -1;
+	let bodyStart = content.length;
+	for (let pos = headerStart; pos <= content.length; ) {
+		const newline = content.indexOf("\n", pos);
+		const lineEnd = newline === -1 ? content.length : newline;
+		if (content.slice(pos, lineEnd).replace(/\r$/, "") === "---") {
+			closingStart = pos;
+			bodyStart = newline === -1 ? content.length : newline + 1;
 			break;
 		}
+		if (newline === -1) break;
+		pos = newline + 1;
 	}
-	if (closingIdx === -1) {
+	if (closingStart === -1) {
 		return { kind: "invalid", reason: "no closing --- marker found" };
 	}
-
-	const yamlText = lines.slice(1, closingIdx).join(lineEnding);
+	const yamlText = content.slice(headerStart, closingStart).replace(/\r?\n$/, "");
 	let data: unknown;
 	try {
 		data = parseYaml(yamlText);
@@ -304,13 +443,14 @@ function extractFrontmatter(content: string): FrontmatterParse {
 
 	// Empty frontmatter (`---\n---`) → parseYaml returns null. Treat as empty object.
 	if (data === null || data === undefined) {
-		const body = lines.slice(closingIdx + 1).join(lineEnding);
+		const body = content.slice(bodyStart);
 		return {
 			kind: "present",
 			data: {},
 			body,
 			lineEnding,
 			rawHeader: "",
+			bom,
 		};
 	}
 
@@ -318,26 +458,75 @@ function extractFrontmatter(content: string): FrontmatterParse {
 		return { kind: "invalid", reason: "Frontmatter is not a YAML object (e.g. list or scalar)" };
 	}
 
-	const body = lines.slice(closingIdx + 1).join(lineEnding);
+	const body = content.slice(bodyStart);
 	return {
 		kind: "present",
 		data: data as Record<string, unknown>,
 		body,
 		lineEnding,
 		rawHeader: yamlText,
+		bom,
 	};
+}
+
+/**
+ * Changes the frontmatter text in place: new keys are appended after the last line, and the value of an existing
+ * single-line scalar is replaced on its own line. Everything else the user wrote stays byte for byte. Returns null
+ * when the change cannot be made that way (a list value, a multi-line value, a key that is not found once) or when the
+ * result does not read back as the merged properties, and the caller then writes the block anew.
+ */
+function patchHeader(
+	rawHeader: string,
+	existing: Record<string, unknown>,
+	properties: Record<string, unknown>,
+	lineEnding: string,
+	merged: Record<string, unknown>
+): string | null {
+	const lines = rawHeader.split(/\r?\n/);
+	const added: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(properties)) {
+		if (!(key in existing)) {
+			added[key] = value;
+			continue;
+		}
+		if (isDeepEqual(existing[key], value)) continue;
+		if (typeof value === "object" || (typeof existing[key] === "object" && existing[key] !== null)) return null;
+		const keyLine = new RegExp(`^(${escapeRegex(key)}|"${escapeRegex(key)}"|'${escapeRegex(key)}'):(\\s|$)`);
+		const own = lines.map((line, i) => (keyLine.test(line) ? i : -1)).filter((i) => i >= 0);
+		const at = own[0];
+		if (own.length !== 1 || at === undefined) return null;
+		// a value that goes on in the next line (indented, or a list item) is not a single-line scalar
+		const next = lines[at + 1];
+		if (next !== undefined && /^(\s|-\s|-$)/.test(next)) return null;
+		lines[at] = stringifyYaml({ [key]: value }).replace(/\r?\n+$/, "");
+	}
+	if (Object.keys(added).length > 0) lines.push(...stringifyYaml(added).replace(/\r?\n+$/, "").split("\n"));
+	const text = lines.join(lineEnding);
+	// the patch is only trusted when the block reads back as exactly the merged properties (a key found on the wrong line, a value that
+	// was only part of a longer text): otherwise the caller writes the block anew
+	try {
+		return isDeepEqual(parseYaml(text), merged) ? text : null;
+	} catch {
+		return null;
+	}
 }
 
 /** Re-assembles the file content with the merged frontmatter. */
 function renderWithFrontmatter(
 	merged: Record<string, unknown>,
-	parsed: Exclude<FrontmatterParse, { kind: "invalid" }>
+	parsed: Exclude<FrontmatterParse, { kind: "invalid" }>,
+	properties: Record<string, unknown>
 ): string {
 	const lineEnding = parsed.lineEnding;
+	// What the user wrote (comments, quoting, flow lists, blank lines) stays as it is when the change can be made in place
+	if (parsed.kind === "present" && parsed.rawHeader !== "") {
+		const patched = patchHeader(parsed.rawHeader, parsed.data, properties, lineEnding, merged);
+		if (patched !== null) return `${parsed.bom}---${lineEnding}${patched}${lineEnding}---${lineEnding}${parsed.body}`;
+	}
 	let yaml = stringifyYaml(merged);
 	// stringifyYaml ends with a newline already; trim trailing newlines so we control the joining exactly.
 	yaml = yaml.replace(/\r?\n+$/, "");
-	const yamlBlock = `---${lineEnding}${yaml.replace(/\n/g, lineEnding)}${lineEnding}---`;
+	const yamlBlock = `${parsed.bom}---${lineEnding}${yaml.replace(/\n/g, lineEnding)}${lineEnding}---`;
 
 	if (parsed.kind === "absent") {
 		// Insert frontmatter at the top. Empty file → just the FM.
@@ -354,6 +543,9 @@ function renderWithFrontmatter(
  * Writes a timestamped backup of the file content into _garmin-health-sync/backups/.
  * Best-effort — failures are logged but not propagated.
  */
+/** Backups of one note that are kept. */
+const BACKUPS_KEPT = 5;
+
 async function backupFile(app: App, file: TFile, content: string, reason: string): Promise<void> {
 	try {
 		const backupDir = "_garmin-health-sync/backups";
@@ -362,8 +554,13 @@ async function backupFile(app: App, file: TFile, content: string, reason: string
 		const safeName = file.name.replace(/\.md$/, "");
 		const backupPath = normalizePath(`${backupDir}/${safeName}.${ts}.md`);
 		const header = `<!-- Garmin Health Sync Backup\nReason: ${reason}\nOriginal: ${file.path}\nTimestamp: ${ts}\n-->\n`;
+		// a note that stays broken is met again at every sync: the same content is backed up once, and only the last few are kept
+		const earlier = app.vault.getMarkdownFiles().filter((f) => f.path.startsWith(`${backupDir}/${safeName}.`)).sort((a, b) => b.path.localeCompare(a.path));
+		const newest = earlier[0];
+		if (newest && (await app.vault.read(newest)).endsWith(`-->\n${content}`)) return;
 		await app.vault.create(backupPath, header + content);
 		console.warn("Garmin Health Sync: backup written to", backupPath);
+		for (const old of earlier.slice(BACKUPS_KEPT - 1)) await app.fileManager.trashFile(old);
 	} catch (e) {
 		console.error("Garmin Health Sync: backup failed for", file.path, e);
 	}
@@ -392,6 +589,19 @@ function isDeepEqual(a: unknown, b: unknown): boolean {
 		return true;
 	}
 	return false;
+}
+
+/**
+ * The reverse of formatDate(): the YYYY-MM-DD date a note name was formatted from, or null.
+ *
+ * Understands every moment token (weekday and month names included, in the app's language), which a hand-written
+ * pattern cannot. The strict parse alone is not trusted: the result must format back to exactly the same name,
+ * so a name that merely resembles the format (wrong weekday, wrong language, extra text) is rejected.
+ */
+export function dateFromFormattedName(name: string, format: string): string | null {
+	const parsed = momentFn(name, format, true);
+	if (!parsed.isValid() || parsed.format(format) !== name) return null;
+	return parsed.format("YYYY-MM-DD");
 }
 
 /**
