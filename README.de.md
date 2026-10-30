@@ -268,4 +268,8 @@ Ursprünglich von [fcandi](https://github.com/fcandi) erstellt. Weiterentwickelt
 
 Dieser Fork (`RemkoPape/Garmin-Health-Sync-variables-`) wird von RemkoPape gepflegt und ergänzt das ursprüngliche Plugin um die Kraftsätze-Funktion.
 
+<<<<<<< HEAD
 Der Umgang mit Properties in Daily Notes (Eigenschaftenblock einklappen, vom Seitenpanel gezeigte Properties ausblenden) wurde von den Community-Plugins [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) von Tommy Bergeron und [Extended Properties](https://obsidian.md/plugins?id=extended-properties) von electroluminescent inspiriert (beide MIT-lizenziert). Es wurde kein Code übernommen; siehe [NOTICE.md](NOTICE.md).
+=======
+Der Umgang mit Properties in Daily Notes (Eigenschaftenblock einklappen, vom Seitenpanel gezeigte Properties ausblenden) wurde von den Community-Plugins [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) von Tommy Bergeron und [Extended Properties](https://obsidian.md/plugins?id=extended-properties) von electroluminescent inspiriert (beide MIT-lizenziert). Es wurde kein Code übernommen; siehe [NOTICE.md](NOTICE.md).
+>>>>>>> c1e342a5fd231248c464a24a14c3a676ec57029c
