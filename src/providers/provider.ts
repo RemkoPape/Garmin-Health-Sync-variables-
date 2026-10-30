@@ -30,6 +30,10 @@ export interface HealthData {
 	strength?: StrengthExercise[];
 	/** Start coordinates of the first activity with GPS */
 	startLocation?: { lat: number; lon: number };
+	/** The habits of the lifestyle log that Garmin sent for the day (all of them), so the panel can name them. */
+	habits?: { key: string; id: string; name: string; kind: "check" | "count" }[];
+	/** Endpoints that failed for this day (error or timeout, not "no data"): the day is incomplete and must be fetched again. */
+	failedEndpoints?: string[];
 }
 
 /** Result of an interactive login. `cancelled` = the user closed the login
@@ -60,6 +64,8 @@ export interface HealthProvider {
 
 	/** Per-sync options (optional) */
 	setOptions?(options: { strengthSets: boolean }): void;
+	/** The keys the habits of the lifestyle log already have in notes and history, by Garmin's id of the habit (optional: only a provider with such a log needs it). */
+	setHabitKeys?(keys: Record<string, string>): void;
 
 	/** Recommended delay between dates in batch operations (ms) — optional */
 	getRecommendedBatchDelay?(enabledMetrics: string[]): number;

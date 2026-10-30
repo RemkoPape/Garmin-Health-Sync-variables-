@@ -1,15 +1,17 @@
 import type { HealthData, HealthProvider, LoginResult } from "../provider";
 import type { ServerRegion } from "../../settings";
-import { GarminApi, getRequiredEndpoints, calculateBatchDelay } from "./garmin-api";
+import { GarminApi, getRequiredEndpoints, calculateBatchDelay, type CredentialLoginOutcome } from "./garmin-api";
 import type { OAuth1Token, OAuth2Token } from "./garmin-oauth";
 import type { AuthState } from "./auth-state";
-import { LoginRequiredError, isLoginRequiredError } from "../../errors";
+import { mapLifestyle, parseHabits, type HabitKeys } from "./lifestyle";
+import { LoginRequiredError, isLoginRequiredError, isSyncFetchError } from "../../errors";
 import {
 	mapDailySummary,
 	mapSleepData,
 	mapHrvData,
 	mapBodyBattery,
 	mapSpO2,
+	mapHydration,
 	mapRespiration,
 	mapWeight,
 	mapTrainingReadiness,
@@ -63,6 +65,25 @@ export class GarminProvider implements HealthProvider {
 		return { ok: res.ok, cancelled: res.cancelled === true };
 	}
 
+	/** Browser-free credential login (mobile). The password is not retained. */
+	loginWithCredentials(email: string, password: string): Promise<CredentialLoginOutcome> {
+		return this.api.loginWithCredentials(email, password);
+	}
+
+	completeMfaLogin(code: string): Promise<CredentialLoginOutcome> {
+		return this.api.completeMfaLogin(code);
+	}
+
+	/** Redacted step log of the last credential login, for bug reports. */
+	getLoginDiagnostics(): string {
+		return this.api.getLoginDiagnostics();
+	}
+
+	/** Redacted per-endpoint log of the last data fetch, for bug reports. */
+	getSyncDiagnostics(): string {
+		return this.api.getSyncDiagnostics();
+	}
+
 	/** Sign-in URL for the manual-ticket fallback (opened in an external browser). */
 	getSigninUrl(): string {
 		return this.api.getSigninUrl();
@@ -101,13 +122,32 @@ export class GarminProvider implements HealthProvider {
 		return calculateBatchDelay(endpoints.length);
 	}
 
-	async fetchData(date: string, enabledMetrics: string[]): Promise<HealthData> {
+	/** The keys the habits have in notes and history, by Garmin's id of the habit. */
+	private habitKeys: HabitKeys = {};
+
+	setHabitKeys(keys: HabitKeys): void {
+		this.habitKeys = keys;
+	}
+
+	/** The API keeps one day's data in a cache, so two fetches must never overlap (an auto-sync during a long history build). */
+	private fetching: Promise<unknown> = Promise.resolve();
+
+	fetchData(date: string, enabledMetrics: string[]): Promise<HealthData> {
+		const run = this.fetching.then(() => this.fetchDataNow(date, enabledMetrics));
+		this.fetching = run.catch(() => undefined);
+		return run;
+	}
+
+	private async fetchDataNow(date: string, enabledMetrics: string[]): Promise<HealthData> {
 		// OAuth: no BrowserWindow needed for data fetching. If the long-lived
 		// OAuth1 token is missing, an interactive login is required. The OAuth2 refresh
 		// happens silently in fetchDataForDate (Phase 7).
 		if (!this.api.isSessionValid()) {
 			throw new LoginRequiredError();
 		}
+
+		// The API cache only has to share one batch between the mapper calls below.
+		this.api.clearCache();
 
 		const enabled = new Set(enabledMetrics);
 		// Only call required endpoints
@@ -117,7 +157,14 @@ export class GarminProvider implements HealthProvider {
 		const metrics: Record<string, number | string> = {};
 
 		const requests: Promise<void>[] = [];
-		const merge = (label: string, data: Record<string, number | string>, raw?: unknown): void => {
+		const merge = (label: string, mapped: Record<string, number | string>, raw?: unknown): void => {
+			// Garmin sometimes sends a field with a type the mapper did not expect ("BALANCED" where a number was
+			// assumed). A NaN or Infinity must never be written into a note, so such values are dropped here, in
+			// one place, for every mapper.
+			const data: Record<string, number | string> = {};
+			for (const [key, value] of Object.entries(mapped)) {
+				if (typeof value === "number" ? Number.isFinite(value) : value !== "") data[key] = value;
+			}
 			console.debug(`Garmin Health Sync: Mapper [${label}] →`, JSON.stringify(data));
 			// Diagnostic (issue #8): a non-empty response that maps to nothing means
 			// the payload shape differs from what the mapper expects. Log the
@@ -127,97 +174,66 @@ export class GarminProvider implements HealthProvider {
 					? `array[${raw.length}]` + (raw.length > 0 && raw[0] != null && typeof raw[0] === "object" ? `: ${Object.keys(raw[0] as object).join(", ")}` : "")
 					: Object.keys(raw).join(", ") || "(none)";
 				console.debug(`Garmin Health Sync: Mapper [${label}] got data but mapped nothing — response keys: ${keys}`);
+				this.api.addSyncDiagnostic(`mapper ${label}: response keys: ${keys}`);
 			}
+			const names = Object.keys(data);
+			// the metric keys the mapper filled (our own names, no values), next to the response shape of the same endpoint
+			this.api.addSyncDiagnostic(`mapper ${label}: mapped ${names.length} field(s)${names.length > 0 ? `: ${names.join(", ")}` : ""}`);
 			Object.assign(metrics, data);
 		};
 		const warnOrRethrowAuth = (label: string, error: unknown): void => {
-			if (isLoginRequiredError(error)) throw error;
+			if (isLoginRequiredError(error) || isSyncFetchError(error)) throw error;
 			console.warn(`Garmin Health Sync: ${label} fetch failed`, error);
 		};
 
-		// Daily Summary
-		const needsSummary = ["steps", "resting_hr", "stress", "calories_total", "calories_active", "distance_km", "floors", "intensity_min"]
-			.some(k => enabled.has(k));
-		if (needsSummary) {
+		// One request group: fetch, map, merge. A group that fails must not drop the others, so only a login
+		// or fetch error is rethrown; anything else (e.g. a mapper choking on a payload) is logged.
+		const group = <T>(label: string, warnLabel: string, fetched: Promise<T>, map: (data: T) => Record<string, number | string>): void => {
 			requests.push(
-				this.api.fetchDailySummary(date)
-					.then(data => merge("dailySummary", mapDailySummary(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Daily summary", e))
+				fetched
+					.then(data => merge(label, map(data), data))
+					.catch(e => warnOrRethrowAuth(warnLabel, e))
 			);
-		}
+		};
 
-		// Sleep
-		const needsSleep = ["sleep_duration", "sleep_score", "sleep_deep", "sleep_light", "sleep_rem", "sleep_awake"]
-			.some(k => enabled.has(k));
-		if (needsSleep) {
-			requests.push(
-				this.api.fetchSleepData(date)
-					.then(data => merge("sleep", mapSleepData(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Sleep data", e))
-			);
+		if (["steps", "resting_hr", "stress", "stress_high", "recovery_high", "calories_total", "calories_active", "distance_km", "floors", "intensity_min"].some(k => enabled.has(k))) {
+			group("dailySummary", "Daily summary", this.api.fetchDailySummary(date), data => mapDailySummary(data, enabled));
 		}
-
-		// HRV
+		if (["sleep_duration", "sleep_score", "sleep_deep", "sleep_light", "sleep_rem", "sleep_awake", "sleep_start", "sleep_end"].some(k => enabled.has(k))) {
+			group("sleep", "Sleep data", this.api.fetchSleepData(date), data => mapSleepData(data, enabled));
+		}
 		if (enabled.has("hrv")) {
-			requests.push(
-				this.api.fetchHrv(date)
-					.then(data => merge("hrv", mapHrvData(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("HRV", e))
-			);
+			group("hrv", "HRV", this.api.fetchHrv(date), data => mapHrvData(data, enabled));
 		}
-
-		// Body Battery
 		if (enabled.has("body_battery") || enabled.has("body_battery_min") || enabled.has("body_battery_max")) {
-			requests.push(
-				this.api.fetchBodyBattery(date)
-					.then(data => merge("bodyBattery", mapBodyBattery(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Body Battery", e))
-			);
+			group("bodyBattery", "Body Battery", this.api.fetchBodyBattery(date), data => mapBodyBattery(data, enabled));
 		}
-
-		// SpO2
 		if (enabled.has("spo2")) {
-			requests.push(
-				this.api.fetchSpO2(date)
-					.then(data => merge("spo2", mapSpO2(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("SpO2", e))
-			);
+			group("spo2", "SpO2", this.api.fetchSpO2(date), data => mapSpO2(data, enabled));
 		}
-
-		// Respiration
+		if (enabled.has("hydration_ml") || enabled.has("hydration_goal_ml")) {
+			group("hydration", "Hydration", this.api.fetchHydration(date), data => mapHydration(data, enabled));
+		}
 		if (enabled.has("respiration_rate")) {
-			requests.push(
-				this.api.fetchRespiration(date)
-					.then(data => merge("respiration", mapRespiration(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Respiration", e))
-			);
+			group("respiration", "Respiration", this.api.fetchRespiration(date), data => mapRespiration(data, enabled));
 		}
-
-		// Weight & Body Fat
 		if (enabled.has("weight_kg") || enabled.has("body_fat_pct")) {
-			requests.push(
-				this.api.fetchWeight(date)
-					.then(data => merge("weight", mapWeight(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Weight", e))
-			);
+			group("weight", "Weight", this.api.fetchWeight(date), data => mapWeight(data, enabled));
 		}
-
-		// Training Readiness
 		if (enabled.has("training_readiness")) {
-			requests.push(
-				this.api.fetchTrainingReadiness(date)
-					.then(data => merge("trainingReadiness", mapTrainingReadiness(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Training Readiness", e))
-			);
+			group("trainingReadiness", "Training Readiness", this.api.fetchTrainingReadiness(date), data => mapTrainingReadiness(data, enabled));
+		}
+		if (enabled.has("training_status") || enabled.has("vo2_max")) {
+			group("trainingStatus", "Training Status", this.api.fetchTrainingStatus(date), data => mapTrainingStatus(data, enabled));
 		}
 
-		// Training Status / VO2 max
-		if (enabled.has("training_status") || enabled.has("vo2_max")) {
-			requests.push(
-				this.api.fetchTrainingStatus(date)
-					.then(data => merge("trainingStatus", mapTrainingStatus(data, enabled), data))
-					.catch(e => warnOrRethrowAuth("Training Status", e))
-			);
+		// the lifestyle log: every habit that was logged is mapped, and all of them are reported so the panel can name them
+		let habits: HealthData["habits"];
+		if (enabled.has("lifestyle_log")) {
+			group("lifestyle", "Lifestyle log", this.api.fetchLifestyle(date), data => {
+				habits = parseHabits(data, this.habitKeys).map(({ key, id, name, kind }) => ({ key, id, name, kind }));
+				return mapLifestyle(data, this.habitKeys);
+			});
 		}
 
 		// Activities
@@ -252,6 +268,14 @@ export class GarminProvider implements HealthProvider {
 
 		await Promise.all(requests);
 
-		return { metrics, activities, trainings, startLocation, strength };
+		// Nothing mapped: on mobile, record how request details change Garmin's answer (diagnostics only).
+		if (Object.keys(metrics).length === 0 && Object.keys(activities).length === 0) {
+			await this.api.probeRequestVariants(date);
+		}
+
+		const result: HealthData = { metrics, activities, trainings, startLocation, failedEndpoints: this.api.failedEndpoints() };
+		if (strength.length > 0) result.strength = strength;
+		if (habits !== undefined) result.habits = habits;
+		return result;
 	}
 }

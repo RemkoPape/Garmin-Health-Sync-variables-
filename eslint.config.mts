@@ -1,9 +1,8 @@
-import tseslint from 'typescript-eslint';
 import obsidianmd from "eslint-plugin-obsidianmd";
 import globals from "globals";
-import { globalIgnores } from "eslint/config";
+import { defineConfig, globalIgnores } from "eslint/config";
 
-export default tseslint.config(
+export default defineConfig(
 	{
 		languageOptions: {
 			globals: {
@@ -90,14 +89,25 @@ export default tseslint.config(
 		},
 	},
 	globalIgnores([
-		".claude", // worktrees of parallel sessions carry their own checkouts
+		".claude/worktrees/**", // worktrees of parallel sessions carry their own checkouts
 		"node_modules",
 		"dist",
 		"esbuild.config.mjs",
 		"eslint.config.js",
 		"version-bump.mjs",
+		"stamp-prerelease.mjs",
+		"stylelint.config.mjs",
+		// Node CLI tooling (.mjs/.mts): console output and node: imports are their job. The review bot
+		// scans .ts/.js/.css, not these (like esbuild.config.mjs above).
+		"scripts/**",
+		"vitest.config.mts",
+		".claude/hooks/**",
 		"versions.json",
 		"main.js",
-		"tools", // Dev-Referenz-Skripte (Node), kein Plugin-Source; tsc deckt via include nur src/ ab
+		// What the community-directory review bot skips (reverse-engineered, see tests/reviewScope.test.ts)
+		"tests/**/*.test.ts",
+		"testUtils/**",
+		"coverage/",
+		"tools", // dev reference scripts (Node), not plugin source; tsc only covers src/ via include
 	]),
 );

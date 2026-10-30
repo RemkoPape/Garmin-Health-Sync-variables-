@@ -4,9 +4,9 @@ import type { StrengthExercise, TrainingEntry } from "../provider";
 /** Converts seconds to "Xh Ymin" format */
 export function secondsToHoursMin(seconds: number | null | undefined): string | null {
 	if (seconds == null || seconds <= 0) return null;
-	const hours = Math.floor(seconds / 3600);
-	const minutes = Math.round((seconds % 3600) / 60);
-	return `${hours}h ${minutes}min`;
+	// Round the total first, then split: rounding the minutes on their own turns 3599 s into "0h 60min".
+	const totalMinutes = Math.round(seconds / 60);
+	return `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}min`;
 }
 
 /** Rounds to one decimal place */
@@ -43,32 +43,50 @@ function firstRecord(value: unknown): Record<string, unknown> {
 export function mapDailySummary(data: Record<string, unknown>, enabled: Set<string>): Record<string, number | string> {
 	const result: Record<string, number | string> = {};
 
-	const mappings: [string, string, ((v: unknown) => number | string | null)?][] = [
+	const mappings: [string, string, ((v: unknown) => number)?][] = [
 		["steps", "totalSteps"],
 		["resting_hr", "restingHeartRate"],
 		["stress", "averageStressLevel"],
 		["calories_total", "totalKilocalories"],
 		["calories_active", "activeKilocalories"],
-		["distance_km", "totalDistanceMeters", (v) => v != null ? round1(Number(v) / 1000) : null],
+		["distance_km", "totalDistanceMeters", (v) => round1(Number(v) / 1000)],
 		["floors", "floorsAscended", (v) => Math.round(Number(v))],
-		["intensity_min", "moderateIntensityMinutes", (v) => {
-			const moderate = Number(v) || 0;
-			const vigorous = Number(data["vigorousIntensityMinutes"]) || 0;
-			return moderate + vigorous;
-		}],
 	];
 
 	for (const [key, field, transform] of mappings) {
 		if (!enabled.has(key)) continue;
 		const raw = data[field];
 		if (raw == null) continue;
+		// Garmin sends -1 or -2 for "no stress reading" (watch off, too much movement): not a level
+		if (key === "stress" && Number(raw) <= 0) continue;
 
 		if (transform) {
-			const val = transform(raw);
-			if (val != null) result[key] = val;
+			result[key] = transform(raw);
 		} else {
 			result[key] = Number(raw);
 		}
+	}
+
+	// Intensity minutes are moderate + vigorous. Garmin may send only one of them (a missing moderate
+	// value next to 30 vigorous minutes still means 30), so this is not a plain field mapping.
+	if (enabled.has("intensity_min")) {
+		const moderate = data["moderateIntensityMinutes"];
+		const vigorous = data["vigorousIntensityMinutes"];
+		if (moderate != null || vigorous != null) {
+			result["intensity_min"] = (Number(moderate) || 0) + (Number(vigorous) || 0);
+		}
+	}
+
+	// Stress minutes: time stressed (medium and high stress) and time at rest, from durations in seconds. Garmin may
+	// leave one band out, so a missing band counts as 0 as long as at least one is there.
+	if (enabled.has("stress_high")) {
+		const medium = data["mediumStressDuration"];
+		const high = data["highStressDuration"];
+		if (medium != null || high != null) result["stress_high"] = Math.round(((Number(medium) || 0) + (Number(high) || 0)) / 60);
+	}
+	if (enabled.has("recovery_high")) {
+		const rest = data["restStressDuration"];
+		if (rest != null) result["recovery_high"] = Math.round(Number(rest) / 60);
 	}
 
 	return result;
@@ -106,15 +124,29 @@ export function mapSleepData(data: Record<string, unknown>, enabled: Set<string>
 		if (formatted) result[key] = formatted;
 	}
 
+	// Garmin's "Local" timestamps are epoch milliseconds of the local wall-clock time read as if it were UTC,
+	// so the UTC fields of the date are the clock time the user saw.
+	const sleepTimes: [string, string][] = [
+		["sleep_start", "sleepStartTimestampLocal"],
+		["sleep_end", "sleepEndTimestampLocal"],
+	];
+	for (const [key, field] of sleepTimes) {
+		if (!enabled.has(key)) continue;
+		const ms = Number(data[field]);
+		if (!Number.isFinite(ms) || ms <= 0) continue;
+		const d = new Date(ms);
+		result[key] = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+	}
+
 	return result;
 }
 
-/** Maps HRV data */
+/** Maps HRV data: the night's value only, so a night without a reading stays a gap instead of showing the 7-day average as if it was measured. */
 export function mapHrvData(data: Record<string, unknown>, enabled: Set<string>): Record<string, number | string> {
 	const result: Record<string, number | string> = {};
 	if (!enabled.has("hrv")) return result;
 
-	const hrvValue = get(data, "hrvSummary.lastNightAvg") ?? get(data, "hrvSummary.weeklyAvg") ?? data["hrvStatus"];
+	const hrvValue = get(data, "hrvSummary.lastNightAvg") ?? data["hrvStatus"];
 	if (hrvValue != null) result["hrv"] = Math.round(Number(hrvValue));
 
 	return result;
@@ -141,8 +173,15 @@ export function mapBodyBattery(data: Record<string, unknown>, enabled: Set<strin
 	if (wantMin || wantMax) {
 		const levels = extractBodyBatteryLevels(data);
 		if (levels.length > 0) {
-			if (wantMin) result["body_battery_min"] = Math.min(...levels);
-			if (wantMax) result["body_battery_max"] = Math.max(...levels);
+			// A loop instead of Math.min(...levels): spreading a huge array throws a RangeError.
+			let min = levels[0]!;
+			let max = min;
+			for (const level of levels) {
+				if (level < min) min = level;
+				if (level > max) max = level;
+			}
+			if (wantMin) result["body_battery_min"] = min;
+			if (wantMax) result["body_battery_max"] = max;
 		}
 	}
 
@@ -185,9 +224,22 @@ export function mapSpO2(data: Record<string, unknown>, enabled: Set<string>): Re
 	const result: Record<string, number | string> = {};
 	if (!enabled.has("spo2")) return result;
 
-	const avg = data["averageSpo2"] ?? get(data, "allDaySpO2.averageSpo2");
+	// Garmin writes the field `averageSpO2` (capital O), seen in a real answer of an iPhone sync; the night's own average is `avgSleepSpO2`.
+	// The spellings the first versions guessed stay, in case another region or firmware sends them.
+	const avg = data["averageSpO2"] ?? data["avgSleepSpO2"] ?? data["averageSpo2"] ?? get(data, "allDaySpO2.averageSpo2");
 	if (avg != null && Number(avg) > 0) result["spo2"] = Number(avg);
 
+	return result;
+}
+
+/** Maps the day's water intake and the intake goal, both in ml. The goal is only kept next to an intake. */
+export function mapHydration(data: Record<string, unknown>, enabled: Set<string>): Record<string, number | string> {
+	const result: Record<string, number | string> = {};
+	const intake = Number(data["valueInML"] ?? data["valueInMl"]);
+	if (!(intake > 0)) return result;
+	if (enabled.has("hydration_ml")) result["hydration_ml"] = Math.round(intake);
+	const goal = Number(data["goalInML"] ?? data["goalInMl"]);
+	if (enabled.has("hydration_goal_ml") && goal > 0) result["hydration_goal_ml"] = Math.round(goal);
 	return result;
 }
 
@@ -311,7 +363,8 @@ export function mapActivities(activities: Record<string, unknown>[]): ActivityRe
 		if (!startLocation) {
 			const latRaw = act["startLatitude"];
 			const lonRaw = act["startLongitude"];
-			if (latRaw != null && lonRaw != null) {
+			const blank = (v: unknown): boolean => v == null || (typeof v === "string" && v.trim() === "");
+			if (!blank(latRaw) && !blank(lonRaw)) {
 				const lat = Number(latRaw);
 				const lon = Number(lonRaw);
 				if (!isNaN(lat) && !isNaN(lon)) {

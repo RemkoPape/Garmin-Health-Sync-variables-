@@ -1,10 +1,24 @@
 import { App, Notice } from "obsidian";
-import type { HealthProvider } from "./providers/provider";
+import type { HealthData, HealthProvider } from "./providers/provider";
 import { writeToDailyNote, dailyNoteExists } from "./daily-note";
-import type { HealthSyncSettings } from "./settings";
+import type { HistoryStore } from "./history/store";
+import { recordFromData } from "./history/record";
+import { BuildProgressUi } from "./history/progress";
+import { Backfill } from "./history/backfill";
+import { isFetched, markFetched } from "./fetch-log";
+import type { HealthSyncSettings, MissingNoteBehaviour } from "./settings";
 import { t } from "./i18n/t";
 import { convertToImperial } from "./units";
 import { isLoginRequiredError } from "./errors";
+import { habitKeysOf } from "./providers/garmin/lifestyle";
+
+/** Remembers the habits of the lifestyle log Garmin sent, so the settings can list them; a habit is only ever added or renamed here. */
+export function registerHabits(settings: HealthSyncSettings, data: HealthData, date: string): void {
+	for (const habit of data.habits ?? []) {
+		const last = settings.lifestyleHabits[habit.key]?.last ?? "";
+		settings.lifestyleHabits[habit.key] = { name: habit.name, kind: habit.kind, last: date > last ? date : last, ...(habit.id ? { id: habit.id } : {}) };
+	}
+}
 
 /**
  * Result of a single-date sync:
@@ -16,13 +30,71 @@ import { isLoginRequiredError } from "./errors";
  */
 export type SyncOutcome = "synced" | "no-data" | "skipped-missing-note" | "error";
 
+/** What a backfill is told besides the range: the choice for days without a note (the setting when absent), whether to fetch complete days again, and whether to go on until the data of the account starts. */
+export interface BackfillRunOptions {
+	force?: boolean;
+	behaviour?: MissingNoteBehaviour;
+	untilStart?: boolean;
+	statusBar?: () => HTMLElement | null;
+	onCursor?: (next: string) => Promise<void>;
+}
+
 export class SyncManager {
 	private provider: HealthProvider;
 	private app: App;
+	private history: HistoryStore;
 
-	constructor(app: App, provider: HealthProvider) {
+	/** The backfill that is running, with its notice; only one runs at a time. */
+	private run: { ui: BuildProgressUi; backfill: Backfill } | null = null;
+
+	constructor(app: App, provider: HealthProvider, history: HistoryStore) {
 		this.app = app;
 		this.provider = provider;
+		this.history = history;
+	}
+
+	/** Whether a backfill is running. */
+	get backfilling(): boolean {
+		return this.run !== null;
+	}
+
+	/** Puts the progress notice of the running backfill back on screen; false when none is running. */
+	revealProgress(): boolean {
+		this.run?.ui.reveal();
+		return this.run !== null;
+	}
+
+	/** Ends the running backfill after the day it is at. */
+	stopBackfill(): void {
+		this.run?.backfill.stop();
+	}
+
+	/** What writeToDailyNote needs from the settings. */
+	private noteOptions(settings: HealthSyncSettings, createIfMissing: boolean) {
+		return {
+			dailyNotePath: settings.dailyNotePath,
+			dailyNoteFormat: settings.dailyNoteFormat,
+			prefix: settings.usePrefix ? "ohs_" : "",
+			template: settings.dailyNoteTemplate,
+			writeTrainings: settings.writeTrainings,
+			writeStrengthSets: settings.writeStrengthSets,
+			writeWorkoutLocation: settings.writeWorkoutLocation,
+			createIfMissing,
+			language: settings.language,
+		};
+	}
+
+	/** Writes a fetched day into its daily note, in the units of the notes; the note is only made when `mayCreate`. */
+	private async writeDay(date: string, data: HealthData, settings: HealthSyncSettings, mayCreate: boolean): Promise<void> {
+		const outputData = settings.unitSystem === "imperial" ? convertToImperial(data) : data;
+		await writeToDailyNote(this.app, date, outputData, this.noteOptions(settings, mayCreate));
+	}
+
+	/** Keeps a fetched day in the history notes when the setting says so; returns whether a missing note may be created. */
+	private async keepDay(date: string, data: HealthData, enabledMetrics: string[], settings: HealthSyncSettings): Promise<boolean> {
+		if (settings.missingNoteBehaviour !== "history") return true;
+		await this.history.put(date, recordFromData(data, enabledMetrics));
+		return false;
 	}
 
 	/** Sync for a specific date.
@@ -75,7 +147,9 @@ export class SyncManager {
 
 			// Fetch data
 			this.provider.setOptions?.({ strengthSets: settings.writeStrengthSets });
+			this.provider.setHabitKeys?.(habitKeysOf(settings.lifestyleHabits));
 			const data = await this.provider.fetchData(date, enabledMetrics);
+			registerHabits(settings, data, date);
 
 			const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
 			if (!hasData) {
@@ -87,20 +161,9 @@ export class SyncManager {
 			// Convert to imperial if configured
 			const outputData = settings.unitSystem === "imperial" ? convertToImperial(data) : data;
 
-			// Write to daily note
-			await writeToDailyNote(this.app, date, outputData, {
-				dailyNotePath: settings.dailyNotePath,
-				dailyNoteFormat: settings.dailyNoteFormat,
-				prefix: settings.usePrefix ? "ohs_" : "",
-				template: settings.dailyNoteTemplate,
-				writeTrainings: settings.writeTrainings,
-				writeStrengthSets: settings.writeStrengthSets,
-				writeWorkoutLocation: settings.writeWorkoutLocation,
-				// In wait mode the gate above already confirmed the note exists;
-				// keep createIfMissing false as a safety net should it vanish
-				// mid-sync. Otherwise (manual/auto-with-creation) create as before.
-				createIfMissing: !waitForNote,
-			});
+			// With "keep in history files" the day goes to the history, and a note is only updated, never created
+			const mayCreate = await this.keepDay(date, data, enabledMetrics, settings);
+			await writeToDailyNote(this.app, date, outputData, this.noteOptions(settings, mayCreate && !waitForNote));
 
 			if (!quiet) new Notice(t("noticeSyncSuccess", settings.language));
 			return "synced";
@@ -115,96 +178,59 @@ export class SyncManager {
 		}
 	}
 
-	/** Backfill for a date range */
-	async backfill(fromDate: string, toDate: string, settings: HealthSyncSettings): Promise<number> {
+	/**
+	 * Fetches the days from `toDate` back to `fromDate` with a notice at the top that shows where it is. Only one runs
+	 * at a time: a second call shows the running one. See history/backfill.ts for what a run does with each day.
+	 */
+	async backfill(fromDate: string, toDate: string, settings: HealthSyncSettings, options: BackfillRunOptions = {}): Promise<void> {
 		if (!this.provider.isConfigured()) {
 			new Notice(t("noticeLoginRequired", settings.language));
-			return 0;
+			return;
+		}
+		// two runs would fetch the same days twice and share one connection: the running one is shown instead
+		if (this.run) {
+			this.run.ui.reveal();
+			new Notice(t("noticeBackfillRunning", settings.language), 8000);
+			return;
 		}
 
-		new Notice(t("noticeBackfillStart", settings.language));
-
-		let count = 0;
+		const enabledMetrics = Object.entries(settings.enabledMetrics).filter(([, enabled]) => enabled).map(([key]) => key);
+		this.provider.setHabitKeys?.(habitKeysOf(settings.lifestyleHabits));
+		const behaviour = options.behaviour ?? settings.missingNoteBehaviour;
+		const ui = new BuildProgressUi(settings.language, () => this.stopBackfill(), options.statusBar?.() ?? null);
+		const backfill = new Backfill({
+			provider: this.provider,
+			store: this.history,
+			enabledMetrics,
+			behaviour,
+			force: options.force ?? false,
+			untilStart: options.untilStart ?? false,
+			hasNote: (date) => dailyNoteExists(this.app, date, { dailyNotePath: settings.dailyNotePath, dailyNoteFormat: settings.dailyNoteFormat }),
+			wasFetched: (date) => isFetched(settings, date, enabledMetrics),
+			markFetched: (date) => markFetched(settings, date, enabledMetrics),
+			writeNote: (date, data, mayCreate) => this.writeDay(date, data, settings, mayCreate),
+			onFetched: (date, data) => {
+				registerHabits(settings, data, date);
+				// a habit met during the run keeps its key for the days that follow
+				this.provider.setHabitKeys?.(habitKeysOf(settings.lifestyleHabits));
+			},
+			onCursor: options.onCursor,
+			onProgress: (progress) => ui.update(progress),
+		});
+		this.run = { ui, backfill };
 		try {
-			if (!this.provider.isSessionValid()) {
-				const authenticated = await this.provider.authenticate();
-				if (!authenticated.ok) return 0;
+			if (!this.provider.isSessionValid() && !(await this.provider.authenticate()).ok) {
+				ui.finish({ status: "login-required", fetched: 0, skipped: 0, failed: 0, date: toDate, reachedStart: false });
+				return;
 			}
-
-			const enabledMetrics = Object.entries(settings.enabledMetrics)
-				.filter(([, enabled]) => enabled)
-				.map(([key]) => key);
-
-			const dates = this.dateRange(fromDate, toDate);
-
-			// Calculate delay based on number of endpoints (50 req/min budget)
-			const batchDelay = this.provider.getRecommendedBatchDelay?.(enabledMetrics) ?? 2000;
-			console.debug(`Garmin Health Sync: Backfill ${dates.length} dates, delay ${batchDelay}ms`);
-
-			for (let i = 0; i < dates.length; i++) {
-				const date = dates[i]!;
-				try {
-					this.provider.setOptions?.({ strengthSets: settings.writeStrengthSets });
-			const data = await this.provider.fetchData(date, enabledMetrics);
-					const hasData = Object.keys(data.metrics).length > 0 || Object.keys(data.activities).length > 0;
-
-					if (hasData) {
-						const outputData = settings.unitSystem === "imperial" ? convertToImperial(data) : data;
-						// Backfill is an explicit user action over a date range — it
-						// always creates missing notes, regardless of the auto-sync
-						// "create daily note when missing" setting.
-						await writeToDailyNote(this.app, date, outputData, {
-							dailyNotePath: settings.dailyNotePath,
-							dailyNoteFormat: settings.dailyNoteFormat,
-							prefix: settings.usePrefix ? "ohs_" : "",
-							template: settings.dailyNoteTemplate,
-							writeTrainings: settings.writeTrainings,
-				writeStrengthSets: settings.writeStrengthSets,
-							writeWorkoutLocation: settings.writeWorkoutLocation,
-							createIfMissing: true,
-						});
-						count++;
-					}
-
-					// Rate limiting: skip delay after the last date
-					if (i < dates.length - 1) {
-						await this.sleep(batchDelay);
-					}
-				} catch (error) {
-					if (isLoginRequiredError(error)) {
-						new Notice(t("noticeLoginRequired", settings.language));
-						throw error;
-					}
-					console.warn(`Garmin Health Sync: Backfill failed for ${date}`, error);
-				}
-			}
-
-			new Notice(t("noticeBackfillDone", settings.language).replace("{count}", String(count)));
-			return count;
+			this.provider.setOptions?.({ strengthSets: settings.writeStrengthSets });
+			ui.finish(await backfill.run(fromDate, toDate));
 		} catch (error) {
-			if (isLoginRequiredError(error)) {
-				return count;
-			}
-			console.error("Garmin Health Sync: Backfill failed", error);
+			console.error("Garmin Health Sync: backfill failed", error);
+			ui.dismiss();
 			new Notice(t("noticeSyncError", settings.language));
-			return 0;
+		} finally {
+			this.run = null;
 		}
-	}
-
-	private dateRange(from: string, to: string): string[] {
-		const dates: string[] = [];
-		const current = new Date(from + "T00:00:00");
-		const end = new Date(to + "T00:00:00");
-
-		while (current <= end) {
-			dates.push(`${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`);
-			current.setDate(current.getDate() + 1);
-		}
-
-		return dates;
-	}
-
-	private sleep(ms: number): Promise<void> {
-		return new Promise(resolve => window.setTimeout(resolve, ms));
 	}
 }

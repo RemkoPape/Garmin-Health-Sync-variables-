@@ -1,8 +1,1793 @@
-/*
+/* Login modals and settings row: keep buttons inside the screen on phones (mobile only). */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.is-mobile .ghs-modal .ghs-action-row {
+	flex-wrap: wrap;
+}
 
-If your plugin does not need CSS, delete this file.
+.is-mobile .ghs-modal .ghs-action-row .setting-item-info {
+	flex: 1 1 100%;
+}
 
-*/
+.is-mobile .ghs-modal .ghs-action-row .setting-item-control {
+	flex: 1 1 100%;
+	flex-wrap: wrap;
+	justify-content: stretch;
+}
+
+.is-mobile .ghs-modal .ghs-action-row .setting-item-control > button {
+	flex: 1 1 100%;
+	max-width: 100%;
+}
+
+.is-mobile .ghs-login-row .setting-item-control {
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	max-width: 100%;
+}
+
+.is-mobile .ghs-login-row .setting-item-control > button {
+	max-width: 100%;
+}
+
+/* Echo of the ticket field, shown above the on-screen keyboard. */
+.ghs-ticket-preview {
+	padding: 6px 10px;
+	margin-bottom: 8px;
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-family: var(--font-monospace);
+	overflow-wrap: anywhere;
+}
+
+.ghs-ticket-preview.is-found {
+	color: var(--text-success);
+}
+
+.ghs-diagnostics {
+	width: 100%;
+	font-family: var(--font-monospace);
+	font-size: var(--font-smaller);
+}
+
+/* "What's new" window: the text scrolls while the button stays on screen. */
+.ghs-whats-new-body {
+	max-height: 60vh;
+	/* up and down only: nothing sideways, no horizontal bar, no rubber band, and no swipe to the side on a touch screen */
+	overflow-x: hidden;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+	overflow-wrap: anywhere;
+}
+
+@supports (height: 1dvh) {
+	/* the visible height on a phone, where vh ignores the on-screen keyboard and the browser bars */
+	.ghs-whats-new-body {
+		max-height: 60dvh;
+	}
+}
+
+.ghs-whats-new-modal {
+	overflow-x: hidden;
+	touch-action: pan-y;
+}
+
+/* whatever a note holds stays inside the window: a long word wraps, an illustration shrinks to the width */
+.ghs-whats-new-body li,
+.ghs-whats-new-body p,
+.ghs-whats-new-body h3 {
+	min-width: 0;
+	max-width: 100%;
+}
+
+.ghs-whats-new-body ul {
+	padding-inline-start: var(--size-4-6);
+}
+
+.ghs-whats-new-intro {
+	color: var(--text-muted);
+}
+
+.ghs-whats-new-actions {
+	flex-shrink: 0;
+	justify-content: flex-end;
+}
+
+/* Health panel (right sidebar) */
+.ghs-panel {
+	/* up and down only: a card that is a few pixels too wide must not make the panel slide sideways */
+	overflow-x: hidden;
+	touch-action: pan-y;
+	/* One data colour for everything that has no good or bad side: the accent of the theme with its lightness held between 0.5 and 0.72, so a very bright or very dark accent still stands out on a light and on a dark card. The shades fade it towards the card, strongest first. */
+	--ghs-data: var(--interactive-accent);
+	/* The card colour: the theme's secondary background with a hint of the accent, so the cards sit in the theme instead of beside it */
+	--ghs-card: var(--background-secondary);
+	--ghs-edge: var(--interactive-accent);
+	/* Plain colours where the browser (an old Android WebView) cannot mix colours; the mixes follow in the @supports block below */
+	--ghs-shade-1: var(--ghs-data);
+	--ghs-shade-2: var(--ghs-data);
+	--ghs-shade-3: var(--text-muted);
+	--ghs-shade-4: var(--background-modifier-border);
+	/* Five effort levels, from easy to hard: the colours of the load zones, so one scale means the same everywhere */
+	--ghs-level-1: var(--text-faint);
+	--ghs-level-2: var(--color-green);
+	--ghs-level-3: var(--color-green);
+	--ghs-level-4: var(--color-orange);
+	--ghs-level-5: var(--color-red);
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-6);
+}
+
+@supports (color: color-mix(in oklab, red, blue)) {
+	.ghs-panel {
+		--ghs-card: color-mix(in oklab, var(--background-secondary), var(--interactive-accent) 2%);
+		--ghs-shade-2: color-mix(in oklab, var(--ghs-data) 70%, var(--ghs-card));
+		--ghs-shade-3: color-mix(in oklab, var(--ghs-data) 45%, var(--ghs-card));
+		--ghs-shade-4: color-mix(in oklab, var(--ghs-data) 25%, var(--ghs-card));
+		--ghs-level-2: color-mix(in srgb, var(--color-green) 45%, var(--ghs-card));
+	}
+
+	/* On a dark theme the cards take a stronger hint of the accent and the data colour is lifted, because a dark accent barely shows on a dark card */
+	.theme-dark .ghs-panel {
+		--ghs-card: color-mix(in oklab, var(--background-secondary), var(--interactive-accent) 10%);
+	}
+}
+
+@supports (color: oklch(from red l c h)) {
+	.ghs-panel {
+		--ghs-data: oklch(from var(--interactive-accent) clamp(0.5, l, 0.72) c h);
+	}
+
+	.theme-dark .ghs-panel {
+		--ghs-data: oklch(from var(--interactive-accent) clamp(0.68, l, 0.85) c h);
+		--ghs-edge: var(--ghs-data);
+	}
+}
+
+.ghs-daynav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	container-type: inline-size;
+}
+
+/* A narrow sidebar has no room for the calendar icon next to the date */
+@container (max-width: 320px) {
+	.ghs-daynav .ghs-daynav-icon {
+		display: none;
+	}
+}
+
+/* The date is a button with a calendar icon: it fills the space between the arrows, so it is centred and obviously tappable */
+.ghs-daynav-pick {
+	position: relative;
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--size-4-2);
+	min-height: 36px;
+	min-width: 0;
+	margin: 0 var(--size-2-2);
+	padding: 0 var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--ghs-card);
+	cursor: pointer;
+}
+
+.ghs-daynav-pick:hover {
+	background: var(--background-modifier-hover);
+}
+
+.is-mobile .ghs-daynav-pick {
+	min-height: 44px;
+}
+
+.ghs-daynav-icon {
+	flex-shrink: 0;
+	display: inline-flex;
+	color: var(--text-muted);
+}
+
+.ghs-daynav-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* The system's date field lies invisibly over the date, so a tap or a click opens the calendar. Obsidian styles every input, so this rule is specific enough to stay out of the layout of the row. */
+.ghs-daynav-pick .ghs-daynav-input {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.ghs-daynav-date {
+	min-width: 0;
+	overflow: hidden;
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* In a narrow sidebar the date gives way, never the arrows and the edit button */
+.ghs-daynav > .clickable-icon {
+	flex-shrink: 0;
+}
+
+.is-mobile .ghs-daynav .clickable-icon {
+	min-width: 44px;
+	min-height: 44px;
+}
+
+.ghs-panel-empty {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	text-align: center;
+	padding: var(--size-4-6) var(--size-4-2);
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--radius-m);
+}
+
+.ghs-card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-3);
+	padding: var(--size-4-2) var(--size-4-3);
+	background: var(--ghs-card);
+	border: 1px solid var(--background-modifier-border);
+	/* A quiet edge in the user's own accent colour tells the cards apart without adding colours; only the Today
+	   verdict (below) and the dashed "No reading" card change it */
+	border-left: 4px solid var(--ghs-edge);
+	border-radius: var(--radius-m);
+}
+
+.ghs-card-empty {
+	border-style: dashed;
+	border-left-style: solid;
+}
+
+.ghs-card-head {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.ghs-card-title {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.ghs-card-value {
+	margin-left: auto;
+	white-space: nowrap;
+	font-size: var(--font-ui-larger);
+	font-weight: var(--font-bold);
+}
+
+.ghs-unit {
+	text-transform: lowercase;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-normal);
+}
+
+/* A figure that matters as much as the value (the sleep score): the colour and weight of the value */
+.ghs-unit-case {
+	text-transform: none;
+}
+
+.ghs-unit-strong {
+	color: var(--text-normal);
+	font-size: inherit;
+	font-weight: var(--font-bold);
+}
+
+.ghs-section {
+	/* more room above than below, so a header belongs to the cards under it */
+	margin-top: var(--size-4-2);
+	margin-bottom: calc(-1 * var(--size-4-2));
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+/* One size for the lines of a card (rows, notes, footers); the smaller one is for numbers on scales, trends and the explanation */
+.ghs-card-note {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+}
+
+.ghs-explain {
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+/* Range bar: colour scale from the usual range outwards */
+.ghs-range {
+	position: relative;
+	height: 12px;
+	margin: var(--size-2-2) 0;
+}
+
+/* Only a bar with numbers under it needs the room for them */
+.ghs-range-labelled {
+	/* room for the label line below the bar, which grows with the font size (a phone with a large font) */
+	margin-bottom: calc(var(--font-ui-smaller) * 1.5 + var(--size-4-2));
+}
+
+.ghs-range-track {
+	height: 8px;
+	margin-top: 2px;
+	border-radius: var(--radius-s);
+}
+
+.ghs-range-track-both {
+	background: linear-gradient(to right, var(--color-red) 0%, var(--color-orange) 17%, var(--color-green) 33%, var(--color-green) 67%, var(--color-orange) 83%, var(--color-red) 100%);
+}
+
+.ghs-range-track-high {
+	background: linear-gradient(to right, var(--color-green) 0%, var(--color-green) 67%, var(--color-orange) 83%, var(--color-red) 100%);
+}
+
+.ghs-tick {
+	position: absolute;
+	top: -3px;
+	bottom: -3px;
+	left: var(--ghs-x, 50%);
+	border-left: 1px dashed var(--text-muted);
+}
+
+.ghs-range-labels {
+	position: absolute;
+	top: 16px;
+	left: 0;
+	right: 0;
+}
+
+.ghs-tick-label {
+	position: absolute;
+	white-space: nowrap;
+	text-transform: lowercase;
+	left: var(--ghs-x, 50%);
+	transform: translateX(-50%);
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-dot {
+	position: absolute;
+	top: 6px;
+	left: var(--ghs-x, 50%);
+	width: 16px;
+	height: 16px;
+	box-sizing: border-box;
+	border-radius: 50%;
+	border: 3px solid var(--color-green);
+	background: var(--text-on-accent);
+	transform: translate(-50%, -50%);
+	box-shadow: 0 0 0 1px var(--ghs-card);
+}
+
+/* Steps below the usual are not a warning: a dark ring that shows on the accent coloured bar */
+.ghs-steps-bar .ghs-dot {
+	border-color: var(--text-normal);
+}
+
+.ghs-dot-warn {
+	border-color: var(--color-orange);
+}
+
+.ghs-dot-bad {
+	border-color: var(--color-red);
+}
+
+/* Sleep: one bar per night against the need */
+.ghs-nights {
+	position: relative;
+	display: flex;
+	align-items: flex-end;
+	gap: var(--size-4-2);
+	height: 64px;
+	padding-right: var(--size-4-6);
+	margin: var(--size-4-2) 0 var(--size-4-5);
+}
+
+.ghs-night {
+	position: relative;
+	flex: 1;
+	height: 100%;
+	display: flex;
+	align-items: flex-end;
+}
+
+.ghs-night-bar {
+	width: 100%;
+	height: var(--ghs-h, 0%);
+	border-radius: var(--radius-s) var(--radius-s) 0 0;
+	background: var(--ghs-data);
+	opacity: 0.6;
+}
+
+.ghs-night-bar-last {
+	opacity: 1;
+}
+
+.ghs-night-bar-missing {
+	height: 2px;
+	background: var(--background-modifier-border);
+	opacity: 1;
+}
+
+.ghs-night-day {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	margin-top: var(--size-2-1);
+	text-align: center;
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-nights-need {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: var(--ghs-y, 50%);
+	border-top: 1px dashed var(--text-muted);
+	pointer-events: none;
+}
+
+.ghs-nights-need-label {
+	position: absolute;
+	right: 0;
+	bottom: var(--ghs-y, 50%);
+	transform: translateY(-2px);
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+/* Steps, intensity minutes and floors */
+.ghs-range-track-steps {
+	background: linear-gradient(to right, var(--ghs-shade-4), var(--ghs-data));
+}
+
+.ghs-zone {
+	position: absolute;
+	top: 0;
+	left: 62.5%;
+	width: 6.25%;
+	height: 12px;
+	box-sizing: border-box;
+	border: 2px solid var(--text-normal);
+	border-radius: var(--radius-s);
+	background: var(--ghs-card);
+	opacity: 0.35;
+}
+
+.ghs-foot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	font-size: var(--font-ui-small);
+}
+
+.ghs-foot-label {
+	color: var(--text-normal);
+}
+
+.ghs-foot-value {
+	color: var(--text-normal);
+	font-weight: var(--font-semibold);
+	text-align: right;
+}
+
+.ghs-foot-good {
+	color: var(--color-green);
+}
+
+.ghs-chips {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+	gap: var(--size-4-2);
+}
+
+.ghs-chip {
+	display: flex;
+	flex-direction: column;
+	padding: var(--size-2-3) var(--size-4-2);
+	background: var(--background-primary);
+	border-radius: var(--radius-s);
+}
+
+.ghs-chip-label {
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-chip-value {
+	font-weight: var(--font-semibold);
+}
+
+.ghs-chip-delta {
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-chip-delta-up {
+	color: var(--color-green);
+}
+
+.ghs-chip-delta-down {
+	color: var(--color-orange);
+}
+
+.ghs-week-bar {
+	background: var(--ghs-data);
+}
+
+.ghs-week-bar-future {
+	background: transparent;
+	border: 1px dashed var(--text-faint);
+	opacity: 1;
+}
+
+.ghs-blocks {
+	display: flex;
+	gap: var(--size-2-1);
+}
+
+.ghs-block {
+	flex: 1;
+	height: 10px;
+	border-radius: 2px;
+	background: var(--background-modifier-border);
+}
+
+.ghs-block-filled {
+	background: var(--ghs-data);
+}
+
+.ghs-block-zone {
+	box-sizing: border-box;
+	background: transparent;
+	border: 1px solid var(--ghs-data);
+}
+
+/* The two zone labels sit 6 % apart: the first ends at its tick, the second starts at its tick */
+.ghs-steps-bar .ghs-tick-label:first-child {
+	transform: translateX(-100%);
+}
+
+.ghs-steps-bar .ghs-tick-label:last-child {
+	transform: none;
+}
+
+.ghs-week {
+	padding-right: 0;
+}
+
+/* Half-width pair: SpO2 and breathing */
+.ghs-pair {
+	display: grid;
+	/* two half cards need about 190px each; a narrower panel (a phone) stacks them, instead of pushing the head of a card out of it */
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+	gap: var(--size-4-6);
+}
+
+.ghs-range-compact {
+	margin-bottom: var(--size-2-3);
+}
+
+.ghs-status {
+	text-transform: lowercase;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.ghs-status-ok {
+	color: var(--color-green);
+}
+
+.ghs-status-warn {
+	color: var(--color-orange);
+}
+
+.ghs-status-bad {
+	color: var(--color-red);
+}
+
+.ghs-range-track-low {
+	background: linear-gradient(to right, var(--color-red) 0%, var(--color-orange) 17%, var(--color-green) 33%, var(--color-green) 100%);
+}
+
+.ghs-dot-neutral {
+	border-color: var(--text-muted);
+}
+
+.ghs-tick-solid {
+	border-left-style: solid;
+}
+
+/* Sleep stages */
+.ghs-stack {
+	display: flex;
+	height: 8px;
+	overflow: hidden;
+	border-radius: var(--radius-s);
+}
+
+.ghs-stack-part {
+	width: var(--ghs-w, 0%);
+}
+
+.ghs-stage-deep {
+	background: var(--ghs-shade-1);
+}
+
+.ghs-stage-rem {
+	background: var(--ghs-shade-2);
+}
+
+.ghs-stage-light {
+	background: var(--ghs-shade-3);
+}
+
+.ghs-stage-awake {
+	background: var(--text-faint);
+}
+
+.ghs-stage-row {
+	display: grid;
+	grid-template-columns: 4.5em 1fr 7.5em;
+	align-items: center;
+	gap: var(--size-4-2);
+	font-size: var(--font-ui-small);
+}
+
+.ghs-stage-label {
+	color: var(--text-normal);
+}
+
+.ghs-stage-track {
+	position: relative;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--background-modifier-border);
+}
+
+.ghs-stage-fill {
+	height: 100%;
+	width: var(--ghs-w, 0%);
+	border-radius: 2px;
+}
+
+.ghs-stage-mean {
+	position: absolute;
+	top: -3px;
+	bottom: -3px;
+	left: 50%;
+	border-left: 2px solid var(--text-normal);
+}
+
+.ghs-stage-value {
+	font-weight: var(--font-semibold);
+	text-align: right;
+}
+
+/* Body battery: your usual peaks and today on the same 0 to 100 scale */
+.ghs-battery-row {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+}
+
+.ghs-battery-row-head {
+	display: flex;
+	justify-content: space-between;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.ghs-battery-row-label {
+	color: var(--text-normal);
+	font-weight: var(--font-normal);
+}
+
+.ghs-battery-bar {
+	position: relative;
+	height: 12px;
+}
+
+.ghs-battery-track {
+	height: 8px;
+	margin-top: 2px;
+	border-radius: var(--radius-s);
+	background: var(--background-modifier-border);
+}
+
+.ghs-battery-fill,
+.ghs-battery-usual {
+	position: absolute;
+	top: 2px;
+	left: var(--ghs-x, 0%);
+	width: var(--ghs-w, 0%);
+	height: 8px;
+	border-radius: var(--radius-s);
+}
+
+.ghs-battery-fill {
+	background: linear-gradient(to right, var(--ghs-shade-3), var(--ghs-data));
+}
+
+.ghs-battery-usual {
+	background: var(--text-faint);
+	opacity: 0.7;
+}
+
+/* Stress: Garmin's four bands */
+.ghs-range-track-stress {
+	background: linear-gradient(to right, var(--ghs-shade-4) 0%, var(--ghs-shade-4) 25%, var(--ghs-shade-3) 25%, var(--ghs-shade-3) 50%, var(--ghs-shade-2) 50%, var(--ghs-shade-2) 75%, var(--ghs-shade-1) 75%, var(--ghs-shade-1) 100%);
+}
+
+/* Trend line: 14 tiny bars and a sentence, set apart from the card's content by a hairline */
+.ghs-trend {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin-top: var(--size-2-2);
+	padding-top: var(--size-2-3);
+	border-top: 1px solid var(--background-modifier-border);
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-trend-bars {
+	display: flex;
+	align-items: flex-end;
+	gap: 2px;
+	height: 14px;
+	flex: 0 0 auto;
+}
+
+.ghs-trend-bar {
+	width: 4px;
+	height: var(--ghs-h, 0%);
+	border-radius: 1px;
+	background: var(--text-muted);
+}
+
+.ghs-trend-bar-last {
+	background: var(--text-normal);
+}
+
+.ghs-trend-bar-missing {
+	height: 2px;
+	background: var(--background-modifier-border);
+}
+
+/* "No reading" is a note, not a headline, and must fit in a half-width card */
+.ghs-card-empty .ghs-card-value {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-normal);
+}
+
+/* Training: intensity steps from easy to hard */
+.ghs-step-0 {
+	background: var(--ghs-level-1);
+}
+
+.ghs-step-1 {
+	background: var(--ghs-level-2);
+}
+
+.ghs-step-2 {
+	background: var(--ghs-level-3);
+}
+
+.ghs-step-3 {
+	background: var(--ghs-level-4);
+}
+
+.ghs-step-4 {
+	background: var(--ghs-level-5);
+}
+
+.ghs-step-none {
+	background: var(--text-faint);
+}
+
+/* Load balance: five zones on a ratio from 0.5 to 1.8 */
+.ghs-range-track-load {
+	background: linear-gradient(to right, var(--ghs-level-1) 0%, var(--ghs-level-1) 23.1%, var(--ghs-level-2) 23.1%, var(--ghs-level-2) 38.5%, var(--ghs-level-3) 38.5%, var(--ghs-level-3) 61.5%, var(--ghs-level-4) 61.5%, var(--ghs-level-4) 76.9%, var(--ghs-level-5) 76.9%, var(--ghs-level-5) 100%);
+}
+
+.ghs-zones {
+	display: grid;
+	/* the columns follow the zones of the bar, but a long word (German "Überlastung") keeps the room it needs instead of running into the next */
+	grid-template-columns: minmax(min-content, 23.1fr) minmax(min-content, 15.4fr) minmax(min-content, 23.1fr) minmax(min-content, 15.4fr) minmax(min-content, 23.1fr);
+	text-align: center;
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-zone-name-current {
+	color: var(--text-normal);
+	font-weight: var(--font-semibold);
+}
+
+/* Weekly load: this week's sessions against the average and the cap */
+.ghs-weekly {
+	height: 12px;
+}
+
+.ghs-weekly-track {
+	display: flex;
+	height: 8px;
+	margin-top: 2px;
+	overflow: hidden;
+	border-radius: var(--radius-s);
+	background: var(--background-modifier-border);
+}
+
+.ghs-weekly-seg {
+	width: var(--ghs-w, 0%);
+	background: var(--ghs-data);
+}
+
+.ghs-weekly-seg-over {
+	background: var(--color-orange);
+}
+
+.ghs-weekly-over {
+	position: absolute;
+	top: 2px;
+	left: var(--ghs-x, 100%);
+	right: 0;
+	height: 8px;
+	border-radius: 0 var(--radius-s) var(--radius-s) 0;
+	background: repeating-linear-gradient(45deg, transparent 0 3px, var(--color-red) 3px 4px);
+	opacity: 0.35;
+	pointer-events: none;
+}
+
+.ghs-tick-cap {
+	border-left-color: var(--color-red);
+}
+
+.ghs-foot-over {
+	color: var(--color-orange);
+}
+
+/* Sessions */
+.ghs-session {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+	padding: var(--size-2-3) var(--size-4-2);
+	border: 2px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+}
+
+.ghs-session-recovery {
+	border-style: dashed;
+	border-color: var(--text-muted);
+}
+
+.ghs-session-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+}
+
+.ghs-session-type {
+	font-weight: var(--font-semibold);
+}
+
+.ghs-session-tag {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-session-facts {
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+}
+
+/* after .ghs-session, whose border shorthand would otherwise reset the colour */
+.ghs-step-border-0 {
+	border-color: var(--ghs-level-1);
+}
+
+.ghs-step-border-1 {
+	border-color: var(--ghs-level-2);
+}
+
+.ghs-step-border-2 {
+	border-color: var(--ghs-level-3);
+}
+
+.ghs-step-border-3 {
+	border-color: var(--ghs-level-4);
+}
+
+.ghs-step-border-4 {
+	border-color: var(--ghs-level-5);
+}
+
+.ghs-step-border-none {
+	border-color: var(--background-modifier-border);
+}
+
+.ghs-load-bar {
+	margin-bottom: var(--size-4-2);
+}
+
+.ghs-weekly .ghs-tick-label:first-of-type {
+	transform: translateX(-100%);
+}
+
+.ghs-weekly .ghs-tick-label:last-of-type {
+	transform: none;
+}
+
+/* Hydration has one label, kept left of its tick so it never runs off the card */
+.ghs-weekly.ghs-hydration-bar .ghs-tick-label:last-of-type {
+	transform: translateX(-100%);
+	text-transform: none;
+	white-space: nowrap;
+}
+
+/* Sleep timeline: when each night happened, not only how long it was */
+.ghs-nights-timeline {
+	height: 168px;
+	padding-left: 2.8em;
+	padding-right: 0;
+}
+
+.ghs-axis-label {
+	position: absolute;
+	left: 0;
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-axis-line {
+	top: var(--ghs-y, 50%);
+	transform: translateY(-50%);
+	color: var(--text-muted);
+}
+
+/* The usual bedtime and wake-up as thin dotted lines through the bars */
+.ghs-night-line {
+	position: absolute;
+	left: 2.8em;
+	right: 0;
+	top: var(--ghs-y, 50%);
+	z-index: 1;
+	border-top: 1px dotted var(--text-muted);
+	pointer-events: none;
+}
+
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+	.ghs-night-line {
+		border-top-color: color-mix(in srgb, var(--text-normal) 60%, transparent);
+	}
+}
+
+.ghs-axis-top {
+	top: 0;
+}
+
+.ghs-axis-bottom {
+	bottom: 0;
+}
+
+.ghs-night-asleep {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: var(--ghs-y, 0%);
+	height: var(--ghs-h, 0%);
+	box-sizing: border-box;
+	border-radius: var(--radius-s);
+	background: var(--ghs-data);
+	opacity: 0.65;
+}
+
+.ghs-night-asleep-last {
+	opacity: 1;
+}
+
+/* Earlier nights fade less on a dark card, where the same opacity looks dimmer */
+.theme-dark .ghs-night-bar:not(.ghs-night-bar-last),
+.theme-dark .ghs-night-asleep:not(.ghs-night-asleep-last) {
+	opacity: 0.8;
+}
+
+/* VO2 max: twelve weekly values */
+.ghs-vo2-bars {
+	height: 32px;
+	gap: 4px;
+}
+
+.ghs-vo2-bars .ghs-trend-bar {
+	flex: 1;
+	width: auto;
+}
+
+/* Body: the last 28 days of weight as dots */
+.ghs-dots {
+	position: relative;
+	height: 48px;
+	margin: var(--size-2-2) var(--size-2-3);
+}
+
+.ghs-dots-point {
+	position: absolute;
+	left: var(--ghs-x, 0%);
+	bottom: var(--ghs-y, 0%);
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--ghs-data);
+	opacity: 0.7;
+	transform: translate(-50%, 50%);
+}
+
+/* Heart rate zone bar under a session */
+.ghs-zonebar {
+	display: flex;
+	gap: 2px;
+	margin-top: var(--size-2-1);
+}
+
+.ghs-zonebar-part {
+	flex: 1;
+	height: 4px;
+	border-radius: 2px;
+	opacity: 0.25;
+}
+
+.ghs-zonebar-current {
+	height: 6px;
+	margin-top: -1px;
+	opacity: 1;
+}
+
+.ghs-zone-tag {
+	color: var(--text-normal);
+}
+
+/* Interpretation under (i): what the data suggests, set apart from the general explanation */
+.ghs-insight,
+.ghs-about {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3);
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+}
+
+.ghs-insight-title {
+	color: var(--text-accent);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.ghs-insight-item {
+	padding-left: var(--size-4-2);
+	border-left: 3px solid var(--text-muted);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+}
+
+.ghs-insight-watch {
+	border-left-color: var(--color-orange);
+}
+
+.ghs-insight-good {
+	border-left-color: var(--color-green);
+}
+
+/* How to read this: folded by default, the title is the button; a block, because a folded flex container keeps the gap of its hidden content */
+.ghs-about {
+	display: block;
+}
+
+.ghs-about .ghs-insight-note {
+	margin-top: var(--size-4-2);
+}
+
+.ghs-about > summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+	list-style: none;
+}
+
+.ghs-about > summary::-webkit-details-marker {
+	display: none;
+}
+
+.ghs-about > summary::after {
+	content: "▾";
+}
+
+.ghs-about:not([open]) > summary::after {
+	content: "▸";
+}
+
+.ghs-about[open] > summary {
+	margin-bottom: var(--size-4-2);
+}
+
+.ghs-insight-note {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+/* Stress minutes: stressed against recovering */
+.ghs-split-wrap {
+	position: relative;
+}
+
+.ghs-split {
+	display: flex;
+	height: 8px;
+	overflow: hidden;
+	border-radius: var(--radius-s);
+}
+
+.ghs-split-part {
+	width: var(--ghs-w, 0%);
+}
+
+.ghs-split-stressed {
+	background: var(--ghs-shade-1);
+}
+
+.ghs-split-recovering {
+	background: var(--ghs-shade-3);
+}
+
+.ghs-split-labels {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-split-labels span::before {
+	content: "";
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	margin-right: var(--size-2-3);
+	border-radius: 50%;
+	background: var(--ghs-swatch, var(--text-faint));
+}
+
+.ghs-split-label-stressed {
+	--ghs-swatch: var(--ghs-shade-1);
+}
+
+.ghs-split-label-recovering {
+	--ghs-swatch: var(--ghs-shade-3);
+}
+
+/* The light bulb: a clear glyph flush with the right edge of the card, in a roomy touch target that reaches into the empty space to its left */
+.ghs-card-head .ghs-info {
+	--icon-size: 16px;
+	--icon-stroke: 2px;
+	justify-content: flex-end;
+	padding-right: 0;
+	color: var(--text-normal);
+}
+
+.ghs-card-head .ghs-info svg,
+.is-mobile .ghs-card-head .ghs-info svg {
+	width: 16px;
+	height: 16px;
+	stroke-width: 2px;
+}
+
+.is-mobile .ghs-card-head .ghs-info {
+	min-width: 44px;
+	min-height: 44px;
+	margin: -10px 0 -10px -28px;
+}
+
+/* Today: the verdict in a card tinted by it, and the readiness bar */
+.ghs-verdict {
+	font-size: var(--font-ui-large);
+	font-weight: var(--font-semibold);
+}
+
+.ghs-card-verdict-hard {
+	border-left: 4px solid var(--color-green);
+}
+
+.ghs-card-verdict-planned {
+	border-left: 4px solid var(--color-yellow);
+}
+
+.ghs-card-verdict-easy {
+	border-left: 4px solid var(--color-orange);
+}
+
+.ghs-card-verdict-rest {
+	border-left: 4px solid var(--color-red);
+}
+
+.ghs-range-track-readiness {
+	background: linear-gradient(to right, var(--color-red) 0%, var(--color-red) 30%, var(--color-orange) 30%, var(--color-orange) 50%, var(--color-yellow) 50%, var(--color-yellow) 70%, var(--color-green) 70%, var(--color-green) 90%, var(--color-cyan) 90%, var(--color-cyan) 100%);
+}
+
+/* A warning on the card itself: what is off, in one line */
+.ghs-card-alert {
+	color: var(--color-orange);
+	font-weight: var(--font-semibold);
+}
+
+/* The notice of a running history build: the text and a Stop button */
+.ghs-history-notice {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+}
+
+.ghs-history-text {
+	flex: 1;
+}
+
+.ghs-history-estimate {
+	color: var(--text-muted);
+}
+
+/* Arranging the cards: a list of titles with a handle each */
+.ghs-edit-hint {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ghs-sort {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.ghs-sort-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-2-3) var(--size-4-2);
+	background: var(--ghs-card);
+	border: 1px solid var(--background-modifier-border);
+	border-left: 4px solid var(--ghs-edge);
+	border-radius: var(--radius-m);
+}
+
+.ghs-sort-dragging {
+	box-shadow: var(--shadow-s);
+	border-color: var(--interactive-accent);
+}
+
+.ghs-sort-handle {
+	cursor: grab;
+	touch-action: none;
+}
+
+/* A finger needs a larger target than a pointer */
+.is-mobile .ghs-sort-handle {
+	min-width: 44px;
+	min-height: 44px;
+}
+
+/* A finger needs a 44px target; the padding is taken back with the margin, so the button is as high as on a desktop (the extra reach lies over the card's own padding) */
+.is-mobile .ghs-about > summary {
+	box-sizing: border-box;
+	min-height: 44px;
+	margin: -13px 0;
+	padding: 0;
+}
+
+.is-mobile .ghs-about[open] > summary {
+	margin-bottom: calc(var(--size-4-2) - 13px);
+}
+
+.ghs-sort-title {
+	flex: 1;
+	font-weight: var(--font-semibold);
+}
+
+.ghs-sort-section {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-edit-reset {
+	align-self: flex-start;
+}
+
+/* A property row that the side panel already shows, hidden from the properties block of a daily note */
+.metadata-container .ghs-property-hidden {
+	display: none;
+}
+
+/* Illustrations of the what's new window, drawn with the real panel code */
+.ghs-whats-new-figure {
+	box-sizing: border-box;
+	max-width: 100%;
+	overflow: hidden;
+	margin: var(--size-4-2) 0 var(--size-4-3);
+	padding: var(--size-4-3);
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	pointer-events: none;
+}
+
+.ghs-fig-setting {
+	flex-wrap: wrap;
+	min-width: 0;
+	padding: var(--size-4-2) 0;
+}
+
+.ghs-fig-panel {
+	margin-top: var(--size-4-2);
+}
+
+.ghs-fig-file {
+	margin-top: var(--size-4-2);
+	color: var(--text-muted);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-fig-compare {
+	display: flex;
+	gap: var(--size-4-6);
+	margin-top: var(--size-4-2);
+}
+
+.ghs-fig-side {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.ghs-fig-label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-fig-bars {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+}
+
+.ghs-fig-bar {
+	width: 60%;
+	height: 6px;
+	border-radius: var(--radius-s);
+	background: var(--background-modifier-border);
+}
+
+.ghs-fig-bar.is-long {
+	width: 90%;
+}
+
+.ghs-fig-frame {
+	padding: var(--size-4-2) var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+}
+
+.ghs-fig-arrow {
+	padding: var(--size-2-2) 0;
+	color: var(--text-muted);
+	text-align: center;
+}
+
+.ghs-fig-notice {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-3);
+	padding: var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-secondary);
+	box-shadow: var(--shadow-s);
+}
+
+.ghs-fig-statusbar {
+	margin-top: var(--size-4-2);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	text-align: right;
+}
+
+.ghs-fig-command {
+	padding: var(--size-2-3) var(--size-4-3);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+}
+
+.ghs-fig-command-what {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-fig-command:nth-child(odd) {
+	background: var(--background-secondary);
+}
+
+/* Habits: the day's habits as tags, then per habit a strip of the last days and how the night after it looks */
+.ghs-habit-note,
+.ghs-habit-legend {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-habit-yes {
+	color: var(--color-green);
+	font-weight: var(--font-bold);
+}
+
+.ghs-habit-no {
+	color: var(--text-muted);
+	font-weight: var(--font-bold);
+}
+
+.ghs-habit {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	padding-top: var(--size-4-2);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.ghs-habit-head {
+	position: relative;
+	padding-right: 28px;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0 var(--size-4-2);
+}
+
+.ghs-habit-name {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+}
+
+.ghs-habit-strip {
+	display: flex;
+	gap: var(--size-2-2);
+}
+
+.ghs-habit-dot {
+	display: inline-block;
+	box-sizing: border-box;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+}
+
+/* Yes is the accent colour of the panel, no is an empty ring, not logged is a tiny faint dot: three states that differ in shape as well as in colour */
+.ghs-habit-dot-yes {
+	background: var(--ghs-data);
+}
+
+.ghs-habit-dot-no {
+	border: 2px solid var(--text-muted);
+}
+
+.ghs-habit-dot-unknown {
+	width: 4px;
+	height: 4px;
+	margin: 3px;
+	background: var(--text-faint);
+}
+
+.ghs-habit-effect {
+	display: grid;
+	grid-template-columns: minmax(48px, 22%) 1fr auto;
+	align-items: center;
+	gap: var(--size-4-2);
+	font-size: var(--font-ui-smaller);
+}
+
+.ghs-habit-effect-label {
+	color: var(--text-muted);
+}
+
+.ghs-habit-bar {
+	position: relative;
+	height: 8px;
+	border-radius: 4px;
+	background: var(--background-modifier-border);
+}
+
+.ghs-habit-bar::before {
+	content: "";
+	position: absolute;
+	top: -2px;
+	bottom: -2px;
+	left: 50%;
+	width: 1px;
+	background: var(--text-muted);
+}
+
+.ghs-habit-fill {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: var(--ghs-w, 0);
+	border-radius: 4px;
+}
+
+.ghs-habit-fill-right {
+	left: 50%;
+}
+
+.ghs-habit-fill-left {
+	right: 50%;
+}
+
+.ghs-habit-fill-good {
+	background: var(--color-green);
+}
+
+.ghs-habit-fill-bad {
+	background: var(--color-orange);
+}
+
+.ghs-habit-fill-flat {
+	background: var(--text-faint);
+}
+
+.ghs-habit-result {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+}
+
+.ghs-habit-result-note {
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	white-space: nowrap;
+}
+
+.ghs-habit-value {
+	min-width: 62px;
+	text-align: right;
+	white-space: nowrap;
+}
+
+.ghs-habit-value-good {
+	color: var(--color-green);
+	font-weight: var(--font-semibold);
+}
+
+.ghs-habit-value-bad {
+	color: var(--color-orange);
+	font-weight: var(--font-semibold);
+}
+
+.ghs-habit-value-flat {
+	color: var(--text-muted);
+}
+
+.ghs-habit-legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-3);
+	padding-top: var(--size-4-2);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+/* A counted habit: the amount of each day as a small column */
+.ghs-habit-columns {
+	display: flex;
+	align-items: flex-end;
+	gap: var(--size-2-2);
+	height: 22px;
+}
+
+.ghs-habit-col {
+	display: block;
+	box-sizing: border-box;
+	width: 10px;
+	height: var(--ghs-h, 3px);
+	border-radius: 2px;
+	background: var(--ghs-data);
+}
+
+.ghs-habit-col-zero {
+	height: 4px;
+	background: var(--text-muted);
+}
+
+.ghs-habit-col-unknown {
+	height: 2px;
+	background: var(--text-faint);
+}
+
+/* How close the comparison is to the days it needs */
+.ghs-habit-progress {
+	height: 3px;
+	border-radius: 2px;
+	background: var(--background-modifier-border);
+}
+
+.ghs-habit-progress-fill {
+	width: var(--ghs-w, 0);
+	height: 100%;
+	border-radius: 2px;
+	background: var(--ghs-data);
+}
+
+.is-mobile .ghs-habit-head {
+	padding-right: 36px;
+}
+
+/* The hide button is always at the right edge of the row, whatever the name and the note take */
+.ghs-habit-hide {
+	--icon-size: 14px;
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: var(--size-2-2);
+	color: var(--text-faint);
+}
+
+.is-mobile .ghs-habit-hide {
+	min-width: 44px;
+	min-height: 44px;
+	top: -10px;
+	right: -10px;
+}
+
+/* Hidden habits: one square each, in the colour of the day (accent = yes, ring = no, dashed = not logged) */
+.ghs-habit-hidden {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-3);
+	padding-top: var(--size-4-2);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.ghs-habit-squares {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+}
+
+.ghs-habit-square {
+	box-sizing: border-box;
+	min-width: 24px;
+	height: 24px;
+	padding: 0 var(--size-2-3);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	line-height: 1;
+	border: 2px solid var(--text-muted);
+	border-radius: var(--radius-s);
+	background: transparent;
+	box-shadow: none;
+	cursor: pointer;
+}
+
+.is-mobile .ghs-habit-square {
+	min-width: 32px;
+	height: 32px;
+}
+
+.ghs-habit-square-yes {
+	border-color: var(--ghs-data);
+	background: var(--ghs-data);
+	color: var(--text-on-accent);
+}
+
+.ghs-habit-square-unknown {
+	border: 1.5px dashed var(--text-faint);
+	color: var(--text-faint);
+}
+
+/* The light bulb of the Habits card: one folded section per habit, a dot and the name on the left, the arrow on the right */
+.ghs-insight-group {
+	padding: var(--size-2-3) 0;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+/* block layout: a closed details element must not keep a gap for its hidden content */
+.ghs-insight-group > .ghs-insight-item {
+	margin-top: var(--size-4-2);
+}
+
+.ghs-insight-group > summary {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	cursor: pointer;
+	list-style: none;
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	line-height: 1.3;
+}
+
+.ghs-insight-group > summary::-webkit-details-marker {
+	display: none;
+}
+
+/* every heading has the dot's place, so the names line up; grey when there is nothing to say */
+.ghs-insight-group > summary::before {
+	content: "";
+	flex-shrink: 0;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--text-faint);
+}
+
+.ghs-insight-group > summary.ghs-insight-group-watch::before {
+	background: var(--color-orange);
+}
+
+.ghs-insight-group > summary.ghs-insight-group-good::before {
+	background: var(--color-green);
+}
+
+.ghs-insight-group > summary::after {
+	content: "▸";
+	margin-left: auto;
+	color: var(--text-muted);
+}
+
+.ghs-insight-group[open] > summary::after {
+	content: "▾";
+}
+
+/* a finger needs 44px; the extra height is taken back with the margin, so the heading is as low as on a desktop */
+.is-mobile .ghs-insight-group > summary {
+	min-height: 44px;
+	margin: -10px 0;
+}

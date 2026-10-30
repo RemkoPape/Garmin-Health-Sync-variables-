@@ -5,6 +5,8 @@
  * are normalized. Unknown keys are passed through as lowercase+underscore.
  */
 
+import { stripGarminSuffix } from "./activity-names";
+
 /** Cleanup mapping: Garmin typeKey → canonical key */
 const KEY_CLEANUP: Record<string, string> = {
 	e_bike_fitness: "e_bike",
@@ -13,6 +15,8 @@ const KEY_CLEANUP: Record<string, string> = {
 	backcountry_skiing_snowboarding: "backcountry_skiing",
 	stand_up_paddleboarding: "sup",
 	fitness_equipment: "gym_equipment",
+	snow_shoe: "snowshoeing",
+	wind_kite_surfing: "kiteboarding",
 };
 
 /** Category mapping for machine-readable training data */
@@ -29,9 +33,13 @@ const CATEGORY_MAP: Record<string, string> = {
 	bmx: "cycling",
 	bike_commute: "cycling",
 	bike_touring: "cycling",
+	virtual_ride: "cycling",
 
 	// Running
 	running: "running",
+	treadmill_running: "running",
+	indoor_running: "running",
+	street_running: "running",
 	trail_running: "running",
 	treadmill: "running",
 	indoor_track: "running",
@@ -76,6 +84,7 @@ const CATEGORY_MAP: Record<string, string> = {
 	sailing: "water",
 	kiteboarding: "water",
 	windsurfing: "water",
+	paddling: "water",
 
 	// Gym / Fitness
 	strength_training: "gym",
@@ -85,6 +94,8 @@ const CATEGORY_MAP: Record<string, string> = {
 	pilates: "gym",
 	hiit: "gym",
 	cardio: "gym",
+	indoor_cardio: "gym",
+	stair_climbing: "gym",
 	boxing: "gym",
 	jump_rope: "gym",
 	stair_stepper: "gym",
@@ -117,13 +128,18 @@ const CATEGORY_MAP: Record<string, string> = {
 	horseback_riding: "other",
 	inline_skating: "other",
 	skating: "other",
-	meditation: "other",
-	breathwork: "other",
 	multi_sport: "other",
+	triathlon: "other",
 	dancing: "other",
 
 	// Gym (additional)
 	martial_arts: "gym",
+
+	// Recovery: restores rather than loads, and is left out of the load
+	meditation: "recovery",
+	breathwork: "recovery",
+	stretching: "recovery",
+	mobility: "recovery",
 };
 
 /**
@@ -140,5 +156,7 @@ export function normalizeActivityKey(providerKey: string): string {
  * Falls back to "other".
  */
 export function getActivityCategory(normalizedKey: string): string {
-	return CATEGORY_MAP[normalizedKey] ?? "other";
+	// Garmin names some newer sports with a suffix (kayaking_v2, skate_skiing_ws): the sport is the same
+	const base = stripGarminSuffix(normalizedKey);
+	return CATEGORY_MAP[KEY_CLEANUP[base] ?? base] ?? "other";
 }
