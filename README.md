@@ -2,6 +2,8 @@
 
 # Garmin Health Sync
 
+> **This is a personal fork** of Garmin Health Sync, maintained by RemkoPape (`RemkoPape/Garmin-Health-Sync-variables-`). It follows the original plugin and merges its updates, and adds one feature on top: **strength sets**, the exercises, sets, reps and weights of your strength workouts written to your daily notes. Install it with the BRAT plugin using the repository name above. The original authors are credited under Credits.
+
 **A companion for your daily notes.** Garmin Health Sync brings the numbers that matter from your Garmin watch into your Obsidian daily notes, and, if you like, shows how you are doing against your own normal. It is not a copy of Garmin Connect: the aim is to help you make the right decisions for the day.
 
 **Two ways to use it**
@@ -40,6 +42,7 @@
 - **Subdirectory support** — finds existing Daily Notes in nested folders (e.g. `Journal/2024-07/`), and creates date-based subfolders when the filename format contains `/` (e.g. `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Language auto-detection** — UI language is set from your Obsidian language (EN, DE, ZH, JA, ES, FR)
 - **Optional structured data** — machine-readable `trainings` field for advanced Dataview queries
+- **Strength sets (fork addition)**: optionally write the exercises, sets, reps and weights of each strength workout as a `strength_sets` property, so your lift progression can be tracked with Dataview
 - **Property prefix** — optionally adds an `ohs_` prefix to all frontmatter properties to avoid naming conflicts with other plugins
 - **Lifestyle log (habits)** — optionally sync the habits you log in Garmin Connect (yes or no, or a count such as cups of coffee) as `lifestyle_<name>` properties; the Habits card in the side panel shows each habit and, once there is enough data, how your HRV and resting heart rate look on the night after it
 - **Health side panel** — optional right sidebar with cards for recovery, sleep, energy, movement, fitness and training, set against your own usual range; tap the light bulb on a card for what your data suggests and how it is worked out; turn it on under **Settings → Garmin Health Sync → Side panel**
@@ -99,6 +102,23 @@ trainings:
     calories: 420
 ---
 ```
+
+### Strength sets (fork addition)
+
+Enable "Strength sets" in settings to add a `strength_sets` field for strength workouts. The plugin makes one extra request to Garmin per strength activity and lists each exercise in the order it was done. Rest sets are skipped and weights are converted to kg:
+
+```yaml
+---
+strength_sets:
+  - exercise: Barbell Back Squat
+    sets: 4
+    reps: [5, 5, 5, 5]
+    weights_kg: [60, 60, 60, 60]
+    max_weight_kg: 60
+---
+```
+
+Exercise names come from Garmin's internal exercise keys, so they can differ slightly from the names in the Garmin Connect app. Reps and weights are what your watch recorded, or what you corrected afterwards in Garmin Connect.
 
 ## Requirements
 
@@ -245,5 +265,7 @@ npm run build  # production build
 ## Credits
 
 Originally created by [fcandi](https://github.com/fcandi). Maintained and developed further by [davadev](https://github.com/davadev).
+
+This fork (`RemkoPape/Garmin-Health-Sync-variables-`) is maintained by RemkoPape and adds the strength sets feature on top of the original plugin.
 
 The handling of properties in daily notes (folding the properties block, hiding the properties the side panel shows) was inspired by the community plugins [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) by Tommy Bergeron and [Extended Properties](https://obsidian.md/plugins?id=extended-properties) by electroluminescent (both MIT licensed). No code was copied; see [NOTICE.md](NOTICE.md).

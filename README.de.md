@@ -2,6 +2,8 @@
 
 # Garmin Health Sync
 
+> **Dies ist ein persönlicher Fork** von Garmin Health Sync, gepflegt von RemkoPape (`RemkoPape/Garmin-Health-Sync-variables-`). Er folgt dem ursprünglichen Plugin und übernimmt dessen Updates und ergänzt eine Funktion: **Kraftsätze**, also Übungen, Sätze, Wiederholungen und Gewichte deiner Krafttrainings in deinen Daily Notes. Installiere ihn mit dem BRAT-Plugin über den Repository-Namen oben. Die ursprünglichen Autoren werden unter Credits genannt.
+
 **Ein Begleiter für deine Daily Notes.** Garmin Health Sync bringt die Zahlen, auf die es ankommt, von deiner Garmin-Uhr in deine Obsidian Daily Notes und zeigt dir auf Wunsch, wie es dir im Vergleich zu deiner eigenen Normalität geht. Es ist keine Kopie von Garmin Connect: Ziel ist, dir bei den richtigen Entscheidungen für den Tag zu helfen.
 
 **Zwei Arten, es zu nutzen**
@@ -40,6 +42,7 @@
 - **Unterordner-Unterstützung** — findet bestehende Daily Notes in verschachtelten Ordnern (z.B. `Journal/2024-07/`) und legt datumsbasierte Unterordner an, wenn das Dateinamen-Format ein `/` enthält (z.B. `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Automatische Spracherkennung** — die UI-Sprache wird aus deiner Obsidian-Sprache übernommen (EN, DE, ZH, JA, ES, FR)
 - **Optionale strukturierte Daten** — maschinenlesbares `trainings`-Feld für erweiterte Dataview-Abfragen
+- **Kraftsätze (Fork-Ergänzung)**: schreibt optional Übungen, Sätze, Wiederholungen und Gewichte jedes Krafttrainings als Eigenschaft `strength_sets`, sodass sich der Kraftfortschritt mit Dataview verfolgen lässt
 - **Property-Präfix** — fügt optional allen Frontmatter-Properties das Präfix `ohs_` hinzu, um Namenskonflikte mit anderen Plugins zu vermeiden
 - **Lifestyle-Protokoll (Gewohnheiten)** — synchronisiert optional die Gewohnheiten, die du in Garmin Connect protokollierst (Ja/Nein oder eine Anzahl wie Tassen Kaffee), als `lifestyle_<name>`-Properties; die Karte Gewohnheiten im Seitenpanel zeigt jede Gewohnheit und, sobald genug Daten da sind, wie HRV und Ruhepuls in der Nacht danach aussehen
 - **Gesundheits-Seitenpanel** — optionale rechte Seitenleiste mit Karten für Erholung, Schlaf, Energie, Bewegung, Fitness und Training im Vergleich zu deinem eigenen üblichen Bereich; tippe auf die Glühbirne einer Karte, um zu sehen, was deine Daten nahelegen und wie sie berechnet ist; einschalten unter **Einstellungen → Garmin Health Sync → Seitenpanel**
@@ -99,6 +102,23 @@ trainings:
     calories: 420
 ---
 ```
+
+### Kraftsätze (Fork-Ergänzung)
+
+Aktiviere "Kraftsätze" in den Einstellungen, um für Krafttrainings ein Feld `strength_sets` hinzuzufügen. Das Plugin stellt pro Krafttraining eine zusätzliche Anfrage an Garmin und listet jede Übung in der Reihenfolge, in der sie ausgeführt wurde. Pausensätze werden übersprungen und Gewichte in kg umgerechnet:
+
+```yaml
+---
+strength_sets:
+  - exercise: Barbell Back Squat
+    sets: 4
+    reps: [5, 5, 5, 5]
+    weights_kg: [60, 60, 60, 60]
+    max_weight_kg: 60
+---
+```
+
+Die Übungsnamen stammen aus Garmins internen Übungsschlüsseln und können daher leicht von den Namen in der Garmin Connect App abweichen. Wiederholungen und Gewichte sind das, was deine Uhr aufgezeichnet hat oder was du danach in Garmin Connect korrigiert hast.
 
 ## Voraussetzungen
 
@@ -245,5 +265,7 @@ npm run build  # Produktions-Build
 ## Credits
 
 Ursprünglich von [fcandi](https://github.com/fcandi) erstellt. Weiterentwickelt und gepflegt von [davadev](https://github.com/davadev).
+
+Dieser Fork (`RemkoPape/Garmin-Health-Sync-variables-`) wird von RemkoPape gepflegt und ergänzt das ursprüngliche Plugin um die Kraftsätze-Funktion.
 
 Der Umgang mit Properties in Daily Notes (Eigenschaftenblock einklappen, vom Seitenpanel gezeigte Properties ausblenden) wurde von den Community-Plugins [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) von Tommy Bergeron und [Extended Properties](https://obsidian.md/plugins?id=extended-properties) von electroluminescent inspiriert (beide MIT-lizenziert). Es wurde kein Code übernommen; siehe [NOTICE.md](NOTICE.md).

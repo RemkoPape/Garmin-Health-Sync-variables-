@@ -2,6 +2,8 @@
 
 # Garmin Health Sync
 
+> **这是 Garmin Health Sync 的个人分支（fork）**，由 RemkoPape 维护（`RemkoPape/Garmin-Health-Sync-variables-`）。它跟随原插件并合并其更新，同时增加了一项功能：**力量训练组**，即把力量训练的动作、组数、次数和重量写入你的每日笔记。请使用上面的仓库名称通过 BRAT 插件安装。原作者见致谢部分。
+
 **你每日笔记的好帮手。** Garmin Health Sync 把 Garmin 手表上最重要的数据带进你的 Obsidian 每日笔记，并可按需展示你与自己日常水平相比的状态。它不是 Garmin Connect 的复制品：目标是帮助你为这一天做出正确的决定。
 
 **两种使用方式**
@@ -40,6 +42,7 @@
 - **子目录支持** —— 在嵌套文件夹中查找已有的 Daily Notes（例如 `Journal/2024-07/`）；文件名格式包含 `/` 时会按日期创建子文件夹（例如 `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`）
 - **语言自动检测** —— UI 语言根据你的 Obsidian 语言设置自动适配（EN、DE、ZH、JA、ES、FR）
 - **可选的结构化数据** —— 机器可读的 `trainings` 字段，用于高级 Dataview 查询
+- **力量训练组（分支新增）**：可选择将每次力量训练的动作、组数、次数和重量写入 `strength_sets` 属性，便于用 Dataview 跟踪力量进步
 - **属性前缀** — 可为所有 frontmatter 属性添加 `ohs_` 前缀，以避免与其他插件的名称冲突
 - **生活方式日志（习惯）** — 可选择同步你在 Garmin Connect 中记录的习惯（是/否，或像咖啡杯数这样的次数），写为 `lifestyle_<名称>` 属性；侧边栏的“习惯”卡片显示每个习惯，数据足够时还会显示之后那一晚的 HRV 和静息心率
 - **健康侧边面板** — 可选的右侧边栏，以卡片展示恢复、睡眠、能量、活动、体能和训练，并与你自己的日常范围对比；点击卡片上的灯泡可查看数据的启示及计算方式；在**设置 → Garmin Health Sync → 侧边面板**中启用
@@ -99,6 +102,23 @@ trainings:
     calories: 420
 ---
 ```
+
+### 力量训练组（分支新增）
+
+在设置中启用"力量训练组"，即可为力量训练添加 `strength_sets` 字段。插件会为每次力量训练向 Garmin 额外发送一次请求，并按完成顺序列出每个动作。休息组会被跳过，重量换算为 kg：
+
+```yaml
+---
+strength_sets:
+  - exercise: Barbell Back Squat
+    sets: 4
+    reps: [5, 5, 5, 5]
+    weights_kg: [60, 60, 60, 60]
+    max_weight_kg: 60
+---
+```
+
+动作名称来自 Garmin 内部的动作键，因此可能与 Garmin Connect 应用中显示的名称略有不同。次数和重量为手表记录的数据，或你之后在 Garmin Connect 中修正的数据。
 
 ## 要求
 
@@ -245,5 +265,7 @@ npm run build  # 生产构建
 ## 致谢
 
 最初由 [fcandi](https://github.com/fcandi) 创建，现由 [davadev](https://github.com/davadev) 维护和继续开发。
+
+此分支（`RemkoPape/Garmin-Health-Sync-variables-`）由 RemkoPape 维护，在原插件基础上增加了力量训练组功能。
 
 每日笔记中属性的处理方式（折叠属性区、隐藏侧边面板已显示的属性）受到社区插件的启发：Tommy Bergeron 的 [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) 和 electroluminescent 的 [Extended Properties](https://obsidian.md/plugins?id=extended-properties)（均为 MIT 许可）。未复制任何代码；见 [NOTICE.md](NOTICE.md)。

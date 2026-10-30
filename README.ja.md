@@ -2,6 +2,8 @@
 
 # Garmin Health Sync
 
+> **これは Garmin Health Sync の個人用フォークです**。RemkoPape が管理しています（`RemkoPape/Garmin-Health-Sync-variables-`）。元のプラグインに追従してその更新を取り込みつつ、1 つの機能を追加しています：**筋トレのセット**、つまり筋力トレーニングの種目・セット数・回数・重量をデイリーノートに書き込む機能です。上記のリポジトリ名を使って BRAT プラグインでインストールしてください。元の作者はクレジットに記載しています。
+
 **デイリーノートの相棒。** Garmin Health Sync は、Garmin ウォッチの大切な数値を Obsidian のデイリーノートに取り込み、必要に応じて、あなた自身の普段の状態と比べた今日の調子を表示します。Garmin Connect のコピーではありません。目的は、その日の判断を的確に行う手助けをすることです。
 
 **2つの使い方**
@@ -40,6 +42,7 @@
 - **サブディレクトリ対応** — ネストされたフォルダ内の既存 Daily Notes を検索（例：`Journal/2024-07/`）。ファイル名形式に `/` を含めると日付ごとのサブフォルダを作成（例：`YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`）
 - **言語自動検出** — UI 言語は Obsidian の言語設定に基づいて自動設定（EN、DE、ZH、JA、ES、FR）
 - **オプションの構造化データ** — 高度な Dataview クエリ用の機械可読 `trainings` フィールド
+- **筋トレのセット（フォークでの追加）**：各筋力トレーニングの種目・セット数・回数・重量を `strength_sets` プロパティとして任意で書き込み、Dataview で挙上重量の推移を追跡できます
 - **プロパティのプレフィックス** — 他のプラグインとの名前の衝突を避けるため、すべての frontmatter プロパティに `ohs_` プレフィックスを付けられます（オプション）
 - **ライフスタイルログ（習慣）** — Garmin Connectに記録した習慣（はい／いいえ、またはコーヒーの杯数のような回数）を `lifestyle_<名前>` プロパティとして任意で同期します。サイドパネルの「習慣」カードは各習慣を表示し、十分なデータがあれば、その翌夜のHRVと安静時心拍数の様子も示します
 - **ヘルスサイドパネル** — 回復・睡眠・エネルギー・活動・体力・トレーニングのカードを、あなた自身の普段の範囲と比べて表示する右サイドバー（オプション）。カードの電球をタップすると、データが示すことと計算方法が分かります。**設定 → Garmin Health Sync → サイドパネル**で有効にします
@@ -99,6 +102,23 @@ trainings:
     calories: 420
 ---
 ```
+
+### 筋トレのセット（フォークでの追加）
+
+設定で「筋トレのセット」を有効にすると、筋力トレーニングに `strength_sets` フィールドが追加されます。プラグインは筋トレ 1 回につき Garmin へ追加のリクエストを 1 件送り、実施した順に各種目を一覧にします。休憩セットは除外され、重量は kg に換算されます：
+
+```yaml
+---
+strength_sets:
+  - exercise: Barbell Back Squat
+    sets: 4
+    reps: [5, 5, 5, 5]
+    weights_kg: [60, 60, 60, 60]
+    max_weight_kg: 60
+---
+```
+
+種目名は Garmin 内部の種目キーに基づくため、Garmin Connect アプリでの表示名と少し異なる場合があります。回数と重量は、ウォッチが記録した値、または後から Garmin Connect で修正した値です。
 
 ## 要件
 
@@ -245,5 +265,7 @@ npm run build  # プロダクションビルド
 ## クレジット
 
 [fcandi](https://github.com/fcandi) が作成したプラグインです。現在は [davadev](https://github.com/davadev) がメンテナンスと開発を行っています。
+
+このフォーク（`RemkoPape/Garmin-Health-Sync-variables-`）は RemkoPape が管理しており、元のプラグインに筋トレのセット機能を追加しています。
 
 デイリーノートのプロパティの扱い（プロパティブロックの折りたたみ、サイドパネルが表示するプロパティの非表示）は、Tommy Bergeron さんのコミュニティプラグイン [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) と、electroluminescent さんの [Extended Properties](https://obsidian.md/plugins?id=extended-properties) に着想を得ています（どちらも MIT ライセンス）。コードはコピーしていません。[NOTICE.md](NOTICE.md) を参照してください。

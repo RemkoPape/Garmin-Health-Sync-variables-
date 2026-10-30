@@ -2,6 +2,8 @@
 
 # Garmin Health Sync
 
+> **Ceci est un fork personnel** de Garmin Health Sync, maintenu par RemkoPape (`RemkoPape/Garmin-Health-Sync-variables-`). Il suit le plugin d’origine et intègre ses mises à jour, et ajoute une fonctionnalité : les **séries de musculation**, c’est-à-dire les exercices, séries, répétitions et charges de vos séances de musculation écrits dans vos notes quotidiennes. Installez-le avec le plugin BRAT en utilisant le nom du dépôt ci-dessus. Les auteurs d’origine sont cités dans Crédits.
+
 **Un compagnon pour vos notes quotidiennes.** Garmin Health Sync apporte les chiffres qui comptent de votre montre Garmin dans vos notes quotidiennes Obsidian et, si vous le souhaitez, montre où vous en êtes par rapport à votre propre normalité. Ce n’est pas une copie de Garmin Connect : le but est de vous aider à prendre les bonnes décisions pour la journée.
 
 **Deux façons de l’utiliser**
@@ -40,6 +42,7 @@
 - **Support des sous-dossiers** — trouve les Daily Notes existantes dans les dossiers imbriqués (par ex. `Journal/2024-07/`) et crée des sous-dossiers par date lorsque le format du nom de fichier contient `/` (par ex. `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Détection automatique de la langue** — la langue de l'interface est définie selon la langue de votre Obsidian (EN, DE, ZH, JA, ES, FR)
 - **Données structurées optionnelles** — champ `trainings` lisible par machine pour des requêtes Dataview avancées
+- **Séries de musculation (ajout du fork)** : écrit en option les exercices, séries, répétitions et charges de chaque séance de musculation dans une propriété `strength_sets`, pour suivre votre progression avec Dataview
 - **Préfixe des propriétés** — ajoute éventuellement le préfixe `ohs_` à toutes les propriétés frontmatter pour éviter les conflits de noms avec d’autres plugins
 - **Journal de style de vie (habitudes)** — synchronise éventuellement les habitudes saisies dans Garmin Connect (oui/non ou un nombre, comme des tasses de café) sous forme de propriétés `lifestyle_<nom>` ; la carte Habitudes du panneau latéral montre chaque habitude et, avec assez de données, l’allure de votre VFC et de votre fréquence cardiaque au repos la nuit suivante
 - **Panneau latéral santé** — barre latérale droite optionnelle avec des cartes pour la récupération, le sommeil, l’énergie, le mouvement, la forme et l’entraînement, comparées à votre propre plage habituelle ; touchez l’ampoule d’une carte pour voir ce que suggèrent vos données et comment c’est calculé ; à activer dans **Réglages → Garmin Health Sync → Panneau latéral**
@@ -99,6 +102,23 @@ trainings:
     calories: 420
 ---
 ```
+
+### Séries de musculation (ajout du fork)
+
+Activez « Séries de musculation » dans les paramètres pour ajouter un champ `strength_sets` aux séances de musculation. Le plugin envoie une requête supplémentaire à Garmin par séance et liste chaque exercice dans l’ordre où il a été fait. Les séries de repos sont ignorées et les charges converties en kg :
+
+```yaml
+---
+strength_sets:
+  - exercise: Barbell Back Squat
+    sets: 4
+    reps: [5, 5, 5, 5]
+    weights_kg: [60, 60, 60, 60]
+    max_weight_kg: 60
+---
+```
+
+Les noms des exercices proviennent des clés internes de Garmin et peuvent donc différer légèrement de ceux de l’application Garmin Connect. Les répétitions et les charges sont celles enregistrées par votre montre, ou corrigées ensuite dans Garmin Connect.
 
 ## Prérequis
 
@@ -245,5 +265,7 @@ npm run build  # build de production
 ## Crédits
 
 Créé à l’origine par [fcandi](https://github.com/fcandi). Maintenu et développé par [davadev](https://github.com/davadev).
+
+Ce fork (`RemkoPape/Garmin-Health-Sync-variables-`) est maintenu par RemkoPape et ajoute la fonctionnalité des séries de musculation au plugin d’origine.
 
 La gestion des propriétés dans les notes quotidiennes (replier le bloc de propriétés, masquer les propriétés que montre le panneau latéral) s’est inspirée des plugins communautaires [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) de Tommy Bergeron et [Extended Properties](https://obsidian.md/plugins?id=extended-properties) d’electroluminescent (tous deux sous licence MIT). Aucun code n’a été copié ; voir [NOTICE.md](NOTICE.md).

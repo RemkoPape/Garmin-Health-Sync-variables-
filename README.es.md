@@ -2,6 +2,8 @@
 
 # Garmin Health Sync
 
+> **Este es un fork personal** de Garmin Health Sync, mantenido por RemkoPape (`RemkoPape/Garmin-Health-Sync-variables-`). Sigue al plugin original e incorpora sus actualizaciones, y añade una función: **series de fuerza**, los ejercicios, series, repeticiones y pesos de tus entrenamientos de fuerza escritos en tus notas diarias. Instálalo con el plugin BRAT usando el nombre del repositorio indicado arriba. Los autores originales aparecen en Créditos.
+
 **Un compañero para tus notas diarias.** Garmin Health Sync lleva los números que importan de tu reloj Garmin a tus notas diarias de Obsidian y, si quieres, muestra cómo estás respecto a tu propia normalidad. No es una copia de Garmin Connect: el objetivo es ayudarte a tomar las decisiones adecuadas para el día.
 
 **Dos formas de usarlo**
@@ -40,6 +42,7 @@
 - **Soporte de subdirectorios** — encuentra Daily Notes existentes en carpetas anidadas (p. ej., `Journal/2024-07/`) y crea subcarpetas por fecha cuando el formato del nombre de archivo contiene `/` (p. ej., `YYYY/YYYY-MM-DD` → `Journal/2026/2026-08-04.md`)
 - **Detección automática del idioma** — el idioma de la interfaz se configura según el idioma de tu Obsidian (EN, DE, ZH, JA, ES, FR)
 - **Datos estructurados opcionales** — campo `trainings` legible por máquina para consultas avanzadas con Dataview
+- **Series de fuerza (añadido del fork)**: escribe opcionalmente los ejercicios, series, repeticiones y pesos de cada entrenamiento de fuerza como propiedad `strength_sets`, para seguir tu progresión con Dataview
 - **Prefijo de propiedades** — añade opcionalmente el prefijo `ohs_` a todas las propiedades de frontmatter para evitar conflictos de nombres con otros plugins
 - **Registro de estilo de vida (hábitos)** — sincroniza opcionalmente los hábitos que registras en Garmin Connect (sí/no o una cantidad, como tazas de café) como propiedades `lifestyle_<nombre>`; la tarjeta Hábitos del panel lateral muestra cada hábito y, con datos suficientes, cómo son tu VFC y tu frecuencia cardíaca en reposo la noche siguiente
 - **Panel lateral de salud** — barra lateral derecha opcional con tarjetas de recuperación, sueño, energía, movimiento, forma física y entrenamiento frente a tu propio rango habitual; toca la bombilla de una tarjeta para ver qué sugieren tus datos y cómo se calcula; actívalo en **Ajustes → Garmin Health Sync → Panel lateral**
@@ -99,6 +102,23 @@ trainings:
     calories: 420
 ---
 ```
+
+### Series de fuerza (añadido del fork)
+
+Activa "Series de fuerza" en la configuración para añadir un campo `strength_sets` a los entrenamientos de fuerza. El plugin hace una solicitud adicional a Garmin por cada actividad de fuerza y lista cada ejercicio en el orden en que se hizo. Las series de descanso se omiten y los pesos se convierten a kg:
+
+```yaml
+---
+strength_sets:
+  - exercise: Barbell Back Squat
+    sets: 4
+    reps: [5, 5, 5, 5]
+    weights_kg: [60, 60, 60, 60]
+    max_weight_kg: 60
+---
+```
+
+Los nombres de los ejercicios provienen de las claves internas de Garmin, por lo que pueden diferir ligeramente de los nombres en la app Garmin Connect. Las repeticiones y los pesos son los que registró tu reloj o los que corregiste después en Garmin Connect.
 
 ## Requisitos
 
@@ -245,5 +265,7 @@ npm run build  # compilación para producción
 ## Créditos
 
 Creado originalmente por [fcandi](https://github.com/fcandi). Mantenido y desarrollado por [davadev](https://github.com/davadev).
+
+Este fork (`RemkoPape/Garmin-Health-Sync-variables-`) lo mantiene RemkoPape y añade la función de series de fuerza al plugin original.
 
 El tratamiento de las propiedades en las notas diarias (plegar el bloque de propiedades, ocultar las propiedades que muestra el panel lateral) se inspiró en los plugins de la comunidad [Fold Properties By Default](https://obsidian.md/plugins?id=fold-properties-by-default) de Tommy Bergeron y [Extended Properties](https://obsidian.md/plugins?id=extended-properties) de electroluminescent (ambos con licencia MIT). No se copió código; véase [NOTICE.md](NOTICE.md).
