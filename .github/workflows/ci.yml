@@ -143,9 +143,9 @@ jobs:
         env:
           TZ: ${{ matrix.tz }}
 
-  # main's manifest must always name a published stable release. On a PR that bumps the version this
-  # is red until the stable tag has published, then green on re-run; that is what makes merging the
-  # bump before the release exists impossible once this is a required check.
+  # The committed manifest version must point to a published stable release. We enforce this whenever
+  # a commit changes manifest.version (PRs compare with the base branch; pushes compare with before-SHA),
+  # which prevents merging version bumps before a release exists.
   store-listing:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -169,4 +169,4 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/check-store-listing.mjs
+        run: node scripts/check-store-listing.mjs --base "${{ github.event.before }}"
