@@ -89,6 +89,10 @@ describe("ci.yml", () => {
 	it("never cancels runs on main", () => {
 		expect(ci).toContain("cancel-in-progress: ${{ github.event_name == 'pull_request' }}");
 	});
+
+	it("checks store-listing on main only when the version changed", () => {
+		expect(ci).toContain('node scripts/check-store-listing.mjs --base "${{ github.event.before }}"');
+	});
 });
 
 describe("Node version", () => {
