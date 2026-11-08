@@ -1,5 +1,7 @@
 import { shiftDate } from "../dates";
 import { t } from "../i18n/t";
+import { formatNumber } from "./format";
+import type { HistoryRank } from "./best-days";
 
 /** The year looked at, and the two windows compared inside it. */
 const YEAR_DAYS = 365;
@@ -48,6 +50,16 @@ export function longFacts(view: LongView | null, format: (value: number) => stri
 	const lines = [t("panelLongRange", lang).replace("{n}", String(view.days)).replace("{avg}", format(view.avg)).replace("{min}", format(view.min)).replace("{max}", format(view.max))];
 	if (view.recent !== null && view.prior !== null) lines.push(t("panelLongChange", lang).replace("{recent}", format(view.recent)).replace("{prior}", format(view.prior)));
 	return lines;
+}
+
+/** The line about all the days of the person for the box under the light bulb: where the shown day ranks. */
+export function historyFacts(rank: HistoryRank | null, lang: string): string[] {
+	return rank ? [t("panelHistoryRank", lang).replace("{pct}", String(Math.round(rank.share * 100))).replace("{n}", formatNumber(rank.n, lang, 0)).replace("{since}", rank.since.slice(0, 7))] : [];
+}
+
+/** What the best days average, as the line that explains the diamond (it carries the diamond's colour). `format` writes a value with its unit. */
+export function bestFact(best: number | null, format: (value: number) => string, lang: string): string | undefined {
+	return best === null ? undefined : t("panelBestDays", lang).replace("{value}", format(best));
 }
 
 /** Weeks looked back for the pattern of a weekday, and the days it must rest on. */
