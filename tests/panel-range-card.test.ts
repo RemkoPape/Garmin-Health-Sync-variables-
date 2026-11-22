@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { App } from "../testUtils/mocks/obsidian";
 import { seedHistory } from "../testUtils/fakeHistory";
 import { DayIndex } from "../src/panel/index";
-import { computeRange, renderRange, HRV_CARD, RESTING_HR_CARD, RANGE_EARLY_MIN_DAYS as HRV_EARLY_MIN_DAYS, RANGE_MIN_DAYS as HRV_MIN_DAYS, type RangeCardSpec } from "../src/panel/cards/range-card";
+import { computeRange, renderRange, HRV_CARD, RESTING_HR_CARD, SPO2_CARD, RANGE_EARLY_MIN_DAYS as HRV_EARLY_MIN_DAYS, RANGE_MIN_DAYS as HRV_MIN_DAYS, type RangeCardSpec } from "../src/panel/cards/range-card";
 import { en } from "../src/i18n/en";
 import { de } from "../src/i18n/de";
 
@@ -68,7 +68,7 @@ describe("renderHrv", () => {
 	it("shows the value, the usual range and a green dot inside it", async () => {
 		render(computeHrv(await indexWith(61), END));
 		expect(text(".ghs-card-title")).toBe("HRV");
-		expect(text(".ghs-card-value")).toBe("61 ms");
+		expect(text(".ghs-card-value")).toBe("61 ms · Last night");
 		expect(root.querySelector(".ghs-range")?.getAttribute("aria-label")).toBe("Usual range 58–62 ms");
 		expect(Array.from(root.querySelectorAll(".ghs-tick-label")).map((e) => e.textContent)).toEqual(["58", "62"]);
 		expect(root.querySelectorAll(".ghs-tick")).toHaveLength(2);
@@ -134,7 +134,7 @@ describe("renderHrv", () => {
 
 	it("formats numbers and texts in the plugin language", async () => {
 		render(computeHrv(await indexWith(61.4), END), "de");
-		expect(text(".ghs-card-value")).toBe("61 ms");
+		expect(text(".ghs-card-value")).toBe("61 ms · Letzte Nacht");
 		expect(root.querySelector(".ghs-range")?.getAttribute("aria-label")).toBe("Üblicher Bereich 58–62 ms");
 		expect(root.querySelector("button")?.getAttribute("aria-label")).toBe(de.panelInfo);
 	});
@@ -176,7 +176,7 @@ describe("resting heart rate card", () => {
 	it("titles the card and shows bpm", async () => {
 		await tone(60);
 		expect(text(".ghs-card-title")).toBe(en.panelRestingHrTitle);
-		expect(text(".ghs-card-value")).toBe("60 bpm");
+		expect(text(".ghs-card-value")).toBe("60 bpm · Today");
 		expect(root.querySelector(".ghs-range")?.getAttribute("aria-label")).toBe("Usual range 58–62 bpm");
 		expect(root.querySelector(".ghs-range-track-high")).not.toBeNull();
 	});
@@ -197,5 +197,73 @@ describe("resting heart rate card", () => {
 		root.empty();
 		render(computeRange(RESTING_HR_CARD, await rhr(60), END), "en", true, () => undefined, RESTING_HR_CARD);
 		expect(text(".ghs-explain")).toBe(en.panelRestingHrExplain);
+	});
+});
+
+describe("the week chart on the HRV card", () => {
+	it("draws the nights with their average on the HRV card and keeps the range bar", async () => {
+		const m = computeHrv(await indexWith(60), END);
+		expect(m.week?.nights).toHaveLength(14);
+		render(m);
+		expect(root.querySelectorAll(".ghs-hrvweek .ghs-night-bar")).toHaveLength(14);
+		expect(root.querySelector(".ghs-range")).not.toBeNull();
+		expect(root.querySelector(".ghs-trend-text")).toBeNull();
+	});
+
+	it("draws the same chart for the resting heart rate, with the high side as the bad one", async () => {
+		const app = new App();
+		await seedHistory(app, { end: END, days: 80, frontmatter: (ago) => ({ resting_hr: ago < 7 ? 60 : 50 + (ago % 2 === 0 ? 1 : -1) }) });
+		const m = computeRange(RESTING_HR_CARD, new DayIndex(app as never, () => settings), END);
+		expect(m.week?.average).toBeCloseTo(60, 3);
+		render(m, "en", false, () => undefined, RESTING_HR_CARD);
+		expect(text(".ghs-card-value")).toBe("60 bpm · Today");
+		expect(text(".ghs-hrvweek-status")).toContain("7-day avg 60 bpm");
+		// above the usual is the bad side here, not below
+		expect(root.querySelector(".ghs-hrvweek-below")).not.toBeNull();
+		expect(root.querySelector(".ghs-trend-text")).toBeNull();
+	});
+
+	it("leaves the cards without a week chart on their trend line", async () => {
+		const index = await indexWith(60);
+		const m = computeRange(SPO2_CARD, index, END);
+		expect(m.week).toBeNull();
+		render(m, "en", false, () => undefined, SPO2_CARD);
+		expect(root.querySelector(".ghs-hrvweek")).toBeNull();
+	});
+});
+
+describe("the long-term change on the HRV card", () => {
+	/** 200 days: the last 90 average `recent`, the 90 before `prior`, a night-to-night swing of 2. */
+	async function longIndex(recent: number, prior: number): Promise<DayIndex> {
+		const app = new App();
+		await seedHistory(app, { end: END, days: 200, frontmatter: (ago) => ({ hrv: (ago < 90 ? recent : prior) + (ago % 2 === 0 ? 2 : -2) }) });
+		return new DayIndex(app as never, () => settings);
+	}
+
+	it("says how far the 90 day average moved, and that the unit of the headline is last night", async () => {
+		render(computeHrv(await longIndex(64, 58), END));
+		expect(text(".ghs-hrvweek-long")).toBe("↑ 6 ms over 90 days");
+		expect(text(".ghs-card-value")).toBe("66 ms · Last night");
+		root.replaceChildren();
+		render(computeHrv(await longIndex(52, 58), END));
+		expect(text(".ghs-hrvweek-long")).toContain("↓ 6 ms");
+	});
+
+	it("calls a change within the usual swing steady and shows nothing without 60 days of data", async () => {
+		render(computeHrv(await longIndex(59, 58), END));
+		expect(text(".ghs-hrvweek-long")).toBe(en.panelWeekLongSteady);
+		root.replaceChildren();
+		render(computeHrv(await indexWith(60), END));
+		expect(root.querySelector(".ghs-hrvweek-long")).toBeNull();
+	});
+});
+
+describe("the caption of the bar on cards with a week chart", () => {
+	it("says which question the bar answers, so the chart below can answer another", async () => {
+		render(computeHrv(await indexWith(60), END));
+		expect(text(".ghs-bar-caption")).toBe("Last night against your usual days");
+		root.replaceChildren();
+		render(computeRange(SPO2_CARD, await indexWith(60), END), "en", false, () => undefined, SPO2_CARD);
+		expect(root.querySelector(".ghs-bar-caption")).toBeNull();
 	});
 });

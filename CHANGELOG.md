@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.14.1
+
+Security: clears all open Dependabot alerts. Development dependencies only; nothing changes in the shipped `main.js`. The detail of every step is in the `0.14.1-beta.N` notes of the GitHub releases.
+
+### Added
+
+- A "what's new" entry for 0.14.1 (six languages) about the dependency security fixes.
+
+### Changed
+
+- Updated `happy-dom` to 21.0.4 and the lockfile entries `fast-uri`, `brace-expansion`, `picomatch` and `@humanfs/node` to their patched versions; merged the pending dev-dependency update.
+- Scoped `overrides` in `package.json` for `minimatch` 11.0.1, `ajv` 8.20.0 and `moment` 2.31.0 where the parent packages still pin vulnerable versions.
+- `.npmrc`: `brace-expansion` is excluded from `min-release-age` so its fix (published days ago) can land.
+- Dependabot: security updates arrive grouped in one pull request.
+
+## 0.14.0
+
+The release of the week. The HRV and resting heart rate cards show a week at a glance, and Readiness judges HRV on the 7-night average instead of one night. The thresholds are starting values (see `docs/panel-insights.md`, "Where the numbers come from"). The detail of every step is in the `0.14.0-beta.N` notes of the GitHub releases.
+
+### Added
+
+- **A week chart on the HRV and resting heart rate cards.** Under the range bar: the last 14 days as bars (the shown day solid), the 7-day average as a line, the "Typical week" as a green band (the mean of up to 60 days before the week, the week itself left out, plus or minus three quarters of a standard deviation, worked out on ln(value)) and one status row ("In / Below / Above your typical week") with the change of the 90 day average. Runs of 3 or more days without a value are drawn as dashed boxes and break the line; a missing night is never counted as low. The headline says what it is ("37 ms · Last night", "Today" for the resting heart rate); only an average above the typical week is coloured as a warning on the resting heart rate. The range bar keeps its range (the 30 days before, plus or minus one standard deviation) and now has a caption saying so.
+- **Readiness says why.** The first interpretation shows under the score bar without opening the light bulb. New interpretations: `today_week_low`, `today_hard_session`, `hrv_low_hard_session`, `rhr_high_hard_session`, `today_no_hrv`, each with its section in `docs/panel-insights.md`.
+- **Readiness for a watch that sends no HRV.** It uses resting heart rate, sleep and body battery (the resting heart rate carrying more weight), says the score is less reliable and never says "train hard". With HRV in the notes but not for last night there is still no score.
+- **The Readiness switch follows the data.** When the daily notes have at least 14 days of other data but neither resting heart rate with sleep nor Garmin's readiness, the card cannot be switched on in **Settings → Garmin Health Sync → Side panel**; the description says why. A card already switched on can still be switched off.
+- A "what's new" entry for 0.14.0 (six languages) with a small HRV week figure.
+
+### Changed
+
+- **Readiness judges HRV on the 7-night average** (from 4 of 7 nights; otherwise on last night as before) against the typical week. The HRV flag fires when the average is more than three quarters of a standard deviation low, or when last night alone is more than 2 standard deviations low and no hard session explains it.
+- **The morning after a hard session** (a non-recovery session of yesterday with a known intensity: step 3 or more, or load 70 or more at step 2 or more) the night's low HRV and raised resting heart rate are not flagged and the verdict is at most "go easy". A rest verdict stays, and a raised resting heart rate with raised breathing (the sign of an illness) stays flagged.
+- No readiness score without last night's HRV, as in 0.13.0.
+- The HRV and resting heart rate cards no longer show the two-week trend line; the week chart replaces it.
+- **Less work while an installer waits.** When the plugin is enabled while Obsidian is already running (BRAT, the community browser, an update), the startup work that does not need to hurry now starts 3 seconds later. At a normal Obsidian start nothing changes.
+- The green band is a little more transparent on a light theme.
+
+### Fixed
+
+- **"How to read this" no longer folds itself while you read it.** The folded sections inside an open light bulb keep their state across a redraw of the panel.
+- A long easy walk is no longer a "hard session".
+- Docs and README brought up to date: the typical week, the resting heart rate chart, the score and the flags.
+
 ## 0.13.0
 
 The release of the personal best. The detail of every step is in the `0.13.0-beta.N` notes of the GitHub releases.

@@ -60,9 +60,9 @@ describe("health panel view", () => {
 		await seedHistory(app, { end: "2026-10-22", days: 31, frontmatter: (ago) => ({ hrv: ago % 2 === 0 ? 62 : 58 }) });
 		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
 		await view.onOpen();
-		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("62 ms");
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("62 ms · Last night");
 		buttons(view)[0]!.click();
-		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("58 ms");
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("58 ms · Last night");
 	});
 
 	it("shows the cards in order: today, recovery, sleep, movement", async () => {
@@ -98,6 +98,29 @@ describe("health panel view", () => {
 		expect(view.contentEl.querySelector(".ghs-explain")).toBeNull();
 	});
 
+	it("keeps \"how to read this\" open while the panel is drawn again, so it can be read to the end", async () => {
+		const { view, app } = await open();
+		const infos = (): HTMLButtonElement[] => Array.from(view.contentEl.querySelectorAll(".ghs-info"));
+		const about = (): HTMLDetailsElement | null => view.contentEl.querySelector("details.ghs-about");
+		infos()[0]!.click();
+		// a redraw leaves a part that was folded folded
+		app.metadataCache.fireChanged(app.vault.getMarkdownFiles()[0]!);
+		await vi.advanceTimersByTimeAsync(300);
+		expect(about()!.open).toBe(false);
+		about()!.open = true;
+		// a note changed: the whole panel is drawn again
+		app.metadataCache.fireChanged(app.vault.getMarkdownFiles()[0]!);
+		await vi.advanceTimersByTimeAsync(300);
+		expect(about()!.open).toBe(true);
+		// another card's explanation starts folded
+		infos()[1]!.click();
+		expect(about()!.open).toBe(false);
+		// and the first one does not remember it was open once it was closed
+		infos()[1]!.click();
+		infos()[0]!.click();
+		expect(about()!.open).toBe(false);
+	});
+
 	it("re-renders once, 300 ms after a burst of note changes, with fresh data", async () => {
 		const app = new App();
 		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
@@ -110,7 +133,7 @@ describe("health panel view", () => {
 		await vi.advanceTimersByTimeAsync(299);
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
 		await vi.advanceTimersByTimeAsync(1);
-		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms");
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms · Last night");
 	});
 
 	it.each(["delete", "rename"] as const)("refreshes when a note is %sd", async (event) => {
@@ -118,7 +141,7 @@ describe("health panel view", () => {
 		await seedHistory(app, { end: "2026-10-22", days: 1, frontmatter: () => ({ hrv: 64 }) });
 		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } } as never);
 		await view.onOpen();
-		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms");
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms · Last night");
 		app.metadataCache.frontmatter.clear();
 		app.vault.fire(event, app.vault.getMarkdownFiles()[0]!);
 		await vi.advanceTimersByTimeAsync(300);
@@ -133,12 +156,12 @@ describe("health panel view", () => {
 		await view.onOpen();
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
 		await vi.advanceTimersByTimeAsync(0);
-		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms");
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("64 ms · Last night");
 		app.vault.overwrite(path, serializeMonth("2026-10", new Map([["2026-10-22", { hrv: 65 }]])));
 		app.metadataCache.fireChanged(app.vault.getAbstractFileByPath(path) as never);
 		await vi.advanceTimersByTimeAsync(300);
 		await vi.advanceTimersByTimeAsync(0);
-		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("65 ms");
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("65 ms · Last night");
 	});
 
 	it("reads history notes from years back, not only the last 400 days", async () => {
@@ -273,7 +296,7 @@ describe("health panel view", () => {
 		app.metadataCache.frontmatter.set("2026-10-22.md", { hrv: 61 });
 		app.metadataCache.fire("resolved");
 		await vi.advanceTimersByTimeAsync(300);
-		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("61 ms");
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("61 ms · Last night");
 	});
 
 	it("keeps the place in the panel when it is drawn again", async () => {
@@ -289,7 +312,7 @@ describe("health panel view", () => {
 		const plugin = { settings: { ...DEFAULT_SETTINGS, panelCards: { today: false } } };
 		const view = new HealthPanelView(new WorkspaceLeaf(app) as never, plugin as never);
 		await view.onOpen();
-		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("61 ms");
+		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe("61 ms · Last night");
 		plugin.settings.dailyNoteFormat = "YYYY.MM.DD";
 		view.refresh();
 		expect(view.contentEl.querySelector(".ghs-card-value")?.textContent).toBe(en.panelNoReading);
@@ -419,7 +442,7 @@ describe("health panel view", () => {
 			view.containerEl.isShown = () => true;
 			if (reveal === "resize") view.onResize();
 			else app.workspace.fire(reveal);
-			expect(view.contentEl.querySelector(".ghs-card-value")?.textContent, reveal).toBe("64 ms");
+			expect(view.contentEl.querySelector(".ghs-card-value")?.textContent, reveal).toBe("64 ms · Last night");
 		}
 	});
 

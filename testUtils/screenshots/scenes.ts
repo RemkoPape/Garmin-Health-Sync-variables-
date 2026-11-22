@@ -2,7 +2,7 @@
 // because README.md and the what's new window refer to them. Add a scene here and run `npm run screenshots`.
 export interface Scene {
 	id: string;
-	/** "panel" renders the side panel; "whats-new" renders the what's new window of the running minor line. */
+	/** "panel" renders the side panel; "whats-new" renders the what's new window of the newest release notes entry. */
 	kind?: "panel" | "whats-new";
 	/** Width of the image in CSS px (default IMAGE_WIDTH). */
 	width?: number;
@@ -34,7 +34,7 @@ export const SCENES: Scene[] = [
 		daysBack: 0,
 		cards: [],
 		open: [],
-		expect: [".ghs-whats-new-figure", ".ghs-fig-frame", ".ghs-fig-panel", ".ghs-insight", ".ghs-fig-compare", ".ghs-fig-notice", ".ghs-fig-command"],
+		expect: [".ghs-whats-new-figure", ".ghs-fig-hrv-week", ".ghs-hrvweek", ".ghs-hrvweek-band"],
 	},
 	{
 		id: "panel-today",
@@ -44,7 +44,7 @@ export const SCENES: Scene[] = [
 		daysBack: 7,
 		cards: ["today", "hrv", "resting_hr", "spo2", "respiration_rate"],
 		open: [],
-		expect: [".ghs-readiness-bar", ".ghs-range-labelled"],
+		expect: [".ghs-readiness-bar", ".ghs-range-labelled", ".ghs-hrvweek"],
 	},
 	{
 		id: "panel-today-dark",
@@ -54,7 +54,7 @@ export const SCENES: Scene[] = [
 		daysBack: 7,
 		cards: ["today", "hrv", "resting_hr", "spo2", "respiration_rate"],
 		open: [],
-		expect: [".ghs-readiness-bar"],
+		expect: [".ghs-readiness-bar", ".ghs-hrvweek"],
 	},
 	{
 		id: "panel-sleep",
