@@ -3,6 +3,8 @@
 # Garmin Health Sync
 
 > **这是 Garmin Health Sync 的个人分支（fork）**，由 RemkoPape 维护（`RemkoPape/Garmin-Health-Sync-variables-`）。它跟随原插件并合并其更新，同时增加了一项功能：**力量训练组**，即把力量训练的动作、组数、次数和重量写入你的每日笔记。请使用上面的仓库名称通过 BRAT 插件安装。原作者见致谢部分。
+>
+> **当前版本：** 基于原插件的 0.14.1 版本；本分支的最新发布为 0.14.2-beta.1。
 
 **你每日笔记的好帮手。** Garmin Health Sync 把 Garmin 手表上最重要的数据带进你的 Obsidian 每日笔记，并可按需展示你与自己日常水平相比的状态。它不是 Garmin Connect 的复制品：目标是帮助你为这一天做出正确的决定。
 

@@ -3,6 +3,8 @@
 # Garmin Health Sync
 
 > **This is a personal fork** of Garmin Health Sync, maintained by RemkoPape (`RemkoPape/Garmin-Health-Sync-variables-`). It follows the original plugin and merges its updates, and adds one feature on top: **strength sets**, the exercises, sets, reps and weights of your strength workouts written to your daily notes. Install it with the BRAT plugin using the repository name above. The original authors are credited under Credits.
+>
+> **Current version:** based on the original plugin's 0.14.1; the latest fork release is 0.14.2-beta.1.
 
 **A companion for your daily notes.** Garmin Health Sync brings the numbers that matter from your Garmin watch into your Obsidian daily notes, and, if you like, shows how you are doing against your own normal. It is not a copy of Garmin Connect: the aim is to help you make the right decisions for the day.
 

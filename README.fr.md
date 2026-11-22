@@ -3,6 +3,8 @@
 # Garmin Health Sync
 
 > **Ceci est un fork personnel** de Garmin Health Sync, maintenu par RemkoPape (`RemkoPape/Garmin-Health-Sync-variables-`). Il suit le plugin d’origine et intègre ses mises à jour, et ajoute une fonctionnalité : les **séries de musculation**, c’est-à-dire les exercices, séries, répétitions et charges de vos séances de musculation écrits dans vos notes quotidiennes. Installez-le avec le plugin BRAT en utilisant le nom du dépôt ci-dessus. Les auteurs d’origine sont cités dans Crédits.
+>
+> **Version actuelle :** basée sur la version 0.14.1 du plugin d’origine ; la dernière version du fork est 0.14.2-beta.1.
 
 **Un compagnon pour vos notes quotidiennes.** Garmin Health Sync apporte les chiffres qui comptent de votre montre Garmin dans vos notes quotidiennes Obsidian et, si vous le souhaitez, montre où vous en êtes par rapport à votre propre normalité. Ce n’est pas une copie de Garmin Connect : le but est de vous aider à prendre les bonnes décisions pour la journée.
 
